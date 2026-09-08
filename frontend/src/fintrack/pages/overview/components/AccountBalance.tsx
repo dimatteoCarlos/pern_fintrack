@@ -2,21 +2,25 @@
 import { Link } from 'react-router-dom';
 import { currencyFormat } from '../../../helpers/functions.ts';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-import { url_get_accounts_by_type } from '../../../../urlConfig.ts';
-import { useFetch } from '../../../hooks/useFetch.ts';
 import {
   CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
 } from '../../../helpers/constants.ts';
-import {
-  AccountByTypeResponseType,
-  AccountListType,
-} from '../../../types/responseApiTypes.ts';
+import { AccountListType } from '../../../types/responseApiTypes.ts';
 import { useEffect, useState } from 'react';
-import useAuth from '../../../../auth/hooks/useAuth.ts';
 
 //----------------------------
-export type AccountPropType = { previousRoute: string; accountType: string };
+// The card no longer fetches. Overview.tsx asks the route once for
+// bank_and_investment and hands each card its own type, so the two cards that
+// used to make one request each now share one.
+export type AccountPropType = {
+  previousRoute: string;
+  // null while nothing has arrived; an empty array means the owner has no
+  // account of this type, which is a different state and renders as nothing.
+  accounts: AccountListType[] | null;
+  isLoading: boolean;
+  error: string | null;
+};
 
 //--default values------------
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -26,37 +30,21 @@ const concept = 'balance';
 //----------------------------
 function AccountBalance({
   previousRoute,
-  accountType,
+  accounts,
+  isLoading,
+  error,
 }: AccountPropType) {
 
  //--STATES---------------------
   const [accountsToRender, setAccountsToRender] = useState<AccountListType[]>(
     [],
   );
-
- //Check authentication
-  const { isAuthenticated, isCheckingAuth } = useAuth();
-
- //--DATA FETCHING---------------
-  const urlGetAccounts =
-    !isCheckingAuth && isAuthenticated
-      ? `${url_get_accounts_by_type}/?type=${accountType}`
-      : undefined; // &user=${user}`;
-
-  const {
-    apiData: accountsData,
-    isLoading,
-    error,
-  } = useFetch<AccountByTypeResponseType>(urlGetAccounts as string);
   //------------------------------
   useEffect(() => {
     function updateAccounts() {
       const newBankAccounts: AccountListType[] =
-        accountsData &&
-        !isLoading &&
-        !error &&
-        !!accountsData.data.accountList?.length
-          ? accountsData.data?.accountList?.map((acc, indx) => ({
+        accounts && !isLoading && !error && !!accounts.length
+          ? accounts.map((acc, indx) => ({
               account_id: acc.account_id ?? indx,
               account_name: acc.account_name,
               concept: { concept },
@@ -72,19 +60,9 @@ function AccountBalance({
     }
     //---
     updateAccounts();
-  }, [accountsData, isLoading, error]);
-
-  // console.log('accounts:', accountsData, error, isLoading);
+  }, [accounts, isLoading, error]);
 
   if (isLoading) {
-    return (
-      <span style={{ color: 'cyan', width: '100%', textAlign: 'center' }}>
-        Loading...
-      </span>
-    );
-  }
-  //------------------------------
-  if (isCheckingAuth || isLoading) {
     return (
       <span className='loading__msg' style={{ color: '#fff' }}>
         Loading...
@@ -92,7 +70,7 @@ function AccountBalance({
     );
   }
 
-  if (!accountsToRender || isLoading || error) return null; 
+  if (!accountsToRender || error) return null; 
   //--------
   return (
     <>

@@ -1,15 +1,10 @@
 // frontend\src\pages\overview\components\InvestmentAccBalance.tsx
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { url_get_accounts_by_type } from '../../../../urlConfig.ts';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { currencyFormat } from '../../../helpers/functions.ts';
-import { useFetch } from '../../../hooks/useFetch.ts';
-import {
-  AccountByTypeResponseType,
-  AccountListType,
-} from '../../../types/responseApiTypes.ts';
+import { AccountListType } from '../../../types/responseApiTypes.ts';
 
 import {
   //ACCOUNT_DEFAULT ,
@@ -17,7 +12,17 @@ import {
   DEFAULT_CURRENCY,
 } from '../../../helpers/constants.ts';
 
-type AccountPropType = { previousRoute: string; accountType: string };
+// The card no longer fetches. Overview.tsx asks the route once for
+// bank_and_investment and hands each card its own type, so this card and
+// AccountBalance.tsx share the request that each of them used to make.
+type AccountPropType = {
+  previousRoute: string;
+  // null while nothing has arrived; an empty array means the owner holds no
+  // investment account, which is a different state and renders as nothing.
+  accounts: AccountListType[] | null;
+  isLoading: boolean;
+  error: string | null;
+};
 
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -32,7 +37,9 @@ const DASH = '—';
 //-------------------------------------
 function InvestmentAccountBalance({
   previousRoute,
-  accountType,
+  accounts,
+  isLoading,
+  error,
 }: AccountPropType) {
 
   //--STATES---------------------
@@ -42,20 +49,12 @@ function InvestmentAccountBalance({
     //ACCOUNT_DEFAULT
     [],
   );
-
-  //DATA FETCHING
-  const urlInvestmentAccounts = `${url_get_accounts_by_type}/?type=${accountType}`;
-
-  const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
-    urlInvestmentAccounts,
-  );
-  // console.log('Investment_accounts:', data, error, isLoading);
   //------------------------------
   useEffect(() => {
     function updateInvestmentAccounts() {
       const newInvestmentAccounts: AccountListType[] =
-        apiData && !isLoading && !error && !!apiData.data.accountList?.length
-          ? apiData.data?.accountList?.map((acc, indx) => ({
+        accounts && !isLoading && !error && !!accounts.length
+          ? accounts.map((acc, indx) => ({
               account_id: acc.account_id ?? indx,
               account_name: acc.account_name,
               concept: { concept },
@@ -76,15 +75,12 @@ function InvestmentAccountBalance({
     }
     //---
     updateInvestmentAccounts();
-  }, [apiData, isLoading, error]);
-
-  // console.log('accounts:', apiData, error, isLoading);
-
-  // if (isLoading) {
-  // return <span style={{color:'cyan', width:'100%', textAlign:'center'}}>Loading...</span>;  }
+  }, [accounts, isLoading, error]);
 
  // MAIN RENDER ----------------------
-  if (!apiData || isLoading || error) return null; 
+ // accounts is null until the one request Overview makes has answered, which is
+ // the state this card used to read off its own apiData.
+  if (!accounts || isLoading || error) return null; 
   
   return (
     <>

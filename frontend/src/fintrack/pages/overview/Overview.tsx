@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 //NAVIGATION
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../../auth/hooks/useAuth.ts';
+import { useFetch } from '../../hooks/useFetch.ts';
 
 // UI COMPONENTS
 import AccountBalance from './components/AccountBalance.tsx';
@@ -24,10 +25,12 @@ import {
   // service still exist, and this line is the record of who used to call them.
   // url_monthly_TotalAmount_ByType,
   dashboardMovementTransactions,
+  url_get_accounts_by_type,
 } from '../../../urlConfig.ts';
 
 //TYPES
 import {
+  AccountByTypeResponseType,
   FinancialDataRespType,
   LastMovementRespType,
   // YearlyTotalsType,
@@ -146,6 +149,45 @@ function Overview() {
 
   // AUTHENTICATION STATE
   const { isAuthenticated, isCheckingAuth } = useAuth();
+
+  // ONE REQUEST FOR BOTH ACCOUNT CARDS. Account Balance asked the route for
+  // ?type=bank and Investment Accounts asked the same route for
+  // ?type=investment - two round trips for two halves of one list. The route
+  // already answers bank_and_investment (getAccountController.js:440), so the
+  // page asks once and each card takes its own type out of the one answer.
+  const urlAccountsByType =
+    !isCheckingAuth && isAuthenticated
+      ? `${url_get_accounts_by_type}/?type=bank_and_investment`
+      : null;
+
+  const {
+    apiData: accountsByTypeData,
+    isLoading: accountsLoading,
+    error: accountsError,
+  } = useFetch<AccountByTypeResponseType>(urlAccountsByType);
+
+  // Split here and not inside each card: the division is a property of this one
+  // answer, and a card filtering its own share would have to know what the
+  // other card takes. Null while nothing has arrived, which is what lets a card
+  // tell "not yet" from "none of this type".
+  const accountList = accountsByTypeData?.data?.accountList ?? null;
+
+  // EACH CARD KEEPS THE ORDER ITS OWN STATEMENT GAVE IT, restored here because
+  // the shared statement cannot give two. ?type=bank ordered by balance ascending
+  // (getAccountController.js:434) and ?type=investment by the magnitude of the
+  // balance descending (:379), while bank_and_investment orders by type and then
+  // by name (:454). Sorting a copy of the filtered slice: filter already returns
+  // a new array, so neither sort reaches accountList.
+  const bankAccounts =
+    accountList
+      ?.filter((acc) => acc.account_type_name === 'bank')
+      .sort((a, b) => a.account_balance - b.account_balance) ?? null;
+
+  const investmentAccounts =
+    accountList
+      ?.filter((acc) => acc.account_type_name === 'investment')
+      .sort((a, b) => Math.abs(b.account_balance) - Math.abs(a.account_balance)) ??
+    null;
   //------------------
   //FUNCTIONS
   function createNewAccount(originRoute: string) {
@@ -408,12 +450,21 @@ function Overview() {
           </OpenAddEditBtn>
           }
 
-        {<AccountBalance previousRoute={originRoute} accountType={'bank'} />}
+        {
+          <AccountBalance
+            previousRoute={originRoute}
+            accounts={bankAccounts}
+            isLoading={accountsLoading}
+            error={accountsError}
+          />
+        }
 
         {
           <InvestmentAccountBalance
             previousRoute={originRoute}
-            accountType={'investment'}
+            accounts={investmentAccounts}
+            isLoading={accountsLoading}
+            error={accountsError}
           />
         }
 {/* ------------------ */}
