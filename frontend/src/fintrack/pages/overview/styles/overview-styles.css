@@ -554,3 +554,148 @@ a.icon {
     the six month names render at twice their size and touch each other. */
  font-size: inherit;
 }
+
+/*------------*/
+/* Block 05, the month against its own history. Built to
+   propuesta-snapshot-mensual.html and sharing the .domainCards grid above, so
+   the two blocks keep one column count at every width instead of the fixed row
+   of three the old tiles used, which is what made them wrap at 480px. */
+
+.overviewLayout .snapshot {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ padding: var(--space-4);
+ border: 1px solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+}
+
+.overviewLayout .snapshot__head {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2);
+}
+
+.overviewLayout .snapshot__domain {
+ font-size: var(--font-size-sm);
+ font-weight: 600;
+ letter-spacing: 0.2px;
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .snapshot__period {
+ flex-shrink: 0;
+ font-size: var(--font-size-xs);
+ letter-spacing: 0.65px;
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .snapshot__actual {
+ font-size: var(--font-size-lg);
+ font-weight: 600;
+ line-height: 1.2;
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+/* The square and the figure are one statement, so they share a row. */
+.overviewLayout .snapshot__variance {
+ display: flex;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+
+.overviewLayout .snapshot__square {
+ flex: none;
+ width: var(--space-3);
+ height: var(--space-3);
+ border-radius: var(--radius-xs);
+}
+
+.overviewLayout .snapshot__square--calm {
+ background: var(--color-status-ok);
+}
+
+.overviewLayout .snapshot__square--watch {
+ background: var(--color-status-warning);
+}
+
+.overviewLayout .snapshot__square--alert {
+ background: var(--color-status-alert);
+}
+
+/* Empty and outlined, never calm. No comparable month is not a healthy month,
+   and a filled square would assert a reading nobody measured. */
+.overviewLayout .snapshot__square--unknown {
+ background: transparent;
+ border: 1px solid var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .snapshot__delta {
+ font-size: var(--font-size-sm);
+ font-weight: 600;
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .snapshot__delta--calm {
+ color: var(--color-status-ok);
+}
+
+.overviewLayout .snapshot__delta--watch {
+ color: var(--color-status-warning);
+}
+
+.overviewLayout .snapshot__delta--alert {
+ color: var(--color-status-alert);
+}
+
+.overviewLayout .snapshot__delta--unknown {
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .snapshot__against {
+ font-size: var(--font-size-xs);
+ letter-spacing: 0.2px;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The rule is what separates the month from what it is being measured against.
+   auto-fit rather than a fixed three, so the third cell drops under the other
+   two on a narrow card instead of squeezing all three. */
+.overviewLayout .snapshot__baselines {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+ gap: var(--space-3);
+ padding-top: var(--space-3);
+ border-top: 1px solid var(--color-border-subtle);
+}
+
+.overviewLayout .snapshot__baseline {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+}
+
+.overviewLayout .snapshot__label {
+ font-size: var(--font-size-xs);
+ letter-spacing: 0.65px;
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .snapshot__figure {
+ font-size: var(--font-size-base);
+ font-weight: 500;
+ color: var(--color-content-on-dark-muted);
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .snapshot__weight {
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+ font-variant-numeric: tabular-nums;
+}

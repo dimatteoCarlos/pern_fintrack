@@ -11,7 +11,11 @@ import { useFetch } from '../../hooks/useFetch.ts';
 import AccountBalance from './components/AccountBalance.tsx';
 import DomainCards from './components/DomainCards.tsx';
 import FinancialGoals from './components/FinancialGoals.tsx';
-import MonthlyAverage from './components/MonthlyAverage.tsx';
+// MonthlyAverage is superseded by MonthlySnapshot, which prints the same
+// three figures plus the two baselines and the deviation square it did not.
+// The file stays on disk unrendered rather than being removed.
+// import MonthlyAverage from './components/MonthlyAverage.tsx';
+import MonthlySnapshot from './components/MonthlySnapshot.tsx';
 import TrendCharts from './components/TrendCharts.tsx';
 import LastMovements, {
   LastMovementType,
@@ -447,7 +451,7 @@ function Overview() {
             layout above it has already filled for the month on screen. Passing
             them from here would have made this page fetch a month of its own,
             and the two months would drift the moment the picker moved. */}
-        <MonthlyAverage />
+        <MonthlySnapshot />
 
         {/* Block 05, in the sketch's own order: the goals read at the close of
             the same month the cards above are cut to. Store-backed like the two
