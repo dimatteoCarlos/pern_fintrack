@@ -47,12 +47,15 @@
    badge and both arrows in .monthStepper, and the skeleton is wrapped with them,
    so the same box exists before the first month arrives.
 
-   translate(-50%, -100%) and not -50%, which is the whole of the fix for a
-   month that read as sitting on a black band. At -50% the pill was CENTRED on
-   the header's bottom edge, so its upper half sat on the white header and its
-   lower half on the page's own dark ground - one control on two grounds, and
-   the dark half is what the reader sees behind the label. At -100% its bottom
-   edge lands on that same edge and the pill sits wholly inside the header.
+   translate(-50%, -50%), which straddles the header's bottom edge: the pill's
+   upper half sits on the white header and its lower half on the page's own
+   ground, the same way the budget and pocket boards carry theirs.
+
+   It was briefly -100%, which pulled the pill wholly inside the white header.
+   Reverted on Carlos's instruction on 2026-09-08: the position was never the
+   complaint, and moving it changed the one thing about the control that was
+   right. The dark half behind the pill is the page's ground, not a band this
+   rule paints, and it is answered by the page's background and not here.
 
    No length is named on either axis, so the pill follows the band rather than a
    measurement of it, and the header's box does not grow: it is absolute with no
@@ -64,7 +67,7 @@
  position: absolute;
  top: 100%;
  left: 50%;
- transform: translate(-50%, -100%);
+ transform: translate(-50%, -50%);
  z-index: 2;
 }
 
