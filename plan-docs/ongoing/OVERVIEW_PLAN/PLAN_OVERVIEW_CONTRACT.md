@@ -705,11 +705,40 @@ type MonthlySnapshot = {
  // frontend renderiza guion, nunca 0 (regla de frontend del proyecto).
  activeMonthAverage3m: number | null;
  activeMonthAverage12m: number | null;
+ // Cuantos meses de cada ventana tuvieron actividad: el denominador con el que
+ // se dividio el promedio de arriba. 0 y nunca null, porque no es una cifra
+ // retenida sino la respuesta. Un promedio sobre tres meses activos y uno sobre
+ // tres meses de los que uno tuvo actividad son el mismo numero con distinto
+ // peso, y la tarjeta tiene que poder decir cual de los dos es.
+ activeMonths3m: number;
+ activeMonths12m: number;
  varianceVsAverage: number | null; // MS4 = domainMonthlyActual - activeMonthAverage12m; null si el segundo es null
+ // El ano calendario corrido del mes de referencia, inclusive. Se suma de la
+ // misma serie de trece meses, sin consulta propia: una ventana de trece meses
+ // que termina en el mes de referencia siempre contiene todos los meses de ese
+ // ano calendario, porque un ano corrido son doce como maximo.
+ //
+ // Cuenta todos los meses, activos o no, al reves que los dos promedios de
+ // arriba. Un total no tiene denominador que proteger y un mes vacio le aporta
+ // 0 honestamente; una media si lo tiene, y por eso ahi el mes vacio se excluye.
+ //
+ // Nunca null: el mes de referencia siempre esta en su propio ano.
+ yearToDate: number;
  currency: CurrencyType;
  meta: SectionMeta;
 };
 ```
+
+**Enmienda del 2026-09-08.** `activeMonths3m`, `activeMonths12m` y `yearToDate`
+se agregan al bloque de arriba. Los tres son campos nuevos, no cambios de
+significado: ninguna cifra ya publicada cambia de nombre, de tipo ni de valor,
+asi que un consumidor escrito contra la version anterior sigue leyendo lo mismo.
+
+El motivo es que `MonthlyAverage.tsx` pinta cuatro cosas por movimiento y este
+bloque cargaba dos, de modo que el componente seguia recalculando todo en el
+navegador contra una peticion aparte. Con los tres campos, la tarjeta se sirve
+entera desde el payload que la pagina ya pide, y la peticion a
+`url_monthly_TotalAmount_ByType` deja de tener consumidor.
 
 ## 9. Financial goals (G1-G3 — reusado, no recalculado)
 

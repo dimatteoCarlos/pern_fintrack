@@ -362,6 +362,8 @@ Definido para **tres** dominios solamente: ingreso, gasto y pocket.
 | **promedio de 3 meses** | `activeMonthAverage3m` | la media de los meses **activos** de los últimos tres | M |
 | **promedio de 12 meses** | `activeMonthAverage12m` | la media de los meses **activos** de los últimos doce | M |
 | **varianza contra el promedio** | `varianceVsAverage` | la cifra del mes − el promedio de **doce** | F, comparación |
+| **meses activos de cada ventana** | `activeMonths3m` / `12m` | el denominador con el que se dividió cada promedio | M |
+| **año calendario corrido** | `yearToDate` | suma de **todos** los meses del año del mes de referencia, activos o no | M |
 
 **"Meses activos" es toda la definición.** Un mes sin actividad se **excluye del
 denominador** en vez de contarse como cero, que es por qué el promedio es `null`
