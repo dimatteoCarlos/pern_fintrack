@@ -225,13 +225,28 @@ const DEBT_DOMAIN_FIELDS_QUERY = `
   SELECT
     COALESCE(SUM(balance) FILTER (WHERE balance > 0), 0) AS receivable,
     COALESCE(SUM(-balance) FILTER (WHERE balance < 0), 0) AS payable,
+    COUNT(*) FILTER (WHERE balance > 0) AS receivable_count,
+    COUNT(*) FILTER (WHERE balance < 0) AS payable_count,
     COUNT(*) FILTER (WHERE balance = 0 AND has_movement) AS settled_count
   FROM closing
 `;
 
 /**
- * The debt card's own fields: the two legs of the position and the count of
- * debtors settled at the close of the reference month.
+ * The debt card's own fields: the two legs of the position, how many
+ * counterparties each leg is made of, and the count of debtors settled at the
+ * close of the reference month.
+ *
+ * The two counts sit on the same FILTER boundary as the two sums, so a
+ * counterparty is counted on exactly the leg its balance was added to and an
+ * account at exactly 0 is counted on neither. That is what keeps
+ * `receivableCount + payableCount + (accounts at zero)` equal to the set the
+ * legs were summed over, and it is why they are computed here rather than in a
+ * second statement that could disagree about the cut.
+ *
+ * An account at zero WITHOUT a movement of its own is in no count at all: it is
+ * outside settledCount by the activity clause and outside both legs by its
+ * balance. That is deliberate - it is an account that was opened and never
+ * used.
  *
  * An empty accountIds returns two zero legs and a zero count. A user with no
  * debtor accounts is owed nothing and owes nothing, which is a real answer, and
@@ -241,7 +256,7 @@ const DEBT_DOMAIN_FIELDS_QUERY = `
  * @param {number[]} accountIds - the same set totalAmount is computed over
  * @param {string} month - the reference month, as 'YYYY-MM-01'
  * @param {string} timeZone - IANA zone of the account owner
- * @returns {Promise<{receivable: number, payable: number, settledCount: number}>}
+ * @returns {Promise<{receivable: number, payable: number, receivableCount: number, payableCount: number, settledCount: number}>}
  */
 export async function getDebtDomainFields(
  pool,
@@ -260,6 +275,11 @@ export async function getDebtDomainFields(
  return {
   payable: toAmount(row.payable ?? 0),
   receivable: toAmount(row.receivable ?? 0),
+  // Counts and not amounts, so Number and never toAmount: rounding a
+  // counterparty to two decimals would be a category error the type would not
+  // catch.
+  receivableCount: Number(row.receivable_count ?? 0),
+  payableCount: Number(row.payable_count ?? 0),
   settledCount: Number(row.settled_count ?? 0),
  };
 }

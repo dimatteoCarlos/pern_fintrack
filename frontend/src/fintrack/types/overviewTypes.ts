@@ -111,8 +111,26 @@ export type OverviewDebtCard = OverviewDomainCardBase & {
  // net, and receivable - payable reproduces it as an auditable check.
  payable: number;
  receivable: number;
+ // How many counterparties each leg is made of, on the same sign boundary the
+ // two sums use. A card that says "You owe $27.96" cannot tell one lender from
+ // nine without them, and the amount alone reads as a single obligation.
+ //
+ // The vocabulary is the debts module's, not the sign's: a balance BELOW zero
+ // is money the user owes, so its counterparty is a LENDER and it is counted in
+ // payableCount. A balance above zero is a DEBTOR. ListOfDebtors.tsx:216 makes
+ // the same call from the same sign.
+ //
+ // An account sitting at exactly zero is in neither count, which is the same
+ // rule that keeps it out of both legs.
+ payableCount: number;
+ receivableCount: number;
  // Debtors who reached zero at the month's close, counting only those with a
  // movement of their own. The row that OPENS the account does not count.
+ //
+ // Published and no longer drawn on the level-1 card: "0 debts settled at
+ // close" is a sentence a reader cannot decode without the activity clause
+ // beside it, and the two counterparty counts above answer the question that
+ // reader was actually asking.
  settledCount: number;
 };
 
