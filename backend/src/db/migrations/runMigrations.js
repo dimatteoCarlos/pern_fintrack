@@ -15,21 +15,6 @@ import {
  getDbConfig,
  isProduction,
 } from './dbMigrationConfig.js';
-/*
-// Alternative using dbMigrationConfig.js
-import { Client } from 'pg';
-import pc from 'picocolors';
-import { getDbConfig, isProduction } from '../dbConfig.js';
-
-if (isProduction()) {
-  console.error(pc.red('❌ Migrations are not allowed in production'));
-  process.exit(1);
-}
-
-const config = getDbConfig();
-const client = new Client(config);
-
-*/
 const MIGRATIONS_DIR = path.join(process.cwd(), 'src/db/migrations/sql_migrations'); //
 
 /**
