@@ -1,5 +1,9 @@
 
-"backup_fintrack.sql" 
+# gitignore has no quoting syntax. This line used to carry the pattern in
+# double quotes, which matches a filename containing the quote characters, so
+# the dump was never excluded and stayed tracked. Untracked in the same commit;
+# the working copy stays on disk.
+backup_fintrack.sql
 
 .vscode/
 
@@ -95,7 +99,9 @@ storybook-static/
 # ===============================
 SCRIPTS
 scripts/
-*scripts"backen/.gitignore"
+# Never matched anything: the same quoting mistake as above, and it misspells
+# backend. Kept commented rather than removed until its intent is confirmed.
+# *scripts"backen/.gitignore"
 
 # backend/scripts/ holds development tooling, not scratch files. The rule above
 # is a bare directory name, so it matches at any depth and swallowed this
