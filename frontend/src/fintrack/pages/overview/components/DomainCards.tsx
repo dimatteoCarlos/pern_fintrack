@@ -12,6 +12,7 @@
 // headline and one subordinate line. The rest belongs to level 2.
 
 import { currencyFormat } from '../../../helpers/functions';
+import { CardTitle } from '../../../general_components/CardTitle';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 
@@ -59,22 +60,23 @@ type CardProps = {
  // natures have no token of their own and inventing one would put an
  // unreviewed value in the palette.
  nature: 'flow' | 'position';
- month: string | null;
  children: React.ReactNode;
  sub: React.ReactNode;
 };
 
-const DomainCard = ({ label, nature, month, children, sub }: CardProps) => (
+// The month is NOT repeated on the card. All six read the same one, so six
+// copies of the same period were six lines competing with the figures for the
+// width they needed, which is what forced every caption down to a size that
+// could not be read. The month is stated once above the grid and the card keeps
+// the half that differs between cards: the nature.
+const DomainCard = ({ label, nature, children, sub }: CardProps) => (
  <article className='domainCard'>
-  <div className='domainCard__label'>{label}</div>
+  <div className='domainCard__head'>
+   <span className='domainCard__label'>{label}</span>
+   <span className='domainCard__scope'>{nature}</span>
+  </div>
 
   <div className='domainCard__figures'>{children}</div>
-
-  <div className='domainCard__scope'>
-   {nature === 'flow'
-    ? `Flow · ${monthLabel(month)}`
-    : `Position · close of ${monthLabel(month)}`}
-  </div>
 
   <div className='domainCard__sub'>{sub}</div>
  </article>
@@ -92,11 +94,20 @@ function DomainCards() {
  const { income, expense, pnl, debt, pocket, investment } = domainCards;
 
  return (
-  <section className='domainCards'>
+  <>
+   <div className='presentation__card__title__container flx-row-sb'>
+    {/* The period every card below is read for, said once. The second row is
+        the rule that tells the two natures apart, which the cards used to
+        spell out one by one. */}
+    <CardTitle subtitle='Flow is measured across the month; position is read at its close'>
+     {monthLabel(referenceMonth)}
+    </CardTitle>
+   </div>
+
+   <section className='domainCards'>
    <DomainCard
     label='Income'
     nature='flow'
-    month={referenceMonth}
     sub={deltaLine(income.delta, income.currency)}
    >
     <div className='domainCard__figure'>
@@ -107,7 +118,6 @@ function DomainCards() {
    <DomainCard
     label='Expense'
     nature='flow'
-    month={referenceMonth}
     sub={
      <>
       {deltaLine(expense.delta, expense.currency)}
@@ -128,7 +138,6 @@ function DomainCards() {
    <DomainCard
     label='PnL'
     nature='flow'
-    month={referenceMonth}
     sub={deltaLine(pnl.delta, pnl.currency)}
    >
     {/* Signed, and a negative is a real answer here in a way it is not on an
@@ -142,7 +151,6 @@ function DomainCards() {
    <DomainCard
     label='Debt'
     nature='position'
-    month={referenceMonth}
     sub={
      debt.settledCount === 1
       ? '1 debt settled at close'
@@ -166,7 +174,6 @@ function DomainCards() {
    <DomainCard
     label='Pocket · committed'
     nature='position'
-    month={referenceMonth}
     sub={
      pocket.delta === null
       ? NO_FIGURE
@@ -184,7 +191,6 @@ function DomainCards() {
    <DomainCard
     label='Investment'
     nature='position'
-    month={referenceMonth}
     sub={
      investment.accountCount === 1
       ? '1 account — the count is as of today'
@@ -195,7 +201,8 @@ function DomainCards() {
      {money(investment.currency, investment.ledgerBalance)}
     </div>
    </DomainCard>
-  </section>
+   </section>
+  </>
  );
 }
 

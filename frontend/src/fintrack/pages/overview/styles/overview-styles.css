@@ -390,20 +390,37 @@ a.icon {
 .overviewLayout .domainCard {
  display: flex;
  flex-direction: column;
- gap: var(--space-1);
- padding: var(--space-3) var(--space-4);
+ gap: var(--space-2);
+ padding: var(--space-4);
  border: 1px solid var(--color-border-subtle);
  border-radius: var(--radius-xl);
 }
 
-/* Every caption on a domain card is set one step above where it started. The
-   whole set moves together: the name of the card, the two debt legs, the
-   nature-and-period line and the subordinate figure are one register, and a
-   register reads as accidental the moment its members disagree. */
+/* THREE SIZES ON A CARD AND NOT FIVE. What the card is worth is --font-size-xl,
+   what it is called is --font-size-sm, and everything qualifying either of them
+   is --font-size-xs. Before this the name, the nature, the debt legs and the
+   subordinate line were all one step apart from each other, which is a list and
+   not a hierarchy: five near-equal sizes leave the reader to work out what to
+   read first, and the answer to that is the whole job of the block.
+
+   The three are also told apart by more than size, so the order survives a
+   reader who has scaled the page up: the figure is white, the name is muted,
+   the qualifiers are subtle. */
+
+/* The name and the nature share one line. The nature is one word now that the
+   month is stated once above the grid, so it fits beside the name instead of
+   taking a line of its own under the figure. */
+.overviewLayout .domainCard__head {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2);
+}
+
 .overviewLayout .domainCard__label {
- font-size: var(--font-size-xs);
- font-weight: 500;
- letter-spacing: 1px;
+ font-size: var(--font-size-sm);
+ font-weight: 600;
+ letter-spacing: 0.2px;
  text-transform: capitalize;
  color: var(--color-content-on-dark-muted);
 }
@@ -415,9 +432,9 @@ a.icon {
 }
 
 .overviewLayout .domainCard__figure {
- font-size: var(--font-size-lg);
- font-weight: 500;
- line-height: 1.3;
+ font-size: var(--font-size-xl);
+ font-weight: 600;
+ line-height: 1.2;
  color: var(--color-content-on-dark);
  /* The cards sit in rows, so their figures line up column-wise. */
  font-variant-numeric: tabular-nums;
@@ -435,12 +452,13 @@ a.icon {
 
 .overviewLayout .domainCard__leg {
  font-size: var(--font-size-xs);
- letter-spacing: 1px;
+ font-weight: 400;
+ letter-spacing: 0.2px;
  color: var(--color-content-on-dark-subtle);
 }
 
-/* Nature and period. The two natures are told apart by the word, not by a
-   colour: neither has a token, and a value invented here would enter the
+/* Flow or position, one word. The two natures are told apart by the word, not
+   by a colour: neither has a token, and a value invented here would enter the
    palette without review.
 
    Never --font-size-3xs: the smallest step is 0.5rem and --font-size-root
@@ -448,6 +466,7 @@ a.icon {
    exists as the floor of a container-query clamp in pocket, which is a
    different job from setting a caption outright. */
 .overviewLayout .domainCard__scope {
+ flex-shrink: 0;
  font-size: var(--font-size-xs);
  letter-spacing: 0.65px;
  text-transform: uppercase;
