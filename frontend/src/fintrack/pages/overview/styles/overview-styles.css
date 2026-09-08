@@ -460,8 +460,9 @@ a.icon {
  font-variant-numeric: tabular-nums;
 }
 
-/* Debt prints two legs instead of one net, so each is smaller than a headline
-   and the wording sits beside the amount rather than above it. */
+/* Debt's two legs, which are subordinate to its net and not headlines of their
+   own: one step down from .domainCard__figure, with the wording beside the
+   amount rather than above it. */
 .overviewLayout .domainCard__figure--split {
  display: flex;
  align-items: baseline;

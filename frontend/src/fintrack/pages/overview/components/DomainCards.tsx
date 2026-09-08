@@ -403,16 +403,29 @@ function DomainCards() {
     nature='position'
     sub={deltaLine(debt.delta, debt.currency)}
    >
-    {/* Two legs and not one net. A net of −$550 does not distinguish "you owe
-        550" from "you are owed 1,750 and you owe 2,300", which are opposite
-        situations. Both print as positive magnitudes: the direction is in the
-        wording, so a negative would be a double negative.
+    {/* The net across every counterparty, in the headline the other five
+        cards give totalAmount. It keeps its sign and takes no colour, the
+        rule the debts board's hero already follows for the same figure
+        (DebtsBigBoxResult.tsx:64-67): a net is a position and not a
+        direction, and the two legs under it are what say which way it leans.
+
+        The legs stay for that reason. A net of -$550 on its own does not
+        distinguish "you owe 550" from "you are owed 1,750 and you owe 2,300",
+        which are opposite situations - the decomposition below is what makes
+        the headline readable rather than a second reading of it. */}
+    <div className='domainCard__figure'>
+     {money(debt.currency, debt.totalAmount)}
+    </div>
+
+    {/* The secondary readings: each leg's magnitude and how many
+        counterparties it is made of. Both print unsigned - the direction is
+        in the wording, so a negative would be a double negative.
 
         Coloured by direction, the debts module's rule and its two tokens
         (debts-styles.css:457-463). The colour is the SECOND carrier - the
         words beside each figure say the same thing, which is what keeps the
         rows readable in monochrome and to an eye that cannot separate the two
-        hues. */}
+        hues. The counts take no colour: they are not amounts. */}
     <div className='domainCard__figure domainCard__figure--split'>
      <span className='domainCard__leg'>
       You owe{counterparties(debt.payableCount, 'lender', 'lenders')}
