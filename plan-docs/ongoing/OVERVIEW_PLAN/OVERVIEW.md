@@ -93,7 +93,7 @@ afirmaría lo contrario.
 | deuda | por qué se registra acá |
 |---|---|
 | **la fragilidad del prefijo de texto en el resultado realizado** | las dos cifras de resultado realizado excluyen las compensaciones de cierre de cuenta comparando un **prefijo de descripción**. Es un escritor contra **cuatro** lectores, así que editar esa cadena reclasifica dinero histórico en cuatro sitios a la vez. Reemplazarlo por una bandera tipada es trabajo propio |
-| **la migración de limpieza que `020` difirió** | dejó a propósito la fila del tipo de cuenta de pocket retirado y la tabla legacy. **No existe tal migración de limpieza**; la secuencia termina en 030. Después de la fase P2 nadie lee esa tabla, que es exactamente cuando la limpieza pasa a ser segura |
+| **la migración de limpieza que `020` difirió** | dejó a propósito la fila del tipo de cuenta de pocket retirado y la tabla legacy. **No existe tal migración de limpieza**: la cadena llega hasta `035_create_account_registry.sql` y ninguna de sus entradas retira esa fila ni esa tabla. Después de la fase P2 nadie lee esa tabla, que es exactamente cuando la limpieza pasa a ser segura |
 | **los ocho fallbacks a cero de la pantalla viva** | violan la regla de que una cifra faltante es un guion y nunca un cero. Son reales, y esa pantalla es la que este trabajo reemplaza, así que la regla **obliga al reemplazo**. La única excepción es el guard de gasto, que **ya está arreglado en los dos checkouts**: el comentario de `OverviewLayout.tsx:203-204` lo describe en pasado. No es trabajo de P5 |
 
 ---
