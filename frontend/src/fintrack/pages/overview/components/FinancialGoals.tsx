@@ -52,8 +52,6 @@ function FinancialGoals() {
  const { goalsTotalBalance, goalsTotalTarget, goalsTotalRemaining, currency } =
   financialGoals;
 
- const scope = `Position · close of ${monthLabel(referenceMonth)}`;
-
  const amount = (value: number | null) =>
   value === null
    ? NO_FIGURE
@@ -62,32 +60,42 @@ function FinancialGoals() {
  return (
   <>
    <div className='presentation__card__title__container flx-row-sb'>
-    <CardTitle>Financial Goals</CardTitle>
+    {/* All three cards read the same nature at the same close, so the scope
+        is stated once here instead of three times inside the grid, where it
+        was the longest line on every card and wrapped to two. */}
+    <CardTitle
+     subtitle={`Position at the close of ${monthLabel(referenceMonth)}`}
+    >
+     Financial Goals
+    </CardTitle>
    </div>
 
    <section className='domainCards'>
     <article className='domainCard'>
-     <div className='domainCard__label'>Saved</div>
+     <div className='domainCard__head'>
+      <span className='domainCard__label'>Saved</span>
+     </div>
      {/* Always a number: it counts every pocket, including the ones with no
          target, because money set aside is set aside whether or not it was
          promised to a goal. */}
      <div className='domainCard__figure'>{amount(goalsTotalBalance)}</div>
-     <div className='domainCard__scope'>{scope}</div>
     </article>
 
     <article className='domainCard'>
-     <div className='domainCard__label'>Target</div>
+     <div className='domainCard__head'>
+      <span className='domainCard__label'>Target</span>
+     </div>
      <div className='domainCard__figure'>{amount(goalsTotalTarget)}</div>
-     <div className='domainCard__scope'>{scope}</div>
     </article>
 
     <article className='domainCard'>
-     <div className='domainCard__label'>Remaining</div>
+     <div className='domainCard__head'>
+      <span className='domainCard__label'>Remaining</span>
+     </div>
      {/* Not floored at zero. It is a plain subtraction, so an owner who saved
          past the goal reads a negative remainder, which is the true answer;
          clamping it would report the goal as exactly met. */}
      <div className='domainCard__figure'>{amount(goalsTotalRemaining)}</div>
-     <div className='domainCard__scope'>{scope}</div>
     </article>
    </section>
   </>

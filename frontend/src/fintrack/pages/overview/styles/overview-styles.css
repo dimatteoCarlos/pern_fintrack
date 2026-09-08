@@ -396,7 +396,7 @@ a.icon {
  border-radius: var(--radius-xl);
 }
 
-/* THREE SIZES ON A CARD AND NOT FIVE. What the card is worth is --font-size-xl,
+/* THREE SIZES ON A CARD AND NOT FIVE. What the card is worth is --font-size-lg,
    what it is called is --font-size-sm, and everything qualifying either of them
    is --font-size-xs. Before this the name, the nature, the debt legs and the
    subordinate line were all one step apart from each other, which is a list and
@@ -432,7 +432,7 @@ a.icon {
 }
 
 .overviewLayout .domainCard__figure {
- font-size: var(--font-size-xl);
+ font-size: var(--font-size-lg);
  font-weight: 600;
  line-height: 1.2;
  color: var(--color-content-on-dark);
