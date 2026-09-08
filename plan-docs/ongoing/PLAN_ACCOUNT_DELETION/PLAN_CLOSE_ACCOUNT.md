@@ -103,19 +103,21 @@ both as the transaction's owner and as the account being opened, so it occupies
 two of the restricting references above. **There is therefore no such thing as an
 account with no transactions.**
 
-### 3.3 The detail tables cascade, and that destroys information
+### 3.3 The detail tables cascade, and that is the only thing that destroys them
 
 The four one-to-one extension tables — income source, spending category, debtor
-and pocket saving (`002_accounts.sql`, lines 124, 142, 167 and 193) — reference
-the account with cascade. Deleting the account row silently removes the
-category's budget amount, the saving target and the debtor's terms.
-
-**Consequence for the design, and it is an ordering constraint rather than a
-preference:** whatever the closure needs to remember has to be **written before
-the delete, inside the same database transaction.** There is no path that
-recovers it afterwards. The pocket module's migration already measured that
-cascade against real data and recorded the loss
+and pocket saving (`002_accounts.sql`, at lines 122, 140, 165 and 191) — each
+declare their primary key as a reference to the account **with cascade**.
+Deleting the account row silently removes the category's budget amount, the
+saving target and the debtor's terms. The pocket module's migration already
+measured that cascade against real data and recorded the loss
 (`020_create_pocket_tables.sql`).
+
+**The cascade is the sole destroyer: the erasure tail never touches those four
+tables** (`eraseAccountTail.js` writes only to transactions, pocket allocations
+and the accounts table). That is what makes section 4.3's answer possible —
+repoint those four keys and the rows simply do not die, so nothing has to be
+copied before the delete.
 
 ### 3.4 A snapshot column already exists, and it is already wrong
 
@@ -129,8 +131,9 @@ rename leaves it stale, and a delete blanks the id while leaving the name
 standing.
 
 It is a live, rendered instance of exactly the pattern the owner declined for
-transactions. **The design has to decide what happens to that column rather than
-inherit it.**
+transactions. **Repointing that reference at the registry stops the blanking**,
+since nothing is ever deleted there; the staleness on rename is a separate defect
+that this plan neither fixes nor owns.
 
 ---
 
@@ -138,11 +141,38 @@ inherit it.**
 
 ### 4.1 The problem, measured
 
-Twelve queries join transactions to accounts with an inner join: ten in
-`dashboardController.js`, one in `getAccountController.js`, one in the Overview
-row shape (`transactionRowShape.js`). **An inner join drops the row when the
-account is absent, and raises nothing.** A closed category's May expense would
-stop adding to May's total, silently.
+**An inner join drops the row when the account is absent, and raises nothing.** A
+closed category's May expense would stop adding to May's total, silently. The
+inventory below is measured per branch, because the two branches carry different
+readers and a single number would be wrong on both.
+
+| Where | Count | Sites |
+|---|---|---|
+| This branch | 12 | ten in `dashboardController.js`, one in `getAccountController.js`, one in the Overview row shape (`transactionRowShape.js`) |
+| Overview branch, additional | 2 | `overviewInvestmentRepository.js` on the transaction's own account, `overviewPocketRepository.js` on an allocation's source account |
+
+Two more sites are not inner joins onto the accounts table and drop no row, yet
+they produce a **wrong figure**, which is worse than a missing one because
+nothing looks absent:
+
+- **The month's realised profit and loss stops summing to its own split.**
+  `overviewMonthlyRepository.js` reads the account type through two left joins
+  and splits the total with a filter on the investment type; a closed account
+  resolves to a null type, lands in neither part, and the parts stop adding up to
+  the total they split. Measured by the Overview session on its branch.
+- **A thirteenth site on this branch drops rows through a different door.**
+  `dashboardMonthlyTotalAmountByType.js` left-joins the accounts table from the
+  transaction and then **inner-joins the type catalog on the account's type
+  column**. Its comment justifies that inner join by the constraint making the
+  type column not-null behind a restricting key — true today, and false the
+  moment the parent row can be absent, because the column then arrives null from
+  the left join. The comment is correct about the constraint and is precisely
+  what makes the exposure invisible.
+
+Two Overview sites were checked and are **not** exposed: income by source is
+already left-joined and its comment already commits to keeping a null source as
+its own part, and the balance series takes the account list as an input
+parameter, so a deleted account is simply absent from it.
 
 What those queries read off the account is not just the name:
 
@@ -186,10 +216,23 @@ be observed.
 
 - One row per account, created **when the account is created**, not when it is
   closed. Nothing ever deletes from it.
-- The five restricting keys are **repointed at the registry** instead of at the
-  accounts table. Since no row is ever deleted there, restrict never fires and
-  costs nothing, the referencing columns keep a real constraint, and the accounts
-  table becomes freely deletable because nothing references it any more.
+- **Nine keys are repointed at the registry** instead of at the accounts table:
+  the three on transactions, the opening marker, the pocket allocation's source,
+  and the primary keys of the four extension tables. Since no row is ever deleted
+  there, restrict never fires and costs nothing, the referencing columns keep a
+  real constraint, and the accounts table becomes freely deletable because
+  nothing references it any more.
+- **Nothing from the extension tables is copied into the registry.** Repointing
+  their four primary keys means the cascade never fires, so the budget amount,
+  the saving target, the debtor's terms and their currency audit columns survive
+  in place, keyed by an id that resolves in the registry — the same state the
+  transaction rows are in. Roughly thirty type-specific columns stay typed,
+  constrained and foreign-keyed instead of becoming a sparse block on the
+  registry of which at most eleven are ever non-null, which is the same
+  denormalization the owner declined for transactions, one table over.
+- The debtor's copied account-name column stops being a defect for free: its
+  reference blanks itself only because it points at the accounts table, and
+  repointed at the registry it never blanks.
 - **While the account is live the registry row carries the id and the owner
   only**, with the descriptive columns null; the live values keep being read from
   the accounts table exactly as today. **Name, type, currency and starting amount
@@ -219,6 +262,40 @@ precisely what the type-required migration exists to forbid on the live side.
 
 **The stamped columns therefore have to be nullable, with null meaning "erased
 before this registry existed", and every reader needs a branch for it.**
+
+Repointing the four extension keys does not change this. It preserves the future
+only: for accounts the old mechanism already erased, the extension rows went with
+the cascade at the time, exactly as the name did.
+
+### 4.5 What surviving extension rows expose
+
+Repointing has a cost that stamping would not have had, and it is measured rather
+than assumed. Almost every reader of the four extension tables joins in **from**
+the accounts table, which is self-filtering — the parent row is gone, so the join
+matches nothing. Three sites do not, and they are the ones the closing phase has
+to settle:
+
+- **The category name is released on close, and the code already says it should
+  not be.** The collision check that decides whether a category name is taken
+  (`accountCategoryCreationcontroller.js`) joins the accounts table and tests the
+  two lifecycle stamps, with a comment stating in as many words that a
+  soft-deleted category releases its name while **a closed one keeps it, because
+  its transactions are kept**. Delete the row and that join matches nothing, so
+  the rule the code states is inverted by the new close. This is the concrete
+  form of the name-uniqueness question and it belongs to whoever writes the
+  account-name uniqueness plan (`PLAN_ACCOUNT_NAME_UNIQUENESS.md`), who has to
+  know these rows persist.
+- **One read reaches an extension row without the parent.** The edit path reads
+  the stored category name parts directly on the extension table's account id
+  (`accountEditController.js`), with no join to the accounts table, so a closed
+  category's row is reachable through it.
+- **One write reaches one without the parent.** The budget writer updates the
+  category's budget by account id alone (`budgetAllocationService.js`), so
+  nothing in the statement stops a budget being written onto a closed category.
+
+Everything else measured — the dashboard, the account reads, the budget
+transaction repository, the creatable-type helper and the export — joins in from
+the accounts table and needs no change.
 
 ---
 
@@ -303,15 +380,15 @@ complete.
 |---|---|---|
 | 0 | Production measurement of how much history the previous mechanism already destroyed | the owner: no session queries production |
 | 1 | The registry table, its backfill from live accounts, and the trigger that keeps issuance honest | the migration suspension lifting |
-| 2 | The five keys repointed at the registry, plus their hand-written boot-path counterparts | phase 1 |
-| 3 | The twelve queries resolving through the registry instead of dropping absent accounts | phase 2 |
+| 2 | The nine keys repointed at the registry, plus their hand-written boot-path counterparts | phase 1 |
+| 3 | The readers resolving through the registry, and the three sites that reach a surviving extension row | phase 2 |
 | 4 | The close operation and its screen | phase 3 |
 | 5 | The other three methods commented out and the surplus screens retired | phase 4 |
 
 Phase two carries a hazard worth stating: schema parity builds both paths from
 scratch and is **structurally blind** to a gap in the boot path, so it reports
 clean while the runtime table builder lacks the new table and the repointed keys.
-Those five keys and the table need five hand-written counterparts in
+Those nine keys and the table need hand-written counterparts in
 `createTables.js`, and no automated check will notice their absence.
 
 ### Inside phase four
@@ -326,8 +403,11 @@ Those five keys and the table need five hand-written counterparts in
 5. Delete the account row.
 
 **The order is load-bearing:** the stamp happens before the delete and inside the
-same database transaction, or the cascade takes the type and the currency with it
-and the surviving transactions become uninterpretable.
+same database transaction, or the type and the currency go with the row and the
+surviving transactions become uninterpretable. The type-specific attributes are
+not part of that risk, because repointing preserves them without a copy — which
+is the reason the irreversible step preserves and only the reversible step, a
+filter on a read, chooses.
 
 ### The frontend, per phase
 
@@ -407,16 +487,29 @@ design.
 
 ## 10. Open decisions
 
+Blocking — the design cannot be finished without them:
+
 | Decision | Who rules |
 |---|---|
 | Whether the closure timestamp migration is held out of the chain or dropped later by the registry migration — needs the ledger read | owner authorizes, migration session rules |
-| Whether the registry also stamps the budget amount, the saving target and the debtor's terms, all of which the cascade destroys | owner |
-| What happens to the debtor's copied account-name column, the snapshot pattern already in the schema | owner |
 | The exact "zero balance" formula per account family | owner |
 | Whether cash becomes an eligible destination, or a cash account with a balance can never be closed | owner |
 | What closing a pocket-saving-type account means, given the frontend no longer creates them | owner |
 | Whether the reason is a new field on the close or the account's existing note | owner |
 | Whether the other three methods are commented out in the service or removed from the router | owner |
+
+Deferred — answerable after the module ships, because no data is at risk either
+way:
+
+| Decision | Who rules |
+|---|---|
+| Whether a closed category still appears in a category picker or a historical budget list — a filter on a read, not a schema change | owner |
+| Whether a closed category's name stays taken; the collision check states it does, and deleting the row inverts that | the account-name uniqueness plan |
+
+Two decisions that stood in the first version of this document are **closed, not
+deferred**: whether the registry stamps the type-specific attributes, and what
+happens to the debtor's copied account-name column. Repointing the four extension
+keys answers both by preserving everything, so there is nothing left to choose.
 
 ---
 
