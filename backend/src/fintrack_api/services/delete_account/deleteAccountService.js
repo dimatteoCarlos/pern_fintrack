@@ -616,36 +616,54 @@ const processStandardDelete = async (
 // 🔒 CLOSE PROCESSING (unit 7, PLAN_ACCOUNT_DELETION.md §3.1/§4.1)
 //========================================
 
-// Release gate ("Gate, stated per branch, not per person", plan doc, unit
-// 5/7 catalog decision): no movement_type_id 10 row could be written until
-// overviewInvestmentRepository.js's reconciliation accounted for that type on
-// BOTH main and feat/overview.
+// RETIRED 2026-09-08 by the owner, in his words: "Si CLOSE ya no genera
+// movement_type_id = 10, entonces el gate esta protegiendo una condicion que ya
+// no puede ocurrir bajo el nuevo diseno." The gate below refused every CLOSE
+// until the investment card's reconciliation accounted for movement_type_id 10.
+// That type reached the card through recordClosureSettlement, and the settlement
+// left the executable flow in the same commit that made CLOSE refuse a non-zero
+// balance instead of settling it - so no path can write a type 10 row and the
+// condition the gate waited for can no longer arise.
 //
-// Cleared 2026-09-07, Carlos, on measurements rather than on this code looking
-// ready. Both branches carry the SAME closure-adjustment term: the filter is
-// identical at origin - the closure movement type OR a description beginning
-// with the annulment prefix - and the realised term excludes those same
-// prefixed rows under a NULL-safe negation. An earlier version of this line
-// said feat/overview sums the movement type alone, which understated it
-// (pern-fintrack-cf, verified here by comparing the two trees at that
-// expression); the version before that said main had no such term at all,
-// which was true when written and stopped being true when the Investment card
-// shipped it.
+// It is not replaced by another gate. The owner's contract for CLOSE is balance
+// zero, release the pocket commitments, terminate the budget, write the
+// registry, delete the account - and no accounting entry anywhere in it.
 //
-// What that means for a later reader checking whether this gate's precondition
-// still holds: feat/vercel-serverless has no close path, so no closure-typed
-// row can exist in data it writes and the term is carried there by the prefix
-// alone - free text that the erasure tail's REPLACE can rewrite. That tail
-// ships on the branch; the movement type that would back the term up does not.
-//
-// What the measurement covered, so a later reader knows what it does not: a
-// real settlement written through this path on fintrack_dev moves the card's
-// closure term by exactly the negation of the residual and leaves the realised
-// term alone, the identity closes, and only the target leg is inside the
-// published account set - the boundary counterpart stays out. Rolled back both
-// times. See scripts/verifyClosureSettlement.js for the writer and
-// scripts/verifyCloseAccount.js for this whole path.
-const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = true;
+// Kept commented rather than deleted, like the two retired policies above,
+// because the measurement recorded in it is the evidence that both branches
+// carried the same closure-adjustment term. That evidence stays readable even
+// though the gate it justified is gone.
+
+// // Release gate ("Gate, stated per branch, not per person", plan doc, unit
+// // 5/7 catalog decision): no movement_type_id 10 row could be written until
+// // overviewInvestmentRepository.js's reconciliation accounted for that type on
+// // BOTH main and feat/overview.
+// //
+// // Cleared 2026-09-07, Carlos, on measurements rather than on this code looking
+// // ready. Both branches carry the SAME closure-adjustment term: the filter is
+// // identical at origin - the closure movement type OR a description beginning
+// // with the annulment prefix - and the realised term excludes those same
+// // prefixed rows under a NULL-safe negation. An earlier version of this line
+// // said feat/overview sums the movement type alone, which understated it
+// // (pern-fintrack-cf, verified here by comparing the two trees at that
+// // expression); the version before that said main had no such term at all,
+// // which was true when written and stopped being true when the Investment card
+// // shipped it.
+// //
+// // What that means for a later reader checking whether this gate's precondition
+// // still holds: feat/vercel-serverless has no close path, so no closure-typed
+// // row can exist in data it writes and the term is carried there by the prefix
+// // alone - free text that the erasure tail's REPLACE can rewrite. That tail
+// // ships on the branch; the movement type that would back the term up does not.
+// //
+// // What the measurement covered, so a later reader knows what it does not: a
+// // real settlement written through this path on fintrack_dev moves the card's
+// // closure term by exactly the negation of the residual and leaves the realised
+// // term alone, the identity closes, and only the target leg is inside the
+// // published account set - the boundary counterpart stays out. Rolled back both
+// // times. See scripts/verifyClosureSettlement.js for the writer and
+// // scripts/verifyCloseAccount.js for this whole path.
+// const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = true;
 
 /**
  * 📝 PROCESS CLOSE ACCOUNT
@@ -689,23 +707,28 @@ export const processCloseAccount = async (
   // signature rather than left as ignored parameters, so a caller that still
   // passes them is a syntax error to read rather than a silent no-op.
 ) => {
-  if (!CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED) {
-    // 409, not 503: this is not a transient outage a retry will clear - it is
-    // a permanent block on the current system state (main's investment card
-    // has no closure-adjustment term yet). 503 reads as retryable to generic
-    // client/proxy retry logic, which would loop forever on a gate that only
-    // a code change lifts (pern-fintrack-cf, 2026-09-06). Same reasoning as
-    // the HARD-delete guard above, which uses 409 for the same kind of
-    // state-dependent refusal.
-    throw createError(
-      409,
-      'CLOSE is not released yet: the investment card reconciliation on main ' +
-        'and feat/overview must account for movement_type_id 10 first (see ' +
-        'PLAN_ACCOUNT_DELETION.md, unit 5/7 catalog decision, "Gate, stated ' +
-        'per branch"). Coordinate with the Overview branch before clearing ' +
-        'this gate.',
-    );
-  }
+  // RETIRED 2026-09-08 with the constant above. The 409 it raised named a
+  // reconciliation that no longer has anything to reconcile: the movement type
+  // it waited for has no writer left. Retired here and not merely made
+  // unreachable, so a reader does not have to resolve a constant to find out
+  // whether CLOSE can run.
+  // if (!CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED) {
+  // // 409, not 503: this is not a transient outage a retry will clear - it is
+  // // a permanent block on the current system state (main's investment card
+  // // has no closure-adjustment term yet). 503 reads as retryable to generic
+  // // client/proxy retry logic, which would loop forever on a gate that only
+  // // a code change lifts (pern-fintrack-cf, 2026-09-06). Same reasoning as
+  // // the HARD-delete guard above, which uses 409 for the same kind of
+  // // state-dependent refusal.
+  // throw createError(
+  // 409,
+  // 'CLOSE is not released yet: the investment card reconciliation on main ' +
+  // 'and feat/overview must account for movement_type_id 10 first (see ' +
+  // 'PLAN_ACCOUNT_DELETION.md, unit 5/7 catalog decision, "Gate, stated ' +
+  // 'per branch"). Coordinate with the Overview branch before clearing ' +
+  // 'this gate.',
+  // );
+  // }
 
   // The two states are distinguishable as of migration 034, and this is the
   // refusal that needed it. Both set deleted_at, so a single check on that
