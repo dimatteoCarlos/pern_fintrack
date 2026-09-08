@@ -20,6 +20,7 @@
 import pg from 'pg';
 import pc from 'picocolors';
 import dotenv from 'dotenv';
+import { assertExpectedDatabase } from './dbMigrationConfig.js';
 // import { getAdminDbConfig, isProduction } from '../dbConfig.js';//opcion 2
 // import pkg from 'pg-connection-string'; //opcione 3
 // const { parse } = pkg;
@@ -103,11 +104,76 @@ const adminClient = new Client({
 // =========================
 // 4. Main function
 // =========================
+/**
+ * Confirm the database about to be destroyed, from inside it.
+ *
+ * The mode guards above test NODE_ENV, and NODE_ENV does not select the
+ * database: a run with NODE_ENV unset and a production DATABASE_URI passes both
+ * of them and drops production. This is the script where that matters most,
+ * because it is the only one whose damage cannot be undone by running something
+ * else afterwards.
+ *
+ * IT CONFIRMS THROUGH A CONNECTION TO THE TARGET, not through the admin
+ * connection. adminClient is attached to 'postgres', so current_database() there
+ * reports 'postgres' and would confirm a database nobody is dropping. The only
+ * honest answer comes from the database itself, which also yields its address
+ * and so gets the off-machine refusal for free.
+ *
+ * A DATABASE THAT DOES NOT EXIST IS NOT CONFIRMED AND NOT REFUSED. There is
+ * nothing to destroy, the DROP is a no-op and the CREATE is the whole run.
+ * DB_EXPECTED is still required, because a run that names no destination is a
+ * run nobody has decided on.
+ */
+async function confirmTarget() {
+ if (!process.env.DB_EXPECTED) {
+  console.error(
+   pc.red('\n❌ db:reset refuses to run without DB_EXPECTED.\n') +
+    pc.gray(`   It would drop and recreate "${targetDbName}".\n`) +
+    pc.gray('   Set DB_EXPECTED to that name to confirm it is the one you mean.\n'),
+  );
+  process.exit(1);
+ }
+
+ const { rows } = await adminClient.query(
+  'SELECT 1 FROM pg_database WHERE datname = $1',
+  [targetDbName],
+ );
+
+ if (!rows.length) {
+  console.log(
+   pc.yellow(`⚠ ${targetDbName} does not exist; nothing to drop.`),
+  );
+
+  if (process.env.DB_EXPECTED !== targetDbName) {
+   console.error(
+    pc.red('\n❌ db:reset refuses to run: destination mismatch.\n') +
+     pc.gray(`   DB_EXPECTED names "${process.env.DB_EXPECTED}" and this run would create "${targetDbName}".\n`),
+   );
+   process.exit(1);
+  }
+  return;
+ }
+
+ const targetClient = new Client({ ...config, database: targetDbName });
+ await targetClient.connect();
+
+ try {
+  await assertExpectedDatabase(targetClient, 'db:reset');
+ } finally {
+  // Closed before the terminate below, or this connection is one of the ones
+  // it kills and the drop fails on a database still in use.
+  await targetClient.end();
+ }
+}
+
 async function resetDatabase(){
  try{
   console.log(pc.yellow('\n⚠️  Resetting database (DEV ONLY)...\n'));
 
   await adminClient.connect();
+
+  // Before anything is terminated or dropped.
+  await confirmTarget();
 
   // Terminate active connections to target database
   await adminClient.query(`
