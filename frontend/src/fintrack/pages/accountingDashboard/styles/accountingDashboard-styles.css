@@ -102,17 +102,25 @@
  left: 0;
  display: flex;
  align-items: center;
- height: 100%;
- padding: var(--space-4);
+ justify-content: center;
+ /* The round disc .accounting__openAccount takes at the other end of the row,
+    rather than the full row height it had. Two icon controls on one row read
+    as a pair only if they share the shape as well as the states.
+
+    --size-icon and not --size-touch-target: 32px against a 20px drawing leaves
+    a ring of six, which is the fill Carlos asked to bring down. It clears the
+    24px minimum target of WCAG 2.2 AA and not the 44px of AAA. */
+ width: var(--size-icon);
+ height: var(--size-icon);
+ border-radius: var(--radius-full);
  color: var(--color-content-on-dark-muted);
  cursor: pointer;
- transition: opacity var(--motion-normal);
+ transition: background-color var(--motion-fast), color var(--motion-fast);
 }
 
 .accounting__header--icon:focus-visible {
  outline: var(--border-width-thick) solid var(--color-border-inverse);
  outline-offset: var(--border-width-thick);
- border-radius: var(--radius-sm);
 }
 
 /* The asset hardcodes its stroke, so the colour above only reaches the
@@ -121,10 +129,17 @@
  stroke: currentColor;
 }
 
-/* The scale names no opacity token, so the dimming stays a literal. */
-.accounting__header--icon:hover,
+/* Was opacity 0.7, which dimmed this control while the one at the other end of
+   the same row inverted. Two answers to one event on one row. The creme fill
+   is the answer that stays. */
+.accounting__header--icon:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
 .accounting__header--icon:active {
- opacity: 0.7;
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
 }
 
 /* Opening an account, from the board that manages them. Pinned to the right
@@ -141,8 +156,12 @@
  display: flex;
  align-items: center;
  justify-content: center;
- width: var(--size-touch-target);
- height: var(--size-touch-target);
+ /* --size-icon and not --size-touch-target: the creme disc was the full 44px
+    tappable box and read as a panel behind the mark rather than a state on it.
+    32px against the 20px drawing leaves a ring of six. Same disc as the back
+    arrow at the other end of the row. */
+ width: var(--size-icon);
+ height: var(--size-icon);
  border-radius: var(--radius-full);
  color: var(--color-content-on-dark-muted);
  cursor: pointer;
@@ -168,18 +187,21 @@
 }
 
 /* The action in words, under the mark. Not the shared Tooltip component: that
-   one draws its tip ABOVE the trigger, and this control sits in the pinned head
-   at the top of the page, so the tip would open off screen.
+   one draws its tip ABOVE the trigger (tooltip.css sets bottom: 100%), and this
+   control sits in the pinned head at the top of the page, so the tip would open
+   off screen.
 
-   Creme with dark text and a hairline of the same dark, which is the palette
-   that component uses. The hairline is what keeps the tip readable as its own
-   shape against the creme fill the button takes on the very same hover.
+   A child span and not a ::after on the link. The pseudo-element carried these
+   same declarations and never painted, while :hover on the same selector did,
+   which rules out the file, the specificity and the cascade and leaves the
+   pseudo-element itself.
 
-   Shown on :focus-visible as well, so the tip exists for a keyboard. The
-   accessible name is on aria-label, so this pseudo-element carries no
-   information that is only here. */
-.accounting__openAccount::after {
- content: attr(data-tip);
+   Creme with dark text and a hairline of the same dark, the palette the shared
+   component uses. The hairline is what keeps the tip readable as its own shape
+   against the creme fill the button takes on the very same hover.
+
+   Shown on :focus-visible as well, so the tip exists for a keyboard. */
+.accounting__openAccount-tip {
  position: absolute;
  top: calc(100% + var(--space-1));
  right: 0;
@@ -197,8 +219,8 @@
  transition: opacity var(--motion-fast);
 }
 
-.accounting__openAccount:hover::after,
-.accounting__openAccount:focus-visible::after {
+.accounting__openAccount:hover .accounting__openAccount-tip,
+.accounting__openAccount:focus-visible .accounting__openAccount-tip {
  opacity: 1;
 }
 
@@ -799,7 +821,7 @@ button {
  .accounting__scrollJump-glyph,
  .accounting__header--icon,
  .accounting__openAccount,
- .accounting__openAccount::after,
+ .accounting__openAccount-tip,
  .accountingSearch,
  .accountingSearch__clear,
  .account-group__toggle,
