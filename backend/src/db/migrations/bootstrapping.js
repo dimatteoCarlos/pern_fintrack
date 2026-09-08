@@ -42,12 +42,15 @@ if (isProduction()) {
 async function bootstrap() {
   console.log(pc.green('\n🚀 Starting database bootstrap...\n'));
 
+  // Hoisted out of step 1 because step 2 needs it too: the migration runner now
+  // refuses to write into a database nobody named, and this script is the one
+  // that knows which database it just created.
+  const targetDbName = getDbConfig().database;
+
   // ---------------------------------
   // Step 1: Ensure database exists
   // ---------------------------------
   try {
-    const config = getDbConfig();
-    const targetDbName = config.database;
 
     // Connect to 'postgres' admin database
     const adminConfig = getAdminDbConfig();
@@ -82,6 +85,9 @@ async function bootstrap() {
     execSync('node src/db/migrations/runMigrations.js', {
       stdio: 'inherit',
       cwd: process.cwd(),
+      // The runner refuses a destination nobody named. This script created the
+      // database three steps ago, so it is the one that can say which.
+      env: { ...process.env, DB_EXPECTED: targetDbName },
     });
     console.log(pc.green('✅ Migrations completed'));
   } catch (error) {
