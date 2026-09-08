@@ -22,8 +22,7 @@ import { getOverviewPage } from '../api/overviewApi.ts';
 import { onAccountChanged, onTransactionRecorded } from './transactionEvents.ts';
 import {
  MonthlySnapshot,
- OverviewDomain,
- OverviewDomainCard,
+ OverviewDomainCards,
  OverviewHero,
  ServedWindow,
 } from '../types/overviewTypes.ts';
@@ -41,7 +40,7 @@ type OverviewState = {
  referenceMonth: string | null;
  currentMonth: string | null;
  hero: OverviewHero | null;
- domainCards: Record<OverviewDomain, OverviewDomainCard> | null;
+ domainCards: OverviewDomainCards | null;
  // The monthly widget's three movements, held as the server sent them. Kept
  // whole rather than indexed by domain: the array IS the contract's shape, and
  // an index built here would be a second place to keep in step with it.

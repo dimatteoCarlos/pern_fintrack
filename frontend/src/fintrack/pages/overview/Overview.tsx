@@ -9,6 +9,7 @@ import { useFetch } from '../../hooks/useFetch.ts';
 
 // UI COMPONENTS
 import AccountBalance from './components/AccountBalance.tsx';
+import DomainCards from './components/DomainCards.tsx';
 import MonthlyAverage from './components/MonthlyAverage.tsx';
 import LastMovements, {
   LastMovementType,
@@ -433,6 +434,12 @@ function Overview() {
             <CoinSpinner />
           </div>
         )}
+
+        {/* First, per the level-1 sketch: the six domain cards answer what the
+            month did, and everything below them is detail on one part of that
+            answer. Like MonthlyAverage it takes no props and reads the store
+            the layout above has already filled. */}
+        <DomainCards />
 
         {/* No props: the widget subscribes to useOverviewStore, which the
             layout above it has already filled for the month on screen. Passing

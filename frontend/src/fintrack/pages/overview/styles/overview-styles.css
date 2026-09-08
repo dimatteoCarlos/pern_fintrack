@@ -361,3 +361,93 @@ a.icon {
  /* The three cards sit side by side, so their figures line up column-wise. */
  font-variant-numeric: tabular-nums;
 }
+
+/*------------*/
+/* The six domain cards of level 1.
+   One column at 360px, two from 480px, three from 768px. The grid is on the
+   section rather than on a wrapper so a card is a grid item and stretches to
+   its row, which is what keeps the scope line on one baseline across a row. */
+
+.overviewLayout .domainCards {
+ display: grid;
+ grid-template-columns: 1fr;
+ gap: var(--space-2);
+ width: 100%;
+}
+
+@media (min-width: 480px) {
+ .overviewLayout .domainCards {
+  grid-template-columns: repeat(2, 1fr);
+ }
+}
+
+@media (min-width: 768px) {
+ .overviewLayout .domainCards {
+  grid-template-columns: repeat(3, 1fr);
+ }
+}
+
+.overviewLayout .domainCard {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ padding: var(--space-3) var(--space-4);
+ border: 1px solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+}
+
+.overviewLayout .domainCard__label {
+ font-size: var(--font-size-2xs);
+ font-weight: 400;
+ letter-spacing: 1px;
+ text-transform: capitalize;
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .domainCard__figures {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+}
+
+.overviewLayout .domainCard__figure {
+ font-size: var(--font-size-lg);
+ font-weight: 500;
+ line-height: 1.3;
+ color: var(--color-content-on-dark);
+ /* The cards sit in rows, so their figures line up column-wise. */
+ font-variant-numeric: tabular-nums;
+}
+
+/* Debt prints two legs instead of one net, so each is smaller than a headline
+   and the wording sits beside the amount rather than above it. */
+.overviewLayout .domainCard__figure--split {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2);
+ font-size: var(--font-size-sm);
+}
+
+.overviewLayout .domainCard__leg {
+ font-size: var(--font-size-2xs);
+ letter-spacing: 1px;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* Nature and period. The two natures are told apart by the word, not by a
+   colour: neither has a token, and a value invented here would enter the
+   palette without review. */
+.overviewLayout .domainCard__scope {
+ font-size: var(--font-size-3xs);
+ letter-spacing: 0.65px;
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .domainCard__sub {
+ font-size: var(--font-size-2xs);
+ line-height: 1.4;
+ color: var(--color-content-on-dark-muted);
+ font-variant-numeric: tabular-nums;
+}

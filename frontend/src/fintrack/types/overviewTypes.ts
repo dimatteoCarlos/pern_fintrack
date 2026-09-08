@@ -49,20 +49,119 @@ export type OverviewDomain =
  | 'pocket'
  | 'pnl';
 
-// The five fields every domain card shares, plus its own. The per-domain extra
-// fields are not typed here yet — they arrive with their card component.
-export type OverviewDomainCard = {
+// The period ONE CARD was measured over, and deliberately not ServedWindow. A
+// card carries these two dates and nothing else: which month is on screen and
+// which month is the ceiling are facts about the page, published once at the
+// top of the payload, and repeating them per card would be six places for the
+// same answer to drift.
+export type OverviewCardWindow = {
+ // 'YYYY-MM-01'.
+ periodStart: string;
+ // 'YYYY-MM-DD' — the month's last day, or today for the month in course.
+ periodEnd: string;
+};
+
+// The shape FIVE of the six cards share. Investment is not one of them: its
+// figures are not a total, a count and a delta, so it has a type of its own
+// below rather than this one with fields that would never be filled.
+export type OverviewDomainCardBase = {
  domain: OverviewDomain;
  // Never null: 0 is real activity at zero, and a null would say the figure did
  // not arrive. Contract, §"Las cinco comparten la misma forma".
  totalAmount: number;
  transactionCount: number;
  // null when the prior month cannot be compared against — an owner whose oldest
- // account is newer than that month has no baseline, not a delta of zero.
+ // account is newer than that month has no baseline, not a delta of zero. An
+ // AMOUNT and not a rate: the prior month's own figure is not published, so a
+ // percentage cannot be derived by any consumer without inventing it.
  delta: number | null;
  currency: string;
- window: ServedWindow;
+ window: OverviewCardWindow;
  meta: OverviewMeta;
+};
+
+export type OverviewIncomeCard = OverviewDomainCardBase & { domain: 'income' };
+
+export type OverviewExpenseCard = OverviewDomainCardBase & {
+ domain: 'expense';
+ // null when no budget is in force for the month, or when the category accounts
+ // span currencies — two situations the card's notices tell apart.
+ budgetAmount: number | null;
+ // Reported whether or not a budget exists: spending and the decision to budget
+ // it are different questions, and blanking one with the other would hide real
+ // spending.
+ categorizedExpense: number;
+ budgetVariance: number | null;
+ // A flag and never a monetary figure. The amount is totalAmount minus
+ // categorizedExpense, a subtraction over two fields already published.
+ hasUncategorizedExpense: boolean;
+};
+
+export type OverviewPnlCard = OverviewDomainCardBase & {
+ domain: 'pnl';
+ // The share of the month's realised result that fell on investment accounts.
+ // A subordinate line under the total, never a figure of the same weight.
+ realizedFromInvestment: number;
+};
+
+export type OverviewDebtCard = OverviewDomainCardBase & {
+ domain: 'debt';
+ // Both legs as POSITIVE MAGNITUDES: the direction is carried by the field
+ // name, so a negative payable would be a double negative. totalAmount is the
+ // net, and receivable - payable reproduces it as an auditable check.
+ payable: number;
+ receivable: number;
+ // Debtors who reached zero at the month's close, counting only those with a
+ // movement of their own. The row that OPENS the account does not count.
+ settledCount: number;
+};
+
+export type OverviewPocketCard = OverviewDomainCardBase & {
+ domain: 'pocket';
+ // What is COMMITTED, not a balance the pocket holds: under the plan model no
+ // allocation moves money, so the hero neither adds it to net worth nor takes
+ // it out of cash.
+ target: number;
+ remaining: number;
+ // A rate OVER 100 and not a ratio in 0-1. Multiplying it as if it were one
+ // prints a hundred times the figure.
+ progress: number;
+ fundedCount: number;
+ overdueCount: number;
+ uncoveredCount: number;
+};
+
+// Investment shares none of the base. §6 of the contract gives it five figures
+// that are not a flow, so there is no totalAmount, no delta and no window: what
+// it reports is a position, and a position is not cut to a month.
+export type OverviewInvestmentCard = {
+ domain: 'investment';
+ accountCount: number;
+ transactionCount: number;
+ capitalContributed: number;
+ ledgerBalance: number;
+ realizedPnl: number;
+ closureAdjustment: number;
+ // The largest account's share of the whole, as a ratio in 0-1 — the opposite
+ // scale to pocket's progress, which is why neither is named 'percentage'.
+ concentration: number;
+ // null when no contribution was ever recorded, which is not a gap of zero days.
+ daysSinceLastContribution: number | null;
+ currency: string;
+ meta: OverviewMeta;
+};
+
+// The six, each under its own key. NOT a Record over OverviewDomain: five of
+// them share a shape and investment does not, and a Record would have to widen
+// to the one type that fits all six, which is the base with every specific
+// field lost.
+export type OverviewDomainCards = {
+ income: OverviewIncomeCard;
+ expense: OverviewExpenseCard;
+ investment: OverviewInvestmentCard;
+ debt: OverviewDebtCard;
+ pocket: OverviewPocketCard;
+ pnl: OverviewPnlCard;
 };
 
 // The stocks at the top of the page. Every one of them is a position, so none is
@@ -121,7 +220,7 @@ export type MonthlySnapshot = {
 export type GetOverviewData = {
  window: ServedWindow;
  hero: OverviewHero;
- domainCards: Record<OverviewDomain, OverviewDomainCard>;
+ domainCards: OverviewDomainCards;
  // An array and not a map, which is how the server sends it. Three entries, in
  // the order income, expense, pocket.
  monthlySnapshot: MonthlySnapshot[];
