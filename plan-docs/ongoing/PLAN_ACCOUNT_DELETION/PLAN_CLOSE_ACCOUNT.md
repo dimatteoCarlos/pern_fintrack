@@ -1198,6 +1198,28 @@ historical population carrying those two columns satisfies the builder without t
 builder changing at all**, and the twelve Overview reads plus `ledgerBody` change
 where they take their population from, not how they compute.
 
+**And one shared string is the widest single fix in the module: eight statements
+on `main`, six here.** `TRANSACTION_ROW_SOURCE` (`transactionRowShape.js:90` on
+`main`) opens with `JOIN user_accounts ua ON ua.account_id = tr.account_id` — an
+inner join, so every transaction row of a closed account leaves all of them at
+once:
+
+| File | Statements |
+|---|---|
+| `overviewPageRepository.js` | the activity page at `:285`, the domain teaser's page at `:307`, and its `SELECT COUNT(*) AS total_rows` at `:318` |
+| `overviewTransactionRepository.js` | `:45`, `:76`, `:99`, `:120`, `:155` |
+
+**The count matters for how wide the fix is, not for whether it is one fix.** All
+eight take the same string, so they cannot drift apart from each other — and that
+is what makes this the well-built case: the teaser's page query and its
+`COUNT(*)` both carry the shared source, so they drop the same rows and cannot
+disagree. **The pocket pair in 6.5 is the counter-example** — there the page query
+joins `user_accounts` and the count query does not, so the two disagree by exactly
+the rows a closed account owns. Same mechanism, opposite consequence, because one
+pair shares its source and the other does not. (Count and the eight sites measured
+by the Overview session on `main`; verified here, including the six on this branch
+— one in `overviewPageRepository.js` and five in `overviewTransactionRepository.js`.)
+
 **That is the practical content of the owner's warning that this is not thirteen
 joins.** Of the four mechanisms in 3.8.3 only the first is a join. The second
 builds an id set `FROM user_accounts` and applies it as `t.account_id = ANY($1)`,
