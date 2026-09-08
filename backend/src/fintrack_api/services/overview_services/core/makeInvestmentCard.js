@@ -83,8 +83,15 @@ export const UNRECONCILED_BALANCE_NOTICE =
  * @param {number} figures.capitalContributed - V1, never null: 0 is a new account
  * @param {number} figures.ledgerBalance - V2, never null
  * @param {number} figures.realizedPnl - V3, never null: 0 is a real answer
- * @param {number} figures.closureAdjustment - what account deletions moved on
- *   these accounts, never null: 0 means none was ever deleted
+ * @param {number} figures.closureAdjustment - never null, and NOT what the name
+ *   suggests. It sums two arms that are not interchangeable: a movement of the
+ *   account-closure type, and a movement whose description carries the
+ *   annulment prefix. Measured on fintrack_dev and on the three production
+ *   copies, the first arm has no rows anywhere and every row the figure has
+ *   ever carried came from the second, so what it reports today is the
+ *   ANNULMENT and not the closure. 0 therefore does NOT mean no account was
+ *   deleted: a soft delete writes neither arm, and only the annulment leg lands
+ *   here at all.
  * @param {number|null} figures.largestBalance - the biggest single balance, null with no accounts
  * @param {number|null} figures.daysSinceLastContribution - V5
  * @param {number} figures.transactionCount - movements on these accounts in the
