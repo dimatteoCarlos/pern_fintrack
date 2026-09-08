@@ -802,6 +802,37 @@ export async function ensureAccountClosedAt(client = pool) {
  console.log(pc.green('user_accounts.closed_at added.'));
 }
 
+/*
+ * NO COUNTERPART FOR MIGRATION 035, DELIBERATELY. Read this before writing one.
+ *
+ * The statement to hold onto is not "035 was forgotten here". It is that this
+ * path does not yet represent the target state 031-035, and 035 stays pending
+ * until its DDL has been applied to a database and the resulting constraints
+ * have been read back. Ruled by the owner on 2026-09-08.
+ *
+ * Why waiting is the safe side. 035_create_account_registry.sql creates
+ * account_registry, the trigger that populates it, a backfill and seven
+ * repointed foreign keys, and it has never been run. Writing the counterpart
+ * from the file rather than from an applied schema puts the same unverified DDL
+ * in two build paths, and if 035 changes under review the copy here diverges in
+ * silence. That is migration 010: edited in place after it had been applied,
+ * with ensureBudgetTables() left carrying the old shape, and fintrack_dev still
+ * holds three tables the current file does not create.
+ *
+ * Why a partial counterpart is worse than none. Four of the seven keys sit on
+ * transactions, the rest on debtor_accounts, budget_monthly_allocations and
+ * pocket_allocations — all four created by the mainTables DDL above, all four
+ * CREATE TABLE IF NOT EXISTS, so on a virgin database they are born pointing at
+ * user_accounts. Creating the registry without repointing them leaves a table
+ * nothing references, while the code reads its presence as proof the repoint
+ * happened. This path takes all four pieces of 035 or none of them.
+ *
+ * The condition for writing it, checkable rather than a later judgement call:
+ * 035 applied at least once, its constraints read back and matched against the
+ * design, the counterpart then derived from what was applied, and the result
+ * tested on a virgin build.
+ */
+
 /**
  * Add the FX audit columns of migration 014 to category_budget_accounts.
  *
