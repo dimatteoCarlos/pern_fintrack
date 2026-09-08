@@ -375,8 +375,23 @@ null. Its own header states the precondition: on a database without
 `:88`, `:191`, `:221`, `:255`), so Overview breaks whole rather than partially
 against such a database.
 
-**Nine plus five is fourteen queries behind one event**, the chain running
-against production. Until it does:
+**Nine plus five is fourteen queries behind one file.** The event is narrower
+than "the chain runs": production sits at `030` with 31 ledger rows as of
+2026-09-06, so what is pending is `031` through `036` — six files, one
+`db:migrate`, and `035_create_account_registry.sql` is the one these fourteen
+queries actually need. Measured by the migration session and recorded at
+`ad014691`; the nineteen-file figure that circulated is the rehearsal's, because
+a rehearsal copy starts from the 2026-08-21 dump.
+
+**And the run is not scheduled by anyone here.** The owner lifted the suspension
+on 2026-09-08 and stated in the same breath that he authorizes each production
+migration individually (`02e74d16`, condition 4 of section 5.B of
+`db-migration-procedure.md`). That section names what does not constitute the
+authorization: the lift itself, a previous run having been approved, and a peer
+session relaying that he said yes. Nothing in this module may treat the lift as
+a date.
+
+Until that file is applied:
 
 - `dashboardController.js` must NOT be moved onto the CTE. Today it omits rows
   for closed accounts, of which production has none, because CLOSE cannot run
