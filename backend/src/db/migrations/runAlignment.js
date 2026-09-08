@@ -122,6 +122,13 @@ async function runAlignment() {
   // the seven repoints and leaving the fourth, opening_for_account_id, on
   // account_registry. Nothing failed and nothing said so.
   //
+  // WHAT IT COSTS IS CAPABILITY, NOT DATA. Step 8 restores the three keys as
+  // ON DELETE RESTRICT ON UPDATE CASCADE, so no transaction row is ever
+  // cascade-deleted; the ON DELETE CASCADE spellings further down that file are
+  // in its commented DOWN block. The regression is that user_accounts gains
+  // three refusing references again, so CLOSE cannot delete the row and the
+  // account stops being closable. account_registry and its rows are untouched.
+  //
   // The hazard is new. Until this runner existed the file could only be applied
   // by hand, and on the live database step 8 was added five days after the file
   // ran, so it never executed from here. A runner makes the second run easy, so

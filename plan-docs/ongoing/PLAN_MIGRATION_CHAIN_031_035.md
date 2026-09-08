@@ -249,6 +249,17 @@ seven repoints undone; the fourth key on the same table,
 step 8 does not name it. No statement failed and nothing in the output said
 anything had changed.
 
+**What it costs is capability, not data, and that decides how fast anyone has to
+act.** Step 8 restores the three keys as `ON DELETE RESTRICT ON UPDATE CASCADE`,
+so no transaction row is ever cascade-deleted; the `ON DELETE CASCADE` spellings
+further down the file are inside its commented DOWN block and do not run. The
+regression is that `user_accounts` gains three refusing references again, so
+CLOSE stops being able to delete the row and the account stops being closable.
+`account_registry` and its rows are untouched by step 8, so every read over the
+registry keeps working. Measured by the Overview session in the file and
+confirmed against this session's own constraint diff, which already reported
+`ON DELETE RESTRICT`.
+
 **Step 8 is an unconditional `DROP CONSTRAINT` then `ADD CONSTRAINT`**, and it is
 right that way for the run it was written for: production's `transactions` table
 already existed, so the `RESTRICT` rule declared inside `CREATE TABLE IF NOT
