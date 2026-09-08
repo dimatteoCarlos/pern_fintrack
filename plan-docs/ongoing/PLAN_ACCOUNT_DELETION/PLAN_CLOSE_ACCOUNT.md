@@ -155,6 +155,25 @@ hiding it**, which is the intended behaviour and not a defect to patch.
 - **The order of the remaining work is this session's to choose**, by the
   owner's instruction of the same day. Ordering is no longer put to him.
 
+### A fifth reference survives into `user_accounts`, and the close cascades it
+
+Found by the migration-chain session on 2026-09-08, verified here against the
+file. Section 4 of the registry migration says the only references left on
+`user_accounts` after the repoint are the four extension primary keys. There
+are five. The case-normalization backup table
+(`013_normalize_category_budget_name_case.sql`, line 24) declares its
+`account_id` as a primary key referencing `user_accounts` `ON DELETE CASCADE`.
+
+**The count is wrong and the conclusion is not:** it cascades, so the account
+row stays deletable and nothing about the close breaks.
+
+What it does mean, and it belongs to this module rather than to the migration:
+closing a category budget account deletes its backup row with it, so migration
+013's reverse step stops being real for that account. Accepted rather than
+worked around. That migration performed a one-time lowercasing of names, and an
+account whose name no longer exists has no original capitalization worth
+restoring.
+
 ### Still open, and the owner rules
 
 - **Whether the closing reason has a maximum length.** It is stored as
