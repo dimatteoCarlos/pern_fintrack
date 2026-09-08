@@ -22,6 +22,7 @@ import { getOverviewPage } from '../api/overviewApi.ts';
 import { onAccountChanged, onTransactionRecorded } from './transactionEvents.ts';
 import {
  MonthlySnapshot,
+ OverviewCharts,
  OverviewDomainCards,
  OverviewFinancialGoals,
  OverviewHero,
@@ -45,6 +46,10 @@ type OverviewState = {
  // The saved amount, the target and the remainder, read at the close of the
  // served month like every position on the page.
  financialGoals: OverviewFinancialGoals | null;
+ // The six-month series and the month's expense ranking, published verbatim by
+ // the page service. No formula runs on the way here, so a chart and the figure
+ // beside it cannot disagree.
+ charts: OverviewCharts | null;
  // The monthly widget's three movements, held as the server sent them. Kept
  // whole rather than indexed by domain: the array IS the contract's shape, and
  // an index built here would be a second place to keep in step with it.
@@ -77,6 +82,7 @@ export const useOverviewStore = create<OverviewState>((set, get) => ({
  hero: null,
  domainCards: null,
  financialGoals: null,
+ charts: null,
  monthlySnapshot: null,
  loadedMonth: null,
  requestedMonth: null,
@@ -113,6 +119,7 @@ export const useOverviewStore = create<OverviewState>((set, get) => ({
     hero: data.hero,
     domainCards: data.domainCards,
     financialGoals: data.financialGoals,
+    charts: data.charts,
     monthlySnapshot: data.monthlySnapshot,
     loadedMonth: key,
     isLoading: false,

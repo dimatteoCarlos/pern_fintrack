@@ -451,3 +451,49 @@ a.icon {
  color: var(--color-content-on-dark-muted);
  font-variant-numeric: tabular-nums;
 }
+
+/*------------*/
+/* The six-month trend. Elements with a height, not a canvas: var(--token)
+   resolves on them and the values stay in the accessibility tree. */
+
+.overviewLayout .trendChart {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ padding: var(--space-3) var(--space-4);
+ border: 1px solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+}
+
+.overviewLayout .trendChart__plot {
+ display: flex;
+ align-items: flex-end;
+ justify-content: space-between;
+ gap: var(--space-1);
+ /* A fixed plot height so the three charts share a baseline across the row.
+    Each series is still scaled against its own peak, which the component
+    states: the charts answer how a domain moved, not which domain is bigger. */
+ height: 3rem;
+}
+
+.overviewLayout .trendChart__column {
+ flex: 1;
+ min-width: 0;
+ border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+ background: var(--color-accent);
+}
+
+.overviewLayout .trendChart__axis {
+ display: flex;
+ justify-content: space-between;
+ gap: var(--space-1);
+ font-size: var(--font-size-3xs);
+ letter-spacing: 0.65px;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .trendChart__axis span {
+ flex: 1;
+ min-width: 0;
+ text-align: center;
+}

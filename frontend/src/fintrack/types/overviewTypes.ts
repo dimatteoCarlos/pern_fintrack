@@ -235,12 +235,57 @@ export type OverviewFinancialGoals = {
  meta: OverviewMeta;
 };
 
+// One month of a series. Month-precision, unlike a card's window, because a
+// trend point is a month and not a period with two ends.
+export type OverviewTrendPoint = {
+ // 'YYYY-MM'.
+ month: string;
+ value: number;
+};
+
+// The six-month series, and ONLY for the three domains §12 gives one to. Each
+// key is optional and its ABSENCE is the statement: the domain has no series.
+// An empty array would say it has one and the months came back blank, which is
+// a different answer and one the server never gives.
+export type OverviewTrend = {
+ income?: OverviewTrendPoint[];
+ expense?: OverviewTrendPoint[];
+ pocket?: OverviewTrendPoint[];
+};
+
+// One category's share of the month's spending, ranked. cumulative* are the
+// running totals the Pareto reading needs, computed by the server so the chart
+// and any figure beside it cannot disagree.
+export type OverviewExpenseCategory = {
+ categoryName: string;
+ currency: string;
+ accountCount: number;
+ budgetAmount: number;
+ actualSpent: number;
+ remainingBudget: number;
+ // A rate OVER 100, the same scale as pocket's progress and the opposite of
+ // investment's concentration.
+ executionPercentage: number;
+ isOverBudget: boolean;
+ // 1-based, assigned by the server. The order is the server's ranking, never
+ // recomputed here.
+ rank: number;
+ cumulativeActual: number;
+ cumulativePercentage: number;
+};
+
+export type OverviewCharts = {
+ trend: OverviewTrend;
+ expenseCategories: OverviewExpenseCategory[];
+};
+
 // The slice of the payload the frontend reads today.
 export type GetOverviewData = {
  window: ServedWindow;
  hero: OverviewHero;
  domainCards: OverviewDomainCards;
  financialGoals: OverviewFinancialGoals;
+ charts: OverviewCharts;
  // An array and not a map, which is how the server sends it. Three entries, in
  // the order income, expense, pocket.
  monthlySnapshot: MonthlySnapshot[];

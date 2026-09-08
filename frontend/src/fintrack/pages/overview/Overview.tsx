@@ -12,6 +12,7 @@ import AccountBalance from './components/AccountBalance.tsx';
 import DomainCards from './components/DomainCards.tsx';
 import FinancialGoals from './components/FinancialGoals.tsx';
 import MonthlyAverage from './components/MonthlyAverage.tsx';
+import TrendCharts from './components/TrendCharts.tsx';
 import LastMovements, {
   LastMovementType,
 } from './components/LastMovements.tsx';
@@ -452,6 +453,10 @@ function Overview() {
             the same month the cards above are cut to. Store-backed like the two
             above it, so the page still makes one request for all three. */}
         <FinancialGoals />
+
+        {/* Block 07, first half. The distribution bar beside it in the sketch
+            waits on a categorical ramp the design system does not have. */}
+        <TrendCharts />
 
         {
           <OpenAddEditBtn
