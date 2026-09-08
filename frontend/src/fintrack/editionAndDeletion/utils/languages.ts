@@ -133,6 +133,14 @@ reportTitleWithImpact:string;
  otherMethodsSectionTitle: string;
  otherMethodsSectionDescription: string;
 
+ // The same screen when CLOSE is the only method it offers
+ // (deletionMethodPolicy.ts). Separate keys rather than edits to the four
+ // above, so turning the flag off restores the wording with it.
+ closeOnlyPageTitle: string;
+ closeOnlySectionTitle: string;
+ closeOnlySectionDescription: string;
+ closeAccountAction: string;
+
 // SoftDeactivateAccountUI
  softDeactivateTriggerButton: string;
  softDeactivateTitle: string;
@@ -324,6 +332,11 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   otherMethodsSectionTitle: "Other deletion methods",
   otherMethodsSectionDescription: "Prefer not to run the annulment above? Deactivate the account instead, or erase it permanently without reversing its impact on other accounts.",
 
+  closeOnlyPageTitle: "Close Account",
+  closeOnlySectionTitle: "Close this account",
+  closeOnlySectionDescription: "Closing removes the account and keeps its history: every movement that names it stays readable, under the same name it had. The balance must be zero first.",
+  closeAccountAction: "Close (the account goes, its history stays)",
+
   softDeactivateTriggerButton: "Deactivate Account",
   softDeactivateTitle: "Deactivate this account?",
   softDeactivateDescription: "This deactivates the account instead of erasing it. Its balance, transactions and history stay exactly as they are, and it can be reactivated later. No financial impact report is needed for this action.",
@@ -469,6 +482,11 @@ totalNetAdjustment: 'Ajuste Neto Total:',
 // 🎯 OTHER DELETION METHODS - SPANISH
   otherMethodsSectionTitle: "Otros métodos de eliminación",
   otherMethodsSectionDescription: "¿Prefiere no ejecutar la anulación anterior? Desactive la cuenta en su lugar, o elimínela de forma permanente sin revertir su impacto en otras cuentas.",
+
+  closeOnlyPageTitle: "Cierre de Cuenta",
+  closeOnlySectionTitle: "Cerrar esta cuenta",
+  closeOnlySectionDescription: "El cierre elimina la cuenta y conserva su historia: todo movimiento que la nombra sigue siendo legible, con el nombre que tenía. El saldo debe estar en cero primero.",
+  closeAccountAction: "Cierre (la cuenta se va, su historia queda)",
 
   softDeactivateTriggerButton: "Desactivar Cuenta",
   softDeactivateTitle: "¿Desactivar esta cuenta?",

@@ -15,6 +15,11 @@ type AccountDetailsUIPropsType = {
   accountCurrency: CurrencyType;
   t: (keyText: keyof DictionaryDataType) => string;
   showStatusIndicator?: boolean;
+  // Which action the card announces. It named the RTA annulment
+  // unconditionally, which is wrong on a screen that offers a different
+  // method; the caller says which, and the default keeps every existing
+  // caller reading as it did.
+  actionKey?: keyof DictionaryDataType;
 };
 // ==================================
 // 🎯 ACCOUNT DETAILS UI COMPONENT
@@ -26,6 +31,7 @@ export const AccountDetailsUI = ({
   accountBalance,
   accountCurrency,
   showStatusIndicator,
+  actionKey = 'rtaDeletionAction',
   t,
 }: AccountDetailsUIPropsType) => {
   return (
@@ -80,9 +86,9 @@ export const AccountDetailsUI = ({
         <strong>{t('actionLabel')}</strong>
         <span
           className='account-action'
-          aria-label={`Action: ${t('rtaDeletionAction')}`}
+          aria-label={`Action: ${t(actionKey)}`}
         >
-          {t('rtaDeletionAction')}
+          {t(actionKey)}
         </span>
       </p>
 
