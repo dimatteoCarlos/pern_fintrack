@@ -25,6 +25,10 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 const subtitle = 'Capital Invested';
 const concept = 'Factual Balance';
 
+// An account that arrives without a starting amount has no denominator, so the
+// result is unknown rather than zero.
+const DASH = '—';
+
 //-------------------------------------
 function InvestmentAccountBalance({
   previousRoute,
@@ -56,6 +60,11 @@ function InvestmentAccountBalance({
               account_name: acc.account_name,
               concept: { concept },
               account_balance: acc.account_balance,
+              // Carried, not dropped. getAccountController.js:352 serves it as
+              // CAST(ua.account_starting_amount AS FLOAT); leaving it out of
+              // this literal made capital undefined for every account, so the
+              // card reported 0 % profit whatever the balance was.
+              account_starting_amount: acc.account_starting_amount,
               account_type_name: acc.account_type_name,
               currency_code: acc.currency_code ?? defaultCurrency,
               account_start_date: acc.account_start_date ?? acc.created_at,
@@ -97,25 +106,21 @@ function InvestmentAccountBalance({
             account_starting_amount,
           } = account;
 
-          const capital = account_starting_amount ?? 0;
+          // Null and not 0: an account with no starting amount, or one opened
+          // at zero, has nothing to measure the result against. Zero would
+          // claim the account broke even.
+          const capital = account_starting_amount;
           const balance = account_balance;
-          let balanceType, percentage;
-          if (capital !== 0) {
-            if (balance > capital) {
-              balanceType = '% Profit';
-              percentage = ((balance - capital) / capital) * 100;
-            } else if (balance < capital) {
-              balanceType = '% Loss';
-              percentage = ((capital - balance) / capital) * 100;
-            } else {
-              balanceType = '% Profit'; // Si es igual, es 0% de ganancia
-              percentage = 0;
-            }
-          } else {
-            balanceType = '% Profit';
-            percentage = 0;
+
+          let balanceType: 'Profit' | 'Loss' | null = null;
+          let percentage: number | null = null;
+
+          if (capital != null && capital !== 0) {
+            balanceType = balance < capital ? 'Loss' : 'Profit';
+            // The denominator takes the magnitude so a negative opening cannot
+            // flip the sign of a result the name already carries.
+            percentage = (Math.abs(balance - capital) / Math.abs(capital)) * 100;
           }
-          // console.log(balance, capital, percentage)
 
           //--RENDER LINK BUBBLE ---------
           {
@@ -136,11 +141,17 @@ function InvestmentAccountBalance({
                       {' '}
                       {subtitle}:
                       <span className='tile__title tile__title--account'>
-                        {currencyFormat(
-                         currency_code ?? defaultCurrency,
-                          account_balance,
-                          formatNumberCountry,
-                        )}
+                        {/* The capital, not the balance. This line published
+                            account_balance, so the card printed the same
+                            figure twice under two names and the percentage
+                            beside it had no visible denominator. */}
+                        {capital == null
+                          ? DASH
+                          : currencyFormat(
+                              currency_code ?? defaultCurrency,
+                              capital,
+                              formatNumberCountry,
+                            )}
                       </span>
                     </div>
                   </div>
@@ -157,11 +168,16 @@ function InvestmentAccountBalance({
 
                     <div className='tile__status--investment--right '>
                       <StatusSquare
-                        alert={balanceType == '% Loss' ? 'alert' : ''}
+                        alert={balanceType === 'Loss' ? 'alert' : ''}
                       />
                       <div className='tile__subtitle subtitle__status__investment--right '>
                         <span style={{ color: 'black', fontSize: '0.875rem' }}>
-                          {balanceType} {Math.floor(percentage)}
+                          {/* The sign was in front of the number and the
+                              number had none: '% Profit' followed by 12 read
+                              as a percent sign belonging to the word. */}
+                          {percentage === null
+                            ? DASH
+                            : `${balanceType} ${Math.floor(percentage)} %`}
                         </span>
                       </div>
                     </div>
