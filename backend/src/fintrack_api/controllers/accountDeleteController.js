@@ -311,6 +311,17 @@ export const executeAccountDeletion = async (req, res, next) => {
   //     ? req.body.expectedResidual
   //     : undefined;
 
+  // CLOSE's one remaining body field, and the only one the service still reads.
+  // Gated on the deletion type for the same reason the three retired reads
+  // above were: every other type ignores it, and an undefined argument says
+  // that more plainly than an empty string would.
+  //
+  // Without this read the service received undefined and refused every CLOSE
+  // with the 400 it raises when the reason is blank - the parameter was added
+  // to the service signature and never passed from here.
+  const closeReason =
+    deletionType === DELETION_TYPE_CLOSE ? req.body.closeReason : undefined;
+
   try {
     console.log(
       pc.magenta(
@@ -335,6 +346,7 @@ export const executeAccountDeletion = async (req, res, next) => {
       userRole,
       deletionType,
       targetAccountName,
+      closeReason,
       // policy,
       // destinationAccountId,
       // expectedResidual,
