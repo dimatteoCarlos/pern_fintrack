@@ -1,4 +1,27 @@
-# PLAN — Account removal
+# Account removal — MEDICIONES Y HALLAZGOS (ya no es el plan)
+
+> ## ESTE ARCHIVO YA NO ES EL PLAN VIGENTE — 2026-09-07
+>
+> **El plan es `ACCOUNT_DELETION_SPEC.md`, en esta misma carpeta.** Léalo primero.
+>
+> Lo que sigue debajo es la **capa de medición**: el detalle archivo por archivo,
+> con fechas, que sostiene las decisiones del plan. Se conserva por eso y sólo por
+> eso — contiene 855 líneas escritas hoy que no existen en ningún otro lado.
+>
+> **Por qué no se puede leer como plan.** Absorbió las mediciones de hoy pero
+> **ninguna de las resoluciones de hoy**, y su última sección trata la propuesta
+> de rediseño como un documento ajeno al que hay que corregir. Es decir: parece
+> vivo, y ésa es exactamente la trampa. Todo enunciado de acá sobre *qué se va a
+> construir* está superado por el plan; todo enunciado sobre *qué mide el código
+> hoy* sigue valiendo, con su fecha.
+>
+> **Trampa concreta, medida.** El interruptor de liberación de la liquidación de
+> cierre vale `true` en el código. Este archivo lo cita seis veces: cuatro dicen
+> `false` bajo encabezados fechados del 2026-09-06, y **eran ciertas cuando se
+> escribieron**; una es neutra; y la que registra `true` es la única de las tres
+> secciones **sin fecha**, o sea que la entrada que supera es la que no se puede
+> ordenar. No reescriba las cuatro: falsificaría un registro fechado. Fecharla a
+> ella es el arreglo, y está retenido por el congelamiento.
 
 **Block:** account removal. **Status:** architecture frozen 2026-08-26. Units 1
 through 4 are shipped, unit 5 is in progress, units 6 through 11 are open by
@@ -2422,8 +2445,18 @@ for nothing.
   the database would make it valid.
 - **409** — the destination is not eligible. Eligibility is a property of the
   current state, not of the request's shape: the same request was valid a moment
-  ago if the destination has since been closed, and becomes valid again if the
-  owner reopens it. This is §4.1 step 3's own answer for VALIDATE.
+  ago if the destination has since been closed or deleted between the selector's
+  read and this confirmation. This is §4.1 step 3's own answer for VALIDATE.
+
+  **Corrected 2026-09-07.** This bullet used to close with "and becomes valid
+  again if the owner reopens it", and the same clause stood in
+  `getCloseTransferDestinations.js`'s own header. There is no reopen: no
+  statement in `backend/src` assigns null to `deleted_at` or `closed_at`, on any
+  path, verified across both columns and every assignment form. What can make a
+  refused request valid later is the owner creating another bank account in the
+  same currency. **The status code is unaffected** — eligibility was already
+  state-dependent in one direction, which is all 409 needs. The code comment is
+  corrected on disk; both wait on the freeze.
 
 The message states the rule rather than which clause failed. Naming the failing
 clause would report on accounts the caller may not own — the query cannot
@@ -2665,8 +2698,17 @@ is what this predicate now guarantees.
 ### Three sites deliberately not swept, each stating its reason on the line
 
 - **`getUserIdFromAccount`** in `accountUtils.js` resolves who owns a row. That
-  is identity, not circulation. A `closed_at` test makes the reopen path fail to
-  resolve the owner of the account it is reopening.
+  is identity, not circulation — a closed account still has an owner, and every
+  caller that needs to know whether it is in circulation tests that separately.
+  **The exemption stands; its second reason did not.** This bullet used to add
+  that a `closed_at` test would make the reopen path fail to resolve the owner of
+  the account it is reopening. There is no reopen path — no statement in
+  `backend/src` clears either stamp — so that sentence reasoned about code that
+  does not exist, and it is dropped rather than reworded (corrected 2026-09-07,
+  same phantom as the 409 bullet above and as the header of
+  `getCloseTransferDestinations.js`). The comment on the line in `accountUtils.js`
+  carries the same phantom and is **`e4`'s to correct, not this module's**;
+  broadcast to them, not edited here.
 - **The compensation account lookups** — one in `accountUtils.js`, one in
   `transactionController.js`, and the find-or-create in
   `checkAndInsertAccount.js`. No path can close that row: the `boundary` type is
@@ -3284,6 +3326,70 @@ migration belongs to the migration chain, not to this module.
 change and any normalising migration go to coordination and the migration chain
 respectively; what this module owns is the scrub that consumes the result.
 
+### A sixth site for the scrub, if the status-events table is built — 2026-09-07
+
+`e4`'s proposal to Carlos has every deletion operation write a row into a new
+status-events table, because his requirement that a deactivation leave a record
+has nothing to attach to: there is no audit, event or log table in the schema,
+the chain or the boot path.
+
+**The schema decides that table's account reference before anyone chooses it.**
+Five foreign keys point at `user_accounts` with `ON DELETE RESTRICT` — the
+transaction's own account, its source and its destination (`018`), the opening
+reference (`022`), and the pocket allocation (`020`). Measured independently by
+this session and by `pern-fintrack-02`, in both build paths. A sixth of the same
+kind blocks the erasure outright, and it blocks it on the one operation whose
+event a reader would most want to find. `CASCADE` deletes the record along with
+the account, so the row does not survive the event it records. `SET NULL` leaves
+it pointing at nothing. **`02`'s recommendation, which this session endorses: no
+foreign key at all, a plain integer, plus the account name as text at event
+time.**
+
+**That last part is what lands on this module.** The erasure tail's whole purpose
+at step 7d is removing the deleted account's name from rows that survive it. An
+event row storing the name as text is a row that survives it, in a table the tail
+does not touch — so the name the scrub exists to remove would persist there. This
+is the same shape already recorded above for the annulment rows RTA writes: a
+deleted account's identity surviving as free text that nothing can join.
+
+**It is a ruling, not a schema choice, and it is Carlos's** (`02`'s framing, and
+it is right): whether the record of a deletion may name the account it deleted is
+a question about what deletion means, not about a column type. Both answers are
+coherent — an audit record that cannot name its subject is close to useless, and
+an erasure that leaves the name behind is not an erasure. **Not decided here.**
+Whichever way it goes, the tail acquires either a sixth blocker or a sixth site
+to sweep, and this module cannot write it until the answer exists.
+
+**The trilemma, not a binary** (`cf`'s sharpening, which corrects this session's
+two-way version). An events table *can* reference the account; what it cannot do
+is hold a reference that both survives the purge and stays joinable. RESTRICT
+breaks the purge, CASCADE deletes the audit together with the account it was
+written to record, SET NULL keeps the row and loses the link. Stating it as three
+options matters because **SET NULL is the one a writer reaches for believing it
+is safe**, and it is the one that leaves an id column that still looks joinable —
+`02`'s reason for ruling it out, and this session's for withdrawing it as an
+alternative. No foreign key, with the id and name denormalized, is the only form
+that says plainly that the reference is historical.
+
+**The question must name the annulment rows, not merely cover them** (`02`,
+and it changes how this is put to Carlos rather than what it says). The two cases
+have opposite provenance: an events table naming the account would be a **choice**
+with its reason on the line, while the annulment rows naming it is an **accident**
+— the tail's rewrite is scoped to the two key columns and those rows put the
+target in neither, so nobody decided they keep the name and nothing recorded that
+they do. A ruling of "the record may name its subject" would therefore *also*
+convert that open finding into correct behaviour, retiring it by implication and
+without Carlos knowing he had retired it. So the question goes up naming both:
+whether a deletion record may name its subject, **and** whether the reversal rows
+keeping the name is intended rather than missed. One clause, and it stops a
+finding closing silently.
+
+**If the answer is yes, the exemption is written in the form the file already
+uses.** The hard-delete branch carries its ruling inline — the ruling, the person,
+the date — and an events table exempted from the scrub needs exactly that, or the
+next reader repairs the exemption as an omission. Same failure mode as the
+phantom-reopen comments corrected above, and the same remedy.
+
 ### What the gate costs on the published contract — `pern-fintrack-02`, 2026-09-07
 
 The gate is a precondition in the service **and** a shape change on the
@@ -3515,3 +3621,771 @@ session's; the allocation-ledger comment that credits the wrong writer is
 `cf`'s own and they are fixing it; `pern-fintrack-02` is not involved. What is
 in this module is the call site inside the close transaction and the
 `removesPocketAllocations` field, both already built.
+
+## The system-account guard, 2026-09-07
+
+Carlos, ruling directly to this session:
+
+> el borrado de la cuenta boundary de compensacion, o del sistema, no deberia
+> ser posible.
+
+Measured first: **no guard existed anywhere.** Neither the service, the
+controller nor the assessment endpoint asked what kind of account it was about
+to destroy, on any of the four deletion types. The compensation account was
+deletable like any other.
+
+Built in `deleteAccountService.js`, after the existence check and **before any
+branch**, so one guard covers all four types. The per-branch alternative is the
+counter-example sitting a few hundred lines below it: the closed-stamp
+precondition was written per branch, and the two branches ended up testing
+different columns for the same state.
+
+### Two arms, either one refusing
+
+- **Type**: the target's stored type name must be in `USER_CREATABLE_ACCOUNT_TYPES`,
+  the same frozen list the creation side already enforces. Reusing it means an
+  account type a user may not create is one they may not destroy, and the two
+  directions cannot drift — a structural type added to the catalog later is
+  refused here with nobody remembering to add it.
+- **Name**: the stored `account_name`, trimmed and lowercased, must not be the
+  reserved compensation-account literal.
+
+### Why the name arm is not redundant
+
+The type arm refuses nothing on a database where `031_add_boundary_account_type.sql`
+has not run: that migration creates the type, and before it the compensation
+account is typed `bank`, which **is** on the whitelist. A type-only guard passes
+the exact account it exists to protect and reports success. The condition is
+`pern-fintrack-02`'s, raised first against the Overview's type-only exclusion;
+it lands harder here, because that miscounts a figure and this destroys an
+account.
+
+`pern-fintrack-cf` argued the arm is unnecessary, on the ground that the chain
+halts on failure and `034` follows `031`, so any database running this file has
+`031`. **The chain reasoning is sound and its premise is not.** Nothing raises
+on a database missing `034`: `accountCheck` selects `ua.*`, which names no
+column, so the four closed-stamp guards are JavaScript property reads and
+`undefined !== null` is true. They refuse everything, silently and with a false
+reason.
+
+So the compensation account is indeed unreachable there — but **only because
+those four guards happen to compare against null explicitly**. Written the other
+natural way, as a truthiness test on a nullable timestamp, `undefined` is falsy,
+the guard stops firing, and the type arm then permits, because pre-`031` the
+account is typed `bank`. A tidy-up in a commit about something else would hand
+the deletion back with nothing refusing it (`pern-fintrack-02`). The name arm is
+the only protection in that state that does not depend on the spelling of a
+comparison in an unrelated function.
+
+**Ordering hazard:** repair those four stamp reads first and this arm looks
+redundant at the exact moment it stops being redundant.
+
+### Neither arm resolves an account, deliberately
+
+`checkAndInsertAccount` is find-or-create with a not-deleted test, lowest id and
+`LIMIT 1`, so a soft-deleted compensation account is invisible to it and the
+next reversal or discard-close creates a second. A guard written against that
+resolution protects whichever single row came back and leaves the sibling
+deletable. A type question and a name question have no cardinality, so both
+refuse every row of the kind, fork or no fork.
+
+### The accepted false positive
+
+Nothing reserves the name at creation, so an owner's own account named any case
+of the literal is refused too. The 403 says so and names renaming as the remedy.
+
+Migration `031`'s prose argues the other way — it calls a case variant "an
+ordinary account of the owner's" and retypes only exact-case matches. But the
+same file raises a NOTICE over exactly those rows saying the resolver of the day
+matched case-insensitively and **would have returned one as the compensation
+account**, and ends "Reconcile by hand." So `031` did not clear a case variant
+for deletion; it recorded that such a row may be functionally the compensation
+account while being aggregated as the owner's, and left it to a human. A
+destructive gate is not the place to settle what a migration deliberately
+declined to settle.
+
+Its measurement is also narrow and dated: `fintrack_dev`, 2026-09-06, ledger head
+`030` — thirty-one accounts, one named `slack`, nine mixed-case names and none a
+variant. That is not evidence about production.
+
+### Retirement condition
+
+Retire the name arm when `031` is confirmed applied in production **and** the
+name is reserved at creation — not before, and not on either half alone. The
+reservation has to be case-insensitive, or it admits the other spellings and the
+arm being retired was the only thing refusing them.
+
+### Open, and Carlos's
+
+The reserved literal is declared in the service rather than beside
+`NOT_BOUNDARY_ACCOUNT` in the shared account utilities, where it belongs,
+because that file is another session's. It already appears in fifteen files, so
+this centralises nothing; it is the only one of those comparisons gating a
+destructive action rather than a read.
+
+
+### What this guard does not protect, found the same day
+
+The guard refuses deletion of the compensation account. The closed-account
+refusals a few hundred lines below it refuse every deletion type against a
+closed account. Between them it is tempting to conclude that a closed account's
+settlement pair is permanent. **That conclusion is false, and this session
+stated it to two peers before `pern-fintrack-cf` and `pern-fintrack-02` each
+found the hole independently.**
+
+The erasure rewrite is keyed on **the account being deleted**, not on the closed
+one: it selects rows where that account sits in a key column and does not own
+the row. Both settlement legs carry the same two accounts in their keys — the
+closing account and the counterpart — and differ only in the row owner. So
+deleting the *counterpart* matches the closing account's surviving leg, nulls
+the key and replaces the counterpart's name with the placeholder, while the
+row-owner delete removes the counterpart's own leg. The closed account is never
+named in that deletion, so neither refusal is consulted.
+
+- Under **DISCARD** the counterpart is the compensation account, so the guard
+  above closes this door once it lands.
+- Under **TRANSFER** the counterpart is an ordinary bank account, freely
+  deletable today.
+
+**The case therefore reads:** closure keeps both names unless the counterpart is
+deleted, and then it keeps one name, one leg, a nulled key and a placeholder.
+
+`02`'s formulation of why this matters is the one to keep: the hard-delete
+refusal justifies itself by saying the preserved history is the whole product of
+closing, and half of that history is a row owned by the counterpart. **The guard
+protects the account; the ruling protects the record; the record is reachable
+through a door the guard does not sit on.** That is not a defect in the guard —
+it is the guard being attached to a different thing than the one the ruling
+names, and it is the open question this section hands forward.
+
+It also bears on the pending decision about whether a reversal row may stop
+naming the account it reversed: closure already answers that one way in
+practice, with a mixed outcome that was nobody's decision.
+
+#### The same deletion also changes a figure, and only one kind of figure
+
+Raised by `pern-fintrack-02`, verified here against the settlement writer and
+the balance derivation before recording.
+
+The settlement writer assigns the pair as exact negations — the closing
+account's leg takes the negated residual and the counterpart's leg the residual
+(`const targetAmount = -residual`, `const counterpartAmount = residual`, in
+`recordClosureSettlement.js`) — so the pair sums to zero **across the two
+accounts** by construction. Deleting the counterpart removes its leg. The
+surviving leg then stands alone at the full residual.
+
+**What does not move: any per-account balance.** Both derivations in
+`derivedBalance.js` sum only the rows an account owns (`WHERE tr.account_id =
+ua.account_id`, and the grouped CTE's join on the same equality). The closing
+account still owns its own leg, unchanged; the counterpart no longer exists to
+have a balance. Every screen reading a balance per account is unaffected.
+
+**What does move: any total summing rows across both accounts.** It changes by
+the residual.
+
+**Why this is not automatically a defect.** A hard delete destroys every row the
+deleted account owned — that is the operation. A cross-account total losing
+those rows is the general consequence of erasing an account that held money, not
+something specific to closure settlements. The narrow claim that survives is:
+the closure pair was *written* as a self-cancelling pair, so anything that
+relied on a closure contributing zero to a span stops getting zero. Whether any
+consumer relies on that is a measurement in the Overview and dashboard
+aggregates, routed to the overview session; the deletion surface cannot answer
+it.
+
+
+### RTA has no zero gate, and an empty impact report does not mean an empty balance
+
+Measured 2026-09-07, while answering `pern-fintrack-e4`'s relay of Carlos's
+question "is hard delete just a subset of returns-to-assets, can it be
+simplified". **It is not a subset, and the direction of the difference is the
+opposite of the reassuring one.**
+
+The two paths share the erasure tail exactly — the same function, the same four
+statements. Everything else is upstream of it:
+
+| | precondition | what it writes before erasing |
+|---|---|---|
+| HARD | derived balance must be zero, else 409 | nothing |
+| RTA | none | one settlement pair per affected account, against the compensation account |
+
+So HARD is RTA's write set minus the reversals, plus a gate RTA does not have.
+Merging them in either direction loses something: collapse HARD into RTA and
+every erasure starts rewriting other accounts; collapse RTA into HARD and an
+account with counterparties can no longer be removed at all.
+
+**The gap this exposes — RETRACTED 2026-09-07 by the session that wrote it. The
+paragraph and its bullets are kept below exactly as published, because three
+sessions carried them for part of a day and a reader who met them elsewhere needs
+to find them here marked rather than absent.**
+
+> The annulment impact report keeps only the target's
+> rows whose two key columns differ from each other (`tr.destination_account_id IS
+> DISTINCT FROM tr.source_account_id`). An account opened with a starting amount
+> and *not* funded by a transfer gets an opening row naming itself as both source
+> and destination — the creation controller sets both ids to the new account when
+> the opening is not a transfer. That row never enters the report's CTE, so:
+>
+> - the report is empty, and the whole reversal block is skipped;
+> - the unattributed total is zero too, because that figure selects rows already
+>   inside the CTE whose counterparty is null, and this row is not in the CTE at
+>   all;
+> - the derived balance is still the full starting amount, because the balance
+>   derivation excludes the opening row and adds the stored starting amount
+>   instead;
+> - the erasure tail runs, and the balance leaves the ledger with nothing
+>   recording that it did.
+
+**Why it is false: the two halves of that account cannot both be true.** An
+opening row is self-referential only when the transaction type is
+`account-opening`, and `determineTransactionType` in `helpers.js` returns that
+type **if and only if the amount is exactly zero** — its first test, before any
+account-type branch. A funded opening therefore gets `deposit`, `withdraw`,
+`lend` or `borrow`, and `determineSourceAndDestinationAccounts` puts the
+compensation account in the opposite key column; `createBasicAccount` reaches the
+same shape through its own `isTransfer` flag rather than the helper. So "opened
+with a starting amount" and "names itself in both key columns" are mutually
+exclusive. The self-referential case exists and is common — every account created
+with no starting amount has one — but it derives to zero, so the empty report
+hides nothing.
+
+**What survives, stated narrowly.** RTA has no balance gate where HARD has a 409;
+that is a plain reading of the two branches and the table above is unaffected.
+And the residual and the impact report are computed from **different sources** —
+the residual is the stored `account_starting_amount` column plus the account's
+rows with its own opening zeroed, the report sums rows — so they agree by
+construction, because the column adds back exactly what the zeroing removes, and
+not because anything enforces it. That is measured agreement, not an invariant.
+**No reachable row is known to make them disagree, and none is claimed.**
+
+**How it happened, since the failure is more reusable than the finding.** The
+rule was checked and the illustrating case was not. Every step of the mechanism
+was verified in the file — the CTE's predicate, the derivation's exclusion, the
+tail's statements — and the one thing never checked was whether an account could
+be in the state the argument needed. That is the same failure this document
+records three times in other people's comments under the phantom-reopen
+corrections: a correct rule resting on a case that does not exist.
+
+HARD refuses a nonzero balance with 409. The log line in that branch calls what
+follows "Proceeding to hard delete", which is the sentence that makes the gap
+invisible to a reader: it is the erasure tail without the gate that defines the
+hard-delete path. The comment now standing at that branch says so.
+
+**The encoding is not the other half of the defect.** The first version of this
+section proposed that the opening row should stop naming its own account in both
+key columns. `pern-fintrack-e4`, who owns that file, verified the shape and
+refused the change with a reason that holds: three readers depend on it. The
+balance derivation zeroes the opening row by testing that the row's owner equals
+the account the opening is for; the report's distinctness test is correct on its
+own terms, since a row with no counterparty has no affected account to report;
+and giving the opening a null counterparty would make `IS DISTINCT FROM` against
+a null evaluate TRUE, so the row would enter the report and produce an affected
+account of null — the exact case that operator was chosen to handle for detached
+rows. **The whole fix is the gate, and the gate is in this service.**
+
+**The refusal text directs traffic into the gap.** `02`'s formulation, and it is
+the sentence to put first: the hard-delete path refuses a nonzero balance and its
+own error names RTA as the alternative, so an owner following the instruction in
+the message lands on the one path with no gate. The assessment endpoint repeated
+the same shape — the hard-delete option published `available: false` with the
+residual quoted as the reason, while the RTA option published `available: true`
+and said nothing about the residual at all.
+
+**What is built, and what is deliberately not.** The assessment endpoint now
+publishes, on the RTA option, the part of the balance no annulment row accounts
+for (`unreversedResidualAmount`, with `erasesUnsettledResidual` beside it),
+computed as the residual less the total net adjustment less the unattributed
+amount. That is a statement of a consequence the engine already produces, which
+is what that file's header commits it to; it decides nothing.
+
+**What the retraction above does to that field: it is expected to be zero on
+every reachable account, and it stays.** Its three terms are the residual, the
+annulment total and the already-reversed amount, and the residual's construction
+adds back exactly what the report's exclusion removes. A figure that is zero *by
+construction* rather than by rule is worth publishing for the same reason the
+close path asserts a zero it has just computed — the value of the assertion is
+that a reader sees the day it stops holding. What must not stand is the earlier
+justification for it, which named a reachable case; the field is kept on the
+weaker and true ground, with the comment at the computation saying so.
+
+**The gate itself is not built** — whether RTA refuses a nonzero unreversed residual, or posts it
+to the compensation account, or is left as the deliberate escape hatch from
+HARD's refusal, are three different operations and not variants of one, so
+building any of them presupposes the answer to Carlos's own question about how
+returns-to-assets keeps the general balance.
+
+**Frontend requirement.** The deletion assessment screen must render the
+unreversed residual on the returns-to-assets option whenever it is nonzero, in
+the same visual register as the hard-delete option's unavailability reason —
+today the screen can only present returns-to-assets as the recommended way out of
+that refusal. A missing figure renders as a dash, never as `0`.
+
+**The four types' balance policies, and only two were chosen.** `02`'s framing:
+CLOSE settles to zero (ruled 2026-09-07), HARD refuses a nonzero balance (ruled
+2026-09-06 under the settlement gap), RTA permits one **as a consequence of which
+rows the impact report keeps**, and SOFT was never ruled on at all. Three answers
+exist and one of them is an accident. The open question is best put as a set —
+HARD refuses, RTA permits by accident, CLOSE removes, what should SOFT do — so
+the gap here is ruled on in the same breath rather than queued behind it.
+
+**Recommendation for the SOFT half, from what the branch already does.** The
+soft branch writes one stamp and nothing else: no reversal, no settlement, no
+row touched anywhere. So the money is genuinely still in the ledger, and a total
+that counts it is arithmetically right. **Soft delete should mean the record is
+kept and the money still exists — deactivation — which is Carlos's own words for
+it.** Under that reading the aggregate figures the Overview and dashboard
+already produce need no change at all, and the thing that is wrong is the
+opposite end: the account is absent from every list that filters the stamp, so
+the owner is shown a total they cannot decompose. The repair is a way to see
+deactivated accounts, not a filter on the totals. This is the only one of the
+four whose answer makes work disappear rather than appear, which is worth
+stating before it is ruled the other way by symmetry with the other three.
+
+**And the product already promised it, in the dialog the owner confirms
+against.** Found by `pern-fintrack-02`, verified here on the shipped path rather
+than in the dictionary: the deactivate description is rendered as the
+confirmation modal's `description` prop in `SoftDeactivateAccountUI`, and it
+reads *"This deactivates the account instead of erasing it. Its balance,
+transactions and history stay exactly as they are, and it can be reactivated
+later."* The Spanish entry says the same. So the recommendation above is not one
+of two defensible readings of an ambiguous operation — it is the definition the
+owner is shown at the moment they agree to it.
+
+**That kills a zero-balance gate on SOFT independently of any design argument.**
+An operation that refuses a balance would make the first clause false as it is
+displayed. Whatever the reopened design does to the other three types, this one
+cannot acquire a balance precondition without its own confirmation text
+contradicting it.
+
+**The second clause has nothing behind it, and that is the serious half.**
+Searched the whole frontend source for reactivation in both languages: the only
+matches are the two dictionary strings. No component, no handler, no affordance —
+and no statement anywhere in the backend sets either stamp back to null. So the
+restore is not a feature a design might or might not call for. **It is a claim
+the software already makes to the owner at the moment of confirmation and does
+not honour.**
+
+**Which makes the elimination trap above worse than stated.** An owner
+deactivates an account holding money having just read that the balance is
+preserved, the transactions and history are preserved, and the account can come
+back. The account cannot come back — nothing in the backend clears either stamp —
+and the only branch that does not refuse it destroys the transactions and the
+history the same sentence promised to keep.
+
+**Corrected 2026-09-07 in the same pass as the retraction above**, which is what
+this paragraph originally rested on: it used to end "erases the balance with
+nothing recording where it went." Returns-to-assets writes one settlement pair
+per affected account before erasing, so the money is accounted for. Two of the
+dialog's three promises are still broken, and the promise that survives is the
+one about the balance.
+
+**Whoever writes the restore writes it from zero.** `pern-fintrack-cf` swept the
+backend for anything that clears either stamp — both columns, every assignment
+form, case-insensitively — and for the words reopen and reactivate: the only hits
+are comments and plan prose. There is no partial path, no disabled route, nothing
+to finish. **One absent mechanism is carrying three artifacts**: a code comment in
+the ownership resolver that justifies its predicate by reasoning about a reopen
+path that exists nowhere, a deliberate-exemption bullet in this document, and the
+shipped dialog copy in both dictionaries. That also settles the shape of the
+resolver correction — the reason given there is phantom in the same way, so the
+exemption survives on its first reason only, and the predicate that *is* there
+remains unexplained.
+
+**Two repairs, split across two owners.** The dialog text stops promising
+reactivation until the restore exists; the restore is what makes the text true
+again. The **restore endpoint** is this module's. The **shared dictionary and the
+confirmation dialog** are the coordination session's, ruled by them after `02`
+routed both halves here — the dictionary is shared frontend, not the deletion
+module's alone. Which of the two repairs happens at all is Carlos's ruling and not
+an ownership question; neither is committable under the freeze in any case.
+
+**Not the same severity as the soft-delete aggregate finding, and they should not
+be scheduled together.** That one is a balance counted in a total whose
+composition the owner cannot decompose, and there is a real reading under which
+including it is correct — the money is genuinely in the ledger, because a soft
+delete writes no reversal. This one has no such reading: the balance leaves the
+ledger with nothing recording where it went, and the global identity stops
+closing. Pairing them by shape would let this one inherit the "open design
+decision" status that legitimately applies to the other.
+
+Carlos's instruction that debtor and lender accounts be taken to zero before any
+deletion is a gate, and RTA is the type that has none — his instinct and this
+measurement are the same finding.
+
+**It is not a hole beside a guard; it is the only unlocked exit.** Raised by
+`pern-fintrack-02` after their own recommendation was defeated, and verified here
+in this service before recording. For an account **already soft-deleted while
+still holding money**, every branch refuses except one:
+
+| type | what refuses it |
+|---|---|
+| SOFT | the already-deleted refusal on the deleted stamp |
+| CLOSE | the refusal that a deleted account is no longer in circulation to hold a residual |
+| HARD | the 409 on a nonzero derived balance |
+| RTA | **nothing** — its only stamp test is the closed one, and it has no balance gate |
+
+So an owner working through the options does not *choose* returns-to-assets over
+the alternatives; they arrive at it by elimination.
+
+**Corrected 2026-09-07, in the same pass as the retraction above.** This sentence
+used to close "and it is the branch that erases the balance with nothing
+recording where it went", which overstated it in the same way and for the same
+reason. Returns-to-assets *does* record where the money went: it writes one
+settlement pair per affected account before the erasure, and a funded account's
+opening row names the compensation account, so it enters the report and is
+reversed like any other. What the elimination table actually shows is narrower
+and still worth having — **the one branch an owner can always reach is the one
+that destroys the account's transactions and history**, which the same
+confirmation dialog promises to preserve. The cost is the history, not the money.
+
+**The trap is uniform, not conditional on the balance.** This module first put it
+as "the trap is the balance, not the state", on the ground that hard delete
+carries no deleted-stamp test either, so a soft-deleted account at exactly zero
+is still erasable. The premise is right and the conclusion was wrong, corrected by
+`02`: that exit is lossless in *money* only. The erasure tail rewrites the
+descriptions on the surviving counterparty rows, deletes the account's
+transactions and then deletes the row — and the confirmation dialog promises
+three things, not one: balance, transactions **and** history stay exactly as they
+are. So holding money, the only non-refusing exit destroys the money; holding
+nothing, the only non-refusing exits destroy the transactions and the history.
+**There is no exit from deactivation that keeps what deactivation's own
+confirmation text says it keeps**, because the operation that would — reactivation
+— is the clause with nothing behind it. The balance decides *which* promise is
+broken, not *whether* one is. "At zero it has two exits" reads as a mitigation and
+it is a different loss, not a smaller one.
+
+**Do not close it by adding a deleted-stamp refusal to RTA.** `02`'s point, and
+it is right: that seals the trap instead of opening it — all four branches
+refusing, no exit at all, and an account permanently unreachable while holding
+money. No statement anywhere in the backend sets either stamp back to null, so
+there is no other way out today. The balance gate is the right shape precisely
+because it refuses the *erasure of an unsettled balance* and says so, which
+leaves the state recoverable once a restore exists rather than making it
+terminal.
+
+**Whether any account is in that state is unmeasured**, and it is the reading
+that decides this item's standing: zero makes the gate prospective work, nonzero
+makes it a live exposure. It belongs with the other production readings still
+held.
+
+**Sequencing, from `pern-fintrack-e4`.** The disclosure built above stands on the
+assessment file's own contract whatever the menu becomes, but the live
+recommendation in front of Carlos collapses the four types toward three lifecycle
+states with returns-to-assets ceasing to be a deletion method at all. So this
+diff does not grow while the shape is open, and when the freeze lifts it lands as
+its own commit with its own gate rather than inside a block that assumes four
+types.
+
+
+### The close path offers types whose money the totals do not count
+
+Raised by `pern-fintrack-cf` from the other side of the aggregate question this
+module put to them, and verified here in the two constants that decide it.
+
+The settlement is written as a self-cancelling pair, and **it only actually
+cancels when both accounts sit inside the same figure.** The transfer
+destination is a single type, `bank`, bound as a parameter rather than a set. The
+close path's only type restriction is the system-account guard, which admits
+everything on the creation whitelist — and that list carries `category_budget`
+and `income_source`. Net worth counts four types: bank, cash, investment and
+debtor.
+
+So closing a category-budget or income-source account moves its residual onto a
+bank account the total counts, while the offsetting leg lands on a type the total
+never counted. **Net worth moves by the residual with no money entering or
+leaving the system**, in whichever direction the residual is signed. No deletion,
+no erasure, no counterpart destroyed — an ordinary close.
+
+This is the same shape as the counterpart-deletion case one step earlier: for
+four of the six types both legs are inside the figure and the pair cancels; for
+two of them they are not.
+
+**It looked like a decision split across two owners** — either net worth counts
+the wrong type set or the close path should not offer an uncounted type — and it
+is not. `02` asked the question that made it measurable: does a budget account
+*hold* money, or *earmark* money already sitting in a bank account? The
+coordination session measured the answer in executable code rather than in the
+comments beside it, and this session verified all three mechanisms independently:
+
+- an expense is written bank → `category_budget`, the destination taking a
+  deposit, in the movement input handler;
+- a `category_budget` **source** is labelled the reversal of an expense, and
+  carries an `'Expense Reversal. '` prefix, in the transaction controller;
+- the type sits in that controller's **funds check**, so a movement out of it is
+  refused for insufficient balance — which is only coherent if the account
+  carries a real one.
+
+So the type accumulates a genuine ledger balance equal to what has been spent in
+it. **Net worth excluding it is correct, because that money is spent rather than
+held, and `cf`'s type set stands unchanged.**
+
+**The fault is therefore entirely on this surface, and there is no decision in
+it.** Closing a category-budget account under the transfer policy moves that
+accumulated spending onto a bank account net worth *does* count, so **net worth
+rises by an amount the owner already spent** — on an ordinary close, with no
+deletion or erasure anywhere near it. Income source is the mirror: it is a source
+only, so its residual carries the opposite sign and a transfer close reduces net
+worth by the income ever received. **Under discard both are harmless**, because
+the compensation counterpart sits outside the figure. It is the transfer policy
+specifically.
+
+**And "residual" understates it by the whole life of the account.** `cf`'s
+correction, upward, and it follows from the same three mechanisms: nothing in the
+ordinary flow ever withdraws from a category account except an explicit expense
+reversal, so its balance is not a leftover — it is the cumulative flow through
+that category, on the order of everything ever spent through it. Their own
+monthly figure confirms it from the other end, summing that set with no negation
+and publishing it as a positive expense total. The close path takes the residual
+from the derived balance, so **a transfer close credits an ordinary bank account
+with the category's entire lifetime spend**, and net worth rises by that whole
+figure. Income source mirrors it: its balance is negative by cumulative income
+received, so the bank pays that off and net worth falls by all income ever
+recorded from that source.
+
+**The repair is one of two, both in this module: the close path refuses those two
+types, or the transfer policy does. Recommendation: the policy.** Refusing the
+close outright would leave an owner unable to retire a category they no longer
+use, which is a legitimate thing to want and has nothing wrong with it under
+discard — where both legs land outside the counted set and the figure does not
+move at all. Restricting the policy keeps the operation available and makes the
+harmful half unreachable. `cf` reached the same recommendation independently and
+named the mechanism: the system-account guard built this morning is the right
+place and the wrong predicate, because it admits everything on the creation
+whitelist.
+
+**But not *in* that guard** — the coordination session's correction, and it is
+right against both of us. That guard answers "may this account be deleted at
+all"; this is "which settlement policy is admissible for a type that may
+certainly be closed". Same file, different question, and folding them means a
+later change to one silently moves the other, which is the shape of half of
+today's findings. It belongs where the policy is validated, beside
+`const isTransfer = policy === CLOSE_POLICY_TRANSFER` in the close path — not in
+the destination eligibility query, which is keyed on the destination and has the
+wrong subject.
+
+**And it is two sites stating one rule, not one.** The assessment endpoint's
+`availablePolicies` must agree with whatever the close path refuses, or the
+assessment offers an option the engine then rejects — the exact failure that
+file's own comment warns against for the settled-balance comparison. One shared
+predicate, consumed in both places.
+
+**The lifetime claim survived a deliberate attempt to break it.** The
+coordination session searched for a period reset that would bound the balance:
+the budget services directory contains nothing resetting, rolling over or closing
+a period; the derived-balance expression takes no date parameter; and monthly
+budgets are rows in their own allocations table rather than a state the account
+balance is reset to. The balance is cumulative over the account's whole life.
+
+**It is reachable by an ordinary owner, and nothing on the path warns them.**
+`02` traced three of the four hops in the frontend and this session measured the
+fourth. The accounting dashboard renders category-budget and income-source
+accounts as groups of their own; its delete handler builds the deletion route
+from the account id alone, with no type predicate; and the deletion page reads
+`account_type_name` into a variable it spends on one label and one dictionary
+lookup, gating nothing. The fourth hop is the assessment endpoint, and it does
+not gate either: the
+close preview's only predicates are the owner and the account id — the type is
+selected for display — and the assessment publishes close as unconditionally
+available with `TRANSFER` among its policies whenever any same-currency bank
+account exists to receive it. **So the whole deletion surface is offered for a
+budget account exactly as for a bank account, and the transfer destinations are
+restricted to precisely the type that makes it harmful.** No deletion is involved
+anywhere in it, and on main nothing holds it back: the close release gate is
+cleared.
+
+**"Live exposure" was this session's word and it is too strong — one hop further
+out cuts the other way.** `02` measured the deploy-target branch by git read, and
+this session confirmed it the same way: on `origin/feat/vercel-serverless` the
+deletion service directory holds two files where main holds five, and the
+deletion utils hold two where main holds four. The assessment endpoint, the close
+preview, the destination query and the settlement writer are all absent. **The
+operation does not exist on that branch to be reached.** Which branch each Vercel
+project actually deploys from is not in the repository — that is Carlos's to say,
+not something either session can verify — so the honest statement is: reachable
+on main through the ordinary path, absent from the branch named as the deploy
+target, and unverified in production.
+
+**That is an argument for repairing it now, not for deferring it.** Fixed before
+the branch advances, it never ships and costs only the writing. Fixed after, it
+is a correction to money already moved in real accounts — and **there is no
+reversal for a close**. This is the last moment at which getting it right the
+first time is free.
+
+**Nothing anywhere would flag the result.** The Overview session enumerated their
+side rather than recalling it: of thirteen notice constants, exactly one comes
+from an arithmetic comparison, and it reconciles the investment card. The bank
+term is never compared to anything — it is an addend in net worth, an addend in
+liquid net worth, the whole of cash position, and a value passed through the page
+service, with no second computation to test it against. So the money moves and
+neither the live screen nor the payload meant to replace it says anything.
+
+Not built — it sits behind the same ruling as everything else on this surface,
+and it is a money movement rather than a reporting asymmetry, which is what the
+design needs to know before it rules. Non-owners: the Overview session, whose
+type set is correct as it stands, and the migration session, whose question is
+what made it measurable and whose frontend trace is what made it reachable.
+
+**What `cf` measured on their own side, and it answers the question this module
+asked them.** No Overview consumer ever received zero from a settlement pair, so
+none can stop receiving it. Their module reads the account-closure movement type
+in exactly one place, an aggregate scoped to the investment account set, and
+neither a transfer close's bank destination nor a discard's compensation
+counterpart can be in that set — so that aggregate has always seen one leg, never
+two. Everything else either filters a different movement type or sums a derived
+balance over an account set, and a derivation only sums rows its own account
+owns. **The pair does meet in the hero's net worth**, which adds separately
+scoped bank, investment and debtor terms, so a transfer close from an investment
+account cancels across terms of one sum — and that survives the counterpart
+deletion, because destroying the counterpart removes the money together with the
+account holding it and the total falls by exactly what left. The caveat recorded
+above therefore stands, and nothing in that path is a defect.
+
+
+### A restoration procedure, if one is specified: the constraint it inherits
+
+Nothing here is built or scheduled. Carlos reopened the design of all four
+deletion types on 2026-09-07 and asked where restoration should live; this
+section records only what this service already makes true, so that whoever
+specifies restoration does not have to rediscover it.
+
+**The guard must be both stamps, never the deleted stamp alone.** Raised by
+`pern-fintrack-02`, verified here in the close path: the marking statement sets
+`closed_at`, `deleted_at` and `updated_at` in one `UPDATE`, deliberately, so
+that readers which have not been swept off `deleted_at` keep excluding closed
+accounts. A restore keyed on `deleted_at IS NOT NULL` therefore matches closed
+accounts as well as soft-deleted ones, and would clear the flag on an account
+whose residual has already been moved to a counterpart and whose settlement pair
+is still standing. The correct predicate is the split one the four refusals in
+this file already use: deleted stamp set **and** closed stamp null.
+
+**Written against a pre-034 database it reintroduces the confusion from the
+other side.** Before that migration the column does not exist, the property read
+yields `undefined`, and a predicate written in JS on the stamp answers for a
+state the database cannot represent — the same failure mode as the four
+closed-stamp refusals, recorded above. **So the guard above is correct and not
+yet writable**: it cannot be implemented before the production migration state is
+known, which is one of the readings no session has run. Recorded explicitly so
+that nobody implements it from this section's own text and reproduces the defect
+this section documents.
+
+**They are two operations, not one, and `02`'s reason is the one to keep.**
+Undoing a soft delete is one statement clearing one stamp, because the soft
+branch destroyed nothing. Reopening a closed account would have to reverse a
+settlement pair, recompute two balances and undo an append-only allocation.
+Specified as a single feature, the cheap one waits on the expensive one, or the
+expensive one gets implemented as the cheap one — which is a silent money
+error, not a missing feature.
+
+**Open, and Carlos's:** whether restoration enters this agreement or a later
+one, and whether reopening a closed account is in scope at all.
+
+## Checking the redesign proposal against this service — 2026-09-07
+
+`plan-docs/ACCOUNT_DELETION_REDESIGN_PROPOSAL.md` is the structured statement of
+the two-operation shape, written for an external reviewer with no context on this
+codebase. It is loose in `plan-docs/`, so untracked and outside the commit
+freeze, and it belongs to the coordination session. Four things in it were
+measured against the deletion service here; three of them need correcting there
+and one strengthens a case it already makes. All four are routed to the session
+that owns the document, not edited into it from here.
+
+### The precondition for physical removal is stated over the wrong test
+
+The proposal makes physical removal safe by requiring that the account's only
+transaction rows be its own **self-referential opening rows**, and justifies that
+by a chain: self-referential implies the transaction type is `account-opening`,
+which implies the amount is exactly zero. That chain is this file's own wording,
+and the middle step does not hold on the path that creates bank, income source
+and investment accounts.
+
+`createBasicAccount` calls neither shared helper. It resolves the two key columns
+from its own `isTransfer`, which is literally the nonzero-amount test, and it
+resolves the transaction type from the account type alone — `deposit` for bank
+and investment, at any amount including zero. So a zero-amount bank account
+carries a self-referential opening row typed `deposit`, and a gate keyed on the
+type name would refuse to recognise it. The `account-opening` rule is reached
+only from the category-budget controller, through
+`determineSourceAndDestinationAccounts` and `determineTransactionType`. Found by
+`pern-fintrack-02`, verified here in the controller before being recorded.
+
+The conclusion the proposal draws is still true — a self-referential opening does
+imply a zero starting amount — but it is true through two independent mechanisms,
+and the one the document names covers only one of them. **The gate must compare
+`source_account_id` against `destination_account_id`. It must never read the
+transaction type name.** Debtor accounts are outside this entirely: their type is
+always `lend` or `borrow`, so their opening row is never self-referential at any
+amount, and their counterparty row is written unconditionally.
+
+### An account that backs a pocket satisfies that precondition, and the tail then destroys the allocations
+
+The proposal's pocket case says such an account is never removed and reads the
+`NOT NULL` plus `ON DELETE RESTRICT` on the allocation's source account as the
+constraint already enforcing it. Measured here, that is false in both halves.
+
+The erasure tail deletes the allocations itself, in the same transaction, before
+it touches the account row — so the restricting key never fires and the
+allocation history leaves with the account. And nothing else stands in for it:
+`insertAllocation` writes to `pocket_allocations` only and emits no `transactions`
+row, so an account can back allocations while its sole ledger row is its own
+opening. That account passes the proposal's precondition exactly as written and
+is then physically removed, which is the outcome the pocket case exists to
+forbid.
+
+**The precondition should be stated over the referrer list, with transaction
+rows as one item on it.** `pern-fintrack-02` enumerated every table referencing
+`user_accounts` in both build paths and found exactly two referrers that are
+neither a transaction key nor a subtype table: the pocket allocation's source
+account, and the debtor account's settlement account. Verified here in both
+paths — `002_accounts.sql` declares `selected_account_id INT REFERENCES
+user_accounts(account_id) ON DELETE SET NULL` and `createTables.js` declares the
+same column the same way. That one is worse than the allocation, because nothing
+refuses and nothing is deleted: another account's row is silently pointed at
+nothing, and it leaves no ledger trace either. Migration 020 already had to
+clear that column by hand for exactly this reason, and said so in its own prose.
+It cannot bite today, and the reason is accidental. Checked here in the debtor
+controller: the counterparty of a debtor's opening entry is the **selected
+account itself**, resolved by name and type, and its transaction row is written
+unconditionally. So an account named as a debtor's settlement account always
+owns at least one transaction row that is not its own opening, and it fails the
+precondition for physical removal on that ground rather than on any rule about
+debtors. The protection therefore lives in a creation controller nobody would
+open when changing the deletion precondition — which is the argument for stating
+the precondition over the referrers rather than over the rows.
+
+### A non-empty impact report is not a reversal that moves anything
+
+This strengthens the proposal's inconsistency case — the account opened with a
+starting amount and never used since, which RTA erases with no balance gate while
+HARD refuses the same account with a 409. Measured here, the two paths do not
+merely disagree about the gate; on that shape they do the same thing.
+
+Such an account has one row that qualifies for the impact report: its own
+opening, whose source is the compensation account. So the report holds a single
+entry whose affected account **is** the compensation account, and the execution
+loop hands `recordAnnulmentTransaction` an affected account equal to its own
+slack account. Both legs are written on that one account, plus the adjustment and
+minus the adjustment, and the ledger nets them to zero. The erasure then drops
+the target's own row and keeps the compensation account's counter row from
+creation. The residual leaves the books with no entry this deletion wrote —
+which is what the hard delete does, on the account the hard delete refuses.
+
+So the case is not "one settles and the other does not". It is one operation
+reachable through two entry points, gated in one and ungated in the other.
+
+### Two smaller corrections to the same document
+
+- The erasure is described as deleting the pocket allocations first and
+  detaching the counterparty rows second. The tail runs the two detach-and-scrub
+  updates first and the allocation delete third. The order matters to a reviewer
+  reasoning about what the restricting keys can still catch.
+- The claim that a balance cannot disagree with its transactions because it *is*
+  its transactions, and that reconciling one against the other is an identity, is
+  not safe to put in front of a reviewer. The starting amount is a stored column
+  that stands in for the account's own opening row, which the derivation zeroes;
+  the two agree because one creation-time variable is written to both, which is a
+  construction and not an invariant. Raised by `pern-fintrack-cf`, who withdrew
+  the stronger version of it the same day — there is no divergence to detect
+  today, no writer can separate the two after creation, and the objection stands
+  on the construction alone. A reviewer told a comparison is an identity is being
+  invited to delete the comparison.
+
