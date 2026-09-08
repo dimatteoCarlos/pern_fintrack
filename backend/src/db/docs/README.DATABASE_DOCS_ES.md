@@ -353,7 +353,7 @@ npm run dev
 |---------|-------------|
 | `npm run db:migrate` | Ejecuta migraciones |
 | `npm run db:seed` | Ejecuta seeds (controlado por flags) |
-| `npm run db:reset` | Reset completo (solo desarrollo) |
+| `DB_EXPECTED=<base> npm run db:reset` | Reset completo (solo desarrollo). Confirma conectandose a la base que va a borrar |
 | `npm run dev` | Inicia servidor de desarrollo |
 | `npm start` | Inicia servidor en producción |
 

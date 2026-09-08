@@ -151,7 +151,7 @@ The backend will now connect to an initialized database.
 To fully reset everything:
 
 ```
-npm run db:reset
+DB_EXPECTED=fintrack_dev npm run db:reset
 ```
 
 Then repeat:

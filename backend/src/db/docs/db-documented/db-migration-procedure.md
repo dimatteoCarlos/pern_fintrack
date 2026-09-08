@@ -110,6 +110,14 @@ was done rather than what remains. Confirm before treating it as either.
  checked too, as a separate refusal, but it is the weaker of the two: it cannot
  decide the destination, because `dbEnvironmentConfig.js` declares `development`
  and `production` with identical bodies that both read `DATABASE_URI`.
+- **Refuses a destination that is not this machine.** `DB_EXPECTED` confirms a
+ name the operator types, and a remote database can carry any name, so
+ `assertExpectedDatabase` also reads `inet_server_addr()` and stops unless the
+ answer is loopback or a Unix socket. `DB_REMOTE_OK=1` is the way through, and
+ the run announces the off-machine destination when it is set. An allowlist of
+ addresses rather than a denylist of names: `schemaParity.js` tests the
+ connection string against `/prod|supabase/i`, which matches a spelling and not
+ a database.
 - **The single transaction is not as single as it looks.** Migrations `001`-`007`
  carry their own `BEGIN`/`COMMIT`, which closes the runner's transaction early,
  so a failure in file N+1 leaves N already committed. Recorded in
@@ -190,7 +198,14 @@ It prints the ledger and the objects the last five migrations create. Two
 `SELECT`s and no writes.
 
 Never point `npm run db:reset` at a database you care about: it terminates the
-connections and drops it.
+connections and drops it. Since 2026-09-08 it carries the same interlock as the
+rest, and confirms through a connection to the database it is about to drop
+rather than through the admin connection to `postgres`, so the name it checks is
+the one being destroyed:
+
+```
+DB_EXPECTED=fintrack_dev npm run db:reset
+```
 
 ---
 
