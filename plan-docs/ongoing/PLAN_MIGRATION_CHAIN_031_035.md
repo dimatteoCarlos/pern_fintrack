@@ -156,7 +156,7 @@ These are Carlos's, and no session should answer them by inference.
 | # | question | why it cannot be answered from the code |
 |---|---|---|
 | 1 | Which runner applies 031-035 | `db:migrate` exists and no deploy step calls it; both existing callers build or compare throwaway databases |
-| 2 | In what order, relative to the code deploy | The deploy branch is 202 commits behind `main` and holds none of these files, so code and schema currently move on separate schedules with no defined relation |
+| 2 | In what order, relative to the code deploy | The deploy branch holds none of these files and nothing `main` does not, so code and schema currently move on separate schedules with no defined relation |
 | 3 | How an execution is recorded | `runMigrations.js` registers file names in the `migrations` table without a checksum, so an edited file is neither re-executed nor detected |
 | 4 | What happens when one fails midway | Migrations `001`-`007` carry their own `BEGIN`/`COMMIT`, which closes the runner's transaction early: if migration N+1 fails, N is already committed |
 
@@ -164,6 +164,37 @@ These are Carlos's, and no session should answer them by inference.
 whether `013_normalize_category_budget_name_case.sql` ran there on 2026-08-27.
 That read is Carlos's alone. Migrations to production are stopped until these
 processes are defined.
+
+### The freeze is a decision, not something the code enforces
+
+Measured 2026-09-08 across the four database scripts. Two refuse to run under
+`NODE_ENV=production` and two do not, and the split does not fall where it would
+be useful:
+
+| script | guard | live |
+|---|---|---|
+| `db:migrate`, `runMigrations.js` | `if (isProduction())` with *"Migrations are not allowed in production"* | **no** — it sits inside the block comment opened at line 14 and closed at line 28, headed *"Alternative using dbMigrationConfig.js"*. The one live `isProduction()` call refuses only the `DB_NAME` override |
+| `db:seed:base` / `db:seed:admin`, `runSeeds.js` | the same guard | **no** — same shape, inside the comment opened at line 37 and closed at line 50 |
+| `db:bootstrap`, `bootstrapping.js` | `if (isProduction())` at line 34 | yes |
+| `db:reset`, `runResetDb.js` | `NODE_ENV === 'production'` at lines 48 and 141 | yes |
+
+So the two scripts that create or drop a whole database refuse, and the two that
+write into an existing one do not — and `db:migrate` is the one the freeze is
+about.
+
+**The synthesis, measured by the deletion session: every guard that exists tests
+`NODE_ENV`, and `NODE_ENV` does not select the database.** `dbEnvironmentConfig.js`
+declares `development` and `production` with identical bodies, both
+`connectionString: process.env.DATABASE_URI`. A run with `NODE_ENV` unset or set
+to `development`, pointed at a production `DATABASE_URI`, passes every live guard
+and reaches production. The guards are blind to the case that matters because the
+variable they read is not the variable that decides the destination.
+
+**No session has fixed this and none should.** Adding a guard changes how a
+production run behaves, which is Carlos's decision, and it would also require
+knowing where `DATABASE_URI` points — which means reading `.env`. Not being able
+to tell which database that variable names is the correct state for a session
+here, not a gap to close.
 
 ---
 
