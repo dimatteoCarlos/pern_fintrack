@@ -179,15 +179,20 @@
   line-height: 1.5;
 }
 
-/* The refusal, stated on the panel rather than inside the dialog. The warning
-   content token, not the error one: a balance that is not zero is a condition
-   the owner can meet, not a failure. */
+/* The refusal, stated on the panel rather than inside the dialog.
+   THE INFO TRIAD, NOT THE WARNING ONE, and the distinction is what the notice
+   and the button beneath it are. This is a condition the owner can meet, and
+   it is text he reads; the button is the operation that removes the account,
+   and it carries the warning triad. Sharing that triad made the two read as
+   one block - the owner said so on 2026-09-08 - and, worse, gave a sentence
+   the same weight as the action it describes. Not the error triad either: the
+   account is not in a bad state, it simply has money in it. */
 .deletion-methods-blocked {
   margin: 0 0 var(--space-4) 0;
   padding: var(--space-3);
-  border-left: var(--border-width-thick) solid var(--color-feedback-warning-border);
-  background-color: var(--color-feedback-warning-surface);
-  color: var(--color-feedback-warning-content);
+  border-left: var(--border-width-thick) solid var(--color-feedback-info-border);
+  background-color: var(--color-feedback-info-surface);
+  color: var(--color-feedback-info-content);
   font-size: var(--font-size-sm);
   line-height: 1.5;
 }
