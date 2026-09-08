@@ -97,19 +97,18 @@
 /* The back affordance. It used to be a div inside a Link that wrapped the
    whole row; it is the Link now, which is why the ring moved here from
    .accounting__header. */
+/* The disc, the four states and the currentColor stroke moved to
+   styles/backArrow.css as .backArrow and .backArrow--dark, which the other
+   sixteen back arrows now share. This block was the source they were copied
+   from, so it is the one that becomes a duplicate. Kept commented rather than
+   removed: it is the only record of what this view had before the shared rule.
+
 .accounting__header--icon {
  position: absolute;
  left: 0;
  display: flex;
  align-items: center;
  justify-content: center;
- /* The round disc .accounting__openAccount takes at the other end of the row,
-    rather than the full row height it had. Two icon controls on one row read
-    as a pair only if they share the shape as well as the states.
-
-    --size-icon and not --size-touch-target: 32px against a 20px drawing leaves
-    a ring of six, which is the fill Carlos asked to bring down. It clears the
-    24px minimum target of WCAG 2.2 AA and not the 44px of AAA. */
  width: var(--size-icon);
  height: var(--size-icon);
  border-radius: var(--radius-full);
@@ -123,15 +122,10 @@
  outline-offset: var(--border-width-thick);
 }
 
-/* The asset hardcodes its stroke, so the colour above only reaches the
-   drawing by naming the path. */
 .accounting__header--icon path {
  stroke: currentColor;
 }
 
-/* Was opacity 0.7, which dimmed this control while the one at the other end of
-   the same row inverted. Two answers to one event on one row. The creme fill
-   is the answer that stays. */
 .accounting__header--icon:hover {
  background-color: var(--color-accent);
  color: var(--color-accent-content);
@@ -141,6 +135,7 @@
  background-color: var(--color-content-on-dark-subtle);
  color: var(--color-accent-content);
 }
+*/
 
 /* Opening an account, from the board that manages them. Pinned to the right
    end of the title row: the row was empty there, so the control costs the
@@ -819,7 +814,6 @@ button {
 @media (prefers-reduced-motion: reduce) {
  .accounting__scrollJump,
  .accounting__scrollJump-glyph,
- .accounting__header--icon,
  .accounting__openAccount,
  .accounting__openAccount-tip,
  .accountingSearch,

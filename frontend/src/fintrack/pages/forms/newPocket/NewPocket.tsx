@@ -280,7 +280,7 @@ function NewPocket() {
           <Link
             to={location.state.previousRoute}
             relative='path'
-            className='iconLeftArrow'
+            className='backArrow backArrow--dark'
           >
             <LeftArrowSvg />
           </Link>

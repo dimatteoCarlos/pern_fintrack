@@ -201,7 +201,7 @@ function PocketDetail() {
         link. "Go back" and not the destination: previousRoute is whatever the
         caller handed over, and only falls back to the board, so naming the
         board would be wrong for every other origin. */}
-    <Link to={previousRoute} className='iconLeftArrow' aria-label='Go back'>
+    <Link to={previousRoute} className='backArrow backArrow--dark' aria-label='Go back'>
      <LeftArrowLightSvg aria-hidden='true' />
     </Link>
 

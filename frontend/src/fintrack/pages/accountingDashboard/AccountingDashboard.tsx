@@ -701,7 +701,7 @@ const AccountingDashboard = () => {
             <div className='accounting__header'>
              <Link
               to={originRoute}
-              className='accounting__header--icon'
+              className='backArrow backArrow--dark'
               aria-label='Back'
              >
               <LeftArrowSvg />

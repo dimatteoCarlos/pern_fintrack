@@ -138,11 +138,16 @@ label,
   text-align: left;
 }
 
+/* Replaced by .backArrow and .backArrow--dark in styles/backArrow.css. The
+   fourteen views that carried this class declared position and nothing else,
+   so the arrow answered no pointer and no keyboard on any of them.
+
 .iconLeftArrow {
   position: absolute;
   left: 0;
   display: flex;
 }
+*/
 
 /* ============================================================
    STRUCTURAL LAYOUT CONTAINERS

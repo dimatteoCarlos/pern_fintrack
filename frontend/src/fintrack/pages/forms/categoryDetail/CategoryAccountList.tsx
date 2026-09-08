@@ -236,7 +236,7 @@ function CategoryAccountList() {
                 <Link
                   to={withMonthParam(budgetPageAddress, month)}
                   relative='path'
-                  className='iconLeftArrow'
+                  className='backArrow backArrow--dark'
                 >
                   <LeftArrowLightSvg />
                 </Link>
