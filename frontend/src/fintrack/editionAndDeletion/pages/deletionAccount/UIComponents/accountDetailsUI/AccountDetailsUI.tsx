@@ -20,6 +20,10 @@ type AccountDetailsUIPropsType = {
   // method; the caller says which, and the default keeps every existing
   // caller reading as it did.
   actionKey?: keyof DictionaryDataType;
+  // Same reasoning as actionKey: the card announced a deletion in its heading
+  // whatever the screen was doing, which reads as the wrong operation on a
+  // screen that closes rather than deletes.
+  titleKey?: keyof DictionaryDataType;
 };
 // ==================================
 // 🎯 ACCOUNT DETAILS UI COMPONENT
@@ -32,6 +36,7 @@ export const AccountDetailsUI = ({
   accountCurrency,
   showStatusIndicator,
   actionKey = 'rtaDeletionAction',
+  titleKey = 'accountDetailsTitle',
   t,
 }: AccountDetailsUIPropsType) => {
   return (
@@ -42,7 +47,7 @@ export const AccountDetailsUI = ({
     >
       {/* Title */}
       <h2 id='account-details-title' className='account-details-title'>
-        {t('accountDetailsTitle')}
+        {t(titleKey)}
       </h2>
 
       {/* Account ID */}

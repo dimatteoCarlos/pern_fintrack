@@ -254,6 +254,25 @@
   transform: translateY(0);
 }
 
+/* THE ONLY METHOD OFFERED. The three above are outlined because they are a
+   menu and none of them is the answer; a button that is the page's single
+   action is not choosing between anything, so it is filled. Same warning
+   triad, so the method still reads at the cost it carries. */
+.deletion-method-button--only {
+  background-color: var(--color-feedback-warning-surface);
+  border-color: var(--color-feedback-warning-content);
+}
+
+.deletion-method-button--only:hover {
+  background-color: var(--color-feedback-warning-border);
+  transform: translateY(-1px);
+}
+
+.deletion-method-button--only:active {
+  background-color: var(--color-feedback-warning-border);
+  transform: translateY(0);
+}
+
 /* HARD: the feedback-error triad, the same reasoning as SOFT above but for
    the destructive method. */
 .deletion-method-button--hard {
