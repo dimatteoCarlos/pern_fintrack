@@ -138,7 +138,18 @@ function DomainCards() {
    <DomainCard
     label='PnL'
     nature='flow'
-    sub={deltaLine(pnl.delta, pnl.currency)}
+    sub={
+     <>
+      {deltaLine(pnl.delta, pnl.currency)}
+      {/* Where the result came from. The card is cut by MOVEMENT TYPE and not
+          by account type - the account set is every account the owner holds
+          except the system counterparty - so a realised result can land on any
+          of them, and the split says how much of it was investment. It is a
+          subordinate clause and never a second figure of equal weight. */}
+      {pnl.realizedFromInvestment !== 0 &&
+       ` · ${money(pnl.currency, pnl.realizedFromInvestment)} from investment`}
+     </>
+    }
    >
     {/* Signed, and a negative is a real answer here in a way it is not on an
         expense card: a losing month is a loss, not an absent figure. */}
