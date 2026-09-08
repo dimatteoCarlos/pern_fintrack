@@ -156,3 +156,19 @@
     padding-top: 0;
   }
 }
+
+/* The detail request is open and the modal has not opened yet. A bar and not a
+   word: the list stays where it is and nothing below it moves, which a line of
+   text appended to the container would not do. */
+.listContent__pending {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4) 0;
+}
+
+.listContent__pendingBar {
+  width: var(--space-16);
+  height: var(--space-1);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-loading);
+}

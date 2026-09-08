@@ -90,13 +90,16 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
     onClose={closeTransaction}
    />
 
-   {/* Optional loading indicator */}
+   {/* The detail request is open. It is a bar and not the word "Loading",
+       which is the rule the account panels already follow, and it carries the
+       state on the region rather than in text: the modal is about to cover the
+       list, so a sentence under it is announced to nobody.
+
+       The inline style this replaces hardcoded a padding and a text alignment,
+       which is the one thing the stylesheet rule forbids outright. */}
    {isLoading && (
-    <div
-     className='modal-loading'
-     style={{ textAlign: 'center', padding: '1rem' }}
-    >
-     Loading...
+    <div className='listContent__pending' role='status' aria-busy='true'>
+     <span className='listContent__pendingBar' aria-hidden='true' />
     </div>
    )}
   </div>
