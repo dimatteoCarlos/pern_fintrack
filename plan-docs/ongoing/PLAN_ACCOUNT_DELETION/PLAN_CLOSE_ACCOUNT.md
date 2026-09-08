@@ -657,32 +657,140 @@ sits with the other picker questions in 10.3.
 
 ## 6. Pockets, inside the close
 
-The release mechanism **already exists and does not have to be written**:
-`pocketAllocationService.release` releases by writing a **negative** allocation
-row, and `getPocketsForAccount` enumerates the pockets an account backs. Pocket
-coverage — committed, uncovered, funded — is **derived, never stored**
-(`makePocketStatus.js`), so releasing is sufficient and there is nothing to
-recompute.
+**The owner ruled on 2026-09-07 that the close releases what the account has
+committed:** *asi como cuando se cierra una cuenta bank, tambien hay que hacer la
+liberacion de lo comprometido por esa cuenta en los pockets correspondientes.*
+That is a step CLOSE performs, not a precondition it checks, and it runs before
+the account row is deleted.
 
-**What has to go:** the current erasure tail runs a direct delete over the
-allocations (`eraseAccountTail.js`), which destroys the allocation history
-instead of releasing it, and incidentally defeats the restricting reference that
-was supposed to protect them.
+### 6.1 The ruling reaches two of the six types and no other
 
-**Releasing does not remove the rows, and that has a named consumer on the
-Overview branch.** `pocketAllocationService.release` calls `writeLedgerRow`, so a
-release adds a negative row rather than deleting the positive one: the allocation
-history survives the close, keyed by an account id that resolves in the registry
-and not in `user_accounts`. The Overview session measured the consequence and
-owns the fix — `overviewPocketRepository.js:120` joins `user_accounts` to
-`pocket_allocations.source_account_id` with an inner join, so a surviving
-allocation whose source account has been closed is dropped silently and the
-pocket's committed figure falls with no figure contradicting another. They also
-measured the sibling that behaves the opposite way: the same key read inside an
-`EXISTS` at `overviewPageRepository.js:190`, which cannot match a non-existent
-account and is safe. **This is the cost of repointing that one key, not of the
-erasure**, and it is recorded here so the repointing is decided with its consumer
-in view.
+`pocketAllocationService.js:56` declares `const ELIGIBLE_SOURCE_TYPES = ['bank',
+'cash'];` and `:217` refuses anything outside it with *only bank and cash
+accounts can back a pocket*. So `investment`, `debtor`, `income_source` and
+`category_budget` can never hold a commitment, and the release step is a no-op
+for them by measurement rather than by assumption. The owner named `bank`; `cash`
+is the other member of that array and takes the same step.
+
+### 6.2 The zero-balance refusal does not already cover this
+
+**A committed figure is not a balance, and the two are read separately.**
+`lockOwnedSourceAccount` returns `accountAllocated` from `SUM(pa.amount)` over
+`pocket_allocations` and `accountBalance` from a second statement over the
+transaction ledger (`accountAllocationRepository.js:208-269`). The only place
+they are compared is the allocate branch —
+`const unassignedCash = money(account.accountBalance).minus(account.accountAllocated,)`
+at `pocketAllocationService.js:345` — and that comparison is made **once, at the
+moment of committing**, never afterwards. Nothing re-checks it when money later
+leaves the account.
+
+So an account can sit at a zero balance with a positive commitment: commit 300
+while the balance is 500, then spend the 500. **The refusal this plan applies to
+`bank` and `cash` is stated over the balance, so it admits exactly that account**,
+and without the owner's ruling the close would delete an account that a pocket
+still counts on. The ruling is operative, not decorative.
+
+### 6.3 The existing service cannot be called from inside the close
+
+`pocketAllocationService.release` is the right algorithm and the wrong entry
+point, for three measured reasons:
+
+- **It owns its own transaction.** `writeLedgerRow` runs `const client = await
+  pool.connect();` at `:307`, `await client.query('BEGIN');` at `:310`, `await
+  client.query('COMMIT');` at `:401` and `client.release();` at `:414`. A release
+  committed on a second connection survives a rollback of the close, which would
+  leave a released pocket beside an account that still exists.
+- **It prices through a rate provider.** `convertTypedAmount` calls
+  `currencyAmountConversion`, an HTTP round trip, and the module's own comment at
+  `:295-299` says why that must not sit inside an open transaction. The close
+  does not need it: what it releases is the net already stored in
+  `pocket_allocations.amount`, which is in the accounting currency.
+- **It refuses a deleted account.** `assertEligibleSource` throws at `:207` when
+  `account.deletedAt !== null`. Harmless in the ordering below, and a reason not
+  to reorder.
+
+### 6.4 What the close writes instead
+
+**One negative row per pocket, inside the close's own transaction, with the
+account already locked.** The set comes from `getPocketsForAccount`
+(`accountAllocationRepository.js:130`), which groups `pocket_allocations` by
+pocket for one `source_account_id` and returns `heldFromThisAccount` as
+`SUM(pa.amount)`, dropping the pockets whose net is already zero through `HAVING
+SUM(pa.amount) <> 0` at `:142`. Each row is written through `insertAllocation`
+(`:311`) with `amount` equal to the negative of that net.
+
+**That is the same row the service would have produced**, because the ceiling on
+a release is `getHeldByPocketFromAccount` (`:271`) and the refusal is
+`requested.greaterThan(held)` at `pocketAllocationService.js:368` — releasing
+exactly what is held is never refused. The sign is applied at `:378` and this
+step applies it the same way.
+
+**Six columns have to be filled and none of them may be null.**
+`020_create_pocket_tables.sql:157-164` declares `original_amount`,
+`original_currency_id`, `exchange_rate`, `exchange_rate_source`,
+`exchange_rate_timestamp` and `exchange_rate_target_currency_id` all `NOT NULL`,
+with `CHECK (exchange_rate > 0)`. Nothing is being converted — the figure is read
+out of the same column it is written back into — so the fill is the identity, and
+**the shape to copy already exists in this module's own code**:
+`recordAnnulmentTransaction.js:169-172` writes `exchange_rate:
+DEFAULT_EXCHANGE_RATE` and `exchange_rate_source: DEFAULT_EXCHANGE_RATE_SOURCE`,
+declared as `1.0` and `'identity'` at `fxConfig.js:8-9`, with
+`original_currency_id` set to the row's own currency and
+`exchange_rate_target_currency_id` to `getCurrencyIdSync(ACCOUNTING_CURRENCY_CODE)`
+resolved at `:127`. Its comment at `:124` states why the column defaults are
+false rather than merely unset. (Precedent identified by the migration session,
+verified here.)
+
+**The two CHECK constraints decide the writer's control flow, not its values.**
+`CHECK (amount <> 0)` at `020_create_pocket_tables.sql:151` means a pocket whose
+net from this account is already zero takes **no row at all**, rather than a zero
+row recording that nothing was released — a branch in the writer, not an edge
+case discovered by a failing insert. `CHECK (exchange_rate > 0)` at `:160` means
+"no conversion" cannot be expressed by leaving the rate at zero, which is why the
+identity constants above are the fill and not a placeholder.
+
+### 6.5 Releasing does not permit the delete, and does not remove the rows
+
+**The restricting key stays.** `pocket_allocations.source_account_id` is declared
+`REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE` at
+`020_create_pocket_tables.sql:149-150`, and a release adds a row rather than
+removing one — so after the release the account is referenced by more rows than
+before and the delete is refused exactly as it was. **The release and the
+repointing of this key at the registry are two separate requirements and neither
+substitutes for the other.** Anyone reading the owner's ruling as a way to avoid
+the sixth repointed key is reading it wrong.
+
+**What has to go is the direct delete.** `eraseAccountTail.js:97` runs `DELETE
+FROM pocket_allocations WHERE source_account_id = $1 AND user_id = $2`, which
+destroys the allocation history instead of releasing it and defeats the
+restricting reference that was meant to protect it. CLOSE does not run it.
+
+**The surviving rows have a named consumer on the Overview branch.** The history
+outlives the close, keyed by an account id that resolves in the registry and not
+in `user_accounts`. The Overview session measured the consequence and owns the
+fix — `overviewPocketRepository.js:120` inner-joins `user_accounts` to
+`pocket_allocations.source_account_id`, so a surviving allocation whose source
+account has been closed is dropped silently and the pocket's committed figure
+falls with no figure contradicting another. They also measured the sibling that
+behaves the opposite way: the same key read inside an `EXISTS` at
+`overviewPageRepository.js:190`, which cannot match a non-existent account and is
+safe. **This is the cost of repointing that one key, not of the erasure**, and it
+is recorded here so the repointing is decided with its consumer in view.
+
+**Pocket coverage is derived and never stored** (`makePocketStatus.js`), so the
+release is sufficient and there is nothing to recompute after it.
+
+### 6.6 The order inside the close, for `bank` and `cash`
+
+1. Lock the account row.
+2. Read the pockets it backs, with their nets.
+3. Write one negative row per pocket.
+4. Stamp the registry row.
+5. Delete the account row.
+
+Step 3 before step 5 is not a preference: after step 5 the account id no longer
+resolves in `user_accounts` and `insertAllocation` writes a column that still
+references it.
 
 ---
 
@@ -832,6 +940,7 @@ design.
 | The `category_budget` account closes | *las cuentas no son de categoria, son de category_budget, y si pueden desaparecer por cierre*. Said to this session directly and, in the same words, to the Overview session |
 | The income source closes | *las cuentas income tambien son borrables*, reversing the recommendation recorded earlier the same day |
 | The income source is exempt from the zero condition | *tambien es borrable, pero no se le exige que sea saldo cero* |
+| Closing releases what the account committed to pockets | *asi como cuando se cierra una cuenta bank, tambien hay que hacer la liberacion de lo comprometido por esa cuenta en los pockets correspondientes*. It is a step CLOSE performs before deleting the row, and it reaches `bank` and `cash` only — see 6 |
 | The budget goes with the budget account | *category_budget tiene un presupuesto asociado, asi que con su borrado, se borra el budget asociado a ella*. Both cascades are therefore intended: `category_budget_accounts` and, through it, `budget_monthly_allocations` — see 3.5 |
 | `income_source_accounts` is dropped | *yo creo que esa tabla es descartable y habria que eliminarla, esto es tarea para migration*. Measured first: created in both build paths, never inserted into, never read — see 5.2. **Assigned to the migration session**, not to this plan |
 | The extension row is deleted with the account, by id | *cuando se borra hay tambien que eliminarla de esta otra tabla, buscando no por nombre sino por id*. The cascade on `002_accounts.sql:141-143` already does exactly this, so no code and no migration are owed — but it reverses the migration session's plan to repoint those four keys, and the repointing count drops from nine to six (4.3) |
