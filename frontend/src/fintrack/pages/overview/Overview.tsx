@@ -442,6 +442,26 @@ function Overview() {
           </div>
         )}
 
+        {/* First on the page, in the band between the hero panel and the
+            month heading. It used to sit ten blocks down, between the trend
+            charts and the account panels, where the reader had to scroll past
+            every figure on the screen to reach the one action the page offers.
+
+            It goes HERE and not in the layout's header. That header is
+            positioned from a constant height and MonthPicker is floated out of
+            its flow for exactly that reason; a second child inside it would
+            change the constant and re-measure every absolute box below. This
+            is the Outlet's first child, which is the same band on screen and
+            costs the layout nothing. createNewAccount and originRoute also
+            live in this file, not in the layout. */}
+        <OpenAddEditBtn
+          btnFunction={createNewAccount}
+          btnFunctionArg={originRoute}
+          btnPreviousRoute={originRoute}
+        >
+          <div className='open__btn__label'>Add Account</div>
+        </OpenAddEditBtn>
+
         {/* First, per the level-1 sketch: the six domain cards answer what the
             month did, and everything below them is detail on one part of that
             answer. Like MonthlyAverage it takes no props and reads the store
@@ -462,16 +482,6 @@ function Overview() {
         {/* Block 07, first half. The distribution bar beside it in the sketch
             waits on a categorical ramp the design system does not have. */}
         <TrendCharts />
-
-        {
-          <OpenAddEditBtn
-            btnFunction={createNewAccount}
-            btnFunctionArg={originRoute}
-            btnPreviousRoute={originRoute}
-          >
-            <div className='open__btn__label'>Add Account</div>
-          </OpenAddEditBtn>
-          }
 
         {
           <AccountBalance
