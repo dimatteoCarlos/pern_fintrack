@@ -862,3 +862,30 @@ a.icon {
  border-radius: var(--radius-xl);
  background-color: var(--color-surface-loading);
 }
+
+/*------------*/
+/* The share of the budget already spent, glossing the remainder beside it.
+   Painted from the same budgetStatusLevel call the square at the head of the
+   line makes, so one card cannot light its number and its square differently -
+   the rule budget-styles.css:411-421 already applies to a category row, and
+   these are the same three tokens.
+
+   'ok' is teal HERE and the bare square in the square's own map, and that is
+   not a contradiction: a number has no shape to fall back on, so the quiet
+   reading still needs a hue to be a reading at all. */
+.overviewLayout .domainCard__share {
+ font-size: inherit;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .domainCard__share--ok {
+ color: var(--color-status-ok);
+}
+
+.overviewLayout .domainCard__share--near {
+ color: var(--color-status-warning);
+}
+
+.overviewLayout .domainCard__share--over {
+ color: var(--color-status-alert);
+}

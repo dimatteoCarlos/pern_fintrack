@@ -19,6 +19,11 @@
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
+import {
+ budgetRemainWord,
+ budgetSquareState,
+ budgetStatusLevel,
+} from '../../../helpers/budgetStatus';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import {
@@ -114,28 +119,104 @@ const coloredDeltaLine = (delta: number | null, currency: string) => {
 // and an indicator nobody can justify is worse than an absent one.
 type SquareClass = '' | 'neutral' | 'info' | 'warning' | 'alert' | 'unknown';
 
-// Over budget, measured against categorizedExpense and not against totalAmount.
-// budgetVariance is budgetAmount minus what was spent inside a live category, so
-// it is NEGATIVE when the budget was exceeded. Null is a month with no budget in
+// How far into the budget the month is, as the rate helpers/budgetStatus.ts
+// reads its threshold against. Derived here and not served: the overview
+// expense card publishes budgetAmount and categorizedExpense and no share
+// between them, and this is the one division over the two.
+//
+// null in the two cases the budget module also withholds it: no budget in force
+// (budgetAmount null, which also covers a category set spanning currencies) and
+// a budget of zero, which has no denominator to divide by. Neither is a reading
+// of 0% - one is an absent decision and the other is unmeasurable.
+const executionPercentage = (card: OverviewExpenseCard): number | null => {
+ if (!card.budgetAmount) return null;
+
+ return (card.categorizedExpense / card.budgetAmount) * 100;
+};
+
+// The three readings of a budget, on the app's own scale: at, near and over the
+// limit. BUDGET_NEAR_LIMIT_PERCENT is 75 and is a business rule the developer
+// fixed on 2026-08-17, not something derived from the model - which is exactly
+// why this card reads it from that file instead of choosing a number.
+//
+// The amber level is what the card could not say before: it had two readings,
+// inside and over, so a month at 96% of its budget looked the same as one at 3%.
+//
+// budgetVariance is budgetAmount minus what was spent inside a LIVE CATEGORY, so
+// it is negative when the budget was exceeded. Null is a month with no budget in
 // force anywhere, which is an absent decision and not a breach.
 const expenseSquare = (card: OverviewExpenseCard): SquareClass => {
  if (card.budgetVariance === null) return 'unknown';
- if (card.budgetVariance < 0) return 'alert';
+
+ const level = budgetSquareState(
+  executionPercentage(card),
+  card.budgetVariance < 0,
+ ) as SquareClass;
 
  // Spending that lost its category is not counted against the budget, so the
- // card can be inside its budget and still not know where the month went.
- return card.hasUncategorizedExpense ? 'warning' : '';
+ // card can be inside its budget and still not know where the month went. It
+ // only raises a reading that is otherwise quiet: a budget already over or near
+ // its limit keeps the louder of the two.
+ if (level === '' && card.hasUncategorizedExpense) return 'warning';
+
+ return level;
 };
 
 // The budget verdict in words, which is what the card was missing: it printed
 // the budget as a bare figure beside the spend and left the comparison to the
 // reader. budgetVariance is the comparison, already computed by the server.
-const budgetClause = (card: OverviewExpenseCard) => {
- if (card.budgetVariance === null) return null;
+// One decimal, which is the budget module's own precision for a share
+// (ListCategory.tsx and BudgetBigBoxResult.tsx both print toFixed(1)).
+const SHARE_DECIMALS = 1;
 
- return card.budgetVariance < 0
-  ? `over budget by ${money(card.currency, Math.abs(card.budgetVariance))}`
-  : `${money(card.currency, card.budgetVariance)} left of budget`;
+// The word is budgetRemainWord's, the same one the four budget screens print, so
+// the two modules cannot describe the same remainder with different verbs. It
+// carries the sign, which is why the amount beside it is an absolute value.
+//
+// The share is SPENT and it says so, because the amount in front of it is the
+// remainder: bare, the same parenthesis reads as 3.0% left, which is the
+// opposite figure. BudgetBigBoxResult solves it the other way round, by letting
+// the word before the parenthesis qualify it; here there are two candidates on
+// the line, so the parenthesis names itself.
+//
+// It is painted by budgetStatusLevel, from the same call the square at the head
+// of the line makes, so the number and the square cannot light differently for
+// one card. That is the rule ListCategory.tsx:320-329 already follows for its
+// own row.
+const budgetClause = (card: OverviewExpenseCard) => {
+ const word = budgetRemainWord(
+  card.budgetAmount,
+  card.categorizedExpense,
+  card.budgetVariance,
+ );
+
+ if (!word) return null;
+
+ const execution = executionPercentage(card);
+
+ const remainder = `budget: ${money(
+  card.currency,
+  Math.abs(card.budgetVariance ?? 0),
+ )} ${word}`;
+
+ // Withheld rather than printed as a dash: the amount beside it is a whole
+ // answer on its own, and a dash inside a parenthesis after it would read as a
+ // broken figure instead of an absent one.
+ if (execution === null) return remainder;
+
+ return (
+  <>
+   {remainder}{' '}
+   <span
+    className={`domainCard__share domainCard__share--${budgetStatusLevel(
+     execution,
+     card.budgetVariance !== null && card.budgetVariance < 0,
+    )}`}
+   >
+    ({execution.toFixed(SHARE_DECIMALS)}% spent)
+   </span>
+  </>
+ );
 };
 
 // How much of the month's spending the budget verdict above did NOT cover.
