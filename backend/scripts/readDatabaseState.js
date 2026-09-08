@@ -16,10 +16,27 @@
 import fs from 'fs';
 import path from 'path';
 import pc from 'picocolors';
-import { pool } from '../src/db/config/configDB.js';
-import { assertExpectedDatabase } from '../src/db/migrations/dbMigrationConfig.js';
+import pg from 'pg';
+import { pool as defaultPool } from '../src/db/config/configDB.js';
+import {
+ assertExpectedDatabase,
+ getDbConfig,
+} from '../src/db/migrations/dbMigrationConfig.js';
+
+// pg_constraint.confdeltype spelled out: a one-letter code is not a reading.
+const ON_DELETE = { a: 'NO ACTION', r: 'RESTRICT', c: 'CASCADE', n: 'SET NULL', d: 'SET DEFAULT' };
 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'src/db/migrations/sql_migrations');
+
+/**
+ * Same override runMigrations honours, for the same reason: a rehearsal copy
+ * lives on the same server under another name, and reading it must not require
+ * editing DATABASE_URI. Reading a database before migrating it is the whole
+ * point, so the two have to be able to reach the same place.
+ */
+function resolvePool() {
+ return process.env.DB_NAME ? new pg.Pool(getDbConfig()) : defaultPool;
+}
 
 /**
  * Compare the ledger against the files on disk. General on purpose: this is the
@@ -104,12 +121,79 @@ async function reportObjects(client) {
  );
 }
 
+/**
+ * The effect of 035, measured rather than assumed. It answers three questions a
+ * ledger row cannot: whether the backfill reached every account, whether any
+ * registry row has outlived its account, and where the referencing keys point.
+ *
+ * The key list is derived from pg_constraint rather than from the migration's
+ * own names, so it stays true if a later migration adds or moves one.
+ */
+async function reportRegistry(client) {
+ console.log(pc.cyan('\nAccount registry (035)'));
+
+ const {
+  rows: [present],
+ } = await client.query("SELECT to_regclass('public.account_registry') AS t");
+
+ if (present.t) {
+  await reportBackfill(client);
+ } else {
+  console.log(pc.yellow('  absent: 035 has not been applied here'));
+ }
+
+ const { rows: keys } = await client.query(
+  'SELECT c.conname, c.conrelid::regclass::text AS child,' +
+   ' c.confrelid::regclass::text AS parent, c.confdeltype AS on_delete' +
+   " FROM pg_constraint c WHERE c.contype = 'f'" +
+   '  AND c.confrelid::regclass::text IN' +
+   "   ('user_accounts', 'account_registry', 'category_budget_accounts')" +
+   ' ORDER BY parent, child, conname',
+ );
+
+ console.log(pc.cyan('\n  Foreign keys into the account identity'));
+ for (const k of keys) {
+  const action = ON_DELETE[k.on_delete] || k.on_delete;
+  console.log(`    ${k.parent.padEnd(24)} <- ${k.child}.${k.conname}  [${action}]`);
+ }
+}
+
+/**
+ * Backfill parity, split out because it can only be read once the table exists
+ * while the key report above is exactly what has to be read before it does.
+ */
+async function reportBackfill(client) {
+ const {
+  rows: [counts],
+ } = await client.query(
+  'SELECT (SELECT count(*) FROM user_accounts) AS accounts,' +
+   ' (SELECT count(*) FROM account_registry) AS registry,' +
+   ' (SELECT count(*) FROM account_registry r WHERE NOT EXISTS' +
+   '   (SELECT 1 FROM user_accounts ua WHERE ua.account_id = r.account_id)) AS closed',
+ );
+
+ // count(*) is bigint and node-postgres hands bigint back as a string, so a
+ // strict comparison against a number is false for every input.
+ const parity = Number(counts.accounts) === Number(counts.registry) - Number(counts.closed);
+
+ console.log(`  user_accounts        ${counts.accounts}`);
+ console.log(`  account_registry     ${counts.registry}`);
+ console.log(`  stamped, no account  ${counts.closed}`);
+ console.log(
+  parity
+   ? pc.green('  every live account has a registry row')
+   : pc.red('  MISMATCH: a live account has no registry row'),
+ );
+}
+
 async function main() {
+ const pool = resolvePool();
  const client = await pool.connect();
  try {
   await assertExpectedDatabase(client, 'db:state');
   await reportLedger(client);
   await reportObjects(client);
+  await reportRegistry(client);
  } finally {
   client.release();
   await pool.end();
