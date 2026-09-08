@@ -26,9 +26,16 @@ import {
 // peso and the Mexican peso all narrow to '$'.
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
-// Rendered when a figure did not arrive. Never a 0: a withheld delta is one the
-// server refused to invent, because no complete prior month existed.
+// Rendered when a FIGURE did not arrive - a cell in a row of figures, where a
+// dash is read as "not this one" against its neighbours. Never a 0: a withheld
+// delta is one the server refused to invent.
 const NO_FIGURE = '—';
+
+// Rendered when a whole CLAUSE is absent, which is a different thing. A dash
+// alone at the head of a sentence reads as a stray character rather than as a
+// missing value, and it has no neighbours to be read against - so the sentence
+// says why instead.
+const NO_PRIOR_MONTH = 'no prior month to compare';
 
 const money = (currency: string, value: number) =>
  currencyFormat(currency, value, formatNumberCountry);
@@ -52,7 +59,7 @@ const monthLabel = (month: string | null) => {
 // denominator. The arrow carries the direction so the sign does not have to be
 // read off the digits.
 const deltaLine = (delta: number | null, currency: string) => {
- if (delta === null) return NO_FIGURE;
+ if (delta === null) return NO_PRIOR_MONTH;
  if (delta === 0) return `no change vs prior month`;
 
  return `${delta > 0 ? '▲' : '▼'} ${money(currency, Math.abs(delta))} vs prior month`;
@@ -252,7 +259,7 @@ function DomainCards() {
     tier={pocketTier(pocket)}
     sub={
      pocket.delta === null
-      ? NO_FIGURE
+      ? NO_PRIOR_MONTH
       : `${pocket.delta >= 0 ? '▲' : '▼'} ${money(
          pocket.currency,
          Math.abs(pocket.delta),
