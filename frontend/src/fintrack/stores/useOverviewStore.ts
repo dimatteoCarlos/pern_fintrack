@@ -21,6 +21,7 @@ import { create } from 'zustand';
 import { getOverviewPage } from '../api/overviewApi.ts';
 import { onAccountChanged, onTransactionRecorded } from './transactionEvents.ts';
 import {
+ MonthlySnapshot,
  OverviewDomain,
  OverviewDomainCard,
  OverviewHero,
@@ -41,6 +42,10 @@ type OverviewState = {
  currentMonth: string | null;
  hero: OverviewHero | null;
  domainCards: Record<OverviewDomain, OverviewDomainCard> | null;
+ // The monthly widget's three movements, held as the server sent them. Kept
+ // whole rather than indexed by domain: the array IS the contract's shape, and
+ // an index built here would be a second place to keep in step with it.
+ monthlySnapshot: MonthlySnapshot[] | null;
  // What is in memory, keyed the way it was asked for. 'current' is the omitted
  // month, which is a different key from the current month spelled out.
  loadedMonth: string | null;
@@ -68,6 +73,7 @@ export const useOverviewStore = create<OverviewState>((set, get) => ({
  currentMonth: null,
  hero: null,
  domainCards: null,
+ monthlySnapshot: null,
  loadedMonth: null,
  requestedMonth: null,
  isLoading: false,
@@ -102,6 +108,7 @@ export const useOverviewStore = create<OverviewState>((set, get) => ({
     currentMonth: data.window.currentMonth,
     hero: data.hero,
     domainCards: data.domainCards,
+    monthlySnapshot: data.monthlySnapshot,
     loadedMonth: key,
     isLoading: false,
     error: null,

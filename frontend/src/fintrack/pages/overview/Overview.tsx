@@ -18,7 +18,11 @@ import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
 //ENDPOINTS
 import {
-  url_monthly_TotalAmount_ByType,
+  // Retired below, with the widget that was its only caller. MonthlyAverage.tsx
+  // reads the monthly snapshot off useOverviewStore now, so no frontend module
+  // requests this route any more. Commented and not deleted: the route and its
+  // service still exist, and this line is the record of who used to call them.
+  // url_monthly_TotalAmount_ByType,
   dashboardMovementTransactions,
 } from '../../../urlConfig.ts';
 
@@ -26,17 +30,19 @@ import {
 import {
   FinancialDataRespType,
   LastMovementRespType,
-  YearlyTotalsType,
+  // YearlyTotalsType,
 } from '../../types/responseApiTypes.ts';
 // import { CurrencyType } from '../../types/types.ts';
 
 //FUNCTIONS
 import { overviewFetchAll } from './overviewFetchAll.ts';
-import {
-  calculateMonthlyAverage,
-  ResultType,
-  // FinancialResultType,
-} from './CalculateMonthlyAverage.ts';
+// The browser-side average the widget used to run. The same four figures now
+// arrive computed in makeMonthlySnapshot.js, so nothing here calls it.
+// import {
+//   calculateMonthlyAverage,
+//   ResultType,
+//   // FinancialResultType,
+// } from './CalculateMonthlyAverage.ts';
 
 //---------------------------------
 export type CreateNewAccountPropType = {
@@ -63,8 +69,9 @@ type KPIEndpointType = {
 
 //type of state data to render
 type KPIDataStateType = {
-  MonthlyMovementKPI: ResultType | null;
-  YearlyTotals: YearlyTotalsType | null;
+  // Both moved to useOverviewStore with the widget that read them.
+  // MonthlyMovementKPI: ResultType | null;
+  // YearlyTotals: YearlyTotalsType | null;
   LastExpenseMovements: LastMovementType[] | null;
   LastDebtMovements: LastMovementType[] | null;
   LastIncomeMovements: LastMovementType[] | null;
@@ -74,11 +81,20 @@ type KPIDataStateType = {
 //-----------------------------------------
 //CONFIG of DATA TO BE FETCHED
 const overviewKPIendpoints: KPIEndpointType[] = [
-  {
-    key: 'MonthlyTotalAmountByType',
-    url: `${url_monthly_TotalAmount_ByType}?type=expense`,
-    type: {} as FinancialDataRespType,
-  },
+  // One request fewer on first paint. The three monthly averages, their month
+  // counts and the year to date are all in the /overview payload the layout
+  // already fetched, so asking a second route for the same figures both costs a
+  // round trip and lets the two disagree: this one was pinned to ?type=expense
+  // and cut against its own window, not against the month the page is showing.
+  //
+  // The key stays in ApiRespDataType above so overviewFetchAll keeps its type
+  // guard and its five other branches untouched. Nothing reads the result that
+  // is now absent from the object it returns.
+  // {
+  //   key: 'MonthlyTotalAmountByType',
+  //   url: `${url_monthly_TotalAmount_ByType}?type=expense`,
+  //   type: {} as FinancialDataRespType,
+  // },
   {
     key: 'MovementExpenseTransactions',
     url: `${dashboardMovementTransactions}?start=&end=&movement=expense&transaction_type=&account_type=category_budget`,
@@ -116,8 +132,8 @@ function Overview() {
   // console.log({ originRoute });
   //-- STATES----
   const [kpiData, setKpiData] = useState<KPIDataStateType>({
-    MonthlyMovementKPI: null,
-    YearlyTotals: null,
+    // MonthlyMovementKPI: null,
+    // YearlyTotals: null,
     LastExpenseMovements: null,
     LastDebtMovements: null,
     LastIncomeMovements: null,
@@ -152,21 +168,23 @@ function Overview() {
           throw new Error('No data received from API');
         }
         //----------------
-        const monthlyAmounts =
-          result.MonthlyTotalAmountByType.status === 'success'
-            ? result.MonthlyTotalAmountByType?.data?.data.monthlyAmounts
-            : null;
-
-        const totalAndMonthlyAmount = monthlyAmounts
-          ? calculateMonthlyAverage(monthlyAmounts)
-          : null;
-
-        // Same payload, no extra request: the year's totals ride beside the
-        // months they were computed from.
-        const yearlyTotals =
-          result.MonthlyTotalAmountByType.status === 'success'
-            ? (result.MonthlyTotalAmountByType?.data?.data.yearlyTotals ?? null)
-            : null;
+        // The average, its month count and the year to date are served by
+        // makeMonthlySnapshot.js and read from the store by the widget. Kept
+        // here commented because these three lines are the only statement of
+        // what the browser used to derive and from which endpoint.
+        // const monthlyAmounts =
+        //   result.MonthlyTotalAmountByType.status === 'success'
+        //     ? result.MonthlyTotalAmountByType?.data?.data.monthlyAmounts
+        //     : null;
+        //
+        // const totalAndMonthlyAmount = monthlyAmounts
+        //   ? calculateMonthlyAverage(monthlyAmounts)
+        //   : null;
+        //
+        // const yearlyTotals =
+        //   result.MonthlyTotalAmountByType.status === 'success'
+        //     ? (result.MonthlyTotalAmountByType?.data?.data.yearlyTotals ?? null)
+        //     : null;
 
         //-------------------
         const movementExpenseTransactionsData =
@@ -325,8 +343,8 @@ function Overview() {
           : null;
         //-------------
         setKpiData({
-          MonthlyMovementKPI: totalAndMonthlyAmount,
-          YearlyTotals: yearlyTotals,
+          // MonthlyMovementKPI: totalAndMonthlyAmount,
+          // YearlyTotals: yearlyTotals,
           LastExpenseMovements: movementExpenseTransactions,
           LastDebtMovements: movementDebtTransactions,
           LastIncomeMovements: movementIncomeTransactions,
@@ -374,10 +392,11 @@ function Overview() {
           </div>
         )}
 
-        <MonthlyAverage
-          data={kpiData.MonthlyMovementKPI}
-          yearlyTotals={kpiData.YearlyTotals}
-        />
+        {/* No props: the widget subscribes to useOverviewStore, which the
+            layout above it has already filled for the month on screen. Passing
+            them from here would have made this page fetch a month of its own,
+            and the two months would drift the moment the picker moved. */}
+        <MonthlyAverage />
 
         {
           <OpenAddEditBtn
