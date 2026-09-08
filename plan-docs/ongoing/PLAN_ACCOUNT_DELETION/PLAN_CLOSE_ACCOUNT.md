@@ -139,13 +139,61 @@ be instantiated with `CLOSE` and send a request carrying no reason.
 
 ### None of it has been exercised
 
-No database has `035_create_account_registry.sql` applied. `fintrack_dev` was
-measured on 2026-09-08 by the migration session as carrying migrations 031
-through 034 and not 035 — a read this session did not take and does not repeat
-as its own. Until that file is applied, the four transaction keys, the pocket
-allocation key and the budget month key still restrict into `user_accounts` and
-the delete is refused. **The close screen surfaces that refusal rather than
-hiding it**, which is the intended behaviour and not a defect to patch.
+**The schema is applied and the operation is still unproven.** The migration
+session applied `035_create_account_registry.sql` to `fintrack_dev` and to
+`fintrack_prod_rehearsal` on 2026-09-08, production untouched — their
+measurement, not this session's. So the sentence this paragraph carried until
+that day, that no database had it, is retired.
+
+What has never happened is a close. `scripts/verifyClose.js` reached
+`fintrack_dev` on 2026-09-08 and stopped before exercising anything, for a
+reason worth recording: **no account of a closing type sits at zero there**,
+which is the ordinary state of a database in use — an account at zero is an
+account nobody uses. The probe now creates its own subject inside the
+transaction rather than skipping, and a skip that reported nothing and looked
+like a pass is what it did before.
+
+**The probe refuses any database it cannot confirm is a named local one.** The
+target is decided entirely by `DATABASE_URI`, and `dbEnvironmentConfig.js`
+gives `development` and `production` byte-identical bodies, so no configuration
+the script can read tells a local copy from the live database. It asks the
+server instead and requires all three: the database is the one named with
+`--expect`, the server is on a loopback address, the connection is
+unencrypted. Three arms rather than a name check, because a managed database
+can be called anything.
+
+### Two things measured elsewhere that the close depends on
+
+Both are the migration session's measurements of 2026-09-08, recorded here as
+preconditions rather than as work.
+
+- **A second run of the production alignment undoes three of `035`'s seven
+  repoints.** `transactions_account_id_fkey`,
+  `transactions_source_account_id_fkey` and
+  `transactions_destination_account_id_fkey` return to `user_accounts`, and
+  nothing in the output says so. That state is worse for this module than no
+  `035` at all, because it looks applied: `account_registry` exists, the
+  ledger records the migration, the backfill rows are there, and the delete
+  this module performs would be refused by `RESTRICT` on three keys while
+  every signal the code can read says the repoint happened. `db:align` now
+  refuses when the ledger already carries the alignment row.
+- **`fintrack_dev` is not a model of production's schema.**
+  `budget_policies`, `budget_policy_allocations` and `budget_frequency_types`
+  exist there and on no production-shaped database, because it ran migration
+  `010` before the commit that removed their `CREATE TABLE` statements. The
+  close deletes `category_budget_accounts` rows, so **"verified on
+  `fintrack_dev`" is not "verified against production's schema" for anything
+  in the budget domain.**
+
+### The Overview sites were taken by the Overview session
+
+On 2026-09-08 the five statements that build Overview's account-id arrays were
+moved onto `account_identity`, the shared builder, and two statements that
+reached an account through an inner join — the transaction row shape and the
+contribution history — were made outer. Their measurement: the id sets are
+identical to the statements they replace, and no closed account exists on
+`fintrack_dev` yet, so it is a no-op there today. The handoff recorded in this
+section on the day it was written is therefore closed.
 
 ### Ownership moved on 2026-09-08
 
