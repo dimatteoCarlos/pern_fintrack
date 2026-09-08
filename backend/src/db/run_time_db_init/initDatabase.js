@@ -33,6 +33,7 @@ import {
   ensureAccountClosureCatalog,
   ensureAccountTypeRequired,
   ensureAccountClosedAt,
+  ensureAccountRegistry,
   ensureCategoryBudgetCurrency,
   ensureCategoryBudgetFxColumns,
   recreateExchangeRatesTable,
@@ -256,6 +257,14 @@ export async function initializeDatabase() {
     // not matter - it adds a column and touches no catalog - but it stays here
     // so both user_accounts schema steps read as one block.
     await ensureAccountClosedAt(client);
+
+    // Runtime counterpart of migrations 035 and 036. The position is a
+    // dependency and not a preference: it repoints keys on transactions,
+    // debtor_accounts, pocket_allocations and budget_monthly_allocations, and
+    // the last two are created by ensurePocketTables() and ensureBudgetTables()
+    // above. Called before either of them it would find no table to alter and
+    // leave the registry half wired.
+    await ensureAccountRegistry(client);
 
     // Runtime counterpart of migration 011, for the databases this file does
     // reach: a local or self-hosted one that has never had the runner pointed

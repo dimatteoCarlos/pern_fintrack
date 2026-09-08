@@ -802,36 +802,284 @@ export async function ensureAccountClosedAt(client = pool) {
  console.log(pc.green('user_accounts.closed_at added.'));
 }
 
-/*
- * NO COUNTERPART FOR MIGRATION 035, DELIBERATELY. Read this before writing one.
+/**
+ * Create account_registry, the trigger that populates it, the backfill and the
+ * seven repointed foreign keys, plus the close_reason cap of migration 036.
  *
- * The statement to hold onto is not "035 was forgotten here". It is that this
- * path does not yet represent the target state 031-035, and 035 stays pending
- * until its DDL has been applied to a database and the resulting constraints
- * have been read back. Ruled by the owner on 2026-09-08.
+ * The runtime counterpart of migration 035, written on 2026-09-08 after the
+ * condition the previous note in this place stated was met: 035 applied at
+ * least once, its constraints read back, the counterpart derived from what was
+ * applied rather than from the SQL. It was derived from
+ * fintrack_prod_rehearsal_full on 2026-09-08 — pg_get_constraintdef,
+ * pg_get_triggerdef, pg_get_functiondef and information_schema.columns — and
+ * not from 035_create_account_registry.sql. Migration 010 is why: it was edited
+ * in place after it had been applied, ensureBudgetTables() kept the old shape,
+ * and fintrack_dev still holds three tables the current file does not create.
  *
- * Why waiting is the safe side. 035_create_account_registry.sql creates
- * account_registry, the trigger that populates it, a backfill and seven
- * repointed foreign keys, and it has never been run. Writing the counterpart
- * from the file rather than from an applied schema puts the same unverified DDL
- * in two build paths, and if 035 changes under review the copy here diverges in
- * silence. That is migration 010: edited in place after it had been applied,
- * with ensureBudgetTables() left carrying the old shape, and fintrack_dev still
- * holds three tables the current file does not create.
+ * WHY IT EXISTS AT ALL. Five statements in overviewAccountRepository.js — at
+ * 44, 88, 191, 221 and 255 — are built on accountIdentityCte, whose FROM clause
+ * is account_registry. They resolve the income account ids, the expense account
+ * ids, the profit-and-loss account ids, the ids of one requested type, and the
+ * oldest account date, and every card on the Overview page is cut against one
+ * of them. On a database built by this path and never met by the runner the
+ * table is absent, so the page returns an error rather than degrading. Measured
+ * by the Overview session on 2026-09-08.
  *
- * Why a partial counterpart is worse than none. Four of the seven keys sit on
- * transactions, the rest on debtor_accounts, budget_monthly_allocations and
- * pocket_allocations — all four created by the mainTables DDL above, all four
- * CREATE TABLE IF NOT EXISTS, so on a virgin database they are born pointing at
- * user_accounts. Creating the registry without repointing them leaves a table
- * nothing references, while the code reads its presence as proof the repoint
- * happened. This path takes all four pieces of 035 or none of them.
+ * ALL FOUR PIECES OR NONE, AND HERE THAT IS ENFORCED RATHER THAN INTENDED.
+ * The whole function runs in one transaction. A counterpart that created the
+ * table without repointing the keys would give a registry populated for new
+ * accounts and empty for the closed ones the CTE exists to recover, which reads
+ * as a working page returning silently short history — worse than the error it
+ * replaced.
  *
- * The condition for writing it, checkable rather than a later judgement call:
- * 035 applied at least once, its constraints read back and matched against the
- * design, the counterpart then derived from what was applied, and the result
- * tested on a virgin build.
+ * A KEY WHOSE COLUMN OR TABLE IS ABSENT IS SKIPPED AND REPORTED, not raised.
+ * Both cases belong to migrations this function does not own — 010 for
+ * budget_monthly_allocations, 022 for transactions.opening_for_account_id — and
+ * failing the boot over them would take the whole registry down for a column
+ * somebody else owes. The warning is the record that the registry is wired
+ * short on that database.
+ *
+ * WHAT IT DOES NOT REACH. Production, like every other ensure* call in this
+ * file: the deployed backend does not run the boot DDL. The population this
+ * serves is a developer creating a fresh local database, or a self-hosted one
+ * the runner has never been pointed at.
+ *
+ * @param {object} client - Database client (pool or transaction)
  */
+export async function ensureAccountRegistry(client = pool) {
+ // The columns are the applied ones. account_name and category_name are
+ // VARCHAR(50) and subcategory VARCHAR(25) because that is what 035 created,
+ // mirroring user_accounts — not the VARCHAR(255) that 013's backup table uses
+ // for a column of the same name.
+ const CREATE_REGISTRY = `
+  CREATE TABLE IF NOT EXISTS account_registry (
+   account_id INTEGER PRIMARY KEY,
+   user_id UUID NOT NULL
+    REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+   account_name VARCHAR(50),
+   account_type_id INTEGER
+    REFERENCES account_types(account_type_id) ON DELETE SET NULL ON UPDATE CASCADE,
+   currency_id INTEGER
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   account_starting_amount NUMERIC(15, 2),
+   account_start_date TIMESTAMPTZ,
+   account_created_at TIMESTAMPTZ,
+   category_name VARCHAR(50),
+   subcategory VARCHAR(25),
+   category_nature_type_id INTEGER
+    REFERENCES category_nature_types(category_nature_type_id),
+   closed_at TIMESTAMPTZ,
+   closed_by UUID
+    REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE,
+   close_reason TEXT,
+   CONSTRAINT chk_close_reason_accompanies_closure CHECK (
+    (closed_at IS NULL) = (close_reason IS NULL)
+    AND (close_reason IS NULL OR close_reason ~ '[^[:space:]]')
+   )
+  )
+ `;
+
+ // The trigger body carries no ON CONFLICT and that is deliberate: a reissued
+ // account id must fail rather than inherit another account's closure stamp.
+ // The reasoning is in 035 section 2 and in the applied function's own comment;
+ // it is not repeated here because a copy of it would drift.
+ const CREATE_TRIGGER_FN = `
+  CREATE OR REPLACE FUNCTION fn_register_account_identity()
+  RETURNS TRIGGER AS $fn$
+  BEGIN
+   INSERT INTO account_registry (account_id, user_id)
+   VALUES (NEW.account_id, NEW.user_id);
+   RETURN NEW;
+  END;
+  $fn$ LANGUAGE plpgsql
+ `;
+
+ // Table, column, and nothing else: the constraint NAME is looked up rather
+ // than assumed, the same reason ensureAccountTypeRequired() gives — Postgres
+ // generates it, and a hardcoded one fails silently where it differs.
+ //
+ // budget_monthly_allocations is the entry that makes a name-based sweep wrong.
+ // In this path its account_id points at category_budget_accounts, declared at
+ // the ensureBudgetTables() DDL above, not at user_accounts. A repoint keyed on
+ // "whatever references user_accounts" would skip it and leave a closed
+ // category's past months tied to the extension row that CLOSE deletes.
+ const REPOINTED_KEYS = [
+  ['transactions', 'account_id'],
+  ['transactions', 'source_account_id'],
+  ['transactions', 'destination_account_id'],
+  ['transactions', 'opening_for_account_id'],
+  ['pocket_allocations', 'source_account_id'],
+  ['debtor_accounts', 'selected_account_id'],
+  ['budget_monthly_allocations', 'account_id'],
+ ];
+
+ await client.query('BEGIN');
+
+ try {
+  const {
+   rows: [{ registry }],
+  } = await client.query(
+   "SELECT to_regclass('public.account_registry') IS NOT NULL AS registry",
+  );
+
+  if (!registry) {
+   await client.query(CREATE_REGISTRY);
+   console.log(pc.green('account_registry created.'));
+  }
+
+  // The ownership filter of every historical read, and the partial index the
+  // closed-account reads use. IF NOT EXISTS on both, so this costs a catalog
+  // lookup on a boot where they are already there.
+  await client.query(`
+   CREATE INDEX IF NOT EXISTS idx_account_registry_user_id
+    ON account_registry (user_id)
+  `);
+  await client.query(`
+   CREATE INDEX IF NOT EXISTS idx_account_registry_closed
+    ON account_registry (user_id, closed_at)
+    WHERE closed_at IS NOT NULL
+  `);
+
+  // Migration 036's cap. Added here rather than in a separate ensure* call
+  // because a constraint on a table this function creates has nowhere else to
+  // live: it would run before the table existed on a virgin build.
+  const {
+   rows: [{ capped }],
+  } = await client.query(`
+   SELECT EXISTS (
+    SELECT 1 FROM pg_constraint
+     WHERE conrelid = 'account_registry'::regclass
+       AND conname = 'chk_close_reason_length'
+   ) AS capped
+  `);
+
+  if (!capped) {
+   await client.query(`
+    ALTER TABLE account_registry
+     ADD CONSTRAINT chk_close_reason_length
+     CHECK (close_reason IS NULL OR length(close_reason) <= 255)
+   `);
+   console.log(pc.green('account_registry.close_reason capped at 255.'));
+  }
+
+  await client.query(CREATE_TRIGGER_FN);
+  await client.query(
+   'DROP TRIGGER IF EXISTS trg_register_account_identity ON user_accounts',
+  );
+  await client.query(`
+   CREATE TRIGGER trg_register_account_identity
+    AFTER INSERT ON user_accounts
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_register_account_identity()
+  `);
+
+  // THE BACKFILL PRECEDES THE REPOINTS AND THE ORDER IS NOT COSMETIC. Every key
+  // below validates against this table as it is created, so a repoint taken
+  // first fails on the first surviving transaction row.
+  //
+  // One row per live account carrying the id and the owner and nulls everywhere
+  // else: a live account's values are read from user_accounts, and a stamp here
+  // would make a second writer for the same fact.
+  const backfilled = await client.query(`
+   INSERT INTO account_registry (account_id, user_id)
+   SELECT ua.account_id, ua.user_id FROM user_accounts ua
+   ON CONFLICT (account_id) DO NOTHING
+  `);
+
+  if (backfilled.rowCount > 0) {
+   console.log(
+    pc.green(`account_registry backfilled ${backfilled.rowCount} account(s).`),
+   );
+  }
+
+  for (const [table, column] of REPOINTED_KEYS) {
+   // THE COLUMN IS CHECKED AND NOT ASSUMED, and a real database taught this.
+   // transactions.opening_for_account_id is added by 022, which has no boot
+   // counterpart: the column is declared in the mainTables DDL, that DDL is
+   // CREATE TABLE IF NOT EXISTS, so a database created before 022 and never met
+   // by the runner does not have it. Measured 2026-09-08 on a copy of the
+   // production dump, where this loop raised 42703 and rolled the whole
+   // function back. Skipping the key is right; failing the boot over a column
+   // another migration owns is not.
+   const {
+    rows: [{ present }],
+   } = await client.query(
+    `SELECT EXISTS (
+      SELECT 1 FROM information_schema.columns
+       WHERE table_name = $1 AND column_name = $2
+     ) AS present`,
+    [table, column],
+   );
+
+   if (!present) {
+    // information_schema.columns returns nothing for a missing table and for a
+    // missing column alike, and the two send a reader to different files, so
+    // the message says which. On the 2026-08-21 production dump this reported
+    // pocket_allocations absent as a table (020) and opening_for_account_id
+    // absent as a column (022).
+    const {
+     rows: [{ table_present }],
+    } = await client.query(
+     'SELECT to_regclass($1) IS NOT NULL AS table_present',
+     [`public.${table}`],
+    );
+
+    console.warn(
+     pc.yellow(
+      table_present
+       ? `${table}.${column} is absent; its key was not repointed at ` +
+          'account_registry. The column belongs to another migration.'
+       : `${table} is absent; its ${column} key was not repointed at ` +
+          'account_registry. The table belongs to another migration.',
+     ),
+    );
+    continue;
+   }
+
+   const { rows } = await client.query(
+    `SELECT con.conname,
+            con.confrelid::regclass::text AS references_table
+       FROM pg_constraint con
+       JOIN pg_class rel ON rel.oid = con.conrelid
+       JOIN pg_attribute att
+         ON att.attrelid = rel.oid AND att.attnum = ANY (con.conkey)
+      WHERE rel.relname = $1
+        AND con.contype = 'f'
+        AND att.attname = $2`,
+    [table, column],
+   );
+
+   const existing = rows[0];
+
+   // Already repointed: skip the DROP and ADD, which would otherwise take an
+   // ACCESS EXCLUSIVE lock on transactions and revalidate every row of it on
+   // every boot.
+   if (existing && existing.references_table === 'account_registry') continue;
+
+   if (existing) {
+    await client.query(
+     `ALTER TABLE ${table} DROP CONSTRAINT "${existing.conname}"`,
+    );
+   }
+
+   await client.query(`
+    ALTER TABLE ${table}
+     ADD CONSTRAINT ${table}_${column}_fkey
+     FOREIGN KEY (${column}) REFERENCES account_registry (account_id)
+     ON DELETE RESTRICT ON UPDATE CASCADE
+   `);
+
+   console.log(
+    pc.green(`${table}.${column} now references account_registry.`),
+   );
+  }
+
+  await client.query('COMMIT');
+ } catch (error) {
+  await client.query('ROLLBACK');
+  throw error;
+ }
+}
 
 /**
  * Add the FX audit columns of migration 014 to category_budget_accounts.
