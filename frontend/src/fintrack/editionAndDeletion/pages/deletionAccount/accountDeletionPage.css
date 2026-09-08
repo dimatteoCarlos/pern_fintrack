@@ -233,6 +233,27 @@
   transform: translateY(0);
 }
 
+/* CLOSE: the feedback-warning triad, which places it exactly where it sits in
+   cost - between SOFT's reversible deactivation and HARD's erasure. The
+   account row goes and the history stays, so neither info nor error is
+   honest for it. */
+.deletion-method-button--close {
+  border-color: var(--color-feedback-warning-border);
+  color: var(--color-feedback-warning-content);
+}
+
+.deletion-method-button--close:hover {
+  background-color: var(--color-feedback-warning-surface);
+  border-color: var(--color-feedback-warning-content);
+  transform: translateY(-1px);
+}
+
+.deletion-method-button--close:active {
+  background-color: var(--color-feedback-warning-surface);
+  border-color: var(--color-feedback-warning-content);
+  transform: translateY(0);
+}
+
 /* HARD: the feedback-error triad, the same reasoning as SOFT above but for
    the destructive method. */
 .deletion-method-button--hard {
@@ -258,6 +279,7 @@
   }
 
   .deletion-method-button--soft:hover,
+  .deletion-method-button--close:hover,
   .deletion-method-button--hard:hover {
     transform: none;
   }

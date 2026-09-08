@@ -238,6 +238,16 @@ export const url_account_delete = (targetAccountId: string | number) =>
   `${BASE_URL_APP}account/delete/${targetAccountId}`;
 
 // ===================================
+// 🎯 GET CLOSE PREVIEW
+// Endpoint: GET /fintrack/account/delete/close_preview/:targetAccountId
+//
+// Three segments, which is what keeps it from being swallowed by the
+// single-segment '/:accountId' route declared above it in accountRoutes.js.
+// ===================================
+export const url_account_close_preview = (targetAccountId: string | number) =>
+  `${BASE_URL_APP}account/delete/close_preview/${targetAccountId}`;
+
+// ===================================
 // 🌐 GET FX CURRENCY RATES 
 // ===================================
 export const url_currency_rates = BASE_URL_APP + 'currency/rates';

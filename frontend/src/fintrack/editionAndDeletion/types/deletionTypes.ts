@@ -136,6 +136,74 @@ export type StandardDeletionMethodType =
   | typeof DELETION_TYPE_SOFT
   | typeof DELETION_TYPE_HARD;
 
+// CLOSE, alongside the three above rather than replacing any of them
+// (accountDeleteController.js:27 declares the same literal server-side).
+//
+// It is NOT a StandardDeletionMethodType and must not be added to that union:
+// SOFT and HARD read their method from the query string and carry no required
+// body, while CLOSE requires closeReason in the body. Widening the union would
+// let useStandardAccountDeletion be instantiated with CLOSE and send a request
+// the service refuses with 400.
+export const DELETION_TYPE_CLOSE = 'CLOSE';
+
+// What the DELETE body must carry for CLOSE. closeReason is mandatory, and the
+// schema is what makes it so rather than the screen: migration 035's
+// chk_close_reason_accompanies_closure refuses a closure stamp with no reason
+// and refuses one made only of whitespace, so the service raises 400 before it
+// takes its lock.
+export type CloseExecutionPayloadType = {
+  deletionType: typeof DELETION_TYPE_CLOSE;
+  closeReason: string;
+};
+
+// The identity half of GET /account/delete/close_preview/:targetAccountId.
+//
+// residual is TEXT, not a number, and stays text through the whole screen: the
+// server sends the balance as the driver handed it over so nothing rounds it
+// in transit. Parse it only to compare against zero, never to render.
+export type ClosePreviewAccountType = {
+  accountId: number;
+  accountName: string;
+  accountTypeName: string;
+  currencyCode: string;
+  residual: string;
+};
+
+// The full preview response. destinations and destinationCount are still in
+// the payload and always answer empty: they belonged to the TRANSFER
+// settlement, retired 2026-09-08, and the keys were kept rather than removed
+// so a screen deployed against the older backend reads an empty list instead
+// of undefined. Nothing here should render them.
+export type ClosePreviewResponseType = {
+  status: number;
+  message: string;
+  data: {
+    targetAccountId: number;
+    targetAccount: ClosePreviewAccountType;
+    destinations: never[];
+    destinationCount: number;
+  };
+};
+
+// What the close returns. Distinct from StandardDeletionSuccessDataType
+// because the fields differ: a close reports what it gave back before the row
+// went away, which SOFT and HARD have no equivalent of.
+export type CloseSuccessDataType = {
+  deletedAccountId: number | string;
+  closeReason: string;
+  closingBalance: string;
+  registryClosedAt: string;
+  releasedPockets: { pocketId: number | string; amount: number | string }[];
+  budgetTerminatedAt: string | null;
+  extensionRowsDeleted: number;
+};
+
+export type CloseDeletionResponseType = {
+  status: number;
+  message: string;
+  data: CloseSuccessDataType;
+};
+
 // Payload for the SOFT/HARD execution call. The backend does not require a
 // body for either (the method comes from the query string), but the
 // discriminant is carried anyway so the request self-documents at the type
