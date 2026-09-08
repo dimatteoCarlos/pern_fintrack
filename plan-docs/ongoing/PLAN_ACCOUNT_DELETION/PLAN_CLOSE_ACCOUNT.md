@@ -3047,7 +3047,7 @@ removes. The two agree **by construction, not by a rule anything enforces**.
 ### 12.2 Rows that are not `status = 'complete'` are destroyed unreversed
 
 The report's CTE filters `AND tr.status='complete'`
-(`getAnnulmentImpactReport.js:53`, whose own trailing comment reads "no effect
+(`getAnnulmentImpactReport.js:52`, whose own trailing comment reads "no effect
 so far"). The erasure has no such filter:
 
 ```
@@ -3057,10 +3057,20 @@ so far"). The erasure has no such filter:
 ```
 (`eraseAccountTail.js:105-107`)
 
-- **Latent, not live.** `003_transactions.sql:56` declares `status TEXT NOT
-  NULL` with no default and no CHECK, and a sweep of `backend/src` finds
-  `status: 'complete'` as the only value any writer sets. Nothing else is
-  storable today because nothing else is written.
+- **Latent, not live, and measured rather than argued.** `003_transactions.sql:56`
+  declares `status TEXT NOT NULL` with no default and no CHECK, and
+  `createTables.js:188` declares the same column the same way, so a boot-built
+  database is identical here and the sweep closes on both build paths. The
+  writers are seven, not the five first relayed: `transactionController.js:827`
+  and `:868`, `recordAnnulmentTransaction.js:151` and `:187`,
+  `recordClosureSettlement.js:187` and `:216`, and
+  `prepareTransactionOption.js:23`. All seven write `'complete'`, so the count
+  changes and the conclusion does not.
+- **No other value has ever existed.** The migration session queried the
+  distinct values across four databases on 2026-09-08 and found `'complete'`
+  alone: 785 rows on `fintrack_prod_data`, the untouched 2026-08-21 dump, 780 on
+  each rehearsal copy, 139 on `fintrack_dev`. That is stronger than "none exists
+  today"; it says the column has never carried a second value.
 - **What makes it live.** The first second status — a scheduled or pending row,
   which is what the backdating work introduces — turns the asymmetry into a row
   that is skipped by the arithmetic and removed by the erasure in the same
@@ -3068,16 +3078,22 @@ so far"). The erasure has no such filter:
 - **The fix is one predicate in one statement**, and it belongs with whoever
   adds the second status, not here: either the erasure filters the same way, or
   the report stops filtering.
+- **A CHECK constraint pinning the column was deliberately NOT added.** It would
+  make the hazard impossible to introduce silently, because a second status would
+  then require a migration and that is the moment someone reads the erasure
+  filter - but it pre-empts a schema decision that belongs to whoever designs the
+  scheduled or pending row. The finding stays a precondition on a future
+  migration rather than becoming a constraint today.
 
 ### 12.3 The deleted account's name survives permanently in the rows the reversal itself wrote
 
 `eraseAccountTail.js:48-63` nulls the counterparty keys and rewrites
 descriptions on rows where the target is the source or the destination. The
 reversal's own rows are not in that population: `recordAnnulmentTransaction.js`
-sets `account_id` to the affected account (`:153`) and to the compensation
-account (`:189`), and both key columns to those same two (`:145-146`), so the
-target appears in neither key column. Its name appears only inside the
-description text, built at `:85-86`.
+sets `account_id` to the affected account (`:154`) and to the compensation
+account (`:190`), and both key columns to those same two (`:155` and `:157`,
+`:191` and `:193`), so the target appears in neither key column. Its name
+appears only inside the description text, built at `:83-86`.
 
 - **Consequence.** Every reversal writes rows naming an account that no longer
   exists, and the erasure that runs seconds later cannot reach them. The
@@ -3103,6 +3119,33 @@ delete path. But `REPLACE` has no word boundary and no anchor.
   account's name and inside the fixed prose the description builders emit.
 - **Short and generic names are the whole risk**, and account names are
   unconstrained in length and content.
+
+**Narrowed by the Overview session on 2026-09-08, verified here.** The exposure
+to Overview's five prefix predicates is real but far narrower than "sits on
+rewritable text" states, and the narrowing is worth having because it changes
+which fix is the right one.
+
+- **The five predicates read a literal, not an account name.** They are
+  `overviewInvestmentRepository.js:162` and `:166`,
+  `overviewMonthlyRepository.js:162`, `overviewTransactionRepository.js:102` and
+  `:114`, and every one of them matches the constant
+  `RTA_ANNULMENT_TARGET_PREFIX` - `'RTA Annulment Target('` at
+  `recordAnnulmentTransaction.js:53` - followed by a trailing `%`, so it reads
+  the opening of the description and nothing else. `:166` is the positive
+  `LIKE`; the other four are `NOT LIKE`.
+- **A rewrite reaches them only when the deleted account's name is a substring
+  of that literal** - an account called `Target`, or `An`, or a single letter.
+  Any other name is replaced further along the description, which no predicate
+  reads.
+- **And only on a second deletion.** The first deletion's own rows are outside
+  both UPDATEs, as 12.3 states. But a row written by deleting A carries the
+  affected account B in a key column, so deleting B later does match it -
+  specifically the compensation account's leg, since the affected account's own
+  leg is excluded by `AND account_id <> $1`.
+- **A word boundary would not fix it**, because the collision is inside a
+  literal rather than at a word edge. The durable fix is to stop keying the
+  reversal on description text at all - a column on the row saying it is a
+  reversal - which is a decision for the owner, alongside 12.10.
 
 ### 12.5 Pocket allocations leave with the account, and the constraint that looks like it prevents that does not
 
@@ -3159,7 +3202,7 @@ to zero.
 
 ### 12.8 Self-referential opening rows are excluded and then destroyed
 
-`getAnnulmentImpactReport.js:52` excludes them with `tr.destination_account_id
+`getAnnulmentImpactReport.js:51` excludes them with `tr.destination_account_id
 IS DISTINCT FROM tr.source_account_id`, and `eraseAccountTail.js:105` destroys
 them with everything else the account owns.
 
