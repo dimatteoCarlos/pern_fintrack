@@ -149,9 +149,11 @@
  transition: background-color var(--motion-fast), color var(--motion-fast);
 }
 
+/* Creme fill with the content colour paired to it, the same inversion the
+   scroll-jump button and the transaction rows take on this surface. */
 .accounting__openAccount:hover {
- background-color: var(--color-surface-raised);
- color: var(--color-content-on-dark);
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
 }
 
 .accounting__openAccount:focus-visible {
@@ -159,8 +161,45 @@
  outline-offset: var(--border-width-thick);
 }
 
+/* Darker than the hover fill, so a press reads as a press. */
 .accounting__openAccount:active {
- background-color: var(--color-surface-sunken);
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+/* The action in words, under the mark. Not the shared Tooltip component: that
+   one draws its tip ABOVE the trigger, and this control sits in the pinned head
+   at the top of the page, so the tip would open off screen.
+
+   Creme with dark text and a hairline of the same dark, which is the palette
+   that component uses. The hairline is what keeps the tip readable as its own
+   shape against the creme fill the button takes on the very same hover.
+
+   Shown on :focus-visible as well, so the tip exists for a keyboard. The
+   accessible name is on aria-label, so this pseudo-element carries no
+   information that is only here. */
+.accounting__openAccount::after {
+ content: attr(data-tip);
+ position: absolute;
+ top: calc(100% + var(--space-1));
+ right: 0;
+ z-index: var(--z-dropdown);
+ padding: var(--space-1) var(--space-2);
+ border: var(--border-width-thin) solid var(--color-accent-content);
+ border-radius: var(--radius-xs);
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-bold);
+ white-space: nowrap;
+ opacity: 0;
+ pointer-events: none;
+ transition: opacity var(--motion-fast);
+}
+
+.accounting__openAccount:hover::after,
+.accounting__openAccount:focus-visible::after {
+ opacity: 1;
 }
 
 /* Sized off the spacing scale, like the empty state's copy of the same drawing:
@@ -760,6 +799,7 @@ button {
  .accounting__scrollJump-glyph,
  .accounting__header--icon,
  .accounting__openAccount,
+ .accounting__openAccount::after,
  .accountingSearch,
  .accountingSearch__clear,
  .account-group__toggle,
