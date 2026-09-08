@@ -803,6 +803,146 @@ export async function ensureAccountClosedAt(client = pool) {
 }
 
 /**
+ * Add transactions.opening_for_account_id, mark the row that opens each
+ * account, and enforce that an account is opened once.
+ *
+ * The runtime counterpart of migration 022, written on 2026-09-08 after
+ * ensureAccountRegistry() below hit its absence: a first run against a copy of
+ * the 2026-08-21 production dump raised 42703 building a foreign key on a
+ * column no boot path ever adds. The column is declared in the mainTables DDL
+ * above, that DDL is CREATE TABLE IF NOT EXISTS, and the guard that makes it
+ * safe to re-run is the same guard that makes it unable to alter anything.
+ *
+ * WHY IT MATTERS BEYOND THE REGISTRY. Two live predicates dereference the
+ * column — overviewBalanceRepository.js:219 and derivedBalance.js:86 — and
+ * derivedBalance is imported by twenty files under backend/src, among them
+ * dashboardController.js, getAccountController.js, transactionController.js,
+ * getClosePreview.js and accountAllocationRepository.js. On a database that
+ * never met the runner the failure is not one page, it is the derived balance
+ * everywhere it is computed.
+ *
+ * ALL THREE PIECES OR NONE, in one transaction: the column with its foreign
+ * key, the backfill that marks one opening row per account, and the partial
+ * unique index. The index without the backfill would be an empty guarantee; the
+ * backfill without the index would leave the duplicate this migration exists to
+ * prevent.
+ *
+ * THE INDEX IS MISSING ON A VIRGIN BUILD TOO, and db:parity cannot see it.
+ * CREATE UNIQUE INDEX does not write a pg_constraint row, and schemaParity.js
+ * compares columns, constraints and seeded catalog rows and never reads
+ * pg_indexes. So a boot-built database has always carried the column without
+ * the uniqueness behind it, and the check reported green. Measured 2026-09-08.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureTransactionOpeningFor(client = pool) {
+ await client.query('BEGIN');
+
+ try {
+  const {
+   rows: [state],
+  } = await client.query(`
+   SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_name = 'transactions'
+       AND column_name = 'opening_for_account_id'
+   ) AS column_present,
+   to_regclass('public.account_registry') IS NOT NULL AS registry
+  `);
+
+  if (!state.column_present) {
+   // 022 points the key at user_accounts and ensureAccountRegistry() below
+   // moves it to account_registry. When the registry is already there — a
+   // database that met this boot path before — it is pointed at its final
+   // parent directly, so the next call does not drop and re-add a key it just
+   // created. Same end state either way; this only avoids the churn.
+   const parent = state.registry ? 'account_registry' : 'user_accounts';
+
+   await client.query(`
+    ALTER TABLE transactions
+     ADD COLUMN opening_for_account_id INTEGER
+      REFERENCES ${parent} (account_id)
+      ON DELETE RESTRICT ON UPDATE CASCADE
+   `);
+   console.log(
+    pc.green(`transactions.opening_for_account_id added, keyed on ${parent}.`),
+   );
+
+   // THE BACKFILL RUNS ONLY WHEN THE COLUMN WAS JUST ADDED. On a database that
+   // already has it the marking is maintained by the creation controllers, and
+   // recomputing it here would overwrite their decisions with this query's.
+   //
+   // Both conditions together identify the row, because neither alone is
+   // sound: the earliest opening row alone marks a funding leg on an account
+   // with no opening row of its own, and the matching amount alone marks a
+   // funding leg that happens to move the starting amount. The movement type
+   // is read from the catalog by name so this does not encode a seeded id.
+   const marked = await client.query(`
+    UPDATE transactions tr
+    SET opening_for_account_id = tr.account_id
+    FROM user_accounts ua
+    WHERE ua.account_id = tr.account_id
+     AND tr.movement_type_id = (
+      SELECT mt.movement_type_id FROM movement_types mt
+      WHERE mt.movement_type_name = 'account-opening'
+     )
+     AND tr.amount = ua.account_starting_amount
+     AND tr.transaction_id = (
+      SELECT MIN(t2.transaction_id) FROM transactions t2
+      WHERE t2.account_id = tr.account_id
+       AND t2.movement_type_id = (
+        SELECT mt.movement_type_id FROM movement_types mt
+        WHERE mt.movement_type_name = 'account-opening'
+       )
+     )
+   `);
+
+   console.log(
+    pc.green(`opening row marked for ${marked.rowCount} account(s).`),
+   );
+  }
+
+  // The index is checked on every boot and not only when the column is new,
+  // because a virgin build gets the column from the mainTables DDL and has
+  // never got the index from anywhere.
+  const {
+   rows: [{ duplicates }],
+  } = await client.query(`
+   SELECT count(*)::int AS duplicates FROM (
+    SELECT opening_for_account_id FROM transactions
+     WHERE opening_for_account_id IS NOT NULL
+     GROUP BY opening_for_account_id HAVING count(*) > 1
+   ) d
+  `);
+
+  if (duplicates > 0) {
+   // Warn and leave it, the way ensureAccountTypeRequired() does with an
+   // untyped account. The duplicate is exactly the state 022 exists to remove,
+   // so it has to be seen — but a boot that refuses to start is a worse way to
+   // report it than a database that starts and says so.
+   console.warn(
+    pc.yellow(
+     `${duplicates} account(s) carry more than one opening row. ` +
+      'uq_transaction_opening_for_account was not created. Resolve the ' +
+      'duplicates, then restart.',
+    ),
+   );
+  } else {
+   await client.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_transaction_opening_for_account
+     ON transactions (opening_for_account_id)
+     WHERE opening_for_account_id IS NOT NULL
+   `);
+  }
+
+  await client.query('COMMIT');
+ } catch (error) {
+  await client.query('ROLLBACK');
+  throw error;
+ }
+}
+
+/**
  * Create account_registry, the trigger that populates it, the backfill and the
  * seven repointed foreign keys, plus the close_reason cap of migration 036.
  *

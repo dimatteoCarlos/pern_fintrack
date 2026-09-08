@@ -33,6 +33,7 @@ import {
   ensureAccountClosureCatalog,
   ensureAccountTypeRequired,
   ensureAccountClosedAt,
+  ensureTransactionOpeningFor,
   ensureAccountRegistry,
   ensureCategoryBudgetCurrency,
   ensureCategoryBudgetFxColumns,
@@ -257,6 +258,12 @@ export async function initializeDatabase() {
     // not matter - it adds a column and touches no catalog - but it stays here
     // so both user_accounts schema steps read as one block.
     await ensureAccountClosedAt(client);
+
+    // Runtime counterpart of migration 022. Before the call below, not after:
+    // that one repoints transactions.opening_for_account_id at the registry and
+    // skips the key when the column is absent, so a database getting the column
+    // here would otherwise wait a whole boot for its key.
+    await ensureTransactionOpeningFor(client);
 
     // Runtime counterpart of migrations 035 and 036. The position is a
     // dependency and not a preference: it repoints keys on transactions,
