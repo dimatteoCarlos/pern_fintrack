@@ -102,7 +102,17 @@ const TrendChart = ({
   <article className='trendChart'>
    <div className='domainCard__label'>{label} · 6 months</div>
 
-   <div className='trendChart__plot'>
+   {/* The markers carry the figure as a title, which only a pointer can reach:
+       they are not focusable and a title is not announced on its own. So the
+       plot names itself with the whole series, which is the one reading a
+       screen reader and a keyboard both get. */}
+   <div
+    className='trendChart__plot'
+    role='img'
+    aria-label={`${label}, last 6 months. ${plotted
+     .map((point) => point.title)
+     .join('. ')}`}
+   >
     {/* Stretched to the card on both axes, which is why the stroke is drawn
         at a fixed width instead of in box units: a scaled stroke would be
         thicker on a wide card than on a narrow one. */}

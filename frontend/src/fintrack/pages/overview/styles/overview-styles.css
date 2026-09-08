@@ -470,7 +470,7 @@ a.icon {
  /* A fixed plot height so the three charts share a baseline across the row.
     Each series is still scaled against its own peak, which the component
     states: the charts answer how a domain moved, not which domain is bigger. */
- height: 3rem;
+ height: 4.5rem;
 }
 
 .overviewLayout .trendChart__line {
@@ -512,7 +512,7 @@ a.icon {
 .overviewLayout .trendChart__axis {
  display: flex;
  justify-content: space-between;
- font-size: var(--font-size-3xs);
+ font-size: var(--font-size-xs);
  letter-spacing: 0.65px;
  color: var(--color-content-on-dark-subtle);
 }
@@ -521,4 +521,8 @@ a.icon {
  flex: 1;
  min-width: 0;
  text-align: center;
+ /* index.css sets font-size on the universal selector, so this span takes 16px
+    from there and never inherits the size set on the row above. Without this
+    the six month names render at twice their size and touch each other. */
+ font-size: inherit;
 }
