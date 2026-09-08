@@ -791,7 +791,7 @@ semantics.
 > in `backend/test/overview/` mirroring the module path. The two probes written
 > during P3 are in it, so the checks that were session-local are now repo checks.
 
-### P5 — Frontend · NOT STARTED, blocked by P4's contract tests
+### P5 — Frontend · NOT STARTED, no longer blocked
 
 The month selector, then the cards. Last, deliberately: a screen wired before P1
 would show three silently changed balances.
@@ -868,7 +868,24 @@ double count. Their only exposure is the label.
   sketches and the plan, and it is not a defect in the sketch so much as the
   reason the hero has to be redesigned rather than corrected.
 
-### P6 — Level 2 · NOT STARTED, specification written 2026-09-07
+### P6 — Level 2 · BACKEND DONE, renderer not started
+
+Corrected 2026-09-07 by measurement, against a heading that read NOT
+STARTED. The backend half is built and committed on `feat/overview`: an
+optional `analysis` parameter on `GET /overview/:domain` naming one of two
+depths, six domain builders, and the four statements the deeper one needs.
+Absent is the default, so a client that has not been updated receives the
+level-1 payload unchanged.
+
+The exit condition below is met by construction rather than by review: the
+shallower depth reshapes what the level-1 request already fetched and issues
+no statement, and every statement the deeper one adds belongs to the
+repository of the domain that publishes it. No level-2 figure re-aggregates
+rows a card already summed.
+
+What remains of this stage is the renderer — the trends, the breakdowns and
+the Pareto view — and it is frontend work that belongs with P5, not a second
+backend stage.
 
 Trends, breakdowns, the Pareto renderer, and the domain analyses returned to
 their domains.
