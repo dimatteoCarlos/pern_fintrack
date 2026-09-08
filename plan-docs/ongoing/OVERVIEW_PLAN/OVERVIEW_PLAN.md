@@ -185,22 +185,25 @@ None of these blocks building a component.
 
 ## 6. Folder cleanup
 
-Twenty files live in this folder. No code comment cites any of them — twenty
-stems searched case-insensitively across `backend/src`, `frontend/src` and
-`backend/test` return nothing — so deleting one breaks nothing compilable. What
-it can break is a citation from another document.
+Sixteen files and one folder remain here. No code comment cites any of them —
+twenty stems searched case-insensitively across `backend/src`, `frontend/src`
+and `backend/test` returned nothing — so deleting one breaks nothing
+compilable. What it can break is a citation from another document.
 
-**Execution belongs on `feat/overview`.** Deleting on `main` is undone by the
-next merge.
+**Execution happens on `main` now that `feat/overview` is merged into it.** The
+earlier instruction to delete on the branch held only while the branch carried
+work `main` did not.
 
-### Delete now — no citation from anywhere
+### Deleted — the first batch, no citation from anywhere
 
-`OVERVIEW_FRONTEND_RENDERING_SKETCH.md`, `OVERVIEW_KPI_MAP_BY_DOMAIN.md`,
-`OVERVIEW_KPI_COMPUTED_VS_DERIVABLE.md`, `OVERVIEW_PAGE_PROPOSAL_2026-09-04.md`.
+Removed on 2026-09-07 after re-measuring that the only reference to any of the
+four was this list: `OVERVIEW_FRONTEND_RENDERING_SKETCH.md`,
+`OVERVIEW_KPI_MAP_BY_DOMAIN.md`, `OVERVIEW_KPI_COMPUTED_VS_DERIVABLE.md`,
+`OVERVIEW_PAGE_PROPOSAL_2026-09-04.md`.
 
-The rendering sketch is measured redundant, not judged so: of its 110
-identifiers, 108 appear in `OVERVIEW.md` or `OVERVIEW_LAYOUT.md`, and the two
-that do not are backend function names, not fields the frontend renders.
+The rendering sketch was measured redundant, not judged so: of its 110
+identifiers, 108 appeared in `OVERVIEW.md` or `OVERVIEW_LAYOUT.md`, and the two
+that did not were backend function names, not fields the frontend renders.
 
 ### Delete after repointing one citation
 
