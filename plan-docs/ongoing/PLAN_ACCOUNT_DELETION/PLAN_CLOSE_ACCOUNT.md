@@ -349,14 +349,19 @@ correct and only its conclusion is not.
 
 #### Fix 1, in detail
 
-- **The terminating zero.** Before the delete, CLOSE writes one
-  `budget_monthly_allocations` row for the **current** month with
-  `budget_amount = 0`. That is the mechanism the schema already documents:
-  *the only way to express "no budget from month M" is a positive marker, and
-  zero is the only one available* (`010_create_budget_tables.sql:25-29`), and
-  `CHECK (budget_amount >= 0)` at `:45` admits it. It makes the answer correct
-  whichever way the readers are later written — with it, a reader that unions
-  closed accounts into the current month still reports zero for this one.
+- **The terminating zero, which is required by any design that keeps the rows
+  and not only by this one.** `getAllocationForMonth`
+  (`budgetAllocationRepository.js:46-58`) resolves a month as the last row at or
+  before it — `WHERE account_id = $1 AND budget_month <= $2 ORDER BY budget_month
+  DESC LIMIT 1`. **Carry-forward has no end**, so a closed category whose rows
+  survive keeps publishing its final budget into every future month, forever.
+  Before the delete, CLOSE writes one `budget_monthly_allocations` row for the
+  **current** month with `budget_amount = 0`. That is the mechanism the schema
+  already documents: *the only way to express "no budget from month M" is a
+  positive marker, and zero is the only one available*
+  (`010_create_budget_tables.sql:25-29`), and `CHECK (budget_amount >= 0)` at
+  `:45` admits it. (Stated as design-independent by the Overview session;
+  verified here.)
 - **The key.** `account_id INTEGER NOT NULL REFERENCES
   category_budget_accounts(account_id) ON DELETE CASCADE` at
   `010_create_budget_tables.sql:41-43` becomes a reference to the registry.
@@ -375,10 +380,32 @@ correct and only its conclusion is not.
   The one field that cannot be rebuilt is `category_nature_type_id` as a catalog
   key; the nature's name survives as text.
 
-**Ownership.** The key and the terminating zero are CLOSE's. The two reader
-branches are the budget module's, and the same two readers are what the Overview
-expense page reads through (`overviewExpenseService.js:72`). This plan does not
-change them.
+**Ownership, and a correction to an earlier draft of this paragraph.** The key
+and the terminating zero are CLOSE's; the two reader branches are the budget
+module's. **The Overview expense page does not reach the budget through either of
+them**, which an earlier draft here got wrong. `overviewExpenseService.js:62`
+builds its own id array with `getExpenseAccountIds` and hands it to
+`budgetCalculationService.getBudgetAccountsStatus` at `:72`, so `owned` at
+`budgetController.js:43-46` is never consulted. `EXPENSE_ACCOUNT_IDS_QUERY`
+(`overviewAccountRepository.js:32-39`) reads `FROM user_accounts ua JOIN
+account_types act` with **no join to `category_budget_accounts`**, deliberately —
+the comment above it at `:22-26` says an account whose budget row was removed is
+exactly what the uncategorized-expense figure exists to reveal. On that path the
+first mechanism is the disappearance of the `user_accounts` row itself; the
+second and third apply unchanged. (Correction measured by the Overview session,
+verified here. Their citation is `:88` and `:94`; on `feat/deletion` the same two
+statements are at `:62` and `:72`, and both branches are right about their own
+file.)
+
+**The retroactive change reaches Overview as one symptom, not as a series.**
+Neither `SERIES_QUERY` nor `SPENT_BY_MONTH_QUERY` is called from
+`overview_services` — the only callers of `getMonthlySeriesForAccounts` are
+`budgetCalculationService.js:457` and `:496`, both reached from
+`budgetController.js`. Overview's thirteen-month expense series carries no budget
+figure at all; the only budget on that page is the reference month's. So
+navigating to a past month moves that month's variance and its categorized
+expense, and nothing else. Narrower exposure than the budget module's, same
+defect.
 
 ---
 
@@ -930,17 +957,37 @@ FROM pocket_allocations WHERE source_account_id = $1 AND user_id = $2`, which
 destroys the allocation history instead of releasing it and defeats the
 restricting reference that was meant to protect it. CLOSE does not run it.
 
-**The surviving rows have a named consumer on the Overview branch.** The history
-outlives the close, keyed by an account id that resolves in the registry and not
-in `user_accounts`. The Overview session measured the consequence and owns the
-fix — `overviewPocketRepository.js:120` inner-joins `user_accounts` to
-`pocket_allocations.source_account_id`, so a surviving allocation whose source
-account has been closed is dropped silently and the pocket's committed figure
-falls with no figure contradicting another. They also measured the sibling that
-behaves the opposite way: the same key read inside an `EXISTS` at
-`overviewPageRepository.js:190`, which cannot match a non-existent account and is
-safe. **This is the cost of repointing that one key, not of the erasure**, and it
-is recorded here so the repointing is decided with its consumer in view.
+**The surviving rows have a named consumer on the Overview branch, and the
+release row this step writes is one of the rows it loses.** The history outlives
+the close, keyed by an account id that resolves in the registry and not in
+`user_accounts`. The defect is a **disagreement between two queries in the same
+response**, not a total that quietly falls:
+
+- `ALLOCATIONS_PAGE_QUERY` (`overviewPocketRepository.js:108`) carries `JOIN
+  user_accounts ua ON ua.account_id = pa.source_account_id` at `:120`, taken only
+  to read `ua.account_name AS "sourceAccountName"` at `:115`. An inner join, so a
+  row whose source account no longer exists is dropped from the listing.
+- `ALLOCATIONS_COUNT_QUERY` (`:129-135`) has no such join and counts the row.
+- Both are issued together at `:210-211`.
+
+So the count reports a number the listing cannot fill, with an empty trailing
+page at the end of the pagination. **The release row written by 6.4 is dated in
+the month of the close and names the account being closed, so it is precisely one
+of the dropped rows** — the owner sees the count move and cannot see the decision
+that moved it. (Measured by the Overview session, verified here on this branch;
+an earlier draft of this section said the pocket's committed figure falls, which
+is wrong — see the next paragraph.)
+
+**The committed total is safe and needs nothing.**
+`MONTHLY_ALLOCATED_NET_QUERY` at `overviewPocketRepository.js:81` joins `pockets`
+and `pocket_allocations` only and never `user_accounts`, so the release rows land
+correctly in the monthly series and in its transaction count. The sibling that
+reads the same key inside an `EXISTS` at `overviewPageRepository.js:190` cannot
+match a non-existent account and is safe too.
+
+**This is the cost of repointing that one key, not of the erasure**, and it is
+recorded here so the repointing is decided with its consumer in view. The fix is
+the Overview session's.
 
 **Pocket coverage is derived and never stored** (`makePocketStatus.js`), so the
 release is sufficient and there is nothing to recompute after it.
