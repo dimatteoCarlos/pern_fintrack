@@ -439,15 +439,27 @@ is untouched.
   values in that same catalog are already seeded and unreferenced. It also
   carries the conflict-tolerant fix on two seeders, without which a chain-built
   database fails on its first boot.
-- **The closure timestamp column on accounts does go dead**
-  (`034_add_account_closed_at.sql`): if the row is deleted, that column is
-  permanently null on every surviving row and the timestamp lives in the
-  registry. The remedy is not to edit the file. **The blocking fact is whether it
-  has ever been applied** — if the ledger has never run it, it is held out of the
-  chain and never runs, which is the cheapest outcome; if it has run on the
-  development database, it lands as written and the registry migration drops the
-  column with a stated reason, which is a forward design change and not a
-  corrective migration. That ledger read needs the owner's authorization.
+- **The closure timestamp column migration cannot be held out of the chain, and
+  it is a deployment blocker rather than a design question**
+  (`034_add_account_closed_at.sql`). The migration session first ruled it could
+  be skipped because the new design never writes it, then withdrew that ruling
+  under its own name: the question is not what writes the column, it is what
+  **reads** it. Measured on main, **eight files name it in SQL** — the account
+  read controller through a live-account predicate interpolated into nine
+  statements plus the closed-accounts list, the category collision check, the
+  rename collision check, the deletion service's soft path, the close preview,
+  the close destination query, the pocket allocation repository, and the shared
+  account-retrieval helper. On a database the migration has not reached, every
+  one of them raises a missing-column error, and the shared helper carries the
+  widest blast radius because it is imported rather than owned by one route.
+  Production never reaches the boot path — the deployed backend never calls the
+  runtime initializer — so the chain is the only way that column arrives. **This
+  is independent of CLOSE:** whether the column is useful afterwards is a much
+  smaller question than whether main boots without it.
+  Note the asymmetry with the same absence elsewhere: the deletion service's four
+  branch tests read it as a JavaScript property off a star select, which fails
+  silently and grants nothing, while the eight SQL sites fail loudly. Same
+  missing migration, opposite failure mode, and only one of the two is visible.
 - **The type-required migration must run before any closure stamps a type.** It
   is what makes the account type column not-null; before it a live account can
   carry null, and a closure would stamp null into the registry permanently. That
@@ -491,7 +503,7 @@ Blocking — the design cannot be finished without them:
 
 | Decision | Who rules |
 |---|---|
-| Whether the closure timestamp migration is held out of the chain or dropped later by the registry migration — needs the ledger read | owner authorizes, migration session rules |
+| Whether a closed category's name stays taken — the rule exists in one predicate today and the first close inverts it, so it cannot ship undecided | owner |
 | The exact "zero balance" formula per account family | owner |
 | Whether cash becomes an eligible destination, or a cash account with a balance can never be closed | owner |
 | What closing a pocket-saving-type account means, given the frontend no longer creates them | owner |
@@ -504,7 +516,20 @@ way:
 | Decision | Who rules |
 |---|---|
 | Whether a closed category still appears in a category picker or a historical budget list — a filter on a read, not a schema change | owner |
-| Whether a closed category's name stays taken; the collision check states it does, and deleting the row inverts that | the account-name uniqueness plan |
+
+**A deferred decision that silently changes behaviour on the day the code ships
+is not deferred.** That is why the category name question moved up: the policy
+still belongs to the account-name uniqueness plan
+(`PLAN_ACCOUNT_NAME_UNIQUENESS.md`), but the fact that the rule's only
+implementation is a predicate on a row about to stop existing makes it a gate on
+the first close.
+
+Outside this plan's scope but found by it, and with no owning session running:
+**the budget writer updates a category's budget by account id alone**
+(`budgetAllocationService.js`), while the same service's other statement joins the
+accounts table and is self-filtering. Once extension rows survive a close, the
+first path can write a budget onto a closed category and the second cannot. It
+goes to whoever owns the budget service.
 
 Two decisions that stood in the first version of this document are **closed, not
 deferred**: whether the registry stamps the type-specific attributes, and what
