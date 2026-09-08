@@ -396,9 +396,13 @@ a.icon {
  border-radius: var(--radius-xl);
 }
 
+/* Every caption on a domain card is set one step above where it started. The
+   whole set moves together: the name of the card, the two debt legs, the
+   nature-and-period line and the subordinate figure are one register, and a
+   register reads as accidental the moment its members disagree. */
 .overviewLayout .domainCard__label {
- font-size: var(--font-size-2xs);
- font-weight: 400;
+ font-size: var(--font-size-xs);
+ font-weight: 500;
  letter-spacing: 1px;
  text-transform: capitalize;
  color: var(--color-content-on-dark-muted);
@@ -426,11 +430,11 @@ a.icon {
  align-items: baseline;
  justify-content: space-between;
  gap: var(--space-2);
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-base);
 }
 
 .overviewLayout .domainCard__leg {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  letter-spacing: 1px;
  color: var(--color-content-on-dark-subtle);
 }
@@ -439,19 +443,19 @@ a.icon {
    colour: neither has a token, and a value invented here would enter the
    palette without review.
 
-   --font-size-2xs and not --font-size-3xs: the smallest step is 0.5rem and
-   --font-size-root clamps the root between 14px and 16px, so 3xs lands between
-   7px and 8px. It exists as the floor of a container-query clamp in pocket,
-   which is a different job from setting a caption outright. */
+   Never --font-size-3xs: the smallest step is 0.5rem and --font-size-root
+   clamps the root between 14px and 16px, so it lands between 7px and 8px. It
+   exists as the floor of a container-query clamp in pocket, which is a
+   different job from setting a caption outright. */
 .overviewLayout .domainCard__scope {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  letter-spacing: 0.65px;
  text-transform: uppercase;
  color: var(--color-content-on-dark-subtle);
 }
 
 .overviewLayout .domainCard__sub {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  line-height: 1.4;
  color: var(--color-content-on-dark-muted);
  font-variant-numeric: tabular-nums;
