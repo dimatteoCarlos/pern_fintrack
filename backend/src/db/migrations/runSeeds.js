@@ -32,6 +32,7 @@ import pc from 'picocolors';
 
 import { pathToFileURL } from 'url';
 import { pool } from '../config/configDB.js';
+import { assertExpectedDatabase, isProduction } from './dbMigrationConfig.js';
 
 //---Alternativ usgin dbConfig.js
 /*
@@ -67,13 +68,22 @@ if (!['base', 'admin'].includes(seedType)) {
 }
 
 async function runSeeds() {
+ // Two independent refusals, the same pair db:migrate carries: the mode, and
+ // the destination the mode cannot decide. Seeds write catalog rows into an
+ // existing database, so a wrong destination is as costly here as there.
+ if (isProduction()) {
+  console.error(pc.red('\n❌ Seeds are not allowed under NODE_ENV=production.\n'));
+  process.exit(1);
+ }
+
   const client = await pool.connect();
+  await assertExpectedDatabase(client, `db:seed:${seedType}`);
   let executedCount = 0;
   try {
    console.log(pc.cyan(`\n🌱 Running "${seedType}" seeds...\n`));
-   
+
 // Start transaction
-await client.query('BEGIN'); 
+await client.query('BEGIN');
 // -----------------------------
 // 2️⃣ Load only requested seeds
 // -----------------------------

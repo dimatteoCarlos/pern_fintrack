@@ -216,7 +216,10 @@ function buildBootPath(uri) {
 function buildChain(uri) {
  return spawnSync(process.execPath, ['src/db/migrations/runMigrations.js'], {
   cwd: process.cwd(),
-  env: { ...process.env, DATABASE_URI: uri },
+  // DB_EXPECTED because the runner refuses a destination nobody named, and this
+  // spawn is the caller that knows it: uri is databaseUri(base, CHAIN_DB), so
+  // the throwaway chain database is the only one it can reach.
+  env: { ...process.env, DATABASE_URI: uri, DB_EXPECTED: CHAIN_DB },
   encoding: 'utf-8',
  });
 }

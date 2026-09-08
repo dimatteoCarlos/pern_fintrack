@@ -216,11 +216,16 @@
 /* The tappable area the smaller box above gives up. Unpainted and
    hit-testable, so a finger still gets the full --size-touch-target while
    only the smaller box shows — same pattern accountEditLink-styles.css:44-52
-   already uses for the same reason. */
+   already uses for the same reason.
+
+   The operands are target minus drawn, in that order. Reversed, the calc
+   resolves positive and inset shrinks the pseudo-element instead of growing
+   it: at --space-6 it produced +10px, a 4px box inside a 24px arrow, so the
+   tappable area was smaller than the drawing rather than 44px. */
 .monthStepper__arrow::after {
  content: '';
  position: absolute;
- inset: calc((var(--space-6) - var(--size-touch-target)) / -2);
+ inset: calc((var(--size-touch-target) - var(--space-6)) / -2);
 }
 
 /* Sized off the spacing scale, the way .pocketHero__chevron already is: the

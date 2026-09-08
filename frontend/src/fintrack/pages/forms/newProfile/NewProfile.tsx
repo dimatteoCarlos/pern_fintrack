@@ -347,7 +347,7 @@ function NewProfile() {
           <Link
             to={location.state.previousRoute}
             relative='path'
-            className='iconLeftArrow'
+            className='backArrow backArrow--dark'
           >
             <LeftArrowLightSvg />
           </Link>

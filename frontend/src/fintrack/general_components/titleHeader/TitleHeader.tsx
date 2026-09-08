@@ -17,7 +17,7 @@ export function TitleHeader() {
         <Link
           to={'..'}
           relative='path'
-          className='iconArrowLeftDark'
+          className='backArrow backArrow--light'
           aria-label='Go back'
         >
           <LeftArrowDarkSvg aria-hidden='true' />

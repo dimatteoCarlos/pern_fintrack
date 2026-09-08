@@ -261,7 +261,7 @@ function CategoryDetailReading() {
               <Link
                 to={withMonthParam(previousRoute, monthParam)}
                 relative='path'
-                className='iconLeftArrow'
+                className='backArrow backArrow--dark'
               >
                 <LeftArrowLightSvg />
               </Link>

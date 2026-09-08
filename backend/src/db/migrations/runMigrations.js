@@ -10,7 +10,11 @@ import path from 'path';
 import pc from 'picocolors';
 import pg from 'pg';
 import { pool as defaultPool } from '../config/configDB.js';
-import { getDbConfig, isProduction } from './dbMigrationConfig.js';
+import {
+ assertExpectedDatabase,
+ getDbConfig,
+ isProduction,
+} from './dbMigrationConfig.js';
 /*
 // Alternative using dbMigrationConfig.js
 import { Client } from 'pg';
@@ -64,10 +68,25 @@ function resolveTarget() {
 }
 
 async function runMigrations() {
+ // Two independent refusals. This one answers "is this the production mode",
+ // which the migration freeze asks; assertExpectedDatabase below answers "is
+ // this the database you meant", which is the question the mode cannot answer.
+ // Refuting one does not retire the other.
+ if (isProduction()) {
+  console.error(pc.red('\n❌ Migrations are not allowed under NODE_ENV=production.\n'));
+  process.exit(1);
+ }
+
  const { pool, target } = resolveTarget();
  console.log(pc.cyan(`Migration target: ${target}`));
 
  const client = await pool.connect();
+
+ // Before the ledger table is created, and therefore before anything is
+ // written: the line above announces a target without naming it when DB_NAME is
+ // unset, and this is what makes the destination a fact rather than a phrase.
+ await assertExpectedDatabase(client, 'db:migrate');
+
  let exitCode = 0;
 
  try {

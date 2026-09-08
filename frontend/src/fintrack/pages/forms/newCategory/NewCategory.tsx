@@ -453,12 +453,12 @@ function NewCategory() {
           <Link
             to={location.state.previousRoute}
             relative='path'
-            className='iconLeftArrow'
+            className='backArrow backArrow--dark'
           >
             <LeftArrowSvg />
           </Link>
 
-          {/* <Link to='..' relative='path' className='iconLeftArrow'>
+          {/* <Link to='..' relative='path' className='backArrow backArrow--dark'>
             <LeftArrowSvg />
           </Link> */}
 

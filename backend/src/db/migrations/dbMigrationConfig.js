@@ -90,3 +90,59 @@ export function getAdminDbConfig() {
 export function isProduction() {
   return process.env.NODE_ENV === 'production';
 }
+
+// ============================================
+// 5. Refuse a destination the operator did not name
+// ============================================
+/**
+ * Guard the destination, not the mode.
+ *
+ * isProduction above tests NODE_ENV, and NODE_ENV does not select the database:
+ * dbEnvironmentConfig.js declares development and production with identical
+ * bodies, both reading DATABASE_URI. A run with NODE_ENV unset and a production
+ * DATABASE_URI passes every mode check in the codebase and still writes to
+ * production, so the mode cannot be what decides.
+ *
+ * The connection itself is the only honest source. current_database() comes back
+ * from the session already opened, so this reads no secret, needs no credential
+ * in the code, and prints no connection string - only the database name, which
+ * is what the operator has to recognise.
+ *
+ * Refusing when DB_EXPECTED is unset is deliberate: a guard that defaults to
+ * proceeding protects the run nobody was worried about.
+ *
+ * @param {object} client a connected pg client
+ * @param {string} script the npm script being guarded, named in the refusal
+ * @returns {Promise<string>} the confirmed database name
+ */
+export async function assertExpectedDatabase(client, script) {
+ const expected = process.env.DB_EXPECTED;
+
+ const {
+  rows: [server],
+ } = await client.query(
+  'SELECT current_database() AS db, inet_server_addr() AS host, inet_server_port() AS port',
+ );
+
+ const where = `${server.db} at ${server.host || 'local socket'}:${server.port || '-'}`;
+
+ if (!expected) {
+  console.error(
+   pc.red(`\n❌ ${script} refuses to run without DB_EXPECTED.\n`) +
+    pc.gray(`   This connection reached ${where}.\n`) +
+    pc.gray(`   Set DB_EXPECTED to that database name to confirm it is the one you mean.\n`),
+  );
+  process.exit(1);
+ }
+
+ if (expected !== server.db) {
+  console.error(
+   pc.red(`\n❌ ${script} refuses to run: destination mismatch.\n`) +
+    pc.gray(`   DB_EXPECTED names "${expected}" and this connection reached ${where}.\n`),
+  );
+  process.exit(1);
+ }
+
+ console.log(pc.green(`✅ Destination confirmed: ${where}`));
+ return server.db;
+}

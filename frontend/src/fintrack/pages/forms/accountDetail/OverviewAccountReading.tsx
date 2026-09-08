@@ -172,7 +172,7 @@ function OverviewAccountReading() {
 
         <div className='page__content'>
           <div className='main__title--container'>
-            <Link to={previousRoute} relative='path' className='iconLeftArrow'>
+            <Link to={previousRoute} relative='path' className='backArrow backArrow--dark'>
               <LeftArrowLightSvg />
             </Link>
 
