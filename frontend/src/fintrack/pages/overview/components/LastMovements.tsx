@@ -1,7 +1,7 @@
 // import ChevronRightSvg from '../../../assets/ChevronRightSvg.svg';
 // import { Link } from 'react-router-dom';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-import ListContent from '../../../general_components/listContent/ListContent.tsx';
+import ListContent from './ListContent.tsx';
 import { CurrencyType } from '../../../types/types.ts';
 
 export type LastMovementType = {
@@ -25,20 +25,11 @@ type LastMovementsProps = {
 function LastMovements({ data, title }: LastMovementsProps) {
   //Last Movements
 
-  const lastMovementDefault: LastMovementType[] = [
-    {
-      accountName: 'Account Name',
-      record: 0,
-      description: 'Description',
-      // Null rather than a placeholder word: the row paints a dash, which is
-      // what an absent note looks like everywhere else.
-      note: null,
-      date: new Date(),
-      currency: 'usd', transactionId: 0, 
-    },
-  ];
-
-  const lastMovements = data ? data : lastMovementDefault;
+  // An absent list is an empty list, and ListContent renders its own empty
+  // state. The placeholder row that stood here published record: 0 and
+  // transactionId: 0, so a missing figure read as zero and the row opened the
+  // detail of a transaction that does not exist.
+  const lastMovements = data ?? [];
 
   return (
     <>
