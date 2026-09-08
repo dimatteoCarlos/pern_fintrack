@@ -312,7 +312,7 @@ no son cuentas*. That narrows the method to the four types that hold money.
 | Investment | yes | holds a position that can be liquidated into a liquid account |
 | Debtor | yes | holds an amount owed in one direction or the other |
 | Spending category | **no** | classifies movements; it is not an account |
-| Income source | **no** | same shape as the category — **not yet ruled**, see 5.3 |
+| Income source | **no** | same shape as the category, ruled the same day |
 | Pocket saving | **no** | the type is to be removed entirely — see 5.2 |
 | Compensation | **no** | the system's counterparty; the refusal is already written |
 
@@ -359,13 +359,12 @@ Two other facts about the type, measured:
 **Needed before the deletion runs, and it is the owner's alone:** whether any
 account of this type exists in production, and whose.
 
-### 5.3 The income source has the same shape and was not ruled
+### 5.3 The income source falls the same way
 
 An income source classifies movements exactly as a spending category does, holds
 no money the owner can move, and its derived balance is accumulated historical
-income. The ruling naming categories did not name it. It is listed as not
-closable above on the strength of that symmetry, and it is flagged rather than
-assumed.
+income. The owner's ruling named categories; asked whether the symmetry carried,
+he confirmed it does. Neither type closes.
 
 ---
 
@@ -532,13 +531,13 @@ design.
 | The other three methods | their route registrations and their service bodies are commented out, not removed |
 | The migration ledger read | authorized and performed |
 
-### 10.2 Still to settle
+### 10.2 Settled the same day, on a recommendation the owner endorsed
 
-| Decision | Options | Recommendation |
-|---|---|---|
-| Whether a closed account's name is renamed with a suffix to free it | rename on close / do nothing | **Do nothing.** Deleting the row already frees the name, because the rename collision check joins the accounts table (`accountEditController.js`) and finds nothing. A suffix would be stored as the registry's historical name and would then appear on transactions that happened before the close, so it buys nothing and corrupts the record. If the goal is telling two same-named accounts apart in a report, the registry already carries the closure date and the screen can say so without changing the data. |
-| Whether an income source closes | closable / not closable | **Not closable**, by the same reasoning that took categories out: it classifies movements and holds no money the owner can move. Flagged rather than assumed, because the ruling named categories only. |
-| What a user does with a category they no longer want, now that CLOSE will not take it | a separate operation / nothing | **A separate operation, out of this plan.** Recording it here so the gap is visible: the category is a row in the accounts table with a derived balance, and no method now removes it. |
+| Decision | Ruling |
+|---|---|
+| A closed account's name is **not** renamed with a suffix | deleting the row already frees the name — the rename collision check joins the accounts table and finds nothing. A suffix would be stored as the registry's historical name and would then appear on transactions that happened before the close. To tell two same-named accounts apart in a report, the screen uses the closure date the registry already carries. |
+| An income source does **not** close | it classifies movements and holds no money the owner can move, exactly like a spending category |
+| Removing a spending category is **not** part of this plan | recorded so the gap stays visible: a category is a row in the accounts table with a derived balance, and after this plan no method removes it |
 
 ### 10.3 Deferred, because nothing is at risk either way
 
