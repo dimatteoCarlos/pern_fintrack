@@ -135,17 +135,25 @@ const MONTHLY_INCOME_QUERY = `
 // built over different cuts. The remainder is the subtraction, which is why only
 // one of the two halves is published.
 //
-// Both joins are LEFT and have to stay LEFT. The outer source is a generated
-// month series, so an inner join anywhere below it drops every month with no
-// profit-and-loss row, and the series grows the gaps the delta and the chart both
-// assume are absent.
+// THE SPLIT IS MADE BY ACCOUNT ID AND NOT BY A JOINED TYPE NAME, which is what
+// makes it agree with the investment card rather than merely resemble it: $5 is
+// the very set getInvestmentAccountIds returns, so the two cannot be built over
+// different readings of what an investment account is. Reading the type through
+// a join to user_accounts also lost the split for a CLOSED investment account,
+// whose row is gone while its rows are still summed into the total - the share
+// would have understated with nothing on the card saying why.
+//
+// The transactions join is LEFT and has to stay LEFT. The outer source is a
+// generated month series, so an inner join below it drops every month with no
+// profit-and-loss row, and the series grows the gaps the delta and the chart
+// both assume are absent.
 const MONTHLY_PNL_QUERY = `
   SELECT
     m.month::date::text AS month,
     COALESCE(SUM(t.amount), 0) AS total_amount,
     COUNT(t.transaction_id) AS transaction_count,
     COALESCE(SUM(t.amount) FILTER (
-      WHERE act.account_type_name = 'investment'
+      WHERE t.account_id = ANY($5::int[])
     ), 0) AS investment_amount
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   LEFT JOIN transactions t
@@ -154,8 +162,6 @@ const MONTHLY_PNL_QUERY = `
    AND (t.description IS NULL OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
    AND t.transaction_actual_date >= (m.month AT TIME ZONE $4)
    AND t.transaction_actual_date <  ((m.month + INTERVAL '1 month') AT TIME ZONE $4)
-  LEFT JOIN user_accounts ua ON ua.account_id = t.account_id
-  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
   GROUP BY m.month
   ORDER BY m.month
 `;
@@ -235,8 +241,13 @@ const INCOME_BY_SOURCE_QUERY = `
  * @param {string} timeZone - IANA zone of the account owner
  * @returns {Promise<Array<{month: string, totalAmount: number, transactionCount: number}>>}
  */
-const readMonthlyRows = async (pool, sql, accountIds, from, to, timeZone) => {
- const { rows } = await pool.query(sql, [accountIds ?? [], from, to, timeZone]);
+const readMonthlyRows = async (pool, sql, accountIds, from, to, timeZone, extraParams = []) => {
+ // extraParams continues the numbering from $5 and is empty for every statement
+ // but the profit-and-loss one, which binds the investment set its split is cut
+ // by. Appended rather than given a reader of its own: the four leading binds
+ // and the row mapping are identical, and a second copy of both is a second
+ // place for them to drift.
+ const { rows } = await pool.query(sql, [accountIds ?? [], from, to, timeZone, ...extraParams]);
 
  return rows.map((row) => ({
   month: row.month,
@@ -262,7 +273,7 @@ const readMonthlyRows = async (pool, sql, accountIds, from, to, timeZone) => {
  * no gaps: a month with no transactions reports 0 and 0.
  *
  * @param {object} pool - Database pool
- * @param {number[]} accountIds - category_budget accounts, soft-deleted included (D19)
+ * @param {number[]} accountIds - category_budget accounts, closed and soft-deleted included (D19)
  * @param {string} from - first month of the window, as 'YYYY-MM-01'
  * @param {string} to - last month, inclusive, as 'YYYY-MM-01'
  * @param {string} timeZone - IANA zone of the account owner
@@ -294,10 +305,15 @@ export async function getMonthlyIncome(pool, accountIds, from, to, timeZone = 'U
  * @param {string} from - first month of the window, as 'YYYY-MM-01'
  * @param {string} to - last month, inclusive, as 'YYYY-MM-01'
  * @param {string} timeZone - IANA zone of the account owner
+ * @param {number[]} investmentAccountIds - the set investmentAmount is cut by,
+ *   the same one getInvestmentAccountIds returns. Empty reports a share of 0,
+ *   which is the true answer for an owner with no investment account.
  * @returns {Promise<Array<{month: string, totalAmount: number, transactionCount: number}>>}
  */
-export async function getMonthlyPnl(pool, accountIds, from, to, timeZone = 'UTC') {
- return readMonthlyRows(pool, MONTHLY_PNL_QUERY, accountIds, from, to, timeZone);
+export async function getMonthlyPnl(pool, accountIds, from, to, timeZone = 'UTC', investmentAccountIds = []) {
+ return readMonthlyRows(pool, MONTHLY_PNL_QUERY, accountIds, from, to, timeZone, [
+  investmentAccountIds ?? [],
+ ]);
 }
 
 /**

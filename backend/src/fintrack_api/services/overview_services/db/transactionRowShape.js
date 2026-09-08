@@ -87,10 +87,18 @@ export function transactionRowColumns(timeZonePlaceholder) {
 // every one of these statements and stays that way: it was LEFT before this
 // module compared the type at all, so it was not written for the nullable case
 // that migration 033 closed.
+//
+// The user_accounts join is LEFT for a different reason, and it has to be. CLOSE
+// deletes that row while the transaction survives pointing at account_registry,
+// so an INNER join dropped every movement of a closed account from the page
+// while the count statement beside it - which touches only transactions - went
+// on counting them, and the paginator offered a page that came back short. The
+// account's own columns come back null for such a row, which is the honest
+// answer until the identity is read from the registry.
 export const TRANSACTION_ROW_SOURCE = `
   FROM transactions tr
   JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
   JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
   JOIN currencies cr ON cr.currency_id = tr.currency_id
-  JOIN user_accounts ua ON ua.account_id = tr.account_id
+  LEFT JOIN user_accounts ua ON ua.account_id = tr.account_id
   LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id`;

@@ -17,6 +17,7 @@
 
 import {
  getPnlAccountIds,
+ getInvestmentAccountIds,
  getOldestAccountDate,
 } from '../db/overviewAccountRepository.js';
 import { getMonthlyPnl } from '../db/overviewMonthlyRepository.js';
@@ -67,7 +68,13 @@ export const overviewPnlService = {
   // has to hold in the total, the count and the list alike, and a filter
   // applied in JavaScript after the fact would only reach the ones that came
   // back.
-  const accountIds = await getPnlAccountIds(pool, userId);
+  // Both sets before the fan-out, because the monthly statement needs both: the
+  // wide one selects the rows and the investment one cuts the share of them the
+  // card publishes as realised on a position.
+  const [accountIds, investmentAccountIds] = await Promise.all([
+   getPnlAccountIds(pool, userId),
+   getInvestmentAccountIds(pool, userId),
+  ]);
 
   const [months, oldestAccountDate, transactions] = await Promise.all([
    getMonthlyPnl(
@@ -76,6 +83,7 @@ export const overviewPnlService = {
     withAnalysis ? analysisStart : trendStart,
     referenceMonth,
     timeZone,
+    investmentAccountIds,
    ),
    getOldestAccountDate(pool, userId, timeZone),
    getPnlTransactionsPage(pool, accountIds, referenceMonth, timeZone, {

@@ -9,13 +9,20 @@
 // through in this month", and a category deleted last week still spent money
 // while it existed.
 //
-// Deleting an account is a soft delete (deleteAccountService.js:362-372 marks
-// deleted_at and nothing else), so its transactions survive the account. Reading
-// the breakdown through the filtered helper would drop that spending from
-// categories while totalAmount kept counting it, and the same page would show
-// two figures that must reconcile and do not.
+// TWO WAYS AN ACCOUNT LEAVES, and only one of them leaves a row. DELETE marks
+// deleted_at and keeps the row (deleteAccountService.js:626). CLOSE deletes the
+// row outright (deleteAccountService.js:1278), and migration 035 repoints
+// transactions, pocket_allocations and budget_monthly_allocations at
+// account_registry so the movements outlive the account.
+//
+// Every set below therefore drives off account_identity and not off
+// user_accounts. Driving off user_accounts kept a soft-deleted account and lost
+// a closed one, which took its spending out of every past month while
+// totalAmount kept counting it - the same reconciliation failure the D19
+// argument above exists to prevent, reached through the door D19 predates.
 
 import { createError } from '../../../../utils/errorHandling.js';
+import { accountIdentityCte } from '../../../../utils/fintrackUtils/accountDataRetrieval/accountIdentity.js';
 
 // Every category_budget account the user has ever had, deleted ones included.
 //
@@ -29,13 +36,17 @@ import { createError } from '../../../../utils/errorHandling.js';
 // restricted to budget categories, whatever type it carries. The reason this
 // comment used to give — that it is a bank account — died at
 // 031, which gave it a structural type of its own.
+//
+// The join to account_types stays INNER against the CTE. An account erased
+// before account_registry existed carries no type on either side, and a type
+// that cannot be read cannot be matched against 'category_budget'.
 const EXPENSE_ACCOUNT_IDS_QUERY = `
-  SELECT ua.account_id
-  FROM user_accounts ua
-  JOIN account_types act ON act.account_type_id = ua.account_type_id
-  WHERE ua.user_id = $1
-    AND act.account_type_name = 'category_budget'
-  ORDER BY ua.account_id
+  WITH ${accountIdentityCte('$1')}
+  SELECT ai.account_id
+  FROM account_identity ai
+  JOIN account_types act ON act.account_type_id = ai.account_type_id
+  WHERE act.account_type_name = 'category_budget'
+  ORDER BY ai.account_id
 `;
 
 // The accounts an income figure is read over: the ones that hold real money.
@@ -74,12 +85,12 @@ const EXPENSE_ACCOUNT_IDS_QUERY = `
 // decision, deferring the removal to the pocket repointing (D54); main did the
 // repointing, so the removal arrives with it and the deferral is spent.
 const INCOME_ACCOUNT_IDS_QUERY = `
-  SELECT ua.account_id
-  FROM user_accounts ua
-  JOIN account_types act ON act.account_type_id = ua.account_type_id
-  WHERE ua.user_id = $1
-    AND act.account_type_name IN ('bank', 'cash', 'investment', 'debtor')
-  ORDER BY ua.account_id
+  WITH ${accountIdentityCte('$1')}
+  SELECT ai.account_id
+  FROM account_identity ai
+  JOIN account_types act ON act.account_type_id = ai.account_type_id
+  WHERE act.account_type_name IN ('bank', 'cash', 'investment', 'debtor')
+  ORDER BY ai.account_id
 `;
 
 // The accounts a realized P/L figure is read over: every account the user owns
@@ -169,13 +180,20 @@ const INCOME_ACCOUNT_IDS_QUERY = `
 // defect reaches the read sites already using the type predicate exactly as it
 // reaches these five, so it belongs at creation and not in a read. Routed
 // 2026-09-07; supersedes the precondition agreed with the migration session.
+//
+// The one set here whose type predicate is an EXCLUSION, so the INNER join is
+// doing more than it does in the other three: an account whose type is
+// unreadable is dropped rather than admitted. That is the safe side of this
+// particular predicate - an unknown type cannot be shown not to be the
+// compensation account, and admitting it would put the system's own
+// counterparty rows into the owner's result.
 const PNL_ACCOUNT_IDS_QUERY = `
-  SELECT ua.account_id
-  FROM user_accounts ua
-  JOIN account_types act ON act.account_type_id = ua.account_type_id
-  WHERE ua.user_id = $1
-    AND act.account_type_name <> 'boundary'
-  ORDER BY ua.account_id
+  WITH ${accountIdentityCte('$1')}
+  SELECT ai.account_id
+  FROM account_identity ai
+  JOIN account_types act ON act.account_type_id = ai.account_type_id
+  WHERE act.account_type_name <> 'boundary'
+  ORDER BY ai.account_id
 `;
 
 // The accounts of one type, the compensation account excluded — the set
@@ -193,19 +211,19 @@ const PNL_ACCOUNT_IDS_QUERY = `
 // the template with holes the module argues against elsewhere: the shape of the
 // statement is fixed and only the value moves.
 //
-// No deleted_at filter, for the same reason the expense set has none and the
-// catalog's D1/P1/H1 state none: a soft-deleted account still owns the balance
-// it held in the months before it was closed, and the balance series would bend
-// at the month of the deletion if those rows vanished. Closing an account writes
-// a compensating movement (R212's annulment rows), so a closed account
-// contributes 0 to today's figure without being filtered out of yesterday's.
+// No deleted_at filter, and the CTE for the other exit: an account still owns
+// the balance it held in the months before it left, and the balance series would
+// bend at that month if those rows vanished. Closing an account writes a
+// compensating movement (R212's annulment rows), so a departed account
+// contributes 0 to today's figure without being filtered out of yesterday's -
+// which only holds while its id is still in this set.
 const ACCOUNT_IDS_BY_TYPE_QUERY = `
-  SELECT ua.account_id
-  FROM user_accounts ua
-  JOIN account_types act ON act.account_type_id = ua.account_type_id
-  WHERE ua.user_id = $1
-    AND act.account_type_name = $2
-  ORDER BY ua.account_id
+  WITH ${accountIdentityCte('$1')}
+  SELECT ai.account_id
+  FROM account_identity ai
+  JOIN account_types act ON act.account_type_id = ai.account_type_id
+  WHERE act.account_type_name = $2
+  ORDER BY ai.account_id
 `;
 
 // The oldest account the user owns, on the owner's calendar.
@@ -228,14 +246,19 @@ const ACCOUNT_IDS_BY_TYPE_QUERY = `
 // either way. The exception is the reserved-name gap stated above - an owner's own
 // account of that name, created first, both becomes the counterparty and
 // legitimately opens the window, so there is nothing to exclude.
+//
+// Over the CTE for a reason particular to a MINIMUM: closing the oldest account
+// would otherwise move this date forward, and with it the month from which any
+// delta may be reported at all. The guard would then answer a question about
+// the owner's history with a fact about which accounts are still open.
 const OLDEST_ACCOUNT_DATE_QUERY = `
-  SELECT (MIN(ua.created_at) AT TIME ZONE $2)::date::text AS oldest_account_date
-  FROM user_accounts ua
-  WHERE ua.user_id = $1
+  WITH ${accountIdentityCte('$1')}
+  SELECT (MIN(ai.account_created_at) AT TIME ZONE $2)::date::text AS oldest_account_date
+  FROM account_identity ai
 `;
 
 /**
- * The category_budget accounts of a user, soft-deleted ones included (D19).
+ * The category_budget accounts of a user, closed and soft-deleted included (D19).
  *
  * @param {object} pool - Database pool
  * @param {string} userId - UUID from the token, never from the client body

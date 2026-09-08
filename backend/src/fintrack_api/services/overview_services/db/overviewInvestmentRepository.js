@@ -220,7 +220,12 @@ const CONTRIBUTION_HISTORY_QUERY = `
     t.amount AS amount,
     (t.transaction_actual_date AT TIME ZONE $2)::date::text AS contribution_date
   FROM transactions t
-  JOIN user_accounts ua ON ua.account_id = t.account_id
+  -- LEFT, and for the same reason the allocations page states at
+  -- overviewPocketRepository.js:129: this join supplies a label, and inner it
+  -- dropped a closed account's contribution from the page while
+  -- CONTRIBUTION_HISTORY_COUNT_QUERY, which touches only transactions, still
+  -- counted the row.
+  LEFT JOIN user_accounts ua ON ua.account_id = t.account_id
   WHERE t.account_id = ANY($1::int[])
     AND t.movement_type_id = ${TRANSFER_MOVEMENT_TYPE_ID}
     AND t.amount > 0

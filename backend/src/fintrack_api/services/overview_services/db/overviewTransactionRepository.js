@@ -222,7 +222,7 @@ const readTransactionsPage = async (pool, statements, accountIds, month, timeZon
  * One page of the expense transactions of a month, plus the size of the whole set.
  *
  * @param {object} pool - Database pool
- * @param {number[]} accountIds - category_budget accounts, soft-deleted included (D19)
+ * @param {number[]} accountIds - category_budget accounts, closed and soft-deleted included (D19)
  * @param {string} month - the month to list, as 'YYYY-MM-01'
  * @param {string} timeZone - IANA zone of the account owner
  * @param {object} paging - { page, pageSize }, both already validated as positive integers

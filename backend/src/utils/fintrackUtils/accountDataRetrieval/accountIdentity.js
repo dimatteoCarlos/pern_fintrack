@@ -55,6 +55,13 @@
  * against an absent catalog row excludes nothing and raises nothing. Nobody has
  * to remember this precondition, because the database states it.
  *
+ * **`account_created_at` is the account's own creation, not the row's.**
+ * `account_registry` names it with the prefix because a bare `created_at` on
+ * that table would mean the registry row's insertion time on a live account and
+ * the account's on a closed one. Published here under the same prefixed name so
+ * the ambiguity does not travel: `OLDEST_ACCOUNT_DATE_QUERY` needs the earliest
+ * account a user ever opened, and closing that account must not move the date.
+ *
  * WHAT IS DELIBERATELY NOT HERE. The registry also carries `category_name`,
  * `subcategory`, `category_nature_type_id`, `closed_at`, `closed_by` and
  * `close_reason`. They are not in this CTE because no consumer of an account's
@@ -103,6 +110,7 @@ export function accountIdentityCte(userIdPlaceholder = '$1') {
             ar.account_starting_amount
           ) AS account_starting_amount,
           COALESCE(ua.account_start_date, ar.account_start_date) AS account_start_date,
+          COALESCE(ua.created_at, ar.account_created_at) AS account_created_at,
           -- The account row is gone, so the account is closed. Derived rather
           -- than read: account_registry.closed_at is stamped by CLOSE, and an
           -- account erased by the deletion tail leaves a registry row with no
