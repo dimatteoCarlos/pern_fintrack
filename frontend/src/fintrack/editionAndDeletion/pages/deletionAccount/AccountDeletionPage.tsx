@@ -36,6 +36,7 @@ import PostOperationView from './UIComponents/postOperationView/PostOperationVie
 import { SoftDeactivateAccountUI } from './UIComponents/softDeletionUI/SoftDeactivateAccountUI.tsx';
 import { HardDeleteConfirmationUI } from './UIComponents/hardDeletionUI/HardDeleteConfirmationUI.tsx';
 import { CloseAccountUI } from './UIComponents/closeAccountUI/CloseAccountUI.tsx';
+import { CLOSE_IS_THE_ONLY_METHOD } from '../../config/deletionMethodPolicy.ts';
 // Where a reader with no navigation state belongs. Named once so the guard
 // below and the back navigation cannot disagree about it.
 const ACCOUNTING_DASHBOARD_ROUTE = '/fintrack/tracker/accounting';
@@ -133,11 +134,20 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
     resetDeletionState, // ⬅️ Retorna la función de reset
     //Required parameters,
     // ...rest
-  } = useRTAImpactAndDeletion(targetAccountId, targetAccountName);
+  } = useRTAImpactAndDeletion(
+    targetAccountId,
+    targetAccountName,
+    !CLOSE_IS_THE_ONLY_METHOD,
+  );
   //----------------------------------
   // 🎯 DETERMINE PRE/POST OPERATION
   //----------------------------------
-  const isPostOperation = deletionResult || fetchLoadError;
+  // Both come from the RTA annulment, and neither can come from the close,
+  // which reports through its own hook and navigates away. Gated so a failed
+  // impact request cannot replace the close screen with an error view for an
+  // operation the owner never started.
+  const isPostOperation =
+    !CLOSE_IS_THE_ONLY_METHOD && (deletionResult || fetchLoadError);
   // console.log("🚀 ~ AccountDeletionPage ~ isPostOperation:", isPostOperation)
 
   //---------------------------------------
@@ -296,7 +306,11 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
           <LeftArrowDarkSvg />
         </Link>
 
-        <h1 className='page-title'>{translateText('pageTitle')}</h1>
+        <h1 className='page-title'>
+          {translateText(
+            CLOSE_IS_THE_ONLY_METHOD ? 'closeOnlyPageTitle' : 'pageTitle',
+          )}
+        </h1>
 
         {/* <div className="header-placeholder" />  */}
         {/* 🎯 LANGUAGE SELECTOR */}
@@ -342,12 +356,17 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
             accountType={targetAccountType}
             accountBalance={targetAccountBalance}
             accountCurrency={targetAccountCurrency}
+            actionKey={
+              CLOSE_IS_THE_ONLY_METHOD ? 'closeAccountAction' : 'rtaDeletionAction'
+            }
             t={translateText}
             // showStatusIndicator
           />
 
-          {/* 🎯 THE OTHER THREE METHODS: SOFT, CLOSE and HARD, none of
-              them described by the impact report below.
+          {/* 🎯 THE METHODS THIS SCREEN OFFERS. One of them today,
+              CLOSE, by the owner's instruction of 2026-09-08
+              (deletionMethodPolicy.ts); three of them when that flag is off,
+              none described by the impact report below.
 
               ABOVE THE REPORT, NOT UNDER IT. The report is one method's
               consequences, not the page's subject, and its table is as long as
@@ -358,20 +377,30 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               (ACCOUNT_DELETION_METHODS.md §6). */}
           <section className='deletion-methods-section'>
             <h2 className='deletion-methods-title'>
-              {translateText('otherMethodsSectionTitle')}
+              {translateText(
+                CLOSE_IS_THE_ONLY_METHOD
+                  ? 'closeOnlySectionTitle'
+                  : 'otherMethodsSectionTitle',
+              )}
             </h2>
             <p className='deletion-methods-description'>
-              {translateText('otherMethodsSectionDescription')}
+              {translateText(
+                CLOSE_IS_THE_ONLY_METHOD
+                  ? 'closeOnlySectionDescription'
+                  : 'otherMethodsSectionDescription',
+              )}
             </p>
             <div className='deletion-methods-actions'>
-              <button
-                type='button'
-                className='deletion-method-button deletion-method-button--soft'
-                onClick={() => setIsSoftModalOpen(true)}
-                aria-label={translateText('softDeactivateTriggerButton')}
-              >
-                {translateText('softDeactivateTriggerButton')}
-              </button>
+              {!CLOSE_IS_THE_ONLY_METHOD && (
+                <button
+                  type='button'
+                  className='deletion-method-button deletion-method-button--soft'
+                  onClick={() => setIsSoftModalOpen(true)}
+                  aria-label={translateText('softDeactivateTriggerButton')}
+                >
+                  {translateText('softDeactivateTriggerButton')}
+                </button>
+              )}
               <button
                 type='button'
                 className='deletion-method-button deletion-method-button--close'
@@ -380,35 +409,45 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               >
                 {translateText('closeAccountTriggerButton')}
               </button>
-              <button
-                type='button'
-                className='deletion-method-button deletion-method-button--hard'
-                onClick={() => setIsHardModalOpen(true)}
-                aria-label={translateText('hardDeleteTriggerButton')}
-              >
-                {translateText('hardDeleteTriggerButton')}
-              </button>
+              {!CLOSE_IS_THE_ONLY_METHOD && (
+                <button
+                  type='button'
+                  className='deletion-method-button deletion-method-button--hard'
+                  onClick={() => setIsHardModalOpen(true)}
+                  aria-label={translateText('hardDeleteTriggerButton')}
+                >
+                  {translateText('hardDeleteTriggerButton')}
+                </button>
+              )}
             </div>
           </section>
 
-          {/* 🎯 MAIN CONTENT AREA */}
-          <main className='main-content '>
-            <h2 className='content-title'>{getReportTitle()}</h2>
+          {/* The RTA annulment: its impact report and the button that runs
+              it. Withdrawn from this screen while CLOSE is the only method
+              it offers (deletionMethodPolicy.ts). The service, its route and
+              its request path are untouched. */}
+          {!CLOSE_IS_THE_ONLY_METHOD && (
+            <>
+            {/* 🎯 MAIN CONTENT AREA */}
+            <main className='main-content '>
+              <h2 className='content-title'>{getReportTitle()}</h2>
 
-            {/* 🎯 DYNAMIC CONTENT */}
-            {renderReportContent()}
+              {/* 🎯 DYNAMIC CONTENT */}
+              {renderReportContent()}
 
-            {/* 🎯 ACTION BUTTON (only if report is loaded successfully) */}
-            {!isLoadingReport && !reportError && (
-              <div className='action-section '>
-                <ProceedButtonUI
-                  onClick={() => setIsModalOpen(true)}
-                  t={translateText}
-                  disabled={isExecutingDeletion}
-                />
-              </div>
-            )}
-          </main>
+              {/* 🎯 ACTION BUTTON (only if report is loaded successfully) */}
+              {!isLoadingReport && !reportError && (
+                <div className='action-section '>
+                  <ProceedButtonUI
+                    onClick={() => setIsModalOpen(true)}
+                    t={translateText}
+                    disabled={isExecutingDeletion}
+                  />
+                </div>
+              )}
+            </main>
+            </>
+          )}
 
         </>
       )}

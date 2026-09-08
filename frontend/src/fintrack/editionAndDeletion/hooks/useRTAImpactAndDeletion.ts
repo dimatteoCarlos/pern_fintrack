@@ -24,6 +24,10 @@ import {
 export const useRTAImpactAndDeletion = (
   targetAccountId: number | string,
   targetAccountName: string,
+  // Whether the impact report is wanted at all. A screen that does not render
+  // it should not ask for it: the request costs a round trip and, worse, its
+  // failure sets an error the page reads as a finished operation.
+  isReportWanted: boolean = true,
 ) => {
   // ---------------------------------
   // 1. Validate inputs early and Build URLs
@@ -35,9 +39,10 @@ export const useRTAImpactAndDeletion = (
   // ---------------------------------
   // 🔗 URL BLOCK: Build URL from endpoints
   // ---------------------------------
-  const getUrl = isValidAccountId
-    ? url_report_of_affected_accounts(targetAccountId)
-    : null;
+  const getUrl =
+    isValidAccountId && isReportWanted
+      ? url_report_of_affected_accounts(targetAccountId)
+      : null;
 
   const deletionUrl = url_account_delete(targetAccountId); //what to do if arg is invalid
   // ---------------------------------
