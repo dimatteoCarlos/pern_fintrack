@@ -55,6 +55,10 @@ that breaks them costs the developer a file read to follow an argument.
 - **Use the identifiers the code uses.** `account_balance`, not "the saved
   figure". `spentAmountSql`, not "the shared builder". A renamed thing is a
   different thing, and a paraphrase cannot be grepped.
+- **Two shapes only: a table, or bold-led bullets.** Prose paragraphs are not a
+  reply format. A bullet leads with the idea in bold and closes in **one concise
+  line**; if it needs two, it is two ideas and becomes two bullets. Use a table
+  when the same attributes are compared across items, bullets otherwise.
 - **Close with a direct question** when a decision is needed.
 
 Marks: bold for key concepts, `code` for files, functions and variables, `-` for
