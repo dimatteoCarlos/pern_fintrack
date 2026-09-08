@@ -68,6 +68,21 @@
 // Pocket commitments are not subtracted from it, and the reason is not that free
 // cash is a different question: it is that a pocket does not constrain spending
 // at all. The header states the ruling and where it lives.
+//
+// Free cash is where the committed total finally appears, and it is the shape
+// the ruling above prescribed rather than an exception to it. The commitment goes
+// BESIDE the balance and never inside it: cashPosition keeps saying what the
+// accounts hold and can be spent, and free cash says separately how much of it
+// nothing has been promised against. Reading them as a pair is what the funding
+// picker already asks the owner to do — the objection was ever only to folding
+// one into the other and calling the result available.
+//
+// It arrives already summed and already floored, because the floor is per
+// account and this file has no accounts. Composing it here from a total balance
+// and a total commitment would produce a different number whenever one account is
+// overcommitted and another is not, and it would be the wrong one: one account's
+// surplus would silently cover another's shortfall. The statement that computes
+// it carries the argument.
 
 import { money, toAmount, toRate } from '../../budget_services/core/money.js';
 
@@ -130,6 +145,8 @@ const savingsRateOf = (income, netFlow) =>
  *
  * @param {object} input
  * @param {number} input.bankBalance - the only figure no card carries
+ * @param {number} input.freeCash - the bank and cash balance less what the
+ *   pockets have been promised, floored per account before the sum
  * @param {number} input.investmentBalance - InvestmentCard.ledgerBalance (V2)
  * @param {number} input.debtPosition - DebtCard.totalAmount (D1)
  * @param {number} input.payable - DebtCard.payable, a positive magnitude (D39)
@@ -141,6 +158,7 @@ const savingsRateOf = (income, netFlow) =>
  */
 export const makeHeroSection = ({
  bankBalance,
+ freeCash,
  investmentBalance,
  debtPosition,
  payable,
@@ -187,8 +205,15 @@ export const makeHeroSection = ({
   liquidNetWorth,
   // H2 — what is spendable without selling a position or collecting a debt.
   // Bank alone, for the same reason: a pocket total is a commitment against this
-  // figure, never an addition to it.
+  // figure, never an addition to it. Bank alone means bank AND cash: the two
+  // types are one thing everywhere a figure is composed (D45), and the query
+  // reads both.
   cashPosition: toAmount(money(bankBalance)),
+  // How much of that is unpromised. Passed through toAmount rather than
+  // published raw so it is rounded by the same rule as the figure it sits beside;
+  // never null, because an owner with no pockets has all of it free, and never
+  // negative, because the floor is applied per account inside the statement.
+  freeCash: toAmount(money(freeCash)),
   // H3 — whether the month moved forward or back. Negative is a real answer and
   // the most useful one the figure has.
   netMonthlyFlow: toAmount(netFlow),

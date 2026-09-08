@@ -52,6 +52,26 @@ export const NO_CONTRIBUTIONS_NOTICE =
 // investment account: the deletion writes a reversal row that moves the balance
 // and is neither contribution nor result, so a two-term identity could not hold
 // and the card called correct books inconsistent.
+//
+// It stays a sentence and does not become a number, and that is the contract's
+// ruling rather than an omission here. §6 says the client reconciles and the
+// server publishes the terms and never the difference between them. The recovery
+// plan's P3 asks for a reconciliation field, which contradicts it — the plan
+// supersedes the sequencing of the older plan, explicitly not the frozen
+// contract, so the prohibition stands until the developer lifts it.
+//
+// The prohibition also costs nothing a client cannot recover: all three terms
+// and the balance are published on this card, so the difference is one
+// subtraction over four fields that are already there. What the client cannot
+// reconstruct is the tolerance — the comparison below runs through the decimal
+// library, and a client subtracting in floating point will find a difference of
+// a cent where this found none.
+//
+// Measured on fintrack_dev 2026-09-07 under the developer's authorisation for
+// that one count: the identity closes at 0.00 for every owner, and no movement
+// type outside the four the terms name appears on an investment account. That
+// retires the recovery plan's premise that the identity does not hold; it does
+// not retire the notice, which exists for the data nobody has written yet.
 export const UNRECONCILED_BALANCE_NOTICE =
  'Contributed capital, realized P/L and closure adjustments do not add up to the ledger balance; some movement on these accounts is none of the three.';
 
@@ -113,6 +133,25 @@ export const makeInvestmentCard = ({
 
  return Object.freeze({
   domain: 'investment',
+  // Published, not merely consulted. It decides two of this card's notices and
+  // was then dropped before the freeze, so a client reading "the concentration
+  // figure is not reported" could not tell an owner with no investment account
+  // from one whose accounts hold nothing. Both notices say which it is in words;
+  // a client that renders figures rather than sentences had no field to branch
+  // on.
+  //
+  // It is a new field of the contract and not a restored one. Nothing declared
+  // it before — the recovery plan calls it a dropped field, which is true of this
+  // function and not of the type.
+  //
+  // Unbounded, and the repository states it where the figure is computed: it
+  // counts the accounts that exist now, not the ones that existed at the
+  // reference month. Every money figure on this card obeys the month, so on a
+  // past month the count can disagree with them — three accounts reported beside
+  // a balance built from the two that were open then. Bounding it needs a
+  // creation date the figures query does not read, so it is a change to that
+  // statement rather than to this one.
+  accountCount,
   capitalContributed,
   ledgerBalance,
   realizedPnl,

@@ -39,7 +39,8 @@ import {
  NO_PRIOR_PERIOD_NOTICE,
 } from '../core/makeDomainCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
-import { monthEndDate } from '../core/monthArithmetic.js';
+import { isFullAnalysis, wantsAnalysis } from '../core/analysisLevels.js';
+import { TREND_MONTHS } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 /**
@@ -49,7 +50,7 @@ import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
  * @param {string} userId - UUID from the token, never from the client body
  * @param {object} request - { window, page, pageSize, includeTransactionRows }
  * @param {string} timeZone - IANA zone of the account owner
- * @param {object} config - the four values that separate one stock domain from the next
+ * @param {object} config - the values that separate one stock domain from the next
  * @param {string} config.domain - one of the six of §3
  * @param {Function} config.getAccountIds - the resolver for this domain's accounts
  * @param {Function} config.getTransactionsPage - the list for this domain's movements
@@ -58,37 +59,73 @@ import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
  *   debt is the only importer left
  * @param {Function} [config.getDomainFields] - the fields this domain adds to the
  *   base card, read at the same cut as the total; omitted by a domain that adds none
+ * @param {Function} [config.getAnalysisRows] - the single statement this domain's
+ *   level-2 section is built from, run at the full level only
+ * @param {Function} [config.makeAnalysis] - the builder for that section. A reader
+ *   and a builder rather than named fields, the same arrangement getDomainFields
+ *   uses: what the section CONTAINS is one domain's contract, and naming it here
+ *   would put it inside a body written for every balance-headed domain
  * @returns {Promise<object>} GetOverviewDomainData for the domain
  */
 export async function readStockDomain(
  pool,
  userId,
- { window, page, pageSize, includeTransactionRows = true },
+ { window, page, pageSize, includeTransactionRows = true, analysis },
  timeZone,
- { domain, getAccountIds, getTransactionsPage, publishesTrend, getDomainFields },
+ {
+  domain,
+  getAccountIds,
+  getTransactionsPage,
+  publishesTrend,
+  getDomainFields,
+  getAnalysisRows,
+  makeAnalysis,
+ },
 ) {
- const { referenceMonth, priorMonth, trendStart } = window;
+ const {
+  referenceMonth,
+  priorMonth,
+  trendStart,
+  analysisStart,
+  periodStart,
+  periodEnd,
+ } = window;
+
+ const withAnalysis = wantsAnalysis(analysis);
+
+ // One lower bound for every monthly statement this body runs. Asked for an
+ // analysis, the aggregate series and the per-account rows are read over the
+ // same generate_series bound, so a ranking taken from one cannot disagree with
+ // the series it appears in.
+ const monthlyFrom = withAnalysis ? analysisStart : trendStart;
 
  // Read once and passed to both consumers. The balance series and the list have
  // to be built over the same accounts or the figure and the rows under it would
  // be answers about two different sets.
  const accountIds = await getAccountIds(pool, userId);
 
- const [months, oldestAccountDate, transactions, domainFields] = await Promise.all([
-  getMonthlyBalance(pool, accountIds, trendStart, referenceMonth, timeZone),
-  getOldestAccountDate(pool, userId, timeZone),
-  getTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
-   page,
-   pageSize,
-   includeRows: includeTransactionRows,
-  }),
-  // In the same round trip as the total it has to agree with, not after it. An
-  // empty object for a domain that adds nothing, so the spread below is the same
-  // shape either way and no caller needs a branch.
-  getDomainFields
-   ? getDomainFields(pool, accountIds, referenceMonth, timeZone)
-   : {},
- ]);
+ const [months, oldestAccountDate, transactions, domainFields, analysisRows] =
+  await Promise.all([
+   getMonthlyBalance(pool, accountIds, monthlyFrom, referenceMonth, timeZone),
+   getOldestAccountDate(pool, userId, timeZone),
+   getTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
+    page,
+    pageSize,
+    includeRows: includeTransactionRows,
+   }),
+   // In the same round trip as the total it has to agree with, not after it. An
+   // empty object for a domain that adds nothing, so the spread below is the same
+   // shape either way and no caller needs a branch.
+   getDomainFields
+    ? getDomainFields(pool, accountIds, referenceMonth, timeZone)
+    : {},
+   // At the full level only, and undefined at every other. The builder reads
+   // that difference: absent means no statement was run, empty means the owner
+   // has no counterparties, and only one of the two is a claim about the owner.
+   isFullAnalysis(analysis) && getAnalysisRows
+    ? getAnalysisRows(pool, accountIds, monthlyFrom, referenceMonth, timeZone)
+    : undefined,
+  ]);
 
  // The last point of the series is the balance right now, by construction: the
  // reference month's end subtracts nothing from today's balance. So the card's
@@ -111,8 +148,8 @@ export async function readStockDomain(
   domainFields,
   currency: ACCOUNTING_CURRENCY_CODE,
   window: {
-   periodStart: referenceMonth,
-   periodEnd: monthEndDate(referenceMonth),
+   periodStart,
+   periodEnd,
   },
   notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
  });
@@ -128,6 +165,23 @@ export async function readStockDomain(
   // Spread rather than set to undefined: §12 wants the key absent for a domain
   // that publishes no series, and `trend: undefined` still shows up as a key to
   // anything that iterates the object.
-  ...(publishesTrend ? { trend: makeTrendSeries(months) } : {}),
+  //
+  // Cut to TREND_MONTHS explicitly rather than published as fetched, so the
+  // card's chart is the same six points whether or not the request asked for an
+  // analysis.
+  ...(publishesTrend ? { trend: makeTrendSeries(months, TREND_MONTHS) } : {}),
+  ...(withAnalysis && makeAnalysis
+   ? {
+      analysis: makeAnalysis({
+       level: analysis,
+       balances: analysisRows,
+       // The month axis of the series above, passed rather than rebuilt: the
+       // analysis and the per-account statement are then bounded by one
+       // generate_series instead of by a list computed a second time here.
+       months: months.map((entry) => entry.month),
+       referenceMonth,
+      }),
+     }
+   : {}),
  };
 }

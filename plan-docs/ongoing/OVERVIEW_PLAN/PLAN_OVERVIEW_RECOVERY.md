@@ -712,7 +712,14 @@ figure**.
 | **pocket** | **DONE** — target, allocated, remaining, progress, and the settled count as one summary line |
 | **profit and loss** | **DONE, and one field beyond the row.** Realised result, change and movement count were already published; added 2026-09-07 is `realizedFromInvestment`, the share of the month's result that landed on investment accounts. It is a `FILTER` over the rows the total already summed — a split, never a second statement — so an owner can tell this figure from the investment card's instead of guessing whether they are the same money seen twice |
 
-### P4 — The API contract · BUILT 2026-09-07, awaiting its gate
+### P4 — The API contract · DONE
+
+Closed 2026-09-07, measured rather than declared: `GET /overview` and
+`GET /overview/:domain` serve, Recent Activity is its own route with its own
+period rather than a parameter on the page, and the contract tests pass — 69
+across six files, no database. The exit condition this stage set for itself,
+that the payload contract is frozen and its tests pass, is met. Committed on
+`feat/overview`; the level-2 sections landed with it.
 
 `GET /overview` and `GET /overview/:domain` already exist. This is a revision,
 not a design.
@@ -784,7 +791,7 @@ semantics.
 > in `backend/test/overview/` mirroring the module path. The two probes written
 > during P3 are in it, so the checks that were session-local are now repo checks.
 
-### P5 — Frontend · NOT STARTED, blocked by P4's contract tests
+### P5 — Frontend · NOT STARTED, no longer blocked
 
 The month selector, then the cards. Last, deliberately: a screen wired before P1
 would show three silently changed balances.
@@ -861,7 +868,24 @@ double count. Their only exposure is the label.
   sketches and the plan, and it is not a defect in the sketch so much as the
   reason the hero has to be redesigned rather than corrected.
 
-### P6 — Level 2 · NOT STARTED, specification written 2026-09-07
+### P6 — Level 2 · BACKEND DONE, renderer not started
+
+Corrected 2026-09-07 by measurement, against a heading that read NOT
+STARTED. The backend half is built and committed on `feat/overview`: an
+optional `analysis` parameter on `GET /overview/:domain` naming one of two
+depths, six domain builders, and the four statements the deeper one needs.
+Absent is the default, so a client that has not been updated receives the
+level-1 payload unchanged.
+
+The exit condition below is met by construction rather than by review: the
+shallower depth reshapes what the level-1 request already fetched and issues
+no statement, and every statement the deeper one adds belongs to the
+repository of the domain that publishes it. No level-2 figure re-aggregates
+rows a card already summed.
+
+What remains of this stage is the renderer — the trends, the breakdowns and
+the Pareto view — and it is frontend work that belongs with P5, not a second
+backend stage.
 
 Trends, breakdowns, the Pareto renderer, and the domain analyses returned to
 their domains.

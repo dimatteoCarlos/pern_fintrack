@@ -19,6 +19,12 @@
 // written as transfers, so V1 reads movement types 6 and 8 and never 3. Reading
 // 3 would return 0 for every user and look like an account nobody funded.
 
+import {
+ ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID,
+ ACCOUNT_OPENING_MOVEMENT_TYPE_ID,
+ PNL_MOVEMENT_TYPE_ID,
+ TRANSFER_MOVEMENT_TYPE_ID,
+} from './movementTypes.js';
 import { toAmount } from '../../budget_services/core/money.js';
 import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
@@ -74,15 +80,27 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // carrying the annulment prefix; those rows do not migrate, and the identity has
 // to keep holding for every month that contains one.
 //
+// The term has two arms and they are fed by different writes, so the figure is
+// not evidence about any one operation: a nonzero value does not identify which
+// arm produced it, and a zero value does not prove no account was ever removed,
+// since an account carrying no balance leaves no row in this table at all. The
+// field keeps its contract name — renaming it is a contract change, not a
+// comment — and this paragraph exists so a reader does not treat the amount as a
+// count of anything.
+//
 // What a closure row is: deleting an account reverses the effect it had on the
 // accounts it touched, writing a pair of rows - one on the affected account and
 // its opposite on the internal counterparty. It is neither capital the owner put
 // in nor a result the market produced, and it does move the balance, which is
 // why a two-term identity over these accounts was never going to hold.
 //
-// Known limit, left as it is: account_count is not bounded. An account opened
-// after the reference month contributes 0 to the balance and still counts, and
-// bounding it needs a creation date this query does not read.
+// Known limit, and now a published one: account_count is not bounded. An account
+// opened after the reference month contributes 0 to the balance and still counts,
+// and bounding it needs a creation date this query does not read. The card used
+// to consume this figure only to choose between two notices, so the limit stayed
+// internal; it is now a field of the card, which means a past month can report
+// three accounts beside a balance built from the two that were open then.
+// Bounding it is a change to THIS statement and not to the card.
 const INVESTMENT_FIGURES_QUERY = `
   WITH bounds AS (
     SELECT
@@ -100,7 +118,7 @@ const INVESTMENT_FIGURES_QUERY = `
         FROM transactions t
         WHERE t.account_id = ua.account_id
           AND t.transaction_actual_date >= (SELECT next_month_start FROM bounds)
-      ), 0) AS account_balance
+      ), 0) AS derived_balance
     FROM user_accounts ua
     WHERE ua.account_id = ANY($1::int[])
   ),
@@ -108,37 +126,37 @@ const INVESTMENT_FIGURES_QUERY = `
     SELECT COALESCE(SUM(t.amount), 0) AS capital_contributed
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
-      AND t.movement_type_id IN (6, 8)
+      AND t.movement_type_id IN (${TRANSFER_MOVEMENT_TYPE_ID}, ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID})
       AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   ),
   last_funding AS (
     SELECT MAX(t.transaction_actual_date) AS last_contribution
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
-      AND t.movement_type_id = 6
+      AND t.movement_type_id = ${TRANSFER_MOVEMENT_TYPE_ID}
       AND t.amount > 0
       AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   ),
   realized AS (
     SELECT
       COALESCE(SUM(t.amount) FILTER (
-        WHERE t.movement_type_id = 9
+        WHERE t.movement_type_id = ${PNL_MOVEMENT_TYPE_ID}
           AND (t.description IS NULL
                OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
       ), 0) AS realized_pnl,
       COALESCE(SUM(t.amount) FILTER (
-        WHERE t.movement_type_id = 10
+        WHERE t.movement_type_id = ${ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID}
            OR t.description LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%'
       ), 0) AS closure_adjustment
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
-      AND t.movement_type_id IN (9, 10)
+      AND t.movement_type_id IN (${PNL_MOVEMENT_TYPE_ID}, ${ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID})
       AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   )
   SELECT
     (SELECT COUNT(*) FROM accounts) AS account_count,
-    (SELECT COALESCE(SUM(account_balance), 0) FROM accounts) AS ledger_balance,
-    (SELECT MAX(account_balance) FROM accounts) AS largest_balance,
+    (SELECT COALESCE(SUM(derived_balance), 0) FROM accounts) AS ledger_balance,
+    (SELECT MAX(derived_balance) FROM accounts) AS largest_balance,
     c.capital_contributed,
     r.realized_pnl,
     r.closure_adjustment,
@@ -148,6 +166,80 @@ const INVESTMENT_FIGURES_QUERY = `
   CROSS JOIN realized r
   CROSS JOIN last_funding f
   CROSS JOIN bounds b
+`;
+
+// The portfolio distributed across its accounts, at the same cut as the card.
+//
+// It is the `accounts` CTE of the statement above with the name added, and that
+// is deliberate rather than a duplication to fold away: the rows have to sum to
+// the ledger balance the card publishes, and the surest way to guarantee that is
+// for them to be the same expression at the same bound. Written as an
+// independent statement it could differ by a predicate and the shares would sum
+// to something other than one.
+//
+// A zero-balance account comes back as a row. An account the owner opened and
+// emptied is a different situation from one they never had, and only a row can
+// say so.
+const INVESTMENT_BALANCE_BY_ACCOUNT_QUERY = `
+  WITH bounds AS (
+    SELECT (($3::date + INTERVAL '1 month') AT TIME ZONE $2) AS next_month_start
+  )
+  SELECT
+    ua.account_id,
+    ua.account_name,
+    ${DERIVED_BALANCE} - COALESCE((
+      SELECT SUM(t.amount)
+      FROM transactions t
+      WHERE t.account_id = ua.account_id
+        AND t.transaction_actual_date >= (SELECT next_month_start FROM bounds)
+    ), 0) AS balance
+  FROM user_accounts ua
+  WHERE ua.account_id = ANY($1::int[])
+  ORDER BY ua.account_id
+`;
+
+// When money was put in, and how much each time — §4.4's series of EVENTS.
+//
+// The predicate is V5's, exactly: movement type transfer, positive amount, before
+// the cut. It excludes the account opening for the reason V5 does — the catalog
+// rules that an owner with nothing beyond the opening has made no contribution,
+// and opening an account once is not a habit — so an empty history here and the
+// card's "no contribution recorded" notice are the same condition rather than
+// two that usually agree.
+//
+// Unbounded below, because a history bounded at thirteen months is not a history.
+// Bounded above by the reference month like every other figure on this card, and
+// bounded in SIZE by the caller's limit: an owner who funds weekly for a decade
+// has a real history that no single response should try to carry, so the newest
+// page of it is served and the count says what was left out.
+const CONTRIBUTION_HISTORY_QUERY = `
+  SELECT
+    t.transaction_id,
+    t.account_id,
+    ua.account_name,
+    t.amount AS amount,
+    (t.transaction_actual_date AT TIME ZONE $2)::date::text AS contribution_date
+  FROM transactions t
+  JOIN user_accounts ua ON ua.account_id = t.account_id
+  WHERE t.account_id = ANY($1::int[])
+    AND t.movement_type_id = ${TRANSFER_MOVEMENT_TYPE_ID}
+    AND t.amount > 0
+    AND t.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $2)
+  ORDER BY t.transaction_actual_date DESC, t.transaction_id DESC
+  LIMIT $4
+`;
+
+// How many events the page above was cut out of. A second statement over the
+// same filter rather than a window function beside a limited page, the same
+// choice every list in this module makes: a count computed beside a limited page
+// is a count of the page.
+const CONTRIBUTION_HISTORY_COUNT_QUERY = `
+  SELECT COUNT(*) AS total_rows
+  FROM transactions t
+  WHERE t.account_id = ANY($1::int[])
+    AND t.movement_type_id = ${TRANSFER_MOVEMENT_TYPE_ID}
+    AND t.amount > 0
+    AND t.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $2)
 `;
 
 /**
@@ -188,5 +280,82 @@ export async function getInvestmentFigures(pool, accountIds, timeZone = 'UTC', r
    || row.days_since_last_contribution === undefined
    ? null
    : Number(row.days_since_last_contribution),
+ };
+}
+
+/**
+ * The balance of each investment account at the close of the reference month.
+ *
+ * The rows sum to the ledger balance the card publishes, by construction rather
+ * than by agreement: the expression and the bound are the ones that produced it.
+ *
+ * An empty accountIds returns an empty array, which the caller reports as an
+ * absent portfolio rather than as a distribution over nothing.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - the user's investment accounts
+ * @param {string} timeZone - IANA zone of the account owner
+ * @param {string} referenceMonth - 'YYYY-MM-01', the month the balances are read at
+ * @returns {Promise<Array<{accountId: number, accountName: string, balance: number}>>}
+ */
+export async function getInvestmentBalanceByAccount(
+ pool,
+ accountIds,
+ timeZone = 'UTC',
+ referenceMonth,
+) {
+ const { rows } = await pool.query(INVESTMENT_BALANCE_BY_ACCOUNT_QUERY, [
+  accountIds ?? [],
+  timeZone,
+  referenceMonth,
+ ]);
+
+ return rows.map((row) => ({
+  accountId: row.account_id,
+  accountName: row.account_name,
+  balance: toAmount(row.balance ?? 0),
+ }));
+}
+
+/**
+ * The funding events on the investment accounts, newest first, and how many
+ * exist in total.
+ *
+ * totalRows is the whole history and rows is the newest `limit` of it, so a
+ * caller can say that the list is a page rather than the history. The two are
+ * equal for every owner whose history fits, which is the ordinary case.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - the user's investment accounts
+ * @param {string} timeZone - IANA zone of the account owner
+ * @param {string} referenceMonth - 'YYYY-MM-01', the cut every figure of this card shares
+ * @param {number} limit - the most events this response will carry
+ * @returns {Promise<{rows: Array<object>, totalRows: number}>}
+ */
+export async function getContributionHistory(
+ pool,
+ accountIds,
+ timeZone = 'UTC',
+ referenceMonth,
+ limit,
+) {
+ const parameters = [accountIds ?? [], timeZone, referenceMonth];
+
+ // Both statements in flight at once: the count does not depend on the page and
+ // the page does not depend on the count.
+ const [events, total] = await Promise.all([
+  pool.query(CONTRIBUTION_HISTORY_QUERY, [...parameters, limit]),
+  pool.query(CONTRIBUTION_HISTORY_COUNT_QUERY, parameters),
+ ]);
+
+ return {
+  rows: events.rows.map((row) => ({
+   transactionId: row.transaction_id,
+   accountId: row.account_id,
+   accountName: row.account_name,
+   amount: toAmount(row.amount ?? 0),
+   contributionDate: row.contribution_date,
+  })),
+  totalRows: Number(total.rows[0]?.total_rows ?? 0),
  };
 }

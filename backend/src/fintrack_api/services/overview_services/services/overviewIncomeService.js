@@ -16,7 +16,10 @@ import {
  getIncomeAccountIds,
  getOldestAccountDate,
 } from '../db/overviewAccountRepository.js';
-import { getMonthlyIncome } from '../db/overviewMonthlyRepository.js';
+import {
+ getIncomeBySource,
+ getMonthlyIncome,
+} from '../db/overviewMonthlyRepository.js';
 import { getIncomeTransactionsPage } from '../db/overviewTransactionRepository.js';
 import {
  makeDomainCard,
@@ -24,7 +27,9 @@ import {
  NO_PRIOR_PERIOD_NOTICE,
 } from '../core/makeDomainCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
-import { monthEndDate } from '../core/monthArithmetic.js';
+import { makeIncomeAnalysis } from '../core/makeIncomeAnalysis.js';
+import { isFullAnalysis, wantsAnalysis } from '../core/analysisLevels.js';
+import { TREND_MONTHS } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 export const overviewIncomeService = {
@@ -36,33 +41,61 @@ export const overviewIncomeService = {
   * domains on the same screen cannot disagree about which month they are
   * reporting.
   *
+  * analysis selects how deep the level-2 section goes, and absent means there is
+  * none. The monthly statement is the one thing it moves: asked for an analysis,
+  * the same query runs over the window's long bound and the card's six-point
+  * chart becomes the tail of that one array, so the two series cannot report
+  * different values for a month they both contain.
+  *
   * @param {object} pool - Database pool
   * @param {string} userId - UUID from the token, never from the client body
-  * @param {object} request - { window, page, pageSize }
+  * @param {object} request - { window, page, pageSize, analysis }
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'income'
   */
  async getIncomeDomainData(
   pool,
   userId,
-  { window, page, pageSize, includeTransactionRows = true },
+  { window, page, pageSize, includeTransactionRows = true, analysis },
   timeZone = 'UTC',
  ) {
-  const { referenceMonth, priorMonth, trendStart } = window;
+  const {
+   referenceMonth,
+   priorMonth,
+   trendStart,
+   analysisStart,
+   periodStart,
+   periodEnd,
+  } = window;
+
+  const withAnalysis = wantsAnalysis(analysis);
 
   // The id set every figure on this page is computed over. Read once and passed
   // to both consumers: built over two different sets, the list and the card
   // would be two answers to the same question on the same screen.
   const accountIds = await getIncomeAccountIds(pool, userId);
 
-  const [months, oldestAccountDate, transactions] = await Promise.all([
-   getMonthlyIncome(pool, accountIds, trendStart, referenceMonth, timeZone),
+  const [months, oldestAccountDate, transactions, sources] = await Promise.all([
+   getMonthlyIncome(
+    pool,
+    accountIds,
+    withAnalysis ? analysisStart : trendStart,
+    referenceMonth,
+    timeZone,
+   ),
    getOldestAccountDate(pool, userId, timeZone),
    getIncomeTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
     page,
     pageSize,
     includeRows: includeTransactionRows,
    }),
+   // undefined and not an empty array when the level did not ask for it. The
+   // builder reads the difference: absent is "no statement was run", empty is
+   // "the month received nothing", and only one of them is a claim about the
+   // owner.
+   isFullAnalysis(analysis)
+    ? getIncomeBySource(pool, accountIds, referenceMonth, timeZone)
+    : undefined,
   ]);
 
   const { currentPoint, delta, canCompare } = makePeriodDelta({
@@ -84,8 +117,8 @@ export const overviewIncomeService = {
    // not a second currency travelling with the card.
    currency: ACCOUNTING_CURRENCY_CODE,
    window: {
-    periodStart: referenceMonth,
-    periodEnd: monthEndDate(referenceMonth),
+    periodStart,
+    periodEnd,
    },
    notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
   });
@@ -99,8 +132,22 @@ export const overviewIncomeService = {
     totalRows: transactions.totalRows,
    },
    // Whole, never paginated: six points are the series, and a page of a trend
-   // is not a trend.
-   trend: makeTrendSeries(months),
+   // is not a trend. Cut to TREND_MONTHS explicitly rather than published as
+   // fetched, so the card's chart is the same six points whether or not the
+   // request carried an analysis.
+   trend: makeTrendSeries(months, TREND_MONTHS),
+   ...(withAnalysis
+    ? {
+       analysis: makeIncomeAnalysis({
+        level: analysis,
+        months,
+        // The card's figure, so the shares are shares of what the card
+        // publishes rather than of a second sum over the same rows.
+        totalAmount: card.totalAmount,
+        sources,
+       }),
+      }
+    : {}),
   };
  },
 };
