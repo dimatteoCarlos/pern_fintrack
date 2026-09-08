@@ -67,20 +67,23 @@ const ImpactReportUI = ({
   //RENDER
   return (
     <div className='impact-report-container '>
-      <div
-        className={
-          isProjectionShown
-            ? 'impact-report-warning'
-            : 'impact-report-warning impact-report-warning--informational'
-        }
-      >
+      <div className='impact-report-warning impact-report-warning--informational'>
+        {/* THE SAME TITLE IN BOTH MODES. "Impact detected: N affected
+            accounts" named the rows by an operation nobody had chosen yet,
+            and under CLOSE by one that never runs. They are the accounts this
+            one has transacted with, which is what they are before any method
+            is picked and after. */}
         <p className='impact-warning-title '>
-          {formatImpactReportTitle(
-            t(isProjectionShown ? 'impactDetectedTitle' : 'relatedAccountsTitle'),
-          )}
+          {formatImpactReportTitle(t('relatedAccountsTitle'))}
         </p>
+        {/* The lede is where the two modes differ, because the two extra
+            columns are what differs. */}
         <p className='impact-warning-message'>
-          {t(isProjectionShown ? 'impactDetectedMessage' : 'relatedAccountsLede')}
+          {t(
+            isProjectionShown
+              ? 'relatedAccountsLedeAdjustment'
+              : 'relatedAccountsLede',
+          )}
         </p>
       </div>
 

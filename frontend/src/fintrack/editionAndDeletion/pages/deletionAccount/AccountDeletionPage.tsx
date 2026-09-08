@@ -450,18 +450,6 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
 
               {renderReportContent()}
 
-              {/* The annulment runs from here, where its own projection is on
-                  screen. Offered only while the balance refuses the close -
-                  it is the alternative to closing, not a step towards it. */}
-              {isAnnulmentOffered && !isLoadingReport && !reportError && (
-                <div className='action-section'>
-                  <ProceedButtonUI
-                    onClick={() => setIsModalOpen(true)}
-                    t={translateText}
-                    disabled={isExecutingDeletion}
-                  />
-                </div>
-              )}
             </div>
           </details>
 
@@ -498,6 +486,21 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               <p className='deletion-methods-blocked' role='note'>
                 {translateText('closeOnlyBlockedNotice')}
               </p>
+            )}
+
+            {/* THE OTHER ROUTE, directly under the notice that says why it is
+                here. It used to sit inside the account-relations section,
+                which the owner asked to be information about the account -
+                and it sat above this notice, so the button arrived before its
+                reason. Offered only while the balance refuses the close. */}
+            {isAnnulmentOffered && !isLoadingReport && !reportError && (
+              <div className='action-section'>
+                <ProceedButtonUI
+                  onClick={() => setIsModalOpen(true)}
+                  t={translateText}
+                  disabled={isExecutingDeletion}
+                />
+              </div>
             )}
 
             <div className='deletion-methods-actions'>
