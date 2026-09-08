@@ -844,7 +844,13 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     case 'all':
       tableName = 'transactions';
       queryModel = {
-        text: `SELECT mt.movement_type_name, ua.*, tr.*
+        // The derived expression sits AFTER ua.*, which already ships a column
+        // called account_balance: two outputs share the name and the driver
+        // keeps the last one. The six sibling branches of this switch alias the
+        // derivation over the stored column; this branch selected ua.* and was
+        // left behind, so 'all' was the one movement filter that published the
+        // stored value.
+        text: `SELECT mt.movement_type_name, ua.*, ${DERIVED_BALANCE} AS account_balance, tr.*
          FROM transactions tr
         JOIN user_accounts ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -954,7 +960,10 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
     const movementsResult = await pool.query({
       text: `
   SELECT mt.movement_type_name, ct.currency_code,ua.*, tr.*, trt.transaction_type_name,
-    CAST(tr.amount AS FLOAT), CAST(${DERIVED_BALANCE} AS FLOAT), CAST(ua.account_starting_amount AS FLOAT)
+    -- AS account_balance is load-bearing. Without the alias this cast lands
+    -- under the output name float8, so it collides with nothing and ua.*'s
+    -- stored account_balance is what the client receives. Measured, not assumed.
+    CAST(tr.amount AS FLOAT), CAST(${DERIVED_BALANCE} AS FLOAT) AS account_balance, CAST(ua.account_starting_amount AS FLOAT)
   FROM transactions tr
           JOIN user_accounts ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -1075,7 +1084,9 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
       text: `
   SELECT mt.movement_type_name, ct.currency_code, ua.*, tr.*, trt.transaction_type_name,act.account_type_name,
   CAST ( ua.account_starting_amount AS FLOAT),  CAST (tr.amount AS FLOAT),
-  CAST(${DERIVED_BALANCE} AS FLOAT)
+  -- Named, for the reason spelled out in dashboardMovementTransactionsSearch:
+  -- an un-aliased cast is called float8 and leaves ua.* holding the name.
+  CAST(${DERIVED_BALANCE} AS FLOAT) AS account_balance
     FROM transactions tr
       JOIN user_accounts ua ON tr.account_id = ua.account_id
       JOIN account_types act ON ua.account_type_id = act.account_type_id

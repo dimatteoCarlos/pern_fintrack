@@ -44,8 +44,9 @@ export async function getUserIdFromAccount(clientOrPool, accountId) {
     FROM user_accounts
     WHERE account_id = $1
       -- Not swept with the rest: this answers who owns a row, not whether
-      -- money may move through it. A closed_at test here makes the reopen
-      -- path fail to resolve the owner of the account it is reopening.
+      -- money may move through it, so no closed_at test belongs here. The
+      -- deleted_at test does not follow from that reason either; flagged
+      -- pending the deletion-type ruling, not changed under the freeze.
       AND deleted_at IS NULL
   `;
   const result = await db.query(query, [accountId]);
