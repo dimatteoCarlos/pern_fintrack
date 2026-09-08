@@ -102,6 +102,18 @@ was done rather than what remains. Confirm before treating it as either.
  line 78. Not one transaction per file. If the fourth pending file fails, the
  three before it roll back with it.
 - Writes one row per file into `migrations` as it goes (line 71).
+- **Refuses to run against a database nobody named.** Before the ledger table is
+ created, and therefore before anything is written, `assertExpectedDatabase` asks
+ the open connection what it reached with `current_database()` and stops unless
+ `DB_EXPECTED` names it. An absent `DB_EXPECTED` is also a refusal; the refusal
+ prints the database it reached, so naming it takes one step. `NODE_ENV` is
+ checked too, as a separate refusal, but it is the weaker of the two: it cannot
+ decide the destination, because `dbEnvironmentConfig.js` declares `development`
+ and `production` with identical bodies that both read `DATABASE_URI`.
+- **The single transaction is not as single as it looks.** Migrations `001`-`007`
+ carry their own `BEGIN`/`COMMIT`, which closes the runner's transaction early,
+ so a failure in file N+1 leaves N already committed. Recorded in
+ `PLAN_MIGRATION_CHAIN_031_035.md`.
 
 Consequences to keep in mind:
 
@@ -156,11 +168,26 @@ creating records in between; or relax the `NOT NULL`, deploy, and restore it.
 ## 4. Applying to a local database
 
 ```bash
-npm run db:migrate
+DB_EXPECTED=fintrack_dev npm run db:migrate
 ```
 
 Reads `DATABASE_URI` from `backend/.env`. To point at a different local
 database, override `DB_NAME`; see `dbMigrationConfig.js`.
+
+`DB_EXPECTED` is not the target and does not change it. It is the name you
+believe the run will reach, checked against what the connection actually
+reports, and the run stops if the two differ. Running without it prints the
+database it reached and refuses, which is the supported way to find out where
+`DATABASE_URI` points without opening `.env`.
+
+To read what a database already has, without writing anything:
+
+```bash
+DB_EXPECTED=fintrack_dev npm run db:state
+```
+
+It prints the ledger and the objects the last five migrations create. Two
+`SELECT`s and no writes.
 
 Never point `npm run db:reset` at a database you care about: it terminates the
 connections and drops it.

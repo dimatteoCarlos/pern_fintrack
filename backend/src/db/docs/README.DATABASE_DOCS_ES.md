@@ -11,11 +11,23 @@ Esta guía está dedicada **exclusivamente a la administración y mantenimiento 
 | # | Etapa | Propósito | Windows (cmd) | Linux/Mac | ¿Producción? |
 |---|-------|-----------|---------------|-----------|--------------|
 | **1** | **Crear DB** | Base de datos limpia | `createdb fintrack_dev` | `createdb fintrack_dev` | ❌ No |
-| **2** | **Migraciones** | Estructura (tablas, FKs) | `npm run db:migrate` | `npm run db:migrate` | ✅ Sí |
+| **2** | **Migraciones** | Estructura (tablas, FKs) | `set DB_EXPECTED=fintrack_dev && npm run db:migrate` | `DB_EXPECTED=fintrack_dev npm run db:migrate` | ✅ Sí |
 | **3** | **Seeds Base** | Catálogos (monedas, roles) | `set SEED_BASE=true && npm run db:seed` | `SEED_BASE=true npm run db:seed` | ❌ No |
 | **4** | **Seeds Admin** | Usuario sistema (bootstrap) | `set SEED_ADMIN=true && npm run db:seed` | `SEED_ADMIN=true npm run db:seed` | ❌ Manual |
 | **5** | **Verificar** | Comprobar datos | `psql -U postgres -d fintrack_dev -c "SELECT * FROM users;"` | `psql -U postgres -d fintrack_dev -c "SELECT * FROM users;"` | ✅ Sí |
 | **6** | **Iniciar App** | Levantar servidor | `npm run dev` | `npm run dev` | `npm start` |
+
+**`DB_EXPECTED` no elige la base, la confirma.** `db:migrate`, `db:seed:base`,
+`db:seed:admin` y `db:state` preguntan a la conexión ya abierta qué base
+alcanzaron, con `current_database()`, y se niegan si no coincide con
+`DB_EXPECTED` o si la variable falta. La negativa imprime la base que alcanzó,
+así que nombrarla es un solo paso. `NODE_ENV` no sirve para esto: en
+`dbEnvironmentConfig.js` los bloques `development` y `production` son idénticos y
+los dos leen `DATABASE_URI`.
+
+**Para leer sin escribir nada** — el libro mayor, lo pendiente y los objetos que
+crean las migraciones 031 a 035 — está `npm run db:state`, dos `SELECT` y
+ninguna escritura.
 
 ### 🔄 Comandos de Utilidad Rápida
 

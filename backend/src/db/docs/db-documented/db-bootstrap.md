@@ -72,7 +72,7 @@ Migrations create the entire schema.
 Execute:
 
 ```
-npm run db:migrate
+DB_EXPECTED=fintrack_dev npm run db:migrate
 ```
 
 This will:
@@ -83,6 +83,15 @@ This will:
 
 Safe to run multiple times.
 
+`DB_EXPECTED` does not choose the database and does not change it. It is the name
+you believe the run will reach, checked against what the connection reports with
+`current_database()`, and the run stops before writing anything if the two
+differ. Omitting it is also a refusal, and the refusal prints the database it
+reached. Substitute your own database name if it is not `fintrack_dev`.
+
+`npm run db:bootstrap` sets it for you, because that script created the database
+a step earlier and knows its name.
+
 ---
 
 ## Step 3: Seed Base Catalogs (Optional)
@@ -92,7 +101,7 @@ Base seeds populate static reference data (currencies, roles, types).
 Run:
 
 ```
-npm run db:seed:base
+DB_EXPECTED=fintrack_dev npm run db:seed:base
 ```
 
 Notes:
@@ -109,7 +118,7 @@ This step bootstraps the **system administrator**.
 Run explicitly:
 
 ```
-npm run db:seed:admin
+DB_EXPECTED=fintrack_dev npm run db:seed:admin
 ```
 
 Requirements:
@@ -148,9 +157,9 @@ npm run db:reset
 Then repeat:
 
 ```
-npm run db:migrate
-npm run db:seed:base
-npm run db:seed:admin
+DB_EXPECTED=fintrack_dev npm run db:migrate
+DB_EXPECTED=fintrack_dev npm run db:seed:base
+DB_EXPECTED=fintrack_dev npm run db:seed:admin
 ```
 
 ⚠️ Never use reset in production.
