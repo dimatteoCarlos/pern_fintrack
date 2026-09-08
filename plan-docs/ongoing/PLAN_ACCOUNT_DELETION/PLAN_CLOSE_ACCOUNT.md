@@ -283,6 +283,105 @@ makes the composite the last remaining copy.
 
 ---
 
+### 3.7 The retroactive lowering, and the fix the owner asked for
+
+**The owner asked for a fix on 2026-09-07** — *cerrar una categoria hoy baja el
+presupuesto de todos los meses anteriores, y la desviacion de un mes ya cerrado
+cambia a posteriori, sin que nadie toque ese mes, hay que arreglarlo,
+sugerencias y propuestas?*
+
+#### The measurement: three removals, and both sides of the deviation fall
+
+Closing a `category_budget` account takes it out of every past month through
+**three independent mechanisms, any one of which is sufficient**:
+
+- **The id set never names it.** `getBudgetAccountsStatus` builds `accountIds`
+  from `getOwnedBudgetAccounts` (`budgetController.js:43-46`), which calls
+  `getAccountsByType(userId, 'category_budget')`. That query
+  (`accountUtils.js:167-188`) reads `FROM user_accounts ua` and inner-joins
+  `category_budget_accounts cba`, so a deleted account cannot appear in it.
+- **The account detail query inner-joins the extension table.**
+  `ACCOUNTS_QUERY` at `budgetTransactionRepository.js:132-133`.
+- **The allocation rows are gone.** `budget_monthly_allocations.account_id`
+  cascades from `category_budget_accounts`
+  (`010_create_budget_tables.sql:41-43`).
+
+**And it is not only the budget side that falls.** `SERIES_QUERY` at
+`budgetTransactionRepository.js:317` and `SPENT_BY_MONTH_QUERY` at `:353` both
+filter on `t.account_id = ANY($1)` — the same id array. So a closed category
+loses its budget *and* its spending from every elapsed month, and the month's
+deviation moves by the difference between the two. It only stays put if the
+category happened to land exactly on budget.
+
+#### What the system's own rule is, measured rather than assumed
+
+**A settled month is not immutable in this codebase, and that is deliberate.**
+`budgetAllocationService.js:222` refuses a write only when `month >
+currentMonth`, and `:231` only when the month precedes the account's start
+month. **Writing a budget into an elapsed month is explicitly permitted.** The
+carry-forward comment at `010_create_budget_tables.sql:25-29` is built on the
+same idea: a row rules from its month onward until a later row replaces it.
+
+So the requirement is not "freeze the past". The owner stated the real one
+himself — *sin que nadie toque ese mes*. **A month may change when the owner
+decides to change it, and must not change as a side effect of an action that was
+about something else.** Closing an account in September is not a decision about
+March.
+
+#### This supersedes a recommendation recorded earlier in this plan
+
+Section 3.5 argues that preserving `budget_monthly_allocations` rows past the
+close *buys nothing*, because the three readers listed above already miss the
+account. **That argument was conditional on the readers staying as they are, and
+the owner's request removes the condition.** The rows would be unread only
+because nothing asks for them; he is now asking for them. Recorded as a
+supersession rather than edited away, because the measurement in 3.5 is still
+correct and only its conclusion is not.
+
+#### The four candidate fixes
+
+| # | Fix | What it satisfies | What it costs | Recommendation |
+|---|---|---|---|---|
+| 1 | Repoint `budget_monthly_allocations.account_id` at the registry, write a terminating zero at closure, and let the budget readers include closed accounts for elapsed months | the requirement exactly, and keeps the ruling that the account row is deleted | a seventh repointed key in three build paths, plus a past-month branch in two readers | **recommended** |
+| 2 | Copy the account's allocation series into a closure snapshot table at closure | the same result | the same reader work plus a second store for one fact, which can drift from the first | no |
+| 3 | Freeze every elapsed month into a settled-month snapshot, read instead of recomputed | far more than asked | a new subsystem, and it would also freeze the retroactive budget edit the code deliberately allows | no |
+| 4 | Change nothing; warn on the close screen | nothing; it only tells the user the past will move | one line of copy | fallback only if 1 is deferred |
+
+#### Fix 1, in detail
+
+- **The terminating zero.** Before the delete, CLOSE writes one
+  `budget_monthly_allocations` row for the **current** month with
+  `budget_amount = 0`. That is the mechanism the schema already documents:
+  *the only way to express "no budget from month M" is a positive marker, and
+  zero is the only one available* (`010_create_budget_tables.sql:25-29`), and
+  `CHECK (budget_amount >= 0)` at `:45` admits it. It makes the answer correct
+  whichever way the readers are later written — with it, a reader that unions
+  closed accounts into the current month still reports zero for this one.
+- **The key.** `account_id INTEGER NOT NULL REFERENCES
+  category_budget_accounts(account_id) ON DELETE CASCADE` at
+  `010_create_budget_tables.sql:41-43` becomes a reference to the registry.
+  Declared in three build paths, not one — the same file,
+  `supabase/001_production_alignment.sql:402` and `createTables.js:407`.
+- **The readers.** Two need a past-month branch: the id set at
+  `accountUtils.js:167-188` and `ACCOUNTS_QUERY` at
+  `budgetTransactionRepository.js:132-133`. `SERIES_QUERY` and
+  `SPENT_BY_MONTH_QUERY` need no change at all — they filter on the id array
+  they are handed, so a wider array is all they require.
+- **The display fields resolve without the extension table**, which is what
+  makes this affordable: `ACCOUNTS_QUERY` needs `category_name`, `subcategory`
+  and the nature, and 3.6 measures that all three are segments of the
+  `account_name` the registry stamps, split by `parseCategoryAccountName`
+  (`newCategoryHelper.ts:26-33`). Currency comes from the registry stamp too.
+  The one field that cannot be rebuilt is `category_nature_type_id` as a catalog
+  key; the nature's name survives as text.
+
+**Ownership.** The key and the terminating zero are CLOSE's. The two reader
+branches are the budget module's, and the same two readers are what the Overview
+expense page reads through (`overviewExpenseService.js:72`). This plan does not
+change them.
+
+---
+
 ## 4. The historical identity
 
 ### 4.1 The problem, measured
@@ -1061,7 +1160,7 @@ it names the one loss his ruling does **not** cover.
 | Decision | Recommendation |
 |---|---|
 | Whether the confirmation screen warns that the budget goes with the account | **yes.** His ruling settles what happens; it does not say whether the user is told before it happens, and the deletion is not reversible. One line on the close screen. |
-| Whether the retroactive lowering of past months is acceptable | **it is not this plan's to accept.** `getAllocationForMonth` recomputes settled months live, so closing an account changes figures already reported. The budget module owns the fix; this plan only records that CLOSE triggers it. |
+| Which of the four fixes for the retroactive lowering is taken | **fix 1 in 3.7** — repoint `budget_monthly_allocations.account_id` at the registry, write a terminating zero at closure, and let the budget readers include closed accounts for elapsed months. The owner asked for a fix on 2026-09-07 and has not chosen among the four. |
 | Whether a closed account still appears in a picker or a historical list | a filter on a read, not a schema change; nothing depends on it, and it waits for the close screen |
 
 **One thing no decision here changes.** The statement at
