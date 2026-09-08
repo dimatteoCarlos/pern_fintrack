@@ -700,29 +700,39 @@ const processStandardDelete = async (
 /**
  * 📝 PROCESS CLOSE ACCOUNT
  * CLOSE as the owner ruled it on 2026-09-08: refuse the close if the account
- * still holds money, then mark it closed. It settles nothing, transfers
- * nothing, discards nothing, reverses nothing and writes no transaction of any
- * kind. In his words, "CLOSE solamente elimina la entidad de cuenta y conserva
- * su identidad/historia."
+ * still holds money, then remove the account and keep its identity. It settles
+ * nothing, transfers nothing, discards nothing, reverses nothing and writes no
+ * transaction of any kind. In his words, "CLOSE solamente elimina la entidad de
+ * cuenta y conserva su identidad/historia."
  *
  * The refusal covers bank, cash, investment and debtor. The owner resolves a
  * balance outside CLOSE - through the ordinary transfer screen - and closes
  * afterwards, which leaves him a movement he can read instead of one written
  * on his behalf against an account no view renders.
  *
- * WHAT IS NOT HERE YET, and each has its own block of the plan: releasing what
- * the account committed to pockets, the terminating zero on the budget series,
- * stamping the registry row with the closure columns and close_reason, and
- * deleting the user_accounts row. Until those land this path still marks the
- * row rather than deleting it, which is the behaviour that shipped before and
- * stays correct on its own.
+ * WHAT IT DOES, in the order the owner fixed, all on the caller's client and
+ * all inside one transaction: lock the account, derive its balance from the
+ * ledger, refuse a nonzero balance on the four types that hold one, release
+ * every pocket allocation the account was backing, write a terminating zero on
+ * a category budget's month series, upsert the account_registry row with the
+ * closure stamp, delete the extension row, delete the user_accounts row.
+ *
+ * THIS HEADER SAID "WHAT IS NOT HERE YET" UNTIL 2026-09-08 and listed the last
+ * four of those. They all landed that day. The statement that marked the row
+ * closed instead of deleting it is retired and left commented below - it
+ * existed because foreign keys refused the delete, never because marking was
+ * the intent.
  *
  * Exported so it can be exercised on a caller's own transaction. The only
  * other way in is deleteAccountService, which opens a connection and commits,
  * so nothing could check what this writes without really closing an account.
  * It takes the client rather than opening one, which is what makes a
- * rolled-back verification possible - see scripts/verifyCloseAccount.js and
- * scripts/verifyCloseTransfer.js.
+ * rolled-back verification possible - see scripts/verifyClose.js.
+ *
+ * The two probes this line used to name, verifyCloseAccount.js and
+ * verifyCloseTransfer.js, are retired: they assert a settlement that no longer
+ * happens, and both fail before their first assertion because they import two
+ * policy constants the controller no longer exports.
  *
  * @param {object} accountCheck - the target's row, already read with its
  *   account_type_name joined in. The type is what decides whether the

@@ -1,3 +1,22 @@
+// RETIRED 2026-09-08. DO NOT RUN; IT CANNOT RUN.
+//
+// This probe asserts the CLOSE that settled: a residual moved out under a
+// policy, an account marked closed with its row left in place, a preview
+// figure echoed back and refused if it had moved. None of that happens now.
+// CLOSE refuses a nonzero balance instead of disposing of it, and it deletes
+// the account row rather than marking it.
+//
+// It also fails before its first assertion rather than failing an assertion:
+// it imports CLOSE_POLICY_DISCARD and CLOSE_POLICY_TRANSFER from the deletion
+// controller, and both are commented out there, so the module does not link.
+//
+// KEPT RATHER THAN DELETED, per the owner's standing rule that disused code is
+// commented and not removed. Its harness is also the best record of how a
+// rolled-back probe against this engine is built, which is what its successor
+// borrows.
+//
+// ITS SUCCESSOR IS scripts/verifyClose.js, which asserts what CLOSE does now.
+//
 // backend/scripts/verifyCloseTransfer.js
 //
 // Exercises CLOSE's TRANSFER policy against a real database and rolls back.
