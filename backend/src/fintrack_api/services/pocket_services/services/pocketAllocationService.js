@@ -292,121 +292,202 @@ const convertTypedAmount = async (
  * @param {'allocate'|'release'} direction
  * @returns {Promise<object>} the row written, and the figures it moved
  */
-const writeLedgerRow = async (direction, userId, pocketId, body) => {
+/**
+ * Commit money to a pocket, or release it back to the account, on a client the
+ * caller already owns.
+ *
+ * No BEGIN, no COMMIT and no ROLLBACK here: whoever passes the client decides
+ * when the work becomes durable, and an error leaves untouched so the caller's
+ * own rollback covers it.
+ *
+ * Split out of writeLedgerRow on 2026-09-08, when the owner ruled that closing
+ * an account has to release what the account committed to pockets inside the
+ * close's own transaction: "release debe poder participar en una transaccion
+ * externa sin abrir/confirmar una propia". The statements are not rewritten and
+ * not copied - both entry points reach the same SQL through this function.
+ *
+ * @param {import('pg').PoolClient} client - inside the caller's transaction,
+ *   which is also where the source account has to be locked
+ * @param {{timeZone:string, requestedDay:string, asOfDay:string|null}} day -
+ *   resolved before the transaction opens, see writeLedgerRow
+ */
+const writeLedgerRowOnClient = async (
+ client,
+ direction,
+ userId,
+ pocketId,
+ body,
+ { timeZone, requestedDay, asOfDay },
+) => {
+ const pocket = await getPocketForUser(client, userId, pocketId);
+
+ if (pocket === null) {
+  throw forbidden('Pocket not found or not owned by the authenticated user.');
+ }
+
+ const account = await lockOwnedSourceAccount(
+  client,
+  userId,
+  body.sourceAccountId,
+ );
+
+ if (account === null) {
+  throw forbidden('Account not found or not owned by the authenticated user.');
+ }
+
+ assertEligibleSource(account, requestedDay, timeZone);
+
+ const converted = await convertTypedAmount(
+  client,
+  body.amount,
+  body.currency,
+  account,
+  asOfDay,
+  timeZone,
+ );
+
+ const requested = money(converted.amount);
+
+ if (direction === 'allocate') {
+  // The precondition of allocating, and of nothing else. It lives here rather
+  // than in a CHECK because a CHECK would also block the insert of a real
+  // expense, which must always be accepted.
+  const unassignedCash = money(account.accountBalance).minus(
+   account.accountAllocated,
+  );
+
+  if (requested.greaterThan(unassignedCash)) {
+   throw unprocessable(
+    `Cannot commit ${statedAmount(requested)} to this pocket: "${account.accountName}" has ${statedAmount(unassignedCash)} of unassigned cash.`,
+   );
+  }
+ } else {
+  // The running sum of the (pocket, source account) pair may never go below
+  // zero: a pocket cannot give back to an account more than it holds from it,
+  // and it is what forces the release form to name a source rather than a
+  // total.
+  const held = money(
+   await getHeldByPocketFromAccount(
+    client,
+    userId,
+    pocketId,
+    body.sourceAccountId,
+   ),
+  );
+
+  if (requested.greaterThan(held)) {
+   throw unprocessable(
+    `Cannot release ${statedAmount(requested)} from "${account.accountName}": this pocket holds ${statedAmount(held)} from it.`,
+   );
+  }
+ }
+
+ // The sign is written here and nowhere else. original_amount carries it too,
+ // so the stored figure stays the origin figure times the rate and the audit
+ // pair reconciles in both magnitude and direction.
+ const sign = direction === 'allocate' ? 1 : -1;
+
+ const written = await insertAllocation(client, userId, {
+  pocketId,
+  sourceAccountId: body.sourceAccountId,
+  amount: toAmount(requested.times(sign)),
+  // The validated day, and null whenever it is today: a decision taken now
+  // keeps the real current instant, and only a past one is anchored at noon.
+  // It is the same value the conversion was priced on, so the row's date and
+  // its rate can never describe two different days.
+  allocationDate: asOfDay,
+  timeZone,
+  originalAmount: toAmount(money(converted.originalAmount).times(sign)),
+  originalCurrencyId: converted.originalCurrencyId,
+  exchangeRate: converted.exchangeRate,
+  exchangeRateSource: converted.exchangeRateSource,
+  exchangeRateTimestamp: converted.exchangeRateTimestamp,
+  // The unit amount is expressed in, which is the unit the pocket's target is
+  // expressed in. Read from the account, whose currency the guard above has
+  // already proven to be that one.
+  exchangeRateTargetCurrencyId: account.currencyId,
+ });
+
+ return {
+  allocationId: Number(written.allocationId),
+  pocketId,
+  sourceAccountId: account.accountId,
+  sourceAccountName: account.accountName,
+  amount: toAmount(written.amount),
+ };
+};
+
+/**
+ * Commit money to a pocket, or release it back to the account.
+ *
+ * The check and the insert are ONE transaction with the source account locked
+ * FOR UPDATE. Two simultaneous requests would otherwise both read the same
+ * unassigned cash and both pass, and the account would end up committed beyond
+ * what it holds with neither request having done anything wrong.
+ *
+ * That transaction is this function's OWN only when no client is passed. Given
+ * one, the work joins the caller's transaction instead and commits or rolls
+ * back with it - which is what account closing needs, because a release that
+ * committed on its own connection would survive a failed close and leave the
+ * pocket giving back money to an account that still exists.
+ *
+ * @param {'allocate'|'release'} direction
+ * @param {import('pg').PoolClient|null} externalClient - the caller's client,
+ *   already inside its transaction, or null to open one here
+ * @returns {Promise<object>} the row written, and the figures it moved
+ */
+const writeLedgerRow = async (
+ direction,
+ userId,
+ pocketId,
+ body,
+ externalClient = null,
+) => {
  // The zone, and the three checks that need nothing but it, run BEFORE the
  // transaction opens. The conversion below depends on the day they resolve, and
  // an HTTP call to a rate provider inside an open transaction would hold it for
  // the length of a network round trip.
- const timeZone = await getUserTimeZone(pool, userId);
+ //
+ // Read on the caller's client when there is one: that read is already inside
+ // their transaction, and a second connection would be a second snapshot for no
+ // reason.
+ const timeZone = await getUserTimeZone(externalClient ?? pool, userId);
 
  const { requestedDay, asOfDay } = resolveAllocationDay(
   body.allocationDate,
   timeZone,
  );
 
+ const day = { timeZone, requestedDay, asOfDay };
+
+ if (externalClient !== null) {
+  return writeLedgerRowOnClient(
+   externalClient,
+   direction,
+   userId,
+   pocketId,
+   body,
+   day,
+  );
+ }
+
  const client = await pool.connect();
 
  try {
   await client.query('BEGIN');
 
-  const pocket = await getPocketForUser(client, userId, pocketId);
-
-  if (pocket === null) {
-   throw forbidden('Pocket not found or not owned by the authenticated user.');
-  }
-
-  const account = await lockOwnedSourceAccount(
+  const written = await writeLedgerRowOnClient(
    client,
+   direction,
    userId,
-   body.sourceAccountId,
-  );
-
-  if (account === null) {
-   throw forbidden('Account not found or not owned by the authenticated user.');
-  }
-
-  assertEligibleSource(account, requestedDay, timeZone);
-
-  const converted = await convertTypedAmount(
-   client,
-   body.amount,
-   body.currency,
-   account,
-   asOfDay,
-   timeZone,
-  );
-
-  const requested = money(converted.amount);
-
-  if (direction === 'allocate') {
-   // The precondition of allocating, and of nothing else. It lives here rather
-   // than in a CHECK because a CHECK would also block the insert of a real
-   // expense, which must always be accepted.
-   const unassignedCash = money(account.accountBalance).minus(
-    account.accountAllocated,
-   );
-
-   if (requested.greaterThan(unassignedCash)) {
-    throw unprocessable(
-     `Cannot commit ${statedAmount(requested)} to this pocket: "${account.accountName}" has ${statedAmount(unassignedCash)} of unassigned cash.`,
-    );
-   }
-  } else {
-   // The running sum of the (pocket, source account) pair may never go below
-   // zero: a pocket cannot give back to an account more than it holds from it,
-   // and it is what forces the release form to name a source rather than a
-   // total.
-   const held = money(
-    await getHeldByPocketFromAccount(
-     client,
-     userId,
-     pocketId,
-     body.sourceAccountId,
-    ),
-   );
-
-   if (requested.greaterThan(held)) {
-    throw unprocessable(
-     `Cannot release ${statedAmount(requested)} from "${account.accountName}": this pocket holds ${statedAmount(held)} from it.`,
-    );
-   }
-  }
-
-  // The sign is written here and nowhere else. original_amount carries it too,
-  // so the stored figure stays the origin figure times the rate and the audit
-  // pair reconciles in both magnitude and direction.
-  const sign = direction === 'allocate' ? 1 : -1;
-
-  const written = await insertAllocation(client, userId, {
    pocketId,
-   sourceAccountId: body.sourceAccountId,
-   amount: toAmount(requested.times(sign)),
-   // The validated day, and null whenever it is today: a decision taken now
-   // keeps the real current instant, and only a past one is anchored at noon.
-   // It is the same value the conversion was priced on, so the row's date and
-   // its rate can never describe two different days.
-   allocationDate: asOfDay,
-   timeZone,
-   originalAmount: toAmount(money(converted.originalAmount).times(sign)),
-   originalCurrencyId: converted.originalCurrencyId,
-   exchangeRate: converted.exchangeRate,
-   exchangeRateSource: converted.exchangeRateSource,
-   exchangeRateTimestamp: converted.exchangeRateTimestamp,
-   // The unit amount is expressed in, which is the unit the pocket's target is
-   // expressed in. Read from the account, whose currency the guard above has
-   // already proven to be that one.
-   exchangeRateTargetCurrencyId: account.currencyId,
-  });
+   body,
+   day,
+  );
 
   await client.query('COMMIT');
 
-  return {
-   allocationId: Number(written.allocationId),
-   pocketId,
-   sourceAccountId: account.accountId,
-   sourceAccountName: account.accountName,
-   amount: toAmount(written.amount),
-  };
+  return written;
  } catch (error) {
   await client.query('ROLLBACK');
   throw error;
@@ -420,7 +501,13 @@ export const pocketAllocationService = {
  allocate: (userId, pocketId, body) =>
   writeLedgerRow('allocate', userId, pocketId, body),
 
- /** POST /pocket/:pocketId/releases */
- release: (userId, pocketId, body) =>
-  writeLedgerRow('release', userId, pocketId, body),
+ /**
+  * POST /pocket/:pocketId/releases
+  *
+  * dbClient is optional and defaults to the standalone behaviour, so the route
+  * calls this exactly as before. Account closing passes its own client so the
+  * release lives or dies with the close.
+  */
+ release: (userId, pocketId, body, dbClient = null) =>
+  writeLedgerRow('release', userId, pocketId, body, dbClient),
 };
