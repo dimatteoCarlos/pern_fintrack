@@ -138,6 +138,26 @@ const budgetClause = (card: OverviewExpenseCard) => {
   : `${money(card.currency, card.budgetVariance)} left of budget`;
 };
 
+// How much of the month's spending the budget verdict above did NOT cover.
+//
+// The server publishes a FLAG and never this amount, deliberately: it is
+// totalAmount minus categorizedExpense, a subtraction over two fields already
+// on the card, and a third field would be a second place for the same number to
+// be wrong. The flag is what decides whether the clause appears at all - the
+// subtraction alone can land on a fraction of a cent of binary float error and
+// would print a clause for spending that does not exist.
+//
+// Without it the amber square says the reading is incomplete and gives the
+// reader no way to tell whether that means a cent or half the month.
+const uncategorizedClause = (card: OverviewExpenseCard) => {
+ if (!card.hasUncategorizedExpense) return null;
+
+ return `${money(
+  card.currency,
+  card.totalAmount - card.categorizedExpense,
+ )} outside a category`;
+};
+
 // A losing month is the one health statement this card can make out of what it
 // publishes, and it is the only card where the sign of the figure and the
 // reading are the same thing.
@@ -236,6 +256,7 @@ function DomainCards() {
  const { income, expense, pnl, debt, pocket, investment } = domainCards;
 
  const budget = budgetClause(expense);
+ const uncategorized = uncategorizedClause(expense);
 
  return (
   <>
@@ -271,6 +292,12 @@ function DomainCards() {
           zero budget. */}
       {budget}
       {budget && ' · '}
+      {/* The reason the verdict above can be incomplete, and the clause the
+          amber square is pointing at. Spending that lost its category is not
+          counted against the budget, so the card can be inside its budget and
+          still not know where the month went. */}
+      {uncategorized}
+      {uncategorized && ' · '}
       {deltaLine(expense.delta, expense.currency)}
      </>
     }
