@@ -42,6 +42,17 @@ import { assessDeletionImpact } from './getAnnulmentImpactReport.js';
 // import { assertTransferDestinationEligible } from './getCloseTransferDestinations.js';
 // import { getCurrencyCode } from '../../../utils/currencyLookup.js';
 
+// Block 3 step 1. Both are reused rather than reimplemented, on the owner's
+// ruling of 2026-09-08: the close does not write its own version of a release
+// or of a budget decision, it calls the ones the modules already own.
+import { pocketAllocationService } from '../pocket_services/services/pocketAllocationService.js';
+import {
+ resolveCurrentMonth,
+ writeAllocation,
+} from '../budget_services/db/budgetAllocationRepository.js';
+import { getUserTimeZone } from '../../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { ACCOUNTING_CURRENCY_CODE } from '../../config/fintrackConfig.js';
+
 // The name the system reserves for the compensation counterpart. Belongs in
 // accountUtils.js beside NOT_BOUNDARY_ACCOUNT; declared here because that file
 // is another session's to edit, and requested from its owner. The literal
@@ -60,6 +71,27 @@ const CLOSE_ZERO_BALANCE_TYPES = Object.freeze([
   'investment',
   'debtor',
 ]);
+
+// The 1:1 extension row each account type carries, and the table it lives in.
+// Four of the eight catalog types have one; bank, cash, investment and
+// boundary keep everything on user_accounts and appear here as an absence
+// rather than as a null entry, so a lookup that misses means "no extension"
+// and never "type not handled".
+//
+// Written out rather than derived from the catalog, for the reason
+// CLOSE_ZERO_BALANCE_TYPES gives above: a type added to account_types must not
+// silently acquire a table this operation would then fail to find.
+//
+// It is also the only source the close interpolates a table name from. The
+// value is a frozen literal reached by a key compared against the catalog's
+// own names, never a string from the request, which is what makes the
+// interpolation below safe.
+const CLOSE_EXTENSION_TABLES = Object.freeze({
+  income_source: 'income_source_accounts',
+  category_budget: 'category_budget_accounts',
+  debtor: 'debtor_accounts',
+  pocket_saving: 'pocket_saving_accounts',
+});
 //=====================================
 // 📋 MESSAGES CONFIGURATION
 const messages = {
@@ -616,36 +648,54 @@ const processStandardDelete = async (
 // 🔒 CLOSE PROCESSING (unit 7, PLAN_ACCOUNT_DELETION.md §3.1/§4.1)
 //========================================
 
-// Release gate ("Gate, stated per branch, not per person", plan doc, unit
-// 5/7 catalog decision): no movement_type_id 10 row could be written until
-// overviewInvestmentRepository.js's reconciliation accounted for that type on
-// BOTH main and feat/overview.
+// RETIRED 2026-09-08 by the owner, in his words: "Si CLOSE ya no genera
+// movement_type_id = 10, entonces el gate esta protegiendo una condicion que ya
+// no puede ocurrir bajo el nuevo diseno." The gate below refused every CLOSE
+// until the investment card's reconciliation accounted for movement_type_id 10.
+// That type reached the card through recordClosureSettlement, and the settlement
+// left the executable flow in the same commit that made CLOSE refuse a non-zero
+// balance instead of settling it - so no path can write a type 10 row and the
+// condition the gate waited for can no longer arise.
 //
-// Cleared 2026-09-07, Carlos, on measurements rather than on this code looking
-// ready. Both branches carry the SAME closure-adjustment term: the filter is
-// identical at origin - the closure movement type OR a description beginning
-// with the annulment prefix - and the realised term excludes those same
-// prefixed rows under a NULL-safe negation. An earlier version of this line
-// said feat/overview sums the movement type alone, which understated it
-// (pern-fintrack-cf, verified here by comparing the two trees at that
-// expression); the version before that said main had no such term at all,
-// which was true when written and stopped being true when the Investment card
-// shipped it.
+// It is not replaced by another gate. The owner's contract for CLOSE is balance
+// zero, release the pocket commitments, terminate the budget, write the
+// registry, delete the account - and no accounting entry anywhere in it.
 //
-// What that means for a later reader checking whether this gate's precondition
-// still holds: feat/vercel-serverless has no close path, so no closure-typed
-// row can exist in data it writes and the term is carried there by the prefix
-// alone - free text that the erasure tail's REPLACE can rewrite. That tail
-// ships on the branch; the movement type that would back the term up does not.
-//
-// What the measurement covered, so a later reader knows what it does not: a
-// real settlement written through this path on fintrack_dev moves the card's
-// closure term by exactly the negation of the residual and leaves the realised
-// term alone, the identity closes, and only the target leg is inside the
-// published account set - the boundary counterpart stays out. Rolled back both
-// times. See scripts/verifyClosureSettlement.js for the writer and
-// scripts/verifyCloseAccount.js for this whole path.
-const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = true;
+// Kept commented rather than deleted, like the two retired policies above,
+// because the measurement recorded in it is the evidence that both branches
+// carried the same closure-adjustment term. That evidence stays readable even
+// though the gate it justified is gone.
+
+// // Release gate ("Gate, stated per branch, not per person", plan doc, unit
+// // 5/7 catalog decision): no movement_type_id 10 row could be written until
+// // overviewInvestmentRepository.js's reconciliation accounted for that type on
+// // BOTH main and feat/overview.
+// //
+// // Cleared 2026-09-07, Carlos, on measurements rather than on this code looking
+// // ready. Both branches carry the SAME closure-adjustment term: the filter is
+// // identical at origin - the closure movement type OR a description beginning
+// // with the annulment prefix - and the realised term excludes those same
+// // prefixed rows under a NULL-safe negation. An earlier version of this line
+// // said feat/overview sums the movement type alone, which understated it
+// // (pern-fintrack-cf, verified here by comparing the two trees at that
+// // expression); the version before that said main had no such term at all,
+// // which was true when written and stopped being true when the Investment card
+// // shipped it.
+// //
+// // What that means for a later reader checking whether this gate's precondition
+// // still holds: feat/vercel-serverless has no close path, so no closure-typed
+// // row can exist in data it writes and the term is carried there by the prefix
+// // alone - free text that the erasure tail's REPLACE can rewrite. That tail
+// // ships on the branch; the movement type that would back the term up does not.
+// //
+// // What the measurement covered, so a later reader knows what it does not: a
+// // real settlement written through this path on fintrack_dev moves the card's
+// // closure term by exactly the negation of the residual and leaves the realised
+// // term alone, the identity closes, and only the target leg is inside the
+// // published account set - the boundary counterpart stays out. Rolled back both
+// // times. See scripts/verifyClosureSettlement.js for the writer and
+// // scripts/verifyCloseAccount.js for this whole path.
+// const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = true;
 
 /**
  * 📝 PROCESS CLOSE ACCOUNT
@@ -684,28 +734,36 @@ export const processCloseAccount = async (
   targetAccountId,
   accountCheck,
   transactionDate,
+  // The owner's stated reason for closing. Mandatory, free text, and it is the
+  // schema that makes it so - see the refusal below.
+  closeReason,
   // RETIRED 2026-09-08. The three parameters that drove the settlement:
   // policy, destinationAccountId, expectedResidual. Removed from the
   // signature rather than left as ignored parameters, so a caller that still
   // passes them is a syntax error to read rather than a silent no-op.
 ) => {
-  if (!CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED) {
-    // 409, not 503: this is not a transient outage a retry will clear - it is
-    // a permanent block on the current system state (main's investment card
-    // has no closure-adjustment term yet). 503 reads as retryable to generic
-    // client/proxy retry logic, which would loop forever on a gate that only
-    // a code change lifts (pern-fintrack-cf, 2026-09-06). Same reasoning as
-    // the HARD-delete guard above, which uses 409 for the same kind of
-    // state-dependent refusal.
-    throw createError(
-      409,
-      'CLOSE is not released yet: the investment card reconciliation on main ' +
-        'and feat/overview must account for movement_type_id 10 first (see ' +
-        'PLAN_ACCOUNT_DELETION.md, unit 5/7 catalog decision, "Gate, stated ' +
-        'per branch"). Coordinate with the Overview branch before clearing ' +
-        'this gate.',
-    );
-  }
+  // RETIRED 2026-09-08 with the constant above. The 409 it raised named a
+  // reconciliation that no longer has anything to reconcile: the movement type
+  // it waited for has no writer left. Retired here and not merely made
+  // unreachable, so a reader does not have to resolve a constant to find out
+  // whether CLOSE can run.
+  // if (!CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED) {
+  // // 409, not 503: this is not a transient outage a retry will clear - it is
+  // // a permanent block on the current system state (main's investment card
+  // // has no closure-adjustment term yet). 503 reads as retryable to generic
+  // // client/proxy retry logic, which would loop forever on a gate that only
+  // // a code change lifts (pern-fintrack-cf, 2026-09-06). Same reasoning as
+  // // the HARD-delete guard above, which uses 409 for the same kind of
+  // // state-dependent refusal.
+  // throw createError(
+  // 409,
+  // 'CLOSE is not released yet: the investment card reconciliation on main ' +
+  // 'and feat/overview must account for movement_type_id 10 first (see ' +
+  // 'PLAN_ACCOUNT_DELETION.md, unit 5/7 catalog decision, "Gate, stated ' +
+  // 'per branch"). Coordinate with the Overview branch before clearing ' +
+  // 'this gate.',
+  // );
+  // }
 
   // The two states are distinguishable as of migration 034, and this is the
   // refusal that needed it. Both set deleted_at, so a single check on that
@@ -723,6 +781,33 @@ export const processCloseAccount = async (
     throw createError(
       400,
       `Account ${targetAccountId} was deleted and cannot be closed. Closing settles a residual, and a deleted account is no longer in circulation to hold one.`,
+    );
+  }
+
+  // THE REASON IS MANDATORY, and the schema is what makes it so rather than
+  // this check. 035 declares chk_close_reason_accompanies_closure as
+  // (closed_at IS NULL) = (close_reason IS NULL) AND (close_reason IS NULL OR
+  // close_reason ~ '[^[:space:]]'), so a closure stamp without a reason, or
+  // with one made only of whitespace, is refused by the database itself.
+  //
+  // Repeated here for two reasons. The caller gets a 400 naming the field
+  // instead of a 500 carrying a constraint name, and the refusal happens
+  // before the lock below, so a request that was never going to succeed takes
+  // no row lock on its way to being refused - the same reasoning the retired
+  // echo parse used.
+  //
+  // trim() is stricter than the constraint's regex and never looser: every
+  // character it strips is one Postgres also treats as space, plus a few it
+  // does not, so no string this accepts can fail the CHECK.
+  const reason = String(closeReason ?? '').trim();
+
+  if (reason === '') {
+    throw createError(
+      400,
+      'closeReason is required to close an account. The account row is ' +
+        'deleted by this operation and the registry entry is what survives ' +
+        'it, so the reason is the only record of why the account stopped ' +
+        'existing.',
     );
   }
 
@@ -952,19 +1037,274 @@ export const processCloseAccount = async (
   // The guard stays deleted_at IS NULL and must not become closed_at IS NULL
   // while the dual-write stands: a soft-deleted account carries deleted_at and
   // no closed_at, and a closed_at guard would let this path close it.
-  const markResult = await dbClient.query(
-    `UPDATE user_accounts
-        SET closed_at = CURRENT_TIMESTAMP,
-            deleted_at = CURRENT_TIMESTAMP,
-            updated_at = CURRENT_TIMESTAMP
+  // ==========================================================================
+  // BLOCK 3, FIRST HALF: what the account is holding on behalf of other things
+  // is given back BEFORE the account stops existing. Both steps run on the
+  // caller's dbClient, so they commit with the close or roll back with it.
+  // ==========================================================================
+
+  // RELEASE WHAT THE ACCOUNT COMMITTED TO POCKETS.
+  //
+  // A commitment is not money: allocating moves nothing, it only reserves part
+  // of an account's balance so the rest reads as unassigned cash. That is why
+  // this survives the zero-balance refusal above - an account can sit at zero
+  // and still be backing a pocket, because the balance fell after the
+  // commitment was made and allocating never checked it again.
+  //
+  // Enumerated per pocket rather than in one statement, because a release is
+  // per (pocket, source account) pair - the running sum of that pair is the
+  // figure the pocket module refuses to push below zero, and one total across
+  // pockets could not be checked against it. HAVING SUM > 0 leaves out pairs
+  // already settled: a zero pair has nothing to give back, and asking the
+  // module to release zero would be refused by the amount <> 0 CHECK.
+  const pocketHoldings = await dbClient.query(
+    `SELECT pa.pocket_id AS "pocketId", SUM(pa.amount)::text AS held
+       FROM pocket_allocations pa
+      WHERE pa.user_id = $1 AND pa.source_account_id = $2
+      GROUP BY pa.pocket_id
+     HAVING SUM(pa.amount) > 0`,
+    [userId, targetAccountId],
+  );
+
+  const releasedPockets = [];
+
+  for (const holding of pocketHoldings.rows) {
+    // The module's own release, on this transaction's client. It writes the
+    // compensating row through the same statement the release form does, and
+    // applies the same guards - the pair may not go below zero, the account
+    // must still be undeleted, the pocket must be the owner's.
+    //
+    // ACCOUNTING_CURRENCY_CODE, not a lookup: the module refuses any source
+    // account not kept in it, so an account that can hold a commitment is
+    // already in that unit and the conversion is an identity.
+    const released = await pocketAllocationService.release(
+      userId,
+      holding.pocketId,
+      {
+        sourceAccountId: targetAccountId,
+        amount: Number(holding.held),
+        currency: ACCOUNTING_CURRENCY_CODE,
+      },
+      dbClient,
+    );
+
+    releasedPockets.push({
+      pocketId: holding.pocketId,
+      amount: released.amount,
+    });
+  }
+
+  // THE BUDGET SERIES STOPS AT THIS MONTH.
+  //
+  // Only a category_budget account has one. The rows live in
+  // budget_monthly_allocations keyed by the extension row's account_id, so no
+  // other type reaches this and the condition is the type rather than a count.
+  //
+  // writeAllocation with `to` null is the "stop budgeting" verb the budget
+  // module already documents against itself: it deletes every decision after
+  // `from` and writes the amount at `from`, leaving the months before it
+  // untouched. That is the owner's ruling of 2026-09-08 exactly - past months
+  // preserved, a terminating zero on the current month, and no future
+  // carry-forward - reached by calling the module rather than by writing a
+  // second version of it.
+  //
+  // The FX metadata is an identity and stating it is not the silence migration
+  // 014 was written to end: zero is zero in every currency, so there is no
+  // conversion here for a rate to describe. The currency ids are the account's
+  // own, so the row reads in the same unit as the decisions before it.
+  let budgetTerminatedAt = null;
+
+  if (targetTypeName === 'category_budget') {
+    const timeZone = await getUserTimeZone(dbClient, userId);
+    const currentMonth = await resolveCurrentMonth(dbClient, timeZone);
+
+    await writeAllocation(dbClient, targetAccountId, 0, currentMonth, null, {
+      originalAmount: 0,
+      originalCurrencyId: accountCheck.rows[0].currency_id,
+      rate: 1,
+      source: 'identity',
+      fetchedAt: new Date(),
+      targetCurrencyId: accountCheck.rows[0].currency_id,
+    });
+
+    budgetTerminatedAt = currentMonth;
+  }
+
+  // ==========================================================================
+  // BLOCK 3, SECOND HALF: the account stops existing and its identity survives.
+  // The order is the owner's, stated on 2026-09-08: write/update
+  // account_registry, delete the extension row, delete user_accounts. All three
+  // run on the caller's dbClient inside the transaction opened above.
+  // ==========================================================================
+
+  // READ THE EXTENSION ROW BEFORE ANYTHING DELETES IT. Three of the registry's
+  // columns live only here, and 035's own comment says why they cannot be
+  // recovered afterwards: budgetCalculationService folds its payload on
+  // category_name and ACCOUNTS_QUERY publishes subcategory as its own field, so
+  // neither may be reconstructed by parsing account_name.
+  //
+  // The nature is stamped as the catalog id rather than the name text, because
+  // category_nature_types rows are never deleted and the existing LEFT JOIN
+  // stays answerable against the id.
+  const extensionTable = CLOSE_EXTENSION_TABLES[targetTypeName] ?? null;
+
+  let extensionRow = null;
+
+  if (targetTypeName === 'category_budget') {
+    const extensionRead = await dbClient.query(
+      `SELECT category_name, subcategory, category_nature_type_id, currency_id
+         FROM category_budget_accounts
+        WHERE account_id = $1`,
+      [targetAccountId],
+    );
+
+    extensionRow = extensionRead.rows[0] ?? null;
+  }
+
+  // THE RESOLVED CURRENCY, not the raw column, because that is what the stamp
+  // has to answer for. ACCOUNTS_QUERY reads
+  // COALESCE(cba.currency_id, ua.currency_id) at
+  // budgetTransactionRepository.js:125; once both rows are gone that COALESCE
+  // has no second operand, so the registry has to already hold the value the
+  // expression would have produced. On every other type the extension row
+  // carries no currency this reader consults, and the account's own column is
+  // the answer.
+  const resolvedCurrencyId =
+    extensionRow?.currency_id ?? accountCheck.rows[0].currency_id;
+
+  // WRITE OR UPDATE THE REGISTRY ROW. An upsert rather than an UPDATE: the
+  // trigger of 035 section 2 writes this row at account creation and the
+  // backfill of section 3 covers the accounts that predate the table, but a
+  // database where neither has reached this account would leave an UPDATE
+  // matching nothing and the closure would vanish with the row it describes.
+  //
+  // The columns are stamped from the row being destroyed, not from the request.
+  // account_created_at takes user_accounts.created_at - the ACCOUNT's creation
+  // day, which is why 035 renamed the column away from a bare created_at.
+  //
+  // closed_by is the account's owner, which is the same userId every guard in
+  // this path filtered on.
+  const registryStamp = await dbClient.query(
+    `INSERT INTO account_registry (
+       account_id,
+       user_id,
+       account_name,
+       account_type_id,
+       currency_id,
+       account_starting_amount,
+       account_start_date,
+       account_created_at,
+       category_name,
+       subcategory,
+       category_nature_type_id,
+       closed_at,
+       closed_by,
+       close_reason
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+             CURRENT_TIMESTAMP, $2, $12)
+     ON CONFLICT (account_id) DO UPDATE
+       SET account_name = EXCLUDED.account_name,
+           account_type_id = EXCLUDED.account_type_id,
+           currency_id = EXCLUDED.currency_id,
+           account_starting_amount = EXCLUDED.account_starting_amount,
+           account_start_date = EXCLUDED.account_start_date,
+           account_created_at = EXCLUDED.account_created_at,
+           category_name = EXCLUDED.category_name,
+           subcategory = EXCLUDED.subcategory,
+           category_nature_type_id = EXCLUDED.category_nature_type_id,
+           closed_at = EXCLUDED.closed_at,
+           closed_by = EXCLUDED.closed_by,
+           close_reason = EXCLUDED.close_reason
+     RETURNING account_id, closed_at`,
+    [
+      targetAccountId,
+      userId,
+      accountCheck.rows[0].account_name,
+      accountCheck.rows[0].account_type_id,
+      resolvedCurrencyId,
+      accountCheck.rows[0].account_starting_amount,
+      accountCheck.rows[0].account_start_date,
+      accountCheck.rows[0].created_at,
+      extensionRow?.category_name ?? null,
+      extensionRow?.subcategory ?? null,
+      extensionRow?.category_nature_type_id ?? null,
+      reason,
+    ],
+  );
+
+  if (registryStamp.rowCount === 0) {
+    throw createError(
+      500,
+      `Failed to record the closure of account ${targetAccountId}`,
+    );
+  }
+
+  // DELETE THE EXTENSION ROW EXPLICITLY, although the foreign key would take it
+  // anyway: every extension table declares account_id ... ON DELETE CASCADE
+  // (002_accounts.sql:124, :142, :167, :193). Stated rather than left to the
+  // cascade because the owner ruled the order, because it yields a count this
+  // path can report, and because a cascade is a property of the schema that a
+  // later migration can change without this file mentioning it.
+  //
+  // The table name is interpolated. It comes from CLOSE_EXTENSION_TABLES, a
+  // frozen literal keyed by the catalog's own type name, and never from the
+  // request.
+  let extensionRowsDeleted = 0;
+
+  if (extensionTable !== null) {
+    const extensionDelete = await dbClient.query(
+      `DELETE FROM ${extensionTable} WHERE account_id = $1`,
+      [targetAccountId],
+    );
+
+    extensionRowsDeleted = extensionDelete.rowCount;
+  }
+
+  // DELETE THE ACCOUNT. This is the operation CLOSE is, in the owner's words of
+  // 2026-09-08: "CLOSE solamente elimina la entidad de cuenta y conserva su
+  // identidad/historia."
+  //
+  // NOT EXERCISABLE UNTIL 035 IS APPLIED, and that is the honest state rather
+  // than a defect here. Four transactions keys, pocket_allocations and
+  // budget_monthly_allocations all point into user_accounts with RESTRICT until
+  // 035 repoints them at account_registry; before that DDL this statement is
+  // refused by the first surviving reference, exactly as it should be.
+  //
+  // The deleted_at IS NULL predicate is kept from the UPDATE this replaces. The
+  // row is already locked and already checked, so it can only fail on a state
+  // this path did not create, which is what the 500 says.
+  const deleteResult = await dbClient.query(
+    `DELETE FROM user_accounts
       WHERE account_id = $1 AND user_id = $2 AND deleted_at IS NULL
       RETURNING account_id`,
     [targetAccountId, userId],
   );
 
-  if (markResult.rowCount === 0) {
+  if (deleteResult.rowCount === 0) {
     throw createError(500, `Failed to close account ${targetAccountId}`);
   }
+
+  // RETIRED 2026-09-08 by the second half of block 3, kept per the standing
+  // rule that code is commented and not deleted. CLOSE marked the row while the
+  // registry did not exist yet: it set closed_at and deleted_at and left the
+  // account in place, because deleting it was refused by the foreign keys 035
+  // repoints. The mark is not a step of the close any more - there is no row
+  // left to carry it.
+  //
+  // const markResult = await dbClient.query(
+  //   `UPDATE user_accounts
+  //       SET closed_at = CURRENT_TIMESTAMP,
+  //           deleted_at = CURRENT_TIMESTAMP,
+  //           updated_at = CURRENT_TIMESTAMP
+  //     WHERE account_id = $1 AND user_id = $2 AND deleted_at IS NULL
+  //     RETURNING account_id`,
+  //   [targetAccountId, userId],
+  // );
+  //
+  // if (markResult.rowCount === 0) {
+  //   throw createError(500, `Failed to close account ${targetAccountId}`);
+  // }
 
   return {
     actionType: USER_ACTION,
@@ -975,7 +1315,18 @@ export const processCloseAccount = async (
     // the other types it is whatever the account held, reported and left
     // alone.
     closingBalance: residual,
-    rowCount: 1,
+    // What the close gave back before it marked the row. Reported so the close
+    // screen can name the pockets that changed rather than leaving the owner to
+    // discover it on the pocket board.
+    releasedPockets,
+    budgetTerminatedAt,
+    // The closure record, read back from the row that survives the account.
+    // Reported because it is the only thing left to report: the account row is
+    // gone by the time this returns.
+    closeReason: reason,
+    registryClosedAt: registryStamp.rows[0].closed_at,
+    extensionRowsDeleted,
+    rowCount: deleteResult.rowCount,
     // RETIRED 2026-09-08 with the settlement policies. The response used to
     // name the policy applied and the account the residual moved to; CLOSE
     // moves nothing now, so there is no destination to report.
@@ -1042,10 +1393,14 @@ export const deleteAccountService = async (
   deletionType,
   // CONDITIONAL RTA PARAMETER:
   targetAccountName = 'Unknown', // RTA execution data - cosmetic only, see processRTAAnnulment
-  // CONDITIONAL CLOSE PARAMETERS:
-  policy, // which settlement policy CLOSE applies (CLOSE_POLICY_DISCARD | CLOSE_POLICY_TRANSFER); ignored by every other deletion type
-  destinationAccountId, // where the residual goes under TRANSFER; ignored by DISCARD and by every other deletion type
-  expectedResidual, // the balance the owner was shown and confirmed; required by CLOSE under both policies, ignored by every other deletion type
+  // CONDITIONAL CLOSE PARAMETER:
+  closeReason, // the owner's stated reason for closing; mandatory for CLOSE by 035's CHECK, ignored by every other deletion type
+  // RETIRED 2026-09-08 with the settlement policies. Removed from the signature
+  // rather than left in place, because a positional parameter nobody passes
+  // shifts every argument after it:
+  // policy, // which settlement policy CLOSE applies (CLOSE_POLICY_DISCARD | CLOSE_POLICY_TRANSFER); ignored by every other deletion type
+  // destinationAccountId, // where the residual goes under TRANSFER; ignored by DISCARD and by every other deletion type
+  // expectedResidual, // the balance the owner was shown and confirmed; required by CLOSE under both policies, ignored by every other deletion type
 ) => {
   // =========================================
   // 🚀 RTA ANNULMENT EXECUTION (ATOMIC TRANSACTION)
@@ -1293,6 +1648,7 @@ export const deleteAccountService = async (
               targetAccountId,
               accountCheck,
               new Date(),
+              closeReason,
               // RETIRED 2026-09-08 with the settlement policies:
               // policy, destinationAccountId, expectedResidual
             )
@@ -1315,12 +1671,19 @@ export const deleteAccountService = async (
           'executed',
         );
       } else if (deletionType === DELETION_TYPE_CLOSE) {
-        // Where the residual went is part of the outcome, not a detail: the
-        // two policies differ by exactly that, and a message that only names
-        // the amount reads identically for a transfer and for a write-off.
-        successMessage = deleteResult.destinationAccountId
-          ? `Account ${targetAccountId} closed. Residual settled: ${deleteResult.settledResidual}, transferred to "${deleteResult.destinationAccountName}".`
-          : `Account ${targetAccountId} closed. Residual settled: ${deleteResult.settledResidual}, discarded to the system account.`;
+        // What the close did, in the order it did it. The account row is gone,
+        // so the message names what replaced it rather than a residual: no
+        // residual is settled by this path.
+        successMessage =
+          `Account ${targetAccountId} closed and removed. Its history stays ` +
+          'in the registry under the same account id.';
+        // RETIRED 2026-09-08 with the settlement policies. Both branches read
+        // fields the close no longer returns, so the message shipped the word
+        // undefined where the amount used to be.
+        //
+        // successMessage = deleteResult.destinationAccountId
+        //   ? `Account ${targetAccountId} closed. Residual settled: ${deleteResult.settledResidual}, transferred to "${deleteResult.destinationAccountName}".`
+        //   : `Account ${targetAccountId} closed. Residual settled: ${deleteResult.settledResidual}, discarded to the system account.`;
       } else {
         successMessage = messages.userAction.messagefn(
           targetAccountId,
@@ -1337,10 +1700,17 @@ export const deleteAccountService = async (
           deletionType: deleteResult.deletionType,
           timestamp: new Date().toISOString(),
           ...(deletionType === DELETION_TYPE_CLOSE && {
-            policy: deleteResult.policy,
-            settledResidual: deleteResult.settledResidual,
-            destinationAccountId: deleteResult.destinationAccountId,
-            destinationAccountName: deleteResult.destinationAccountName,
+            closingBalance: deleteResult.closingBalance,
+            closeReason: deleteResult.closeReason,
+            registryClosedAt: deleteResult.registryClosedAt,
+            releasedPockets: deleteResult.releasedPockets,
+            budgetTerminatedAt: deleteResult.budgetTerminatedAt,
+            // RETIRED 2026-09-08 with the settlement policies. All four were
+            // undefined from the moment the settlement left the service.
+            // policy: deleteResult.policy,
+            // settledResidual: deleteResult.settledResidual,
+            // destinationAccountId: deleteResult.destinationAccountId,
+            // destinationAccountName: deleteResult.destinationAccountName,
           }),
         },
       };

@@ -414,7 +414,10 @@ function NewAccount() {
       <div className='account__page__content page__content'>
         <div className='main__title--container'>
           <Link
-            to={location.state.previousRoute || '/dashboard'}
+            // Optional: two screens open this form and a third could be
+            // reached by typing the URL. Unguarded, a visit with no state threw
+            // on the property read and the page never rendered.
+            to={location.state?.previousRoute || '/dashboard'}
             relative='path'
             className='iconLeftArrow'
           >
