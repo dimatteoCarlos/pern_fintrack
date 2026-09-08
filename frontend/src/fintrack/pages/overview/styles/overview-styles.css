@@ -466,27 +466,52 @@ a.icon {
 }
 
 .overviewLayout .trendChart__plot {
- display: flex;
- align-items: flex-end;
- justify-content: space-between;
- gap: var(--space-1);
+ position: relative;
  /* A fixed plot height so the three charts share a baseline across the row.
     Each series is still scaled against its own peak, which the component
     states: the charts answer how a domain moved, not which domain is bigger. */
  height: 3rem;
 }
 
-.overviewLayout .trendChart__column {
- flex: 1;
- min-width: 0;
- border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+.overviewLayout .trendChart__line {
+ display: block;
+ width: 100%;
+ height: 100%;
+}
+
+/* The stroke is the only width on this page that has no token. The card border
+   above it is declared the same way, at 1px, so the line is set at twice that
+   and follows whatever that border becomes. */
+.overviewLayout .trendChart__stroke {
+ fill: none;
+ stroke: var(--color-accent);
+ stroke-width: 2;
+ stroke-linecap: round;
+ stroke-linejoin: round;
+}
+
+.overviewLayout .trendChart__markers {
+ position: absolute;
+ inset: 0;
+}
+
+.overviewLayout .trendChart__marker {
+ position: absolute;
+ /* Placed by its centre. Its own left and bottom are the point, so half of it
+    has to come back off both axes. */
+ transform: translate(-50%, 50%);
+ width: var(--space-1);
+ height: var(--space-1);
+ border-radius: var(--radius-full);
  background: var(--color-accent);
 }
 
+/* No gap between the cells: a month name is centred in its cell, and the point
+   above it is placed at that same fraction of the full width, so any gap here
+   would slide the name off its point. */
 .overviewLayout .trendChart__axis {
  display: flex;
  justify-content: space-between;
- gap: var(--space-1);
  font-size: var(--font-size-3xs);
  letter-spacing: 0.65px;
  color: var(--color-content-on-dark-subtle);
