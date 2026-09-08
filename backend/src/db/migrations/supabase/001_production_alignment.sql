@@ -39,7 +39,22 @@
 -- BEGIN/COMMIT ARE IN THIS FILE, unlike 010 to 017. Nothing wraps it —
 -- runMigrations.js is not what executes it. Do not remove them.
 --
--- Idempotent throughout: every step is guarded, so re-running changes nothing.
+-- IDEMPOTENT IN EVERY STEP BUT ONE, AND ONLY BEFORE THE CHAIN RUNS ON TOP.
+-- Steps 1 to 7 and 9 are guarded and re-running them changes nothing. Step 8 is
+-- not: it is an unconditional DROP CONSTRAINT followed by ADD CONSTRAINT, and
+-- once migration 035 has repointed those keys at account_registry a second run
+-- returns transactions_account_id_fkey, transactions_source_account_id_fkey and
+-- transactions_destination_account_id_fkey to user_accounts, undoing three of
+-- 035's seven repoints without raising. Measured 2026-09-08 on a copy of
+-- fintrack_prod_rehearsal_full. An earlier version of this line claimed the file
+-- was idempotent throughout, which was true when it was written and stopped
+-- being true when 035 was added.
+--
+-- What that costs is capability, not data: step 8 restores the keys as
+-- ON DELETE RESTRICT, so no transaction row is deleted, but user_accounts gains
+-- three refusing references again and CLOSE can no longer delete the account
+-- row. runAlignment.js refuses a second run for this reason. To rehearse again,
+-- build a new database from the production dump.
 --
 -- ORDER IS FORCED, not stylistic:
 --   1 before 6 — the allocation month is resolved on users.timezone.
@@ -541,6 +556,13 @@ $$;
 --
 -- The other six foreign keys to user_accounts stay untouched: they are 1:1
 -- extension tables and their cascade is correct.
+--
+-- THIS IS THE ONE UNGUARDED STEP IN THE FILE, and the header says what it costs
+-- on a database where migration 035 has already run. It is left unconditional
+-- rather than guarded on confrelid because the guard would have to encode which
+-- table these keys are supposed to reference, and that answer changed with 035.
+-- The refusal in runAlignment.js is where the protection lives instead: one run
+-- per database, checked against the ledger row step 9 writes.
 ALTER TABLE transactions
  DROP CONSTRAINT IF EXISTS transactions_account_id_fkey,
  DROP CONSTRAINT IF EXISTS transactions_source_account_id_fkey,
