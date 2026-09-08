@@ -137,6 +137,23 @@ const INVESTMENT_FIGURES_QUERY = `
       AND t.amount > 0
       AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   ),
+  -- ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID HAS NO WRITER LEFT AND STAYS ANYWAY.
+  -- recordClosureSettlement.js:186 is the only code that ever wrote it, and its
+  -- two imports are commented out (deleteAccountService.js:35, :1000) since
+  -- CLOSE stopped moving money on 2026-09-08. Measured on fintrack_dev: zero
+  -- transactions carry it, while sixteen carry the RTA prefix and every one of
+  -- them is movement type 9.
+  --
+  -- So closure_adjustment is produced ENTIRELY by its second arm today, and the
+  -- type is not what keeps the column alive. What the type still does is
+  -- account for rows written before the settlement was retired. Dropping it
+  -- would not remove a dead branch, it would stop counting those rows - a
+  -- silent change to a published figure on any database that holds one, and
+  -- this database's zero says nothing about another's.
+  --
+  -- The two arms answer different questions and neither substitutes for the
+  -- other: an RTA-prefixed row is an annulment carrying the profit-and-loss
+  -- type, and a type-10 row was a settlement that carried no prefix.
   realized AS (
     SELECT
       COALESCE(SUM(t.amount) FILTER (
