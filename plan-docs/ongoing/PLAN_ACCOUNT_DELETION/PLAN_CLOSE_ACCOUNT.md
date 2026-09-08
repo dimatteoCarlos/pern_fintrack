@@ -242,9 +242,18 @@ the page reads as a finished operation — which would have replaced the close
 screen with an error view for an operation nobody started; the hook takes
 `isReportWanted` and skips the fetch.
 
-**What no longer has a path from that screen: an account holding a balance.**
-CLOSE refuses one, and the annulment that used to settle it is no longer
-offered. Put to the owner on 2026-09-08 and not yet answered.
+**An account holding a balance briefly had no path from that screen**, because
+CLOSE refuses one and the annulment that settles it was no longer offered. The
+owner ruled the same day: the annulment returns for exactly that case and
+disappears again once the balance is zero.
+
+The condition reads the close preview, not `user_accounts.account_balance` —
+the preview returns the figure the engine derives its own refusal from, and the
+stored column is a different number. A loading or a failed preview leaves the
+annulment hidden: a preview that has not answered is not evidence of a balance,
+and guessing would flash a section in and out of the page while the request is
+in flight. The page owns `useCloseAccount` for this reason and passes the
+result to the dialog, so the preview is fetched once rather than twice.
 
 ### The closure movement type has readers and no writer
 
@@ -288,14 +297,49 @@ losing its catalog entry.
 **What is left for the owner is the catalog row itself**, and it belongs to the
 migration session, which will write nothing touching it until he decides.
 
+### Ruled by the owner on 2026-09-08
+
+He approved every recommendation put to him in one answer. What each one means
+and where it landed:
+
+| Decision | Ruling | Where it lives |
+|---|---|---|
+| An account with a balance had no path from the close screen | the annulment returns while the balance is not zero | built, above |
+| Exercising the close against a database | authorised | **still blocked** — see below |
+| A maximum length for the closing reason | cap it in the schema, not in the form | the migration session's, unwritten |
+| Telling the owner the budget goes with the account | say it before he confirms | built, on the close dialog |
+| Whether a closed account appears in pickers and in history | history yes, pickers no | **needs no code** — see below |
+| Migration 032's account-closure catalog row | leave it | nothing to do |
+| Lifting the migration suspension | not yet | nothing to do |
+
+**The closing reason is capped in the database, not in the form.** A limit that
+lives only in the interface is not honoured by a second writer, and the column
+is what every writer meets. The length itself is the migration session's to
+choose; nothing here proposes one.
+
+**The picker decision is already the behaviour, by construction.** Every
+account list roots in `user_accounts` — `accountUtils.js:44`, `:134`, `:176`
+and `getAccountDataById.js:55` — and CLOSE deletes that row, so a closed
+account leaves every picker with no filter written anywhere. What puts it back
+into history is the `account_identity` builder. There is nothing to implement
+and nothing to guard; the risk it names would only appear if some future list
+were rebuilt on the registry without stating `AND NOT ai.is_closed`.
+
+**The close has still never been executed.** The owner authorised the run and
+the session's own permission layer refused it, so the authorisation given in
+conversation does not reach the process that runs it. That is a settings matter
+on his side, and it is not routed through any other session: another session
+running it would be that permission decision bypassed rather than met.
+
 ### Still open, and the owner rules
 
-- **Whether the closing reason has a maximum length.** It is stored as
-  unbounded text, it is supplied by the client, and nothing between the
-  request and the column caps it. The frontend field does not cap it either,
-  deliberately: a limit invented here would be a limit the schema does not
-  enforce, so a second writer would not honour it. Raised on 2026-09-08 and
-  not answered.
+- **The closing reason's maximum length — RULED, and reassigned.** It is
+  stored as unbounded text, supplied by the client, and nothing between the
+  request and the column caps it. The owner ruled on 2026-09-08 that the cap
+  belongs in the schema rather than in the form, for the reason the frontend
+  field was left uncapped in the first place: a limit the schema does not
+  enforce is one a second writer does not honour. The constraint and its
+  length belong to the migration session.
 
 ### Left as measured, not repaired
 
