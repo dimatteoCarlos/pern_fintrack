@@ -111,14 +111,18 @@ proof the repoint happened.
   account still typed `bank` enters net worth and the account inventory with no
   error anywhere. Whoever applies 031 should expect a wrong figure, not a crash,
   as the sign that it has not run.
-- **No session has read any database's `migrations` table.** Both peer sessions
-  were asked on 2026-09-08 and both answered that they have not queried one, on
-  `fintrack_dev` or anywhere else. The applied state of every database is
-  therefore unknown to the repository, and the only evidence that the `boundary`
-  type resolves on the development database is a code comment in
-  `overviewAccountRepository.js` dated 2026-09-07 — which proves the type exists,
-  not that 031 ran, because `populateDB.js` seeds the same catalog row on the
-  boot path.
+- **`fintrack_dev` has 031 through 034 applied and 035 not.** Read on 2026-09-08
+  on Carlos's instruction, read-only, against the database the connection
+  reported as `fintrack_dev` at `::1:5432`. The ledger holds 35 rows ending at
+  `034_add_account_closed_at.sql`, executed 2026-09-07. The schema agrees: the
+  `boundary` row is in `account_types`, `account-closure` is in `movement_types`,
+  `user_accounts.account_type_id` reports `is_nullable = NO`,
+  `user_accounts.closed_at` exists, and `to_regclass('public.account_registry')`
+  is NULL.
+- **035's conditional precondition is satisfied there.**
+  `to_regclass('public.budget_monthly_allocations')` returns the table, so the
+  seventh key has something to repoint and the `to_regclass` branch at the top of
+  035 takes the path that alters it.
 
 ---
 
@@ -162,8 +166,27 @@ These are Carlos's, and no session should answer them by inference.
 
 **A fifth question is unanswerable without reading a production database:**
 whether `013_normalize_category_budget_name_case.sql` ran there on 2026-08-27.
-That read is Carlos's alone. Migrations to production are stopped until these
-processes are defined.
+That read is Carlos's alone; the 2026-09-08 reading covers `fintrack_dev` only,
+where 013 is recorded as executed on 2026-08-08. Migrations to production are
+stopped until these processes are defined.
+
+### Question 3 has a measured instance, not just a risk
+
+The `fintrack_dev` ledger carries `012_backfill_budget_policies.sql`, executed
+2026-08-08. **No such file exists** — `sql_migrations` holds
+`012_backfill_budget_allocations.sql`, and that one is recorded separately,
+executed 2026-08-15. A migration was renamed or replaced after it had run, and
+because the runner keys on the file name and stores no checksum, the successor
+was treated as a migration nobody had applied and ran on the same database. This
+is the abstract risk in question 3 with a date on it.
+
+Two further readings from the same ledger, recorded because they are visible and
+unexplained rather than because they are known to matter: the `id` sequence skips
+18, between `016` and `017`, which is what a deleted row or a rolled-back insert
+leaves behind — every migration file carries a commented
+`DELETE FROM migrations WHERE filename = ...` in its DOWN section, so a deletion
+is the likelier of the two; and `026` is recorded before `025`, which the runner
+allows because each run only considers files the ledger does not already name.
 
 ### The freeze is a decision, not something the code enforces
 
@@ -190,11 +213,22 @@ to `development`, pointed at a production `DATABASE_URI`, passes every live guar
 and reaches production. The guards are blind to the case that matters because the
 variable they read is not the variable that decides the destination.
 
-**No session has fixed this and none should.** Adding a guard changes how a
-production run behaves, which is Carlos's decision, and it would also require
-knowing where `DATABASE_URI` points — which means reading `.env`. Not being able
-to tell which database that variable names is the correct state for a session
-here, not a gap to close.
+**Closed on 2026-09-08, on Carlos's instruction, in `feat(db): guard the
+destination, not the mode`.** `assertExpectedDatabase` asks the open connection
+what it reached, with `current_database()`, and refuses unless `DB_EXPECTED`
+names it; an absent `DB_EXPECTED` is also a refusal, and the refusal prints the
+database it reached so naming it takes one step. It reads no secret and prints no
+connection string. Both runners call it before their first write — before the
+ledger `CREATE TABLE` in one, before `BEGIN` in the other — and the `NODE_ENV`
+test is kept beside it as an independent second refusal.
+
+**The two callers that spawn the runner now declare their destination**, because
+they are the ones that know it: `bootstrapping.js` passes the name of the
+database it created three steps earlier, and `schemaParity.js` passes `CHAIN_DB`,
+the only database its spawn can reach. Restoring the commented guard was never an
+option: the block is an abandoned alternative implementation that re-imports
+`pc` and `getDbConfig` already imported live and pulls from `'../dbConfig.js'`, a
+path that does not exist, so it breaks the module at import time.
 
 ---
 
