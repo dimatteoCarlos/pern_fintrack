@@ -380,8 +380,11 @@ than "the chain runs": production sits at `030` with 31 ledger rows as of
 2026-09-06, so what is pending is `031` through `036` — six files, one
 `db:migrate`, and `035_create_account_registry.sql` is the one these fourteen
 queries actually need. Measured by the migration session and recorded at
-`ad014691`; the nineteen-file figure that circulated is the rehearsal's, because
-a rehearsal copy starts from the 2026-08-21 dump.
+`ad014691`. The figure that circulated as nineteen is the rehearsal's and is
+twenty: a rehearsal copy starts from the 2026-08-21 dump and runs `013` plus
+`018` through `036`. Corrected by the migration session at `f1130b11` and
+checked here against the directory: `036_cap_close_reason_length.sql` exists and
+is the twentieth.
 
 **And the run is not scheduled by anyone here.** The owner lifted the suspension
 on 2026-09-08 and stated in the same breath that he authorizes each production
@@ -3007,3 +3010,200 @@ text.
 - **Whether every user with compensation activity still owns an account named
   exactly as the retype migration expects.** After that migration runs, the
   evidence of which account was the compensation one is gone.
+
+## 12. Edge cases of account reversal — measured 2026-09-08
+
+The owner asked for this analysis before deciding whether the second route stays
+on the close screen ("pero habria que analizarla bien, por los desbalances que
+se pueden crear", 2026-09-08). Every case below was opened in the file named
+beside it; none is carried over from an earlier reading. The route is
+`DELETION_TYPE_RTA`, which reverses the account's effect on other accounts by
+writing a pair of adjusting rows per counterparty and then running the same
+erasure tail the hard delete runs.
+
+Ordered by what each one costs the owner, not by where it sits in the file.
+
+### 12.1 The reversal has no balance gate; the hard delete has one
+
+`deleteAccountService.js:577-582` refuses a hard delete with 409 whenever the
+target derives to a nonzero balance, and the message names the two ways out.
+The reversal branch begins at `deleteAccountService.js:1512` and its only two
+refusals are the system-account guard above it and `closed_at !== null` at
+`:1542`. No balance is read before `processRTAAnnulment` is called at `:1565`.
+
+The imbalance this could create does not occur today, and the reason is stated
+at `deleteAccountService.js:454-461`: the residual is the stored
+`account_starting_amount` plus the account's rows with its own opening zeroed,
+the report sums the rows, and the column adds back exactly what the zeroing
+removes. The two agree **by construction, not by a rule anything enforces**.
+
+- **What this means for the decision.** The route is not unsafe by measurement;
+  it is unsafe by absence. The hard delete states its precondition and refuses;
+  the reversal has the same precondition and never states it, so the day the two
+  derivations stop agreeing the reversal erases the difference silently.
+- **What it does not mean.** No reachable row is known to make them disagree,
+  and none is claimed here.
+
+### 12.2 Rows that are not `status = 'complete'` are destroyed unreversed
+
+The report's CTE filters `AND tr.status='complete'`
+(`getAnnulmentImpactReport.js:53`, whose own trailing comment reads "no effect
+so far"). The erasure has no such filter:
+
+```
+  await dbClient.query('DELETE FROM transactions WHERE account_id = $1', [
+    targetAccountId,
+  ]);
+```
+(`eraseAccountTail.js:105-107`)
+
+- **Latent, not live.** `003_transactions.sql:56` declares `status TEXT NOT
+  NULL` with no default and no CHECK, and a sweep of `backend/src` finds
+  `status: 'complete'` as the only value any writer sets. Nothing else is
+  storable today because nothing else is written.
+- **What makes it live.** The first second status — a scheduled or pending row,
+  which is what the backdating work introduces — turns the asymmetry into a row
+  that is skipped by the arithmetic and removed by the erasure in the same
+  transaction.
+- **The fix is one predicate in one statement**, and it belongs with whoever
+  adds the second status, not here: either the erasure filters the same way, or
+  the report stops filtering.
+
+### 12.3 The deleted account's name survives permanently in the rows the reversal itself wrote
+
+`eraseAccountTail.js:48-63` nulls the counterparty keys and rewrites
+descriptions on rows where the target is the source or the destination. The
+reversal's own rows are not in that population: `recordAnnulmentTransaction.js`
+sets `account_id` to the affected account (`:153`) and to the compensation
+account (`:189`), and both key columns to those same two (`:145-146`), so the
+target appears in neither key column. Its name appears only inside the
+description text, built at `:85-86`.
+
+- **Consequence.** Every reversal writes rows naming an account that no longer
+  exists, and the erasure that runs seconds later cannot reach them. The
+  endpoint still reports success, because nulling the keys is unaffected.
+- **This is the case the erasure's own header already carries**, corrected there
+  on 2026-09-07 (`eraseAccountTail.js:38-47`). It is repeated here because it is
+  an argument against the route, not only a note about the file.
+
+### 12.4 The description rewrite is a blind substring replace
+
+```
+            description = REPLACE(description, $2, '[deleted account]')
+```
+(`eraseAccountTail.js:51`, and again at `:59`)
+
+The second bind is the account's own name read from the database
+(`deleteAccountService.js:1573`, `accountCheck.rows[0].account_name`), which is
+correct — the client-supplied name defaults to `'Unknown Account'` on the hard
+delete path. But `REPLACE` has no word boundary and no anchor.
+
+- **An account named `Cash` rewrites the word "Cash" wherever it occurs** in the
+  description of any surviving row that referenced it, including inside another
+  account's name and inside the fixed prose the description builders emit.
+- **Short and generic names are the whole risk**, and account names are
+  unconstrained in length and content.
+
+### 12.5 Pocket allocations leave with the account, and the constraint that looks like it prevents that does not
+
+```
+  await dbClient.query(
+    'DELETE FROM pocket_allocations WHERE source_account_id = $1 AND user_id = $2',
+    [targetAccountId, userId],
+  );
+```
+(`eraseAccountTail.js:96-99`)
+
+- **The RESTRICT never fires**, because the rows are cleared before the account
+  is deleted. Reading that constraint as "allocations are never removed, only
+  marked" is reading a guard that this line disarms.
+- **An account can back allocations while its only ledger row is its own
+  opening**, since `insertAllocation` writes to `pocket_allocations` and emits
+  nothing into `transactions`. Any precondition for physical removal stated over
+  transaction rows alone admits exactly that account.
+- **The removal is deliberate and documented** (`POCKET_MODULE_SPEC.md` §11.1
+  Q8b) and the assessment endpoint publishes it before the owner confirms. The
+  edge case is not that it happens; it is that the allocation history is gone
+  with no registry counterpart, because the reversal writes no
+  `account_registry` row at all.
+
+### 12.6 An empty report with a nonzero unattributed total is logged and then ignored
+
+`getUnattributedAnnulmentTotal` (`getAnnulmentImpactReport.js:193-228`) sums the
+target's rows whose counterparty is NULL — the residue of an earlier deletion's
+detach step — and logs them in yellow at `:222-227`. They are excluded from the
+report by construction, and the reason is argued at
+`getAnnulmentImpactReport.js:88-104`: the earlier deletion already reversed
+them, its annulment row sits on this same account against the compensation
+account, so the pair cancels and the group arrives settled.
+
+- **The argument is right and the figure is still a signal.** If the netting
+  held, the unattributed sum is zero. A nonzero one is evidence that it did not
+  hold for this account — and nothing acts on it.
+- **The shape that produces it**: an account all of whose counterparties were
+  deleted before it. The report comes back empty, the else branch at
+  `deleteAccountService.js:429` writes nothing, and the account is erased.
+
+### 12.7 A non-empty report can move nothing
+
+`deleteAccountService.js:325-333`. An account created with a starting amount and
+never used has exactly one qualifying row — its own funded opening, whose source
+is the compensation account — so the report holds a single entry whose affected
+account **is** the compensation account. Both legs of the pair are then written
+on that one account, `+adjustment` and `-adjustment`, and the ledger nets them
+to zero.
+
+- **The screen says the reversal will touch one account and the books do not
+  move.** For that shape the two routes differ by the gate alone: the hard
+  delete refuses the same account with 409, the reversal accepts it.
+
+### 12.8 Self-referential opening rows are excluded and then destroyed
+
+`getAnnulmentImpactReport.js:52` excludes them with `tr.destination_account_id
+IS DISTINCT FROM tr.source_account_id`, and `eraseAccountTail.js:105` destroys
+them with everything else the account owns.
+
+- **Nothing is lost.** `createBasicAccount` sets both key columns from its own
+  `isTransfer`, which is the nonzero-amount test, so a self-referential opening
+  carries amount zero. Destroying a zero-amount row moves no money.
+- **Recorded because the predicate that finds them is not the obvious one**: the
+  transaction type is `'deposit'` for bank and investment at any amount, zero
+  included, so a rule keyed on `'account-opening'` misses them. Test the two
+  columns against each other, never the type name.
+
+### 12.9 Cross-currency summation into the compensation account — checked, not a defect
+
+`recordAnnulmentTransaction.js:153` and `:189` both write `currency_id:
+currencyId`, and that value is the **affected** account's currency, carried from
+`ua.currency_id` in the report. The compensation account's leg therefore
+declares the other account's currency, and `derivedAccountBalanceSql`
+(`derivedBalance.js:241-251`) sums `tr.amount` with no currency predicate and no
+conversion.
+
+- **It cannot be reached through any creation path.** All three `insertAccount`
+  call sites pass `accountingCurrencyId`
+  (`accountCreationController.js:326` and `:772`,
+  `accountCategoryCreationcontroller.js:297`), so every account row carries the
+  accounting currency and `currencyId` equals `accountingCurrencyId` at both
+  writes.
+- **It is a convention, not a constraint.** `user_accounts.currency_id` has no
+  check tying it to the accounting currency, so the writer depends on a property
+  it never asserts. Stated here so that a future path writing a different
+  currency onto an account is recognised as making this reachable, rather than
+  as an unrelated change.
+
+### 12.10 What this analysis recommends
+
+**Take the reversal route off the close screen and keep the code.** The reason
+is not any single case above; it is that 12.1, 12.2 and 12.6 are all the same
+shape — a precondition the route depends on and never states — and the route's
+value on that screen is small: it is offered only while a nonzero balance
+refuses the close, and CLOSE with TRANSFER or DISCARD answers that same
+situation without rewriting other accounts' history. Two more, the surviving
+name in 12.3 and the blind substring replace in 12.4, happen on every run today
+rather than under a condition.
+
+Nothing is deleted. `processRTAAnnulment`, `getAnnulmentImpactReport` and the
+`DELETION_TYPE_RTA` branch stay exactly as they are, reachable from the API and
+covered by the assessment endpoint; only the button leaves the screen. The
+decision is the owner's.
