@@ -1128,9 +1128,9 @@ commits hacía más probable que hubieran cambiado, y dos de las tres correccion
 que siguen muestran que **el propio tercer pase ya estaba mal en un punto al
 escribirse**, no sólo que envejeció.
 
-**Árbol de trabajo:** limpio salvo `OVERVIEW_PLAN/OVERVIEW_BRIEF_2026-09-04.md`
-y `OVERVIEW_PLAN/OVERVIEW_DECISIONS.md`, ambos con trabajo del 2026-09-04 sin
-commitear. Ese subplan mantiene su propio brief fresco y no se repite aquí.
+**Árbol de trabajo:** limpio. El estado de ese subplan vive en
+`OVERVIEW_PLAN/OVERVIEW_PLAN.md`, que es el plan de registro desde el
+2026-09-07, y no se repite aquí.
 
 | sección | qué se corrigió |
 |---|---|
@@ -1141,7 +1141,7 @@ commitear. Ese subplan mantiene su propio brief fresco y no se repite aquí.
 | 6 — Debts | Confirmado sin cambio: el título sigue en `DebtsLayout.tsx:75-79`, ternario sobre el signo de `total_debt_balance`. Un ítem menor de "lo demás vivo" ya cerró y no estaba anotado: `ListOfDebtors.tsx:219` usa `key={account_id}`, no índice de arreglo |
 | 5 — Unicidad de nombre | Confirmado sin cambio: `useAccountExistence` (renombrado del hook que este archivo cita) sigue con **dos** consumidores, `NewAccount.tsx:180` y `NewCategory.tsx:170`, y los dos siguen destructurando sólo `getSuggestions`/`checkDuplicate`. Ninguna de las cinco pantallas de edición gatea su envío |
 | 7 — Tracker UX | Una afirmación quedó falsa: "`CardNoteSave.tsx` no tiene ya ningún importador" ya no es cierto — el componente fue reincorporado y hoy lo importan las cinco pantallas del tracker (`Expense.tsx:25`, y lo mismo en `Income`, `Transfer`, `Debts`, `PnL`) |
-| 8 — Overview | **Superado por completo por el propio subplan.** `feat/overview` llegó a `main` el 2026-09-02 (`d5693f1d`) y de ahí a la rama actual — cero commits sin fundir. El backend está montado y nadie lo consume desde el frontend; la consulta de metas de ahorro sigue leyendo el modelo de bolsillo retirado y ahora está **servida y no leída**, en vez de sin fundir. Detalle completo, ya corregido y fechado hoy, en `OVERVIEW_PLAN/OVERVIEW_BRIEF_2026-09-04.md` — no se repite aquí |
+| 8 — Overview | **Superado por completo por el propio subplan.** `feat/overview` llegó a `main` el 2026-09-02 (`d5693f1d`) y de ahí a la rama actual — cero commits sin fundir. El backend está montado y nadie lo consume desde el frontend; la consulta de metas de ahorro sigue leyendo el modelo de bolsillo retirado y ahora está **servida y no leída**, en vez de sin fundir. Detalle completo en `OVERVIEW_PLAN/OVERVIEW_PLAN.md` — no se repite aquí |
 
 **Qué no se remidió en este pase, dicho para que no se lea como medido.** Las
 secciones 3 (Backdating, activa hasta 2026-09-02 en su propio plan y sin señal

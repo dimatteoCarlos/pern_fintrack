@@ -403,5 +403,5 @@ las de §3, porque una cifra ausente se ve y una equivocada no.
 > consumidor: la pantalla de Overview sigue armada contra los endpoints legacy
 > del dashboard y no hay un solo componente que lea `GET /api/fintrack/overview`.
 > El nivel 1 no está bloqueado por ninguna de estas seis filas — está bloqueado
-> por no tener pantalla. Ver el mapa de la carpeta en
-> `OVERVIEW_BRIEF_2026-09-04.md`.
+> por no tener pantalla. Ver el mapa de la carpeta en `OVERVIEW_PLAN.md`,
+> sección 6.

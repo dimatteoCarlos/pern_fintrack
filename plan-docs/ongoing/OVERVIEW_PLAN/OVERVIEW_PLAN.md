@@ -185,7 +185,7 @@ None of these blocks building a component.
 
 ## 6. Folder cleanup
 
-Sixteen files and one folder remain here. No code comment cites any of them —
+Fourteen files and one folder remain here. No code comment cites any of them —
 twenty stems searched case-insensitively across `backend/src`, `frontend/src`
 and `backend/test` returned nothing — so deleting one breaks nothing
 compilable. What it can break is a citation from another document.
@@ -205,12 +205,19 @@ The rendering sketch was measured redundant, not judged so: of its 110
 identifiers, 108 appeared in `OVERVIEW.md` or `OVERVIEW_LAYOUT.md`, and the two
 that did not were backend function names, not fields the frontend renders.
 
-### Delete after repointing one citation
+### Deleted — the second batch, after repointing five citations
 
-| file | cited by |
+Removed on 2026-09-07. This list said one citation and two; enumerating them
+found five, two of them in files this folder still holds.
+
+| file deleted | citation repointed to `OVERVIEW_PLAN.md` |
 |---|---|
-| `PLAN_OVERVIEW_EVAL.md` | `OVERVIEW_DECISIONS.md` |
-| `OVERVIEW_BRIEF_2026-09-04.md` | `ESTADO_PLANES.md`, twice, outside this folder |
+| `PLAN_OVERVIEW_EVAL.md` | `OVERVIEW_DECISIONS.md`, and the reading order in `plan-docs/INDEX.md` |
+| `OVERVIEW_BRIEF_2026-09-04.md` | `ESTADO_PLANES.md` twice, `INVENTARIO_ENDPOINTS_E_INDICADORES.md`, `PLAN_OVERVIEW.md` |
+
+**Count the citations before deleting, do not read the count off this file.**
+The two missed here sit inside documents scheduled for the third batch, so a
+search limited to outside the folder finds neither.
 
 ### Merge first, delete after
 
