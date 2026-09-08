@@ -57,7 +57,10 @@ function PanelState({
         nothing to a reader who cannot see it; aria-busy on the region is what
         carries the state. */}
     <div className='panelState__skeleton' aria-busy='true'>
-     {Array.from({ length: SKELETON_TILES }, (unused, index) => (
+     {/* Keys, not values. Array.from's mapper takes the element first and the
+         index second, so asking for the index alone left a bound name nothing
+         reads - which tsconfig.app.json rejects under noUnusedLocals. */}
+     {[...Array(SKELETON_TILES).keys()].map((index) => (
       <span
        className='panelState__tile'
        key={`skeleton-${index}`}
