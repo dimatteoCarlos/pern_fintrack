@@ -19,6 +19,7 @@ import { Outlet, useSearchParams } from 'react-router-dom';
 import { BigBoxResult } from './components/BigBoxResult.tsx';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import MonthPicker from '../../general_components/monthPicker/MonthPicker.tsx';
+import ScrollJump from '../../general_components/scrollJump/ScrollJump';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 import { useOverviewStore } from '../../stores/useOverviewStore.ts';
 
@@ -154,6 +155,14 @@ function OverviewLayout() {
    )}
 
    <Outlet />
+
+   {/* Outside the Outlet, so it serves every screen of the module and not only
+       the board: the control is fixed to the viewport, and a copy per route
+       would be several controls answering one question. Overview runs past a
+       viewport on any real data - six domain cards, three snapshots, the
+       goals, the charts and five movement lists - and it had no way back to
+       the month picker but the wheel. */}
+   <ScrollJump />
   </main>
  );
 }

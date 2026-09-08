@@ -755,6 +755,10 @@ button {
    Round and 44px: the shape every icon control in the app takes, at the sizing
    scale's minimum tappable area. Filled rather than outlined — it floats over
    the cards and an outline would read as one more card edge. */
+/* Retired: every declaration of this block moved verbatim to
+   general_components/scrollJump/styles/scrollJump-styles.css when the control
+   became shared. Kept commented per the standing rule on deletions.
+
 .accounting__scrollJump {
  position: fixed;
  right: var(--space-4);
@@ -793,8 +797,9 @@ button {
  pointer-events: none;
 }
 
-/* One drawing for both directions, the same asset the group headings rotate.
-   A second file would be the same arrow upside down. */
+   One drawing for both directions, the same asset the group headings rotate.
+   A second file would be the same arrow upside down.
+
 .accounting__scrollJump-glyph {
  width: var(--size-icon);
  height: var(--size-icon);
@@ -805,15 +810,15 @@ button {
  transform: rotate(180deg);
 }
 
-/* The asset hardcodes its stroke, so the button's colour only reaches the
-   drawing by naming the path. */
+   The asset hardcodes its stroke, so the button's colour only reaches the
+   drawing by naming the path.
+
 .accounting__scrollJump-glyph path {
  stroke: currentColor;
 }
+*/
 
 @media (prefers-reduced-motion: reduce) {
- .accounting__scrollJump,
- .accounting__scrollJump-glyph,
  .accounting__openAccount,
  .accounting__openAccount-tip,
  .accountingSearch,

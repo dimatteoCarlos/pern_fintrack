@@ -18,6 +18,7 @@ import InvestmentAccountsSvg from '../../../assets/accountingDashboardSvg/invest
 // The disclosure affordance of every group heading. One asset, rotated when
 // the group opens, rather than a second drawing for the open state.
 import ArrowDownLightSvg from '../../../assets/ArrowDownLightSvg.svg?react';
+import ScrollJump from '../../general_components/scrollJump/ScrollJump';
 // The two halves of the filter field. Both draw with currentColor, so they
 // take the field's colour rather than declaring one.
 import SearchSvg from '../../../assets/budgetListControlsSvg/SearchSvg.svg?react';
@@ -154,58 +155,10 @@ const AccountingDashboard = () => {
 
   // -----------------------------
   // ⬆️⬇️ SCROLL JUMP
-  // One control, two destinations. Which one it offers is decided by where the
-  // reader already is: past a screenful, the way back is up; before it, the far
-  // end is what a long inventory makes expensive to reach.
-  //
-  // Half of what can actually be scrolled, not half a viewport: on a list barely
-  // taller than the window the bottom is reached before a viewport is travelled,
-  // so a viewport-relative threshold leaves the arrow pointing down at the end
-  // of the list and the click does nothing.
-  const [jumpsToTop, setJumpsToTop] = useState(false);
-  // Nothing to scroll is also nothing to jump to, and the control takes itself
-  // off screen rather than offering a trip of zero pixels.
-  const [canJump, setCanJump] = useState(false);
-
-  useEffect(() => {
-    const decideDirection = () => {
-      // innerHeight is fractional on a zoomed viewport, so a document that does
-      // not scroll can still report a fraction of a pixel of distance.
-      const scrollableDistance =
-        document.documentElement.scrollHeight - window.innerHeight;
-
-      setCanJump(scrollableDistance >= 1);
-      setJumpsToTop(window.scrollY > scrollableDistance / 2);
-    };
-
-    decideDirection();
-    window.addEventListener('scroll', decideDirection, { passive: true });
-    // Rotating the device changes innerHeight and expanding a group changes
-    // scrollHeight. Neither fires a scroll event, and both move the threshold.
-    window.addEventListener('resize', decideDirection);
-
-    const watchDocumentHeight = new ResizeObserver(decideDirection);
-    watchDocumentHeight.observe(document.documentElement);
-
-    return () => {
-      window.removeEventListener('scroll', decideDirection);
-      window.removeEventListener('resize', decideDirection);
-      watchDocumentHeight.disconnect();
-    };
-  }, []);
-
-  const jumpToEdge = useCallback(() => {
-    // Honoured here and not only in CSS: scroll-behavior does not govern a
-    // programmatic scroll that names its own behavior.
-    const prefersReducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-
-    window.scrollTo({
-      top: jumpsToTop ? 0 : document.documentElement.scrollHeight,
-      behavior: prefersReducedMotion ? 'auto' : 'smooth',
-    });
-  }, [jumpsToTop]);
+  // The listeners, the threshold and the button now live in
+  // general_components/scrollJump, because Overview is the second page long
+  // enough to need them and two copies of this would drift the first time one
+  // was corrected. Nothing about the behaviour changed in the move.
 
   // -----------------------------
   // 🔄 FETCHING - ACCOUNTS LIST
@@ -775,28 +728,9 @@ const AccountingDashboard = () => {
         </div>
 
         {/* Sits outside the container so its offsets are measured against the
-            viewport and not against a column that is capped and centred.
-            Unmounted rather than hidden: a control that cannot act should not
-            hold a tab stop either. */}
-        {canJump && (
-          <button
-            type='button'
-            className='accounting__scrollJump'
-            onClick={jumpToEdge}
-            aria-label={
-              jumpsToTop ? 'Scroll to top of list' : 'Scroll to bottom of list'
-            }
-            title={jumpsToTop ? 'Back to top' : 'Go to the end'}
-          >
-            <ArrowDownLightSvg
-              className={`accounting__scrollJump-glyph${
-                jumpsToTop ? ' accounting__scrollJump-glyph--up' : ''
-              }`}
-              aria-hidden='true'
-              focusable='false'
-            />
-          </button>
-        )}
+            viewport and not against a column that is capped and centred. It
+            unmounts itself when there is nothing to scroll. */}
+        <ScrollJump subject='list' />
 
         {/* 🚨 TOAST NOTIFICATION */}
         <Toast

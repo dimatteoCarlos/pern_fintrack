@@ -1,0 +1,68 @@
+/* frontend/src/fintrack/general_components/scrollJump/styles/scrollJump-styles.css
+   The shared scroll jump. Every declaration here is the one
+   .accounting__scrollJump carried, renamed off that page's block so a second
+   screen does not have to borrow another screen's namespace to reuse it.
+
+   Fixed, so its offsets are measured against the viewport and not against a
+   column that is capped and centred. The caller renders it outside its own
+   container for the same reason. */
+.scrollJump {
+ position: fixed;
+ right: var(--space-4);
+ bottom: var(--space-4);
+ z-index: var(--z-dropdown);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-touch-target);
+ height: var(--size-touch-target);
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-full);
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+ box-shadow: var(--shadow-md);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), transform var(--motion-fast);
+}
+
+.scrollJump:hover {
+ background-color: var(--color-content-on-dark);
+}
+
+.scrollJump:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.scrollJump:active {
+ background-color: var(--color-content-on-dark-subtle);
+}
+
+.scrollJump:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.scrollJump__glyph {
+ width: var(--size-icon);
+ height: var(--size-icon);
+ transition: transform var(--motion-fast);
+}
+
+.scrollJump__glyph--up {
+ transform: rotate(180deg);
+}
+
+/* The asset hardcodes its stroke, so the button's colour only reaches the
+   drawing by naming the path. */
+.scrollJump__glyph path {
+ stroke: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .scrollJump,
+ .scrollJump__glyph {
+  transition: none;
+ }
+}
