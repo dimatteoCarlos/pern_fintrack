@@ -154,8 +154,43 @@ reportTitleWithImpact:string;
 export const defaultLanguage:LanguageKeyType='en';
 
 //Function to Get texts according to Lang / Función para obtener textos según idioma
-export const getLangText = (lang:LanguageKeyType, key:keyof DictionaryDataType):string => {
- return languages[lang]?.[key] || languages[defaultLanguage][key] || key;
+// The values a sentence needs at render time, keyed by the name written inside
+// the braces of the entry. Numbers are accepted so a caller does not have to
+// stringify an amount before passing it.
+export type TranslationValuesType = Record<string, string | number>;
+
+// Matches a placeholder written as {name}. Word characters only, so a brace in
+// ordinary copy is not treated as the start of one.
+const PLACEHOLDER_PATTERN = /\{(\w+)\}/g;
+
+/**
+ * Reads one entry and substitutes its placeholders.
+ *
+ * The third argument is optional and the two-argument call is unchanged, which
+ * is what lets the existing entries and their call sites stay as they are.
+ *
+ * Substitution rather than splitting the sentence around a rendered element:
+ * the word order differs between the two languages, so a sentence assembled
+ * from fragments is grammatical in one of them and wrong in the other. The
+ * entry holds the whole sentence in each language and the values arrive into
+ * it, so the order belongs to the entry.
+ *
+ * A placeholder with no matching value is left on screen as written. An empty
+ * string would produce a sentence that reads correctly and says the wrong
+ * thing; a visible {name} is a defect the first reader catches. Same reasoning
+ * as the design system's rule that a missing figure renders as a dash and
+ * never as 0.
+ */
+export const getLangText = (lang:LanguageKeyType, key:keyof DictionaryDataType, values?:TranslationValuesType):string => {
+ const entry = languages[lang]?.[key] || languages[defaultLanguage][key] || key;
+
+ if (!values) return entry;
+
+ return entry.replace(PLACEHOLDER_PATTERN, (placeholder, name:string) =>
+  Object.prototype.hasOwnProperty.call(values, name)
+   ? String(values[name])
+   : placeholder,
+ );
 };
 
 //Data Language Dictionary

@@ -33,6 +33,25 @@
  --color-surface-panel: #e8e4da;
  --color-surface-overlay: rgba(17, 24, 39, 0.7);
  --color-surface-disabled: #cccccc;
+ /* The block a skeleton paints while a figure has not arrived. Named for the
+    state and not for the technique, because the grammar at the top of this file
+    asks for the semantic function: a skeleton is how it looks, loading is what
+    it means.
+
+    Two values because the app has two grounds, and the pair splits the way
+    --color-amount-positive / --color-amount-positive-on-panel already splits:
+    the unsuffixed one belongs to the dark app surface, the -on-panel one to the
+    cream. Measured to read at the same intensity on both, so a loading screen
+    does not change weight depending on where it lands: 1.42:1 against
+    --color-surface-raised and 1.56:1 against --color-surface-app for the first,
+    1.41:1 against --color-surface-panel for the second.
+
+    These are the one place in this file where a low ratio is the target rather
+    than a failure. A skeleton is not information and must not read as content;
+    the 3:1 non-text floor does not apply to it, and a value that cleared it
+    would look like a filled block rather than a pending one. */
+ --color-surface-loading: #2f3542;
+ --color-surface-loading-on-panel: #c8c1b0;
 
  /* COLOR - CONTENT: paired to a surface, named in the comment */
  --color-content-primary: #141414; /* on inverse, panel */
@@ -182,6 +201,37 @@
  --color-feedback-info-content: #1565c0;
  --color-feedback-info-surface: #eeeeff;
  --color-feedback-info-border: #6666cc;
+
+ /* COLOR - ACTION: the ground of a button and the content drawn on it, as
+    opposed to the feedback triad above, which is a banner.
+
+    Separate from --color-feedback-error-* on purpose, and the reason is that
+    family's own rule: "Each content value is measured against its own surface
+    value" - error content #cc0000 on error surface #ffeeee, 5.25:1. A
+    destructive button inverts that pairing. The saturated red is the ground and
+    the content on it is white, so a token filed under feedback-error would sit
+    in a family whose stated measurement does not describe it.
+
+    The hue is not new: --color-action-destructive-surface is the same #cc0000
+    already declared as --color-feedback-error-content. What is new is the role,
+    which is why the value is repeated rather than aliased - an alias would make
+    a change to the banner's text colour silently repaint every destructive
+    button.
+
+    Measured: white on the ground 5.89:1, so the label clears the 4.5:1 body
+    floor. The ground itself carries 3.26:1 against --color-surface-app and
+    4.64:1 against --color-surface-panel, over the 3:1 floor that applies to a
+    shape rather than to text.
+
+    Hover lightens rather than darkens, which is the direction that works on a
+    dark application: it lifts the button from 3.26:1 to 3.91:1 against the page
+    while white on it still reads at 4.91:1. There is no -active and no
+    -disabled token: active returns to the base ground, and disabled is the
+    opacity rule the design system already states for every interactive
+    element. */
+ --color-action-destructive-surface: #cc0000;
+ --color-action-destructive-content: #ffffff;
+ --color-action-destructive-hover: #e01414;
 
  --color-amount-positive: #5b8c93;
  --color-amount-negative: #c97474;

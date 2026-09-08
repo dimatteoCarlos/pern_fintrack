@@ -122,9 +122,18 @@ export const listTransferDestinations = async (db, userId, targetAccountId) => {
  *
  * 409 rather than 400: eligibility is a property of the current database state,
  * not of the request's shape. The same request was valid a moment ago if the
- * destination has since been closed, and becomes valid again if the owner
- * reopens it. A missing or unparseable id is the caller's own error and is
- * refused with 400 by the caller before this runs.
+ * destination has since been closed or deleted between the selector's read and
+ * this confirmation.
+ *
+ * It does NOT become valid again by reopening that destination: no statement in
+ * backend/src sets deleted_at or closed_at back to null, on any path, so a
+ * closed account stays ineligible for good (revert-to-active is an open ruling,
+ * PLAN_ACCOUNT_DELETION.md). What can make a refused request valid later is the
+ * owner creating another bank account in the same currency. The 409 is right
+ * either way - this corrects the reason, not the status code.
+ *
+ * A missing or unparseable id is the caller's own error and is refused with 400
+ * by the caller before this runs.
  *
  * @param {object} client - the active transactional client, holding the lock
  * @param {string} userId

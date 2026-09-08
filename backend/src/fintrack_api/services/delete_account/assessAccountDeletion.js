@@ -87,6 +87,47 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
 
  const canTransfer = closePreview.destinationCount > 0;
 
+ // The part of this account's balance that the annulment's own rows do not
+ // account for: the residual, less what RTA will move onto other accounts, less
+ // what an earlier deletion already reversed.
+ //
+ // WHY IT IS EXPECTED TO BE ZERO, and why it is published anyway. The residual
+ // and the impact report are computed from different sources - the residual is
+ // the stored account_starting_amount column plus the account's rows with its
+ // own opening zeroed, the report sums rows whose two key columns differ. They
+ // agree by construction, because the column adds back exactly what the zeroing
+ // removes, not because anything enforces it. A figure that is zero by
+ // construction is worth publishing precisely so a reader sees when it stops
+ // being zero.
+ //
+ // RETRACTED 2026-09-07, by the session that wrote it: this comment used to
+ // claim a reachable case - an account opened with a starting amount whose
+ // opening row names itself as both source and destination. That combination
+ // cannot occur: a self-referential opening implies a zero starting amount, and
+ // a funded one names the compensation account. No reachable case is claimed
+ // here now.
+ //
+ // The implication holds through two different mechanisms and not the one
+ // written here first (pern-fintrack-02, checked in the writers). On the
+ // category-budget path it is the transaction type: an opening row is made
+ // self-referential only for type 'account-opening', which is returned only for
+ // an amount of exactly zero. On the bank, income_source and investment path
+ // createBasicAccount inlines both decisions instead - the columns come from its
+ // own isTransfer, which IS the nonzero-amount test, while the type is 'deposit'
+ // for bank and investment at any amount. A zero-amount bank account therefore
+ // has a self-referential opening row typed 'deposit'. Anything gating on this
+ // must compare the two columns, not read the type name. Debtor accounts are
+ // never self-referential at any amount, since their type is always lend or
+ // borrow.
+ //
+ // Rounded to cents for the same reason the adjustment total is: the three
+ // terms are floats and this figure is displayed, never compared.
+ const totalNetAdjustmentAmount = foldNetAdjustmentTotal(impactReport);
+ const unreversedResidualAmount =
+  Math.round(
+   (residual - totalNetAdjustmentAmount - unattributed.amount) * 100,
+  ) / 100;
+
  return {
   targetAccount: closePreview.targetAccount,
 
@@ -144,11 +185,18 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
     available: true,
     impactReport,
     affectedAccountsCount: impactReport.length,
-    totalNetAdjustmentAmount: foldNetAdjustmentTotal(impactReport),
+    totalNetAdjustmentAmount,
     // Beside the total, never inside it: an earlier deletion already reversed
     // these amounts, so the execution path acts on none of them.
     unattributedAmount: unattributed.amount,
     unattributedTransactionCount: unattributed.transactionCount,
+    // What this option costs the owner and the ledger, which no other field
+    // here states. HARD's reason quotes the residual as the reason it is
+    // unavailable and names this option as the way forward, so an owner
+    // following that instruction must be able to see that this option does not
+    // settle the residual - it erases it.
+    unreversedResidualAmount,
+    erasesUnsettledResidual: unreversedResidualAmount !== 0,
     removesPocketAllocations: true,
     keepsHistory: false,
     releasesAccountName: true,

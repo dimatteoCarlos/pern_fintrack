@@ -1,0 +1,2462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinTrack — Close account, every state</title>
+<style>
+ /* MOCKUP ONLY. Nothing here is a component; the markup is flat HTML so a
+    reviewer can open the file from the filesystem with no build step and no
+    network. The CSS is written to the rules a real component would have to
+    meet, so it can be lifted into a stylesheet with the tokens already in
+    place.
+
+    Every custom property below is COPIED, value for value, from
+    frontend/src/styles/tokens.css. Nothing here is invented. Tokens the screen
+    needed and the file does not carry are listed in the appendix at the end of
+    the page, named as proposals and consumed nowhere. */
+
+ :root {
+  /* SURFACE */
+  --color-surface-app: #0d0f12;
+  --color-surface-raised: #161a22;
+  --color-surface-inverse: #ffffff;
+  --color-surface-panel: #e8e4da;
+  --color-surface-overlay: rgba(17, 24, 39, 0.7);
+  --color-surface-disabled: #cccccc;
+
+  /* CONTENT, each paired to the surface it is legible on */
+  --color-content-primary: #141414; /* on inverse, panel */
+  --color-content-secondary: #5b5b5b; /* on panel, inverse */
+  --color-content-on-dark: #ffffff; /* on app, raised */
+  --color-content-on-dark-muted: #e8e4da; /* on app, raised */
+  --color-content-on-dark-subtle: #bdb1b1; /* on app, raised */
+  --color-content-on-dark-placeholder: #979797; /* on app, raised */
+
+  /* INTERACTIVE */
+  --color-accent: #e8e4da;
+  --color-accent-content: #141414;
+  --color-interactive-hover: #00ffff;
+  --color-border-strong: #141414;
+  --color-border-inverse: #ffffff;
+  --color-border-subtle: rgba(232, 228, 218, 0.4);
+
+  /* FEEDBACK ON A LIGHT SURFACE: the banner triad. Each content value is
+     measured against its own surface value, not against the page. */
+  --color-feedback-error-content: #cc0000;
+  --color-feedback-error-surface: #ffeeee;
+  --color-feedback-error-border: #ff6666;
+  --color-feedback-success-content: #008000;
+  --color-feedback-success-surface: #eeffee;
+  --color-feedback-success-border: #66cc66;
+  --color-feedback-warning-content: #996600;
+  --color-feedback-warning-surface: #ffffdd;
+  --color-feedback-warning-border: #ffcc66;
+  --color-feedback-info-content: #1565c0;
+  --color-feedback-info-surface: #eeeeff;
+  --color-feedback-info-border: #6666cc;
+
+  /* AMOUNT ON A LIGHT SURFACE, calibrated for the cream panel */
+  --color-amount-negative-on-panel: #9c4a4a;
+
+  /* TYPOGRAPHY. Outfit is loaded by index.css from Google Fonts; this file
+     makes no external request, so it renders in the first installed fallback.
+     Letterform and line-length judgement from this page is unreliable. */
+  --font-family-sans: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --font-size-root: clamp(0.875rem, 0.765rem + 0.49vw, 1rem);
+  --font-size-2xs: 0.625rem;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-2xl: 2rem;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --letter-spacing-wide: 0.5px;
+  --letter-spacing-wider: 1px;
+  --letter-spacing-widest: 1.5px;
+
+  /* SPACING */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  /* RADIUS. --radius-lg is deliberately absent: three stylesheets in this same
+     lazy route write --radius-lg: 0.5rem into the global :root, so a panel
+     built on it renders at one value here and another in the app. */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-full: 9999px;
+
+  /* ELEVATION: reserved for content floating over the page. */
+  --shadow-overlay: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* BORDERS */
+  --border-width-thin: 1px;
+  --border-width-thick: 2px;
+
+  /* SIZING */
+  --size-status-square: 0.75rem;
+  --size-icon: 2rem;
+  --size-badge: 2.5rem;
+  --size-control-height: 3.125rem;
+  --size-glyph-inline: 1.25rem;
+  --size-touch-target: 44px;
+
+  /* MOTION */
+  --motion-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-press: 100ms ease-out;
+
+  /* LAYOUT */
+  --layout-width-min: 22.5rem;
+  --layout-width-max: 40rem;
+  --layout-content-width: 88%;
+  --layout-top-space: 2.75rem;
+  --layout-modal-width: 31.25rem;
+  --layout-navbar-bottom: 3.5rem;
+ }
+
+ /* The reset is copied from index.css INCLUDING its defect: font-size is set on
+    the universal selector, so nothing inherits a size. It is reproduced so this
+    page fails the same way production does and the CSS below has to survive it. */
+ body,
+ :root,
+ :after,
+ :before,
+ * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  font-family: var(--font-family-sans);
+ }
+
+ :root {
+  font-size: var(--font-size-root);
+ }
+
+ body {
+  background-color: var(--color-surface-app);
+  color: var(--color-content-on-dark);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+ }
+
+ svg {
+  display: block;
+ }
+
+ /* ============================================================
+    THE REVIEW SHELL — not part of the screen. It frames each
+    state at the 360px design width so they can be read side by
+    side. Everything under .review is scaffolding.
+    ============================================================ */
+
+ .review {
+  max-width: var(--layout-width-max);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+ }
+
+ .review__masthead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+  padding-bottom: var(--space-4);
+ }
+
+ .review__eyebrow {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-widest);
+  text-transform: uppercase;
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ .review__title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.1;
+  color: var(--color-content-on-dark);
+ }
+
+ .review__lede {
+  font-size: var(--font-size-sm);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ .review__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+ }
+
+ .review__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+  padding-bottom: var(--space-2);
+ }
+
+ .review__index {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ .review__name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content-on-dark);
+ }
+
+ .review__note {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ .review__note strong {
+  font-size: inherit; /* the universal selector pins 16px on every inline element */
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content-on-dark-muted);
+ }
+
+ .review__note code {
+  font-size: inherit;
+  font-family: var(--font-family-mono);
+  color: var(--color-content-on-dark-muted);
+ }
+
+ .review__frame {
+  width: 100%;
+  max-width: var(--layout-width-min);
+  border: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+ }
+
+ .review__appendix {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-top: var(--border-width-thin) solid var(--color-border-subtle);
+  padding-top: var(--space-6);
+ }
+
+ .review__heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content-on-dark);
+ }
+
+ .review__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: var(--space-5);
+  font-size: var(--font-size-sm);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ .review__list li {
+  font-size: inherit;
+ }
+
+ .review__list strong,
+ .review__list code {
+  font-size: inherit;
+  color: var(--color-content-on-dark-muted);
+ }
+
+ .review__list code {
+  font-family: var(--font-family-mono);
+ }
+
+ /* ============================================================
+    THE SCREEN. Every class is prefixed close- on purpose: the
+    generic names in this codebase (.box__title, .page-header,
+    .main-content) are declared in several stylesheets at equal
+    specificity and the winner depends on lazy-route load order.
+    ============================================================ */
+
+ .close-page {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface-app);
+  padding-bottom: var(--layout-navbar-bottom);
+ }
+
+ /* The header is white, like every header and navbar in the app. */
+ .close-page__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background-color: var(--color-surface-inverse);
+  color: var(--color-content-primary);
+  padding: var(--space-3) var(--space-4);
+  padding-top: var(--layout-top-space);
+ }
+
+ .close-page__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-touch-target);
+  height: var(--size-touch-target);
+  margin-left: calc(var(--space-3) * -1);
+  border-radius: var(--radius-full);
+  color: var(--color-content-primary);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--motion-fast), color var(--motion-fast);
+ }
+
+ .close-page__back:hover {
+  color: var(--color-interactive-hover);
+ }
+
+ .close-page__back:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-interactive-hover);
+  outline-offset: var(--border-width-thick);
+ }
+
+ .close-page__back:active {
+  transform: scale(0.95);
+ }
+
+ .close-page__back:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+ }
+
+ /* The glyph inside the touch target, and smaller than it on purpose: the
+    tappable area is bounded by a finger, not by the drawing. */
+ .close-page__icon {
+  width: var(--size-icon);
+  height: var(--size-icon);
+ }
+
+ .close-page__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--color-content-primary);
+ }
+
+ .close-page__body {
+  width: var(--layout-content-width);
+  margin: 0 auto;
+  padding: var(--space-5) 0 var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+ }
+
+ /* --- The identity panel: cream, dark ink, the figure the owner confirms --- */
+
+ .close-identity {
+  background-color: var(--color-surface-panel);
+  color: var(--color-content-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+ }
+
+ .close-identity__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+ }
+
+ .close-identity__name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.2;
+  color: var(--color-content-primary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+ }
+
+ .close-identity__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-content-secondary);
+ }
+
+ .close-identity__meta span {
+  font-size: inherit;
+ }
+
+ .close-identity__id {
+  font-family: var(--font-family-mono);
+  font-size: inherit;
+ }
+
+ .close-identity__figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-top: var(--border-width-thin) solid var(--color-content-secondary);
+  padding-top: var(--space-3);
+ }
+
+ .close-identity__label {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wider);
+  text-transform: uppercase;
+  color: var(--color-content-secondary);
+ }
+
+ .close-identity__amount {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-widest);
+  line-height: 1.1;
+  color: var(--color-content-primary);
+ }
+
+ /* A residual below zero: a debtor owing in the other direction. */
+ .close-identity__amount--negative {
+  color: var(--color-amount-negative-on-panel);
+ }
+
+ /* The figure did not arrive. A dash, never a zero: zero is a real balance. */
+ .close-identity__amount--unknown {
+  color: var(--color-content-secondary);
+ }
+
+ .close-identity__caption {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-secondary);
+ }
+
+ /* --- The currency badge takes the surface modifier: it names the surface it
+        sits on, never its own colour. --- */
+
+ .close-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--size-badge);
+  height: var(--size-badge);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-wide);
+ }
+
+ .close-badge.light {
+  border: var(--border-width-thick) solid var(--color-border-strong);
+  color: var(--color-content-primary);
+ }
+
+ .close-badge.dark {
+  border: var(--border-width-thick) solid var(--color-content-on-dark-muted);
+  color: var(--color-content-on-dark-muted);
+ }
+
+ /* --- Section scaffolding on the dark surface --- */
+
+ .close-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+ }
+
+ /* The fieldset stays a plain block: its legend is laid out by the fieldset
+    itself and its default min-width refuses to shrink a flex child. */
+ .close-fieldset {
+  border: none;
+  padding: 0;
+  min-width: 0;
+ }
+
+ .close-fieldset__legend {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content-on-dark);
+  margin-bottom: var(--space-3);
+ }
+
+ .close-section__title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content-on-dark);
+ }
+
+ .close-section__help {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ /* --- The settlement choice --- */
+
+ .close-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  background-color: var(--color-surface-raised);
+  border: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  cursor: pointer;
+  transition: border-color var(--motion-fast), background-color var(--motion-fast);
+ }
+
+ .close-option:hover {
+  border-color: var(--color-interactive-hover);
+ }
+
+ .close-option:focus-within {
+  outline: var(--border-width-thick) solid var(--color-interactive-hover);
+  outline-offset: var(--border-width-thick);
+ }
+
+ .close-option:active {
+  transform: scale(0.99);
+ }
+
+ .close-option.is-active {
+  border-color: var(--color-content-on-dark-muted);
+  border-width: var(--border-width-thick);
+ }
+
+ .close-option__input {
+  flex: none;
+  width: var(--size-status-square);
+  height: var(--size-status-square);
+  margin-top: var(--space-1);
+  accent-color: var(--color-content-on-dark-muted);
+ }
+
+ .close-option__input:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-interactive-hover);
+  outline-offset: var(--border-width-thick);
+ }
+
+ .close-option__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+ }
+
+ .close-option__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+ }
+
+ .close-option__name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content-on-dark);
+ }
+
+ .close-option__detail {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ /* --- The destination selector --- */
+
+ .close-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+ }
+
+ .close-field__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-content-on-dark);
+ }
+
+ .close-field__required {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  color: var(--color-content-on-dark-subtle);
+  border: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-2);
+ }
+
+ .close-field__select {
+  height: var(--size-control-height);
+  width: 100%;
+  background-color: var(--color-surface-raised);
+  color: var(--color-content-on-dark);
+  border: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: border-color var(--motion-fast);
+ }
+
+ .close-field__select:hover {
+  border-color: var(--color-interactive-hover);
+ }
+
+ .close-field__select:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-interactive-hover);
+  outline-offset: var(--border-width-thick);
+ }
+
+ .close-field__select:active {
+  border-color: var(--color-content-on-dark-muted);
+ }
+
+ .close-field__select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+ }
+
+ /* The reason. Bare and underlined, the way every input in this app is drawn. */
+ .close-field__textarea {
+  width: 100%;
+  min-height: var(--size-control-height);
+  background-color: transparent;
+  color: var(--color-content-on-dark);
+  border: none;
+  border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: 0;
+  padding: var(--space-2) 0;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-sans);
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color var(--motion-fast);
+ }
+
+ .close-field__textarea::placeholder {
+  font-size: inherit;
+  color: var(--color-content-on-dark-placeholder);
+ }
+
+ .close-field__textarea:hover {
+  border-bottom-color: var(--color-content-on-dark-subtle);
+ }
+
+ .close-field__textarea:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-interactive-hover);
+  outline-offset: var(--border-width-thick);
+ }
+
+ .close-field__textarea:active {
+  border-bottom-color: var(--color-content-on-dark-muted);
+ }
+
+ .close-field__textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+ }
+
+ .close-field__textarea--invalid {
+  border-bottom-color: var(--color-feedback-error-border);
+  border-bottom-width: var(--border-width-thick);
+ }
+
+ .close-field__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-style: italic;
+  color: var(--color-feedback-error-border);
+ }
+
+ .close-field__icon {
+  flex: none;
+  width: var(--size-glyph-inline);
+  height: var(--size-glyph-inline);
+ }
+
+ .close-field__hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ /* --- Notices. The three banner triads are self-contained: surface, border
+        and content are measured against each other, so a pale card is legible
+        sitting on the dark page. --- */
+
+ .close-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border-radius: var(--radius-sm);
+  border-style: solid;
+  border-width: var(--border-width-thin);
+  padding: var(--space-3);
+ }
+
+ .close-notice--warning {
+  background-color: var(--color-feedback-warning-surface);
+  border-color: var(--color-feedback-warning-border);
+  color: var(--color-feedback-warning-content);
+ }
+
+ .close-notice--error {
+  background-color: var(--color-feedback-error-surface);
+  border-color: var(--color-feedback-error-border);
+  color: var(--color-feedback-error-content);
+ }
+
+ .close-notice--info {
+  background-color: var(--color-feedback-info-surface);
+  border-color: var(--color-feedback-info-border);
+  color: var(--color-feedback-info-content);
+ }
+
+ .close-notice--success {
+  background-color: var(--color-feedback-success-surface);
+  border-color: var(--color-feedback-success-border);
+  color: var(--color-feedback-success-content);
+ }
+
+ .close-notice__icon {
+  flex: none;
+  width: var(--size-glyph-inline);
+  height: var(--size-glyph-inline);
+  margin-top: var(--space-1);
+ }
+
+ .close-notice__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+ }
+
+ .close-notice__title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: inherit;
+ }
+
+ /* Not --font-size-xs, which measured 10.5px at the 360px design width. These
+    are the sentences the owner has to read before an irreversible action. */
+ .close-notice__body {
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: inherit;
+ }
+
+ .close-notice__body strong,
+ .close-notice__body em {
+  font-size: inherit;
+  color: inherit;
+ }
+
+ .close-notice__body strong {
+  font-weight: var(--font-weight-semibold);
+ }
+
+ /* --- The recap the refusal and success screens show as rows --- */
+
+ .close-recap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+ }
+
+ /* Stacked at the design width: measured at 360px the term and the value
+    wrapped into each other. It becomes a row once there is width for both. */
+ .close-recap__row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  width: 100%;
+  border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+  padding: var(--space-2) 0;
+ }
+
+ .close-recap__term {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ .close-recap__value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-wider);
+  color: var(--color-content-on-dark);
+  overflow-wrap: anywhere;
+ }
+
+ /* A span nested only to carry a translation key still meets the universal
+    selector's 16px and has to be told to take the line's size. */
+ .close-recap__value span {
+  font-size: inherit;
+ }
+
+ /* --- Buttons. All five states on each. --- */
+
+ .close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--size-control-height);
+  border-radius: var(--radius-md);
+  border: none;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: opacity var(--motion-fast), transform var(--motion-press),
+   background-color var(--motion-fast), color var(--motion-fast);
+ }
+
+ .close-button:hover {
+  opacity: 0.8;
+ }
+
+ .close-button:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-interactive-hover);
+  outline-offset: var(--border-width-thick);
+ }
+
+ .close-button:active {
+  transform: scale(0.95);
+ }
+
+ .close-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+ }
+
+ /* Destructive: this is the only control on the screen that deletes an account
+    row, and it is drawn from the error triad rather than from the cream accent
+    so it does not read like an ordinary submit. */
+ .close-button--danger {
+  background-color: var(--color-feedback-error-content);
+  color: var(--color-surface-inverse);
+ }
+
+ .close-button--danger:disabled {
+  background-color: var(--color-surface-disabled);
+  color: var(--color-content-primary);
+ }
+
+ /* The way out of a refusal, and the retry. Cream on dark, the app's accent. */
+ .close-button--primary {
+  background-color: var(--color-accent);
+  color: var(--color-accent-content);
+ }
+
+ .close-button--primary:disabled {
+  background-color: var(--color-surface-disabled);
+  color: var(--color-content-primary);
+ }
+
+ .close-button--ghost {
+  background-color: transparent;
+  border: var(--border-width-thick) solid var(--color-border-inverse);
+  color: var(--color-content-on-dark);
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--letter-spacing-wide);
+ }
+
+ .close-button__icon {
+  flex: none;
+  width: var(--size-glyph-inline);
+  height: var(--size-glyph-inline);
+ }
+
+ .close-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+ }
+
+ /* --- The loading skeleton. Block dimensions match the real content so
+        nothing shifts when the payload lands. --- */
+
+ .close-skeleton__bar {
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface-raised);
+  animation: close-skeleton-pulse 1.4s ease-in-out infinite;
+ }
+
+ /* On the cream panel the raised surface would disappear; the disabled grey is
+    the only neutral in the file that reads on cream. */
+ .close-skeleton__bar--on-panel {
+  background-color: var(--color-surface-disabled);
+ }
+
+ .close-skeleton__bar--title {
+  height: var(--font-size-lg);
+  width: 70%;
+ }
+
+ .close-skeleton__bar--meta {
+  height: var(--font-size-xs);
+  width: 45%;
+ }
+
+ .close-skeleton__bar--amount {
+  height: var(--font-size-2xl);
+  width: 60%;
+ }
+
+ .close-skeleton__bar--caption {
+  height: var(--font-size-xs);
+  width: 85%;
+ }
+
+ .close-skeleton__bar--line {
+  height: var(--font-size-sm);
+  width: 100%;
+ }
+
+ .close-skeleton__bar--short {
+  height: var(--font-size-sm);
+  width: 55%;
+ }
+
+ .close-skeleton__badge {
+  flex: none;
+  width: var(--size-badge);
+  height: var(--size-badge);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-disabled);
+  animation: close-skeleton-pulse 1.4s ease-in-out infinite;
+ }
+
+ .close-skeleton__block {
+  height: var(--size-control-height);
+  width: 100%;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-raised);
+  animation: close-skeleton-pulse 1.4s ease-in-out infinite;
+ }
+
+ .close-skeleton__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+ }
+
+ /* Takes the width the name and its meta line will take, so the badge beside
+    it does not move when they arrive. */
+ .close-skeleton__group--grow {
+  flex: 1;
+ }
+
+ @keyframes close-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+ }
+
+ /* --- Responsive. Mobile-first from 360px. --- */
+
+ /* --bp-sm */
+ @media (min-width: 480px) {
+  .close-page__body {
+   gap: var(--space-6);
+  }
+
+  .close-recap__row {
+   flex-direction: row;
+   align-items: center;
+   justify-content: space-between;
+   gap: var(--space-3);
+  }
+
+  .close-recap__value {
+   text-align: right;
+  }
+ }
+
+ /* --bp-md */
+ @media (min-width: 768px) {
+  .review {
+   max-width: none;
+   padding-left: var(--space-8);
+   padding-right: var(--space-8);
+  }
+
+  .review__panels {
+   display: grid;
+   grid-template-columns: repeat(2, minmax(0, 1fr));
+   gap: var(--space-12);
+  }
+
+  /* The actions sit on one row once there is width for both labels. */
+  .close-actions {
+   flex-direction: row-reverse;
+   align-items: stretch;
+  }
+ }
+
+ /* --bp-lg */
+ @media (min-width: 1024px) {
+  .review__panels {
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+ }
+
+ /* --bp-h-short: the status-bar gap collapses on a short viewport, the same
+    degradation every screen in this app makes. */
+ @media (max-height: 735px) {
+  .close-page__header {
+   padding-top: 0;
+  }
+ }
+
+ /* --bp-h-tiny: the form tightens rather than scrolling the confirm button off. */
+ @media (max-height: 568px) {
+  .close-page__body {
+   gap: var(--space-3);
+   padding-top: var(--space-3);
+  }
+
+  .close-identity {
+   gap: var(--space-2);
+  }
+ }
+
+ @media (prefers-reduced-motion: reduce) {
+  .close-skeleton__bar,
+  .close-skeleton__badge,
+  .close-skeleton__block {
+   animation: none;
+  }
+
+  .close-page__back,
+  .close-option,
+  .close-field__select,
+  .close-field__textarea,
+  .close-button {
+   transition: none;
+  }
+
+  .close-page__back:active,
+  .close-option:active,
+  .close-button:active {
+   transform: none;
+  }
+ }
+
+ /* --- The language toggle. Review chrome, but it drives the screen copy, so
+        it is built to the same state matrix as everything else. --- */
+
+ .review__langbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+ }
+
+ .review__langlabel {
+  font-size: var(--font-size-2xs);
+  letter-spacing: var(--letter-spacing-wider);
+  text-transform: uppercase;
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ .review__lang {
+  min-height: var(--size-touch-target);
+  padding: 0 var(--space-4);
+  border: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-full);
+  background-color: transparent;
+  color: var(--color-content-on-dark-subtle);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  cursor: pointer;
+  transition: color var(--motion-fast), border-color var(--motion-fast),
+   background-color var(--motion-fast);
+ }
+
+ .review__lang:hover {
+  color: var(--color-interactive-hover);
+  border-color: var(--color-interactive-hover);
+ }
+
+ .review__lang:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-interactive-hover);
+  outline-offset: var(--border-width-thick);
+ }
+
+ .review__lang:active {
+  transform: scale(0.95);
+ }
+
+ .review__lang:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+ }
+
+ .review__lang.is-active {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-content);
+ }
+
+ /* --- The sequence table: what each step of the walk carries forward. --- */
+
+ .review__flow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+ }
+
+ .review__steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+ }
+
+ .review__step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-left: var(--border-width-thick) solid var(--color-border-subtle);
+  padding-left: var(--space-4);
+ }
+
+ .review__stepname {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content-on-dark);
+ }
+
+ .review__stepname code {
+  font-size: inherit;
+  font-family: var(--font-family-mono);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ .review__carry {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ .review__carry code {
+  font-size: inherit;
+  font-family: var(--font-family-mono);
+  color: var(--color-content-on-dark-muted);
+ }
+
+ .review__tag {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  border: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-2);
+  color: var(--color-content-on-dark-subtle);
+ }
+
+ /* --- The modal. Scrim over the page, white dialog on top, exactly the
+        surfaces the rest of the app's dialogs use. --- */
+
+ .close-scrim {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 100%;
+  background-color: var(--color-surface-overlay);
+  padding: var(--space-4);
+ }
+
+ .close-dialog {
+  width: 100%;
+  max-width: var(--layout-modal-width);
+  background-color: var(--color-surface-inverse);
+  color: var(--color-content-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+ }
+
+ .close-dialog__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  color: var(--color-content-primary);
+ }
+
+ .close-dialog__lede {
+  font-size: var(--font-size-sm);
+  color: var(--color-content-secondary);
+ }
+
+ .close-dialog__summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+ }
+
+ .close-dialog__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-bottom: var(--border-width-thin) solid var(--color-surface-panel);
+  padding: var(--space-2) 0;
+ }
+
+ .close-dialog__term {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wider);
+  text-transform: uppercase;
+  color: var(--color-content-secondary);
+ }
+
+ .close-dialog__value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-content-primary);
+  overflow-wrap: anywhere;
+ }
+
+ .close-dialog__value span {
+  font-size: inherit;
+ }
+
+ .close-dialog__value--amount {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-wider);
+ }
+
+ .close-dialog__loses {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: var(--space-5);
+ }
+
+ .close-dialog__loses li {
+  font-size: var(--font-size-sm);
+  color: var(--color-content-primary);
+ }
+
+ .close-dialog__status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  text-align: center;
+ }
+
+ /* The ring is one circle with a dash pattern rather than four arc commands:
+    one number decides the sweep, and with no motion it degrades to a full
+    ring instead of freezing as a quarter of one. */
+ .close-spinner {
+  width: var(--size-badge);
+  height: var(--size-badge);
+  color: var(--color-content-primary);
+ }
+
+ .close-spinner__track {
+  opacity: 0.2;
+ }
+
+ .close-spinner__arc {
+  transform-origin: center;
+  animation: close-spinner-turn 900ms linear infinite;
+ }
+
+ @keyframes close-spinner-turn {
+  to { transform: rotate(360deg); }
+ }
+
+ /* A button on the white dialog: the app accent is cream and would vanish
+    there, so the ghost variant takes the dark outline instead. */
+ .close-button--outline {
+  background-color: transparent;
+  border: var(--border-width-thick) solid var(--color-border-strong);
+  color: var(--color-content-primary);
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--letter-spacing-wide);
+ }
+
+ /* The page behind an open dialog, shown at reduced height so the scrim and
+    the dialog can be read together in one frame. */
+ .close-page--behind {
+  min-height: 0;
+ }
+
+ @media (min-width: 480px) {
+  .close-scrim {
+   align-items: center;
+  }
+ }
+
+ @media (prefers-reduced-motion: reduce) {
+  .review__lang {
+   transition: none;
+  }
+
+  .review__lang:active {
+   transform: none;
+  }
+
+  /* No turn, so the arc becomes the whole ring: a quarter circle frozen in
+     place reads as a broken graphic rather than as work in progress. */
+  .close-spinner__arc {
+   animation: none;
+   stroke-dashoffset: 0;
+   opacity: 0.6;
+  }
+ }
+</style>
+</head>
+<body>
+
+<!-- Icons are declarative markup, hand-written: a viewBox and no width or
+     height so CSS sizes them, currentColor so they follow the surface
+     modifier, one stroke width across the set. All of them repeat something
+     the text beside them already says, so all of them are aria-hidden. -->
+
+<main class="review">
+
+ <header class="review__masthead">
+  <p class="review__eyebrow">FinTrack &middot; account deletion</p>
+  <h1 class="review__title">Close account &mdash; the walk and every state</h1>
+  <p class="review__lede">Thirteen frames at the 360px design width: five steps of the sequence and the nine states the screen can be in. The preview is a GET on <code>/delete/close_preview/:targetAccountId</code>, the close a DELETE on <code>/delete/:targetAccountId</code>. Open questions and missing tokens are at the foot of the page.</p>
+  <div class="review__langbar">
+   <span class="review__langlabel">Screen copy</span>
+   <button type="button" class="review__lang is-active" data-lang="en">English</button>
+   <button type="button" class="review__lang" data-lang="es">Espa&ntilde;ol</button>
+  </div>
+  <p class="review__note">The toggle changes the screen copy only. These notes and the appendix stay in English: they are documentation, not interface.</p>
+ </header>
+
+ <section class="review__flow">
+  <h2 class="review__heading">The sequence, and what each step carries forward</h2>
+  <div class="review__steps">
+   <div class="review__step">
+    <p class="review__stepname">Step 1 &mdash; the screen loads <code>GET /delete/close_preview/:targetAccountId</code></p>
+    <p class="review__carry">Carries in: the account id from the route, and the name, type and currency from the list the reader came from. Carries out: <code>targetAccount.residual</code> as text, <code>destinations[]</code> and <code>destinationCount</code>. Frames 01, 06, 07, 08.</p>
+   </div>
+   <div class="review__step">
+    <p class="review__stepname">Step 2 &mdash; the settlement choice and the reason</p>
+    <p class="review__carry">This is the step the method choice used to be. Carries out: <code>policy</code>, <code>destinationAccountId</code> when the policy is a transfer, the typed <code>closeReason</code>, and <code>expectedResidual</code> — <strong>the residual string exactly as received, never the formatted figure</strong>. Frames 02, 03, 04, 05.</p>
+   </div>
+   <div class="review__step">
+    <p class="review__stepname">Step 3 &mdash; the confirmation dialog</p>
+    <p class="review__carry">Read-only. It restates every value from step 2 and adds nothing of its own. Frames 10 and 11.</p>
+   </div>
+   <div class="review__step">
+    <p class="review__stepname">Step 4 &mdash; the call <code>DELETE /delete/:targetAccountId</code></p>
+    <p class="review__carry">Body: <code>deletionType: 'CLOSE'</code>, <code>policy</code>, <code>destinationAccountId</code>, <code>expectedResidual</code>, <code>closeReason</code>. The dialog is not dismissible. Frame 12.</p>
+   </div>
+   <div class="review__step">
+    <p class="review__stepname">Step 5 &mdash; the outcome</p>
+    <p class="review__carry">On success the dialog closes and the page becomes the outcome view, reading <code>settledResidual</code>, <code>destinationAccountName</code> and the policy off the response. On a refusal the dialog stays and states what did not happen. Frames 09 and 13.</p>
+   </div>
+  </div>
+ </section>
+
+ <div class="review__panels">
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">01</span>
+    <h2 class="review__name">Loading</h2>
+    <span class="review__tag">state</span>
+   </div>
+   <p class="review__note">The preview is in flight. Block dimensions match the real content so nothing moves when it lands. <strong>No figure is drawn</strong> — not a zero, not a dash, because the skeleton is itself the statement that the figure is unknown. Nothing here is clickable.</p>
+   <div class="review__frame">
+    <div class="close-page">
+     <header class="close-page__header">
+      <button type="button" class="close-page__back" data-i18n-label="closeBackButtonLabel" aria-label="Back">
+       <svg class="close-page__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+       </svg>
+      </button>
+      <h2 class="close-page__title" data-i18n="closePageTitle">Close account</h2>
+     </header>
+     <div class="close-page__body">
+      <div class="close-identity" aria-busy="true">
+       <div class="close-identity__head">
+        <div class="close-skeleton__group close-skeleton__group--grow">
+         <span class="close-skeleton__bar close-skeleton__bar--on-panel close-skeleton__bar--title"></span>
+         <span class="close-skeleton__bar close-skeleton__bar--on-panel close-skeleton__bar--meta"></span>
+        </div>
+        <span class="close-skeleton__badge"></span>
+       </div>
+       <div class="close-identity__figure">
+        <span class="close-skeleton__bar close-skeleton__bar--on-panel close-skeleton__bar--amount"></span>
+        <span class="close-skeleton__bar close-skeleton__bar--on-panel close-skeleton__bar--caption"></span>
+        <span class="close-skeleton__bar close-skeleton__bar--on-panel close-skeleton__bar--caption"></span>
+        <span class="close-skeleton__bar close-skeleton__bar--on-panel close-skeleton__bar--short"></span>
+       </div>
+      </div>
+
+      <div class="close-section" aria-busy="true">
+       <span class="close-skeleton__bar close-skeleton__bar--short"></span>
+       <span class="close-skeleton__block"></span>
+       <span class="close-skeleton__block"></span>
+      </div>
+
+      <div class="close-section" aria-busy="true">
+       <span class="close-skeleton__bar close-skeleton__bar--short"></span>
+       <span class="close-skeleton__bar close-skeleton__bar--line"></span>
+      </div>
+
+      <span class="close-skeleton__block"></span>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">02</span>
+    <h2 class="review__name">Residual, destinations available</h2>
+    <span class="review__tag">state</span>
+   </div>
+   <p class="review__note">The count of eligible destinations is 3, so the choice between moving the balance and discarding it is real. The figure shown is formatted; <strong>the raw text the preview handed over is what goes back</strong> with the confirmation, carried on <code>data-residual-raw</code> here so it is visible in the markup. Each option in the selector carries its own <code>accountId</code> as its value, never its position in the array.</p>
+   <div class="review__frame">
+    <div class="close-page">
+     <header class="close-page__header">
+      <button type="button" class="close-page__back" data-i18n-label="closeBackButtonLabel" aria-label="Back">
+       <svg class="close-page__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+       </svg>
+      </button>
+      <h2 class="close-page__title" data-i18n="closePageTitle">Close account</h2>
+     </header>
+     <form class="close-page__body">
+     <section class="close-identity">
+      <div class="close-identity__head">
+       <div>
+        <h3 class="close-identity__name">Ahorros BBVA</h3>
+        <p class="close-identity__meta">
+         <span data-i18n="bank">bank</span>
+         <span>&middot;</span>
+         <span class="close-identity__id">#48</span>
+        </p>
+       </div>
+       <p class="close-badge light">USD</p>
+      </div>
+      <div class="close-identity__figure">
+       <p class="close-identity__label" data-i18n="closeBalanceToSettleLabel">Balance to settle</p>
+       <p class="close-identity__amount" data-residual-raw="1240.50">$1,240.50</p>
+       <p class="close-identity__caption" data-i18n="closeBalanceCaption">Read from your ledger a moment ago. If a transaction lands before you confirm, FinTrack refuses the close and shows you the new figure.</p>
+      </div>
+     </section>
+
+     <fieldset class="close-fieldset">
+      <legend class="close-fieldset__legend" data-i18n="closePolicyLegend">Where does this balance go?</legend>
+      <div class="close-section">
+
+       <label class="close-option is-active">
+        <input class="close-option__input" type="radio" name="policy-2" value="TRANSFER" checked>
+        <span class="close-option__text">
+         <span class="close-option__name" data-i18n="closePolicyTransferName">Move it to another account</span>
+         <span class="close-option__detail" data-i18n="closePolicyTransferDetail">The whole balance is transferred in one movement. Your net worth does not change.</span>
+        </span>
+       </label>
+
+       <div class="close-field">
+        <label class="close-field__label" for="destination-2">
+         <span data-i18n="closeDestinationLabel">Destination</span>
+         <span class="close-field__required" data-i18n="closeReasonRequiredTag">required</span>
+        </label>
+        <select class="close-field__select" id="destination-2" name="destinationAccountId">
+         <option value="12">Cuenta Corriente BBVA &mdash; $3,120.00</option>
+         <option value="19">N&oacute;mina Santander &mdash; $845.20</option>
+         <option value="27">Cuenta Joven &mdash; &minus;$40.00</option>
+        </select>
+        <p class="close-field__hint">
+         <span>3</span>
+         <span data-i18n="closeDestinationCountHint">accounts can receive this balance: your open bank accounts in this currency.</span>
+        </p>
+       </div>
+
+       <label class="close-option">
+        <input class="close-option__input" type="radio" name="policy-2" value="DISCARD">
+        <span class="close-option__text">
+         <span class="close-option__name" data-i18n="closePolicyDiscardName">Discard it</span>
+         <span class="close-option__detail" data-i18n="closePolicyDiscardDetail">The balance leaves your accounts and is recorded against FinTrack's internal compensation account. Nothing is erased from your history and no other balance of yours changes.</span>
+        </span>
+       </label>
+      </div>
+     </fieldset>
+
+     <div class="close-field">
+      <label class="close-field__label" for="reason-2">
+       <span data-i18n="closeReasonLabel">Why are you closing it?</span>
+       <span class="close-field__required" data-i18n="closeReasonRequiredTag">required</span>
+      </label>
+      <textarea class="close-field__textarea" id="reason-2" name="closeReason" rows="2" data-i18n-placeholder="closeReasonPlaceholder" placeholder="I stopped using it in March"></textarea>
+      <p class="close-field__hint" data-i18n="closeReasonHint">Your own words. It is stored with the account's registry entry and it is the only record of why this was done.</p>
+     </div>
+     <div class="close-notice close-notice--error">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5"/><path d="M12 16.2h.01"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeIrreversibleTitle">This cannot be undone</p>
+       <p class="close-notice__body" data-i18n="closeIrreversibleMessage">There is no way to reopen a closed account. Your transactions stay and keep naming this account, so your history still reads correctly — but the account itself is gone from your accounts for good.</p>
+      </div>
+     </div>
+     <div class="close-actions">
+      <button type="submit" class="close-button close-button--danger" data-i18n="closeSubmitButton">Close account permanently</button>
+      <button type="button" class="close-button close-button--ghost" data-i18n="closeCancelButton">Cancel</button>
+     </div>
+     </form>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">03</span>
+    <h2 class="review__name">Residual, no destination exists</h2>
+    <span class="review__tag">state</span>
+   </div>
+   <p class="review__note">The count of eligible destinations is 0. <strong>No selector is drawn at all</strong> — not a disabled empty one, which reads as a load that failed. Discard is stated as the answer it is, and the way to get a destination is a real route. This frame also carries <strong>the reason field in its invalid state</strong>: the database refuses spaces, tabs and newlines, so whitespace alone is rejected in the browser first.</p>
+   <div class="review__frame">
+    <div class="close-page">
+     <header class="close-page__header">
+      <button type="button" class="close-page__back" data-i18n-label="closeBackButtonLabel" aria-label="Back">
+       <svg class="close-page__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+       </svg>
+      </button>
+      <h2 class="close-page__title" data-i18n="closePageTitle">Close account</h2>
+     </header>
+     <form class="close-page__body">
+     <section class="close-identity">
+      <div class="close-identity__head">
+       <div>
+        <h3 class="close-identity__name">Efectivo</h3>
+        <p class="close-identity__meta">
+         <span data-i18n="cash">cash</span>
+         <span>&middot;</span>
+         <span class="close-identity__id">#31</span>
+        </p>
+       </div>
+       <p class="close-badge light">USD</p>
+      </div>
+      <div class="close-identity__figure">
+       <p class="close-identity__label" data-i18n="closeBalanceToSettleLabel">Balance to settle</p>
+       <p class="close-identity__amount" data-residual-raw="76.40">$76.40</p>
+       <p class="close-identity__caption" data-i18n="closeBalanceCaption">Read from your ledger a moment ago. If a transaction lands before you confirm, FinTrack refuses the close and shows you the new figure.</p>
+      </div>
+     </section>
+     <div class="close-notice close-notice--info">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.8h.01"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeDiscardOnlyTitle">This balance can only be discarded</p>
+       <p class="close-notice__body" data-i18n="closeDiscardOnlyMessage">Moving it needs another open bank account in the same currency, and you have none. Discarding records this balance against FinTrack’s internal compensation account: it stops counting towards your net worth, and nothing is erased from your history.</p>
+      </div>
+     </div>
+     <div class="close-actions">
+      <button type="button" class="close-button close-button--ghost">
+       <svg class="close-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+       <span data-i18n="closeCreateBankAccountButton">Create a bank account instead</span>
+      </button>
+     </div>
+
+     <div class="close-field">
+      <label class="close-field__label" for="reason-3">
+       <span data-i18n="closeReasonLabel">Why are you closing it?</span>
+       <span class="close-field__required" data-i18n="closeReasonRequiredTag">required</span>
+      </label>
+      <textarea class="close-field__textarea close-field__textarea--invalid" id="reason-3" name="closeReason" rows="2" aria-invalid="true" aria-describedby="reason-3-error">   </textarea>
+      <p class="close-field__error" id="reason-3-error">
+       <svg class="close-field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5"/><path d="M12 16.2h.01"/></svg>
+       <span data-i18n="closeReasonErrorEmpty">Write a reason. Spaces, tabs and line breaks on their own are not accepted.</span>
+      </p>
+     </div>
+     <div class="close-notice close-notice--error">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5"/><path d="M12 16.2h.01"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeIrreversibleTitle">This cannot be undone</p>
+       <p class="close-notice__body" data-i18n="closeIrreversibleMessage">There is no way to reopen a closed account. Your transactions stay and keep naming this account, so your history still reads correctly — but the account itself is gone from your accounts for good.</p>
+      </div>
+     </div>
+     <div class="close-actions">
+      <button type="submit" class="close-button close-button--danger" disabled data-i18n="closeSubmitDiscardButton">Close and discard the balance</button>
+      <button type="button" class="close-button close-button--ghost" data-i18n="closeCancelButton">Cancel</button>
+     </div>
+     </form>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">04</span>
+    <h2 class="review__name">Zero residual</h2>
+    <span class="review__tag">state</span>
+   </div>
+   <p class="review__note">The residual is the text <code>"0.00"</code>, a measured figure and not an absence, so it is printed. There is no settlement to choose, so no choice is offered — the form is the reason and the confirmation.</p>
+   <div class="review__frame">
+    <div class="close-page">
+     <header class="close-page__header">
+      <button type="button" class="close-page__back" data-i18n-label="closeBackButtonLabel" aria-label="Back">
+       <svg class="close-page__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+       </svg>
+      </button>
+      <h2 class="close-page__title" data-i18n="closePageTitle">Close account</h2>
+     </header>
+     <form class="close-page__body">
+     <section class="close-identity">
+      <div class="close-identity__head">
+       <div>
+        <h3 class="close-identity__name">Cuenta Joven</h3>
+        <p class="close-identity__meta">
+         <span data-i18n="bank">bank</span>
+         <span>&middot;</span>
+         <span class="close-identity__id">#27</span>
+        </p>
+       </div>
+       <p class="close-badge light">USD</p>
+      </div>
+      <div class="close-identity__figure">
+       <p class="close-identity__label" data-i18n="closeBalanceToSettleLabel">Balance to settle</p>
+       <p class="close-identity__amount" data-residual-raw="0.00">$0.00</p>
+       <p class="close-identity__caption" data-i18n="closeBalanceZeroCaption">Nothing to move. The account is already empty, so closing it writes no movement of any kind.</p>
+      </div>
+     </section>
+     <div class="close-field">
+      <label class="close-field__label" for="reason-4">
+       <span data-i18n="closeReasonLabel">Why are you closing it?</span>
+       <span class="close-field__required" data-i18n="closeReasonRequiredTag">required</span>
+      </label>
+      <textarea class="close-field__textarea" id="reason-4" name="closeReason" rows="2">El banco cerró el producto en agosto</textarea>
+      <p class="close-field__hint" data-i18n="closeReasonHint">Your own words. It is stored with the account's registry entry and it is the only record of why this was done.</p>
+     </div>
+     <div class="close-notice close-notice--error">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5"/><path d="M12 16.2h.01"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeIrreversibleTitle">This cannot be undone</p>
+       <p class="close-notice__body" data-i18n="closeIrreversibleMessage">There is no way to reopen a closed account. Your transactions stay and keep naming this account, so your history still reads correctly — but the account itself is gone from your accounts for good.</p>
+      </div>
+     </div>
+     <div class="close-actions">
+      <button type="submit" class="close-button close-button--danger" data-i18n="closeSubmitButton">Close account permanently</button>
+      <button type="button" class="close-button close-button--ghost" data-i18n="closeCancelButton">Cancel</button>
+     </div>
+     </form>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">05</span>
+    <h2 class="review__name">Category budget account</h2>
+    <span class="review__tag">variant</span>
+   </div>
+   <p class="review__note"><strong>Not one of the eight briefed states, and it has to exist somewhere.</strong> The disclosure that the budget goes with the account is only true of an account of type <code>category_budget</code>, and none of the other frames is one. The confirm button is off because the reason is empty, and the field says so — a disabled button with no stated reason is the defect this screen is under instruction not to repeat.</p>
+   <div class="review__frame">
+    <div class="close-page">
+     <header class="close-page__header">
+      <button type="button" class="close-page__back" data-i18n-label="closeBackButtonLabel" aria-label="Back">
+       <svg class="close-page__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+       </svg>
+      </button>
+      <h2 class="close-page__title" data-i18n="closePageTitle">Close account</h2>
+     </header>
+     <form class="close-page__body">
+     <section class="close-identity">
+      <div class="close-identity__head">
+       <div>
+        <h3 class="close-identity__name">Comida / Supermercado</h3>
+        <p class="close-identity__meta">
+         <span data-i18n="category_budget">category_budget</span>
+         <span>&middot;</span>
+         <span class="close-identity__id">#63</span>
+        </p>
+       </div>
+       <p class="close-badge light">USD</p>
+      </div>
+      <div class="close-identity__figure">
+       <p class="close-identity__label" data-i18n="closeSpentThroughLabel">Spent through this account</p>
+       <p class="close-identity__amount" data-residual-raw="2480.00">$2,480.00</p>
+       <p class="close-identity__caption" data-i18n="closeBudgetBalanceCaption">This is what you have spent under this category, not money the account holds. There is nothing here to move out.</p>
+      </div>
+     </section>
+     <div class="close-notice close-notice--warning">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5 2.5 20h19L12 4.5Z"/><path d="M12 10v4.5"/><path d="M12 17.2h.01"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeBudgetWarningTitle">The budget goes with the account</p>
+       <p class="close-notice__body" data-i18n="closeBudgetWarningMessage" data-i18n-vars='{&quot;name&quot;:&quot;Comida / Supermercado&quot;}'>Closing {name} deletes its budget. What you already spent stays in your history and in the months that have passed; the planned amount for this month and every month after it does not survive. The current month is closed off at zero.</p>
+      </div>
+     </div>
+     <div class="close-field">
+      <label class="close-field__label" for="reason-4b">
+       <span data-i18n="closeReasonLabel">Why are you closing it?</span>
+       <span class="close-field__required" data-i18n="closeReasonRequiredTag">required</span>
+      </label>
+      <textarea class="close-field__textarea" id="reason-4b" name="closeReason" rows="2" data-i18n-placeholder="closeReasonPlaceholder" placeholder="I stopped using it in March"></textarea>
+      <p class="close-field__hint" data-i18n="closeReasonHintDisabled">Your own words, and the button stays off until you write them. It is stored with the account's registry entry and it is the only record of why this was done.</p>
+     </div>
+     <div class="close-notice close-notice--error">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5"/><path d="M12 16.2h.01"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeIrreversibleTitle">This cannot be undone</p>
+       <p class="close-notice__body" data-i18n="closeIrreversibleBudgetMessage">There is no way to reopen a closed account or to restore its budget.</p>
+      </div>
+     </div>
+     <div class="close-actions">
+      <button type="submit" class="close-button close-button--danger" disabled data-i18n="closeSubmitButton">Close account permanently</button>
+      <button type="button" class="close-button close-button--ghost" data-i18n="closeCancelButton">Cancel</button>
+     </div>
+     </form>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">06</span>
+    <h2 class="review__name">Refused — the balance is not zero</h2>
+    <span class="review__tag">state</span>
+   </div>
+   <p class="review__note">The refusal names a remedy <strong>and the remedy is a button that goes somewhere</strong>: the movement screen at <code>/fintrack/tracker/transfer</code>, a route that exists today. The close button is present, disabled, directly under the sentence that says why. <strong>Read the first appendix item before approving this frame</strong> — it contradicts frame 02 and only one of the two can ship.</p>
+   <div class="review__frame">
+    <div class="close-page">
+     <header class="close-page__header">
+      <button type="button" class="close-page__back" data-i18n-label="closeBackButtonLabel" aria-label="Back">
+       <svg class="close-page__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+       </svg>
+      </button>
+      <h2 class="close-page__title" data-i18n="closePageTitle">Close account</h2>
+     </header>
+     <div class="close-page__body">
+     <section class="close-identity">
+      <div class="close-identity__head">
+       <div>
+        <h3 class="close-identity__name">Fondo ETF Global</h3>
+        <p class="close-identity__meta">
+         <span data-i18n="investment">investment</span>
+         <span>&middot;</span>
+         <span class="close-identity__id">#55</span>
+        </p>
+       </div>
+       <p class="close-badge light">USD</p>
+      </div>
+      <div class="close-identity__figure">
+       <p class="close-identity__label" data-i18n="closeBalanceHeldLabel">Balance held</p>
+       <p class="close-identity__amount" data-residual-raw="842.10">$842.10</p>
+       <p class="close-identity__caption" data-i18n="closeBalanceReadCaption">Read from your ledger a moment ago.</p>
+      </div>
+     </section>
+     <div class="close-notice close-notice--error">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5"/><path d="M12 16.2h.01"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeRefusalBalanceTitle">This account still holds money</p>
+       <p class="close-notice__body" data-i18n="closeRefusalBalanceMessage" data-i18n-vars='{&quot;name&quot;:&quot;Fondo ETF Global&quot;,&quot;amount&quot;:&quot;$842.10&quot;}'>{name} holds {amount} and an account of this type has to reach zero before it can be closed. Move the balance into one of your bank accounts first; the close screen will then have nothing left to settle.</p>
+      </div>
+     </div>
+     <div class="close-actions">
+      <button type="button" class="close-button close-button--primary">
+       <span data-i18n="closeMoveBalanceOutButton">Move the balance out</span>
+       <svg class="close-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12h15"/><path d="M13.5 6l6 6-6 6"/></svg>
+      </button>
+     </div>
+
+     <div class="close-recap">
+      <div class="close-recap__row">
+       <span class="close-recap__term" data-i18n="closeRefusalTypesZeroLabel">Types that must reach zero</span>
+       <span class="close-recap__value">
+        <span data-i18n="bank">bank</span> &middot;
+        <span data-i18n="cash">cash</span> &middot;
+        <span data-i18n="investment">investment</span> &middot;
+        <span data-i18n="debtor">debtor</span>
+       </span>
+      </div>
+      <div class="close-recap__row">
+       <span class="close-recap__term" data-i18n="closeRefusalTypesAnyLabel">Types that close at any balance</span>
+       <span class="close-recap__value">
+        <span data-i18n="income_source">income_source</span> &middot;
+        <span data-i18n="category_budget">category_budget</span>
+       </span>
+      </div>
+     </div>
+
+     <div class="close-actions">
+      <button type="button" class="close-button close-button--danger" disabled data-i18n="closeSubmitButton">Close account permanently</button>
+      <button type="button" class="close-button close-button--ghost" data-i18n="closeBackToAccountButton">Back to the account</button>
+     </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">07</span>
+    <h2 class="review__name">Refused — a system account</h2>
+    <span class="review__tag">state</span>
+   </div>
+   <p class="review__note">The guard in <code>deleteAccountService.js</code> has two arms: the type is not user-creatable, or the name is the reserved one. Only the second arm has a remedy, and the rename button is drawn <strong>only for that arm</strong>. No balance is shown, because a refused account is not one the owner is about to settle.</p>
+   <div class="review__frame">
+    <div class="close-page">
+     <header class="close-page__header">
+      <button type="button" class="close-page__back" data-i18n-label="closeBackButtonLabel" aria-label="Back">
+       <svg class="close-page__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+       </svg>
+      </button>
+      <h2 class="close-page__title" data-i18n="closePageTitle">Close account</h2>
+     </header>
+     <div class="close-page__body">
+     <section class="close-identity">
+      <div class="close-identity__head">
+       <div>
+        <h3 class="close-identity__name">Compensation</h3>
+        <p class="close-identity__meta">
+         <span data-i18n="boundary">boundary</span>
+         <span>&middot;</span>
+         <span class="close-identity__id">#3</span>
+        </p>
+       </div>
+       <p class="close-badge light">USD</p>
+      </div>
+     </section>
+     <div class="close-notice close-notice--error">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeRefusalSystemTitle">This account belongs to FinTrack</p>
+       <p class="close-notice__body" data-i18n="closeRefusalSystemMessage" data-i18n-vars='{&quot;name&quot;:&quot;Compensation&quot;}'>{name} is the account FinTrack posts closures and reversals against, so the figures on both sides of those movements stay in balance. It cannot be closed, deleted or reversed. If this is an account of your own that happens to carry that name, rename it and try again.</p>
+      </div>
+     </div>
+     <div class="close-actions">
+      <button type="button" class="close-button close-button--primary" data-i18n="closeBackToAccountsButton">Back to my accounts</button>
+      <button type="button" class="close-button close-button--ghost" data-i18n="closeRenameAccountButton">Rename this account</button>
+     </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">08</span>
+    <h2 class="review__name">Error</h2>
+    <span class="review__tag">state</span>
+   </div>
+   <p class="review__note">The preview did not arrive. The name and type come from the account list the reader arrived from, so the identity panel still renders; <strong>the balance is a dash</strong>, never a zero.</p>
+   <div class="review__frame">
+    <div class="close-page">
+     <header class="close-page__header">
+      <button type="button" class="close-page__back" data-i18n-label="closeBackButtonLabel" aria-label="Back">
+       <svg class="close-page__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+       </svg>
+      </button>
+      <h2 class="close-page__title" data-i18n="closePageTitle">Close account</h2>
+     </header>
+     <div class="close-page__body">
+     <section class="close-identity">
+      <div class="close-identity__head">
+       <div>
+        <h3 class="close-identity__name">Ahorros BBVA</h3>
+        <p class="close-identity__meta">
+         <span data-i18n="bank">bank</span>
+         <span>&middot;</span>
+         <span class="close-identity__id">#48</span>
+        </p>
+       </div>
+       <p class="close-badge light">USD</p>
+      </div>
+      <div class="close-identity__figure">
+       <p class="close-identity__label" data-i18n="closeBalanceToSettleLabel">Balance to settle</p>
+       <p class="close-identity__amount close-identity__amount--unknown">&mdash;</p>
+       <p class="close-identity__caption" data-i18n="closeBalanceNotLoadedCaption">Not loaded.</p>
+      </div>
+     </section>
+     <div class="close-notice close-notice--error">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5"/><path d="M12 16.2h.01"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeLoadErrorTitle">We could not load this account</p>
+       <p class="close-notice__body" data-i18n="closeLoadErrorMessage">The balance and the list of accounts that could receive it did not arrive, so there is nothing safe to confirm. Nothing was closed and nothing was moved.</p>
+      </div>
+     </div>
+     <div class="close-actions">
+      <button type="button" class="close-button close-button--primary">
+       <svg class="close-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v4.5h-4.5"/></svg>
+       <span data-i18n="closeRetryButton">Try again</span>
+      </button>
+      <button type="button" class="close-button close-button--ghost" data-i18n="closeBackToAccountsButton">Back to my accounts</button>
+     </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">09</span>
+    <h2 class="review__name">Closed</h2>
+    <span class="review__tag">state</span>
+   </div>
+   <p class="review__note">What happened, in the owner’s terms and in the past tense. Every line of the recap is a field the response carries back — none of it is inferred from the policy name.</p>
+   <div class="review__frame">
+    <div class="close-page">
+     <header class="close-page__header">
+      <button type="button" class="close-page__back" data-i18n-label="closeBackButtonLabel" aria-label="Back">
+       <svg class="close-page__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+       </svg>
+      </button>
+      <h2 class="close-page__title" data-i18n="closeOutcomePageTitle">Account closed</h2>
+     </header>
+     <div class="close-page__body">
+     <div class="close-notice close-notice--success">
+      <svg class="close-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8 12.2l2.8 2.8L16 9.5"/></svg>
+      <div class="close-notice__text">
+       <p class="close-notice__title" data-i18n="closeOutcomeSuccessTitle" data-i18n-vars='{"name":"Ahorros BBVA"}'>{name} is closed</p>
+       <p class="close-notice__body" data-i18n="closeOutcomeSuccessMessage">It no longer appears among your accounts, and it cannot be reopened.</p>
+      </div>
+     </div>
+
+      <div class="close-recap">
+       <div class="close-recap__row">
+        <span class="close-recap__term" data-i18n="closeOutcomeMovedLabel">Balance moved</span>
+        <span class="close-recap__value">$1,240.50 &rarr; Cuenta Corriente BBVA</span>
+       </div>
+       <div class="close-recap__row">
+        <span class="close-recap__term" data-i18n="closeOutcomeReasonLabel">Reason recorded</span>
+        <span class="close-recap__value">Dejé de usarla en marzo</span>
+       </div>
+       <div class="close-recap__row">
+        <span class="close-recap__term" data-i18n="closeOutcomeClosedOnLabel">Closed on</span>
+        <span class="close-recap__value">08/09/2026</span>
+       </div>
+      </div>
+
+      <p class="close-section__help" data-i18n="closeOutcomeHistoryNote">Every transaction that ever named this account is still in your history and still names it. What is gone is the account itself: it is not in your lists, it receives nothing, and it cannot be chosen anywhere.</p>
+
+      <div class="close-actions">
+       <button type="button" class="close-button close-button--primary" data-i18n="closeOutcomeBackButton">Back to my accounts</button>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">10</span>
+    <h2 class="review__name">Confirmation — transfer</h2>
+    <span class="review__tag">step 3</span>
+   </div>
+   <p class="review__note">The step Carlos named. It restates the account, the figure, where the money goes and what the owner wrote, then lists what is lost. <strong>No checkbox and no typed confirmation</strong>: the consequences sit in the same panel as the button.</p>
+   <div class="review__frame">
+    <div class="close-scrim">
+     <div class="close-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+      <h2 class="close-dialog__title" id="dlg-title" data-i18n="closeConfirmTitle">Close this account?</h2>
+      <p class="close-dialog__lede" data-i18n="closeConfirmLede">This is the last step. Read what is about to happen, then confirm.</p>
+
+      <div class="close-dialog__summary">
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeConfirmAccountLabel">Account</span>
+        <span class="close-dialog__value">Ahorros BBVA &middot; <span data-i18n="bank">bank</span> &middot; #48</span>
+       </div>
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeConfirmResidualLabel">Balance being settled</span>
+        <span class="close-dialog__value close-dialog__value--amount">$1,240.50</span>
+       </div>
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeConfirmDestinationLabel">Goes to</span>
+        <span class="close-dialog__value">Cuenta Corriente BBVA &middot; #12</span>
+       </div>
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeConfirmReasonLabel">Reason you wrote</span>
+        <span class="close-dialog__value">Dejé de usarla en marzo</span>
+       </div>
+      </div>
+
+      <p class="close-dialog__term" data-i18n="closeConfirmLosesLabel">What you lose</p>
+      <ul class="close-dialog__loses">
+       <li data-i18n="closeConfirmLosesAccount">The account itself. It disappears from your lists and cannot be chosen anywhere.</li>
+       <li data-i18n="closeConfirmLosesReopen">Any way back. There is no undo and no reopening.</li>
+       <li data-i18n="closeConfirmKeepsHistory">Nothing else. Every transaction stays and still names this account.</li>
+      </ul>
+
+      <div class="close-actions">
+       <button type="button" class="close-button close-button--danger" data-i18n="closeConfirmProceedButton">Yes, close it</button>
+       <button type="button" class="close-button close-button--outline" data-i18n="closeConfirmBackButton">Go back</button>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">11</span>
+    <h2 class="review__name">Confirmation — budget account</h2>
+    <span class="review__tag">step 3</span>
+   </div>
+   <p class="review__note">The same dialog when the account is a category budget. The loss list gains the budget line; the settlement row says there is nothing to settle rather than showing a destination.</p>
+   <div class="review__frame">
+    <div class="close-scrim">
+     <div class="close-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+      <h2 class="close-dialog__title" id="dlg-title" data-i18n="closeConfirmTitle">Close this account?</h2>
+      <p class="close-dialog__lede" data-i18n="closeConfirmLede">This is the last step. Read what is about to happen, then confirm.</p>
+
+      <div class="close-dialog__summary">
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeConfirmAccountLabel">Account</span>
+        <span class="close-dialog__value">Comida / Supermercado &middot; <span data-i18n="category_budget">category_budget</span> &middot; #63</span>
+       </div>
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeConfirmResidualLabel">Balance being settled</span>
+        <span class="close-dialog__value close-dialog__value--amount">$0.00</span>
+       </div>
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeConfirmPolicyLabel">Settlement</span>
+        <span class="close-dialog__value" data-i18n="closeConfirmNothingToSettle">Nothing to settle</span>
+       </div>
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeConfirmReasonLabel">Reason you wrote</span>
+        <span class="close-dialog__value">La fusioné con Hogar</span>
+       </div>
+      </div>
+
+      <p class="close-dialog__term" data-i18n="closeConfirmLosesLabel">What you lose</p>
+      <ul class="close-dialog__loses">
+       <li data-i18n="closeConfirmLosesBudget">The budget of this category, from this month on. The months already spent keep their figures.</li>
+       <li data-i18n="closeConfirmLosesAccount">The account itself. It disappears from your lists and cannot be chosen anywhere.</li>
+       <li data-i18n="closeConfirmLosesReopen">Any way back. There is no undo and no reopening.</li>
+      </ul>
+
+      <div class="close-actions">
+       <button type="button" class="close-button close-button--danger" data-i18n="closeConfirmProceedButton">Yes, close it</button>
+       <button type="button" class="close-button close-button--outline" data-i18n="closeConfirmBackButton">Go back</button>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">12</span>
+    <h2 class="review__name">In flight</h2>
+    <span class="review__tag">step 4</span>
+   </div>
+   <p class="review__note">The dialog cannot be dismissed while the request is out. The ring is one circle driven by a dash pattern, so with motion disabled it becomes a whole ring instead of a frozen quarter.</p>
+   <div class="review__frame">
+    <div class="close-scrim">
+     <div class="close-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+      <div class="close-dialog__status">
+       <svg class="close-spinner" viewBox="0 0 24 24" role="img" aria-labelledby="spinner-title">
+        <title id="spinner-title" data-i18n="closeExecutingTitle">Closing the account</title>
+        <circle class="close-spinner__track" cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+        <circle class="close-spinner__arc" cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="56.55" stroke-dashoffset="42.41"/>
+       </svg>
+       <h2 class="close-dialog__title" id="dlg-title" data-i18n="closeExecutingTitle">Closing the account</h2>
+       <p class="close-dialog__lede" data-i18n="closeExecutingMessage">Settling the balance and recording the closure. Do not leave this screen.</p>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <section class="review__panel">
+   <div class="review__label">
+    <span class="review__index">13</span>
+    <h2 class="review__name">Refused after confirming</h2>
+    <span class="review__tag">step 5</span>
+   </div>
+   <p class="review__note">The one refusal that can only happen after the owner commits: a transaction landed between the preview and the confirmation, so the figure they echoed back no longer matches. Both figures are shown. <strong>Nothing was closed and nothing was moved</strong>, and the retry reloads the preview rather than resending the old one.</p>
+   <div class="review__frame">
+    <div class="close-scrim">
+     <div class="close-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+      <h2 class="close-dialog__title" id="dlg-title" data-i18n="closeStaleResidualTitle">The balance changed while you were reading</h2>
+      <div class="close-dialog__summary">
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeStaleConfirmedLabel">You confirmed</span>
+        <span class="close-dialog__value close-dialog__value--amount">$1,240.50</span>
+       </div>
+       <div class="close-dialog__row">
+        <span class="close-dialog__term" data-i18n="closeStaleNowLabel">It now holds</span>
+        <span class="close-dialog__value close-dialog__value--amount">$1,310.00</span>
+       </div>
+      </div>
+      <p class="close-dialog__lede" data-i18n="closeStaleResidualMessage">A transaction landed on this account after the screen loaded. Nothing was closed and nothing was moved. Load the new figure and decide again.</p>
+
+      <div class="close-actions">
+       <button type="button" class="close-button close-button--danger">
+        <svg class="close-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v4.5h-4.5"/></svg>
+        <span data-i18n="closeRetryButton">Try again</span>
+       </button>
+       <button type="button" class="close-button close-button--outline" data-i18n="closeCancelButton">Cancel</button>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+ </div>
+
+ <section class="review__appendix">
+  <h2 class="review__heading">Decisions the brief did not settle</h2>
+  <ol class="review__list">
+   <li><strong>Frame 02 and frame 06 cannot both be right, and this is the one thing to rule on first.</strong> The close operation that ships today in <code>deleteAccountService.js</code> settles any residual by moving it or discarding it and never refuses for a non-zero balance; the close sequence written in <code>PLAN_CLOSE_ACCOUNT.md</code> refuses unless the balance is already zero on bank, cash, investment and debtor, and says in as many words that closing moves no money. Both frames are drawn because both states were asked for. Which rule governs?</li>
+   <li><strong>The backend refusal text is not rendered as received.</strong> The screen owns its copy and keys off the outcome, so both languages read the same sentence. What it costs: the sentence the server actually threw is not shown, and the two can drift. What it needs: today a 403 carries two unrelated causes — a reserved name and a non-creatable type — in prose alone, so <strong>the screen cannot tell them apart without a machine-readable code on the error payload</strong>. Frame 07 assumes one exists.</li>
+   <li><strong>The translation helper cannot interpolate.</strong> <code>useLanguageTranslation</code> returns <code>translateText(key)</code> and <code>getLangText</code> hands back a raw string, so a sentence naming the account or the amount has no way to receive it. This mockup substitutes <code>{name}</code> and <code>{amount}</code> at render time. The alternative the module uses today — splitting the sentence around a rendered span — produces ungrammatical Spanish, because the word order differs.</li>
+   <li><strong>The confirmation dialog has no checkbox.</strong> Carlos ruled that out. The consequences are listed in the dialog itself, beside the button.</li>
+   <li><strong>Frame 06 is drawn on an investment account.</strong> If the refusal survives the first ruling above, it has to name a type whose balance this screen cannot settle by itself, and an investment position is the clearest case: transfer destinations are bank accounts, so there is no in-screen route.</li>
+   <li><strong>The closing date is printed 08/09/2026 and nothing decides that format.</strong> A date is data, so it takes no dictionary key, but day-first and month-first are different sentences to an English reader and to a Spanish one. Either the screen formats it against the active language or the payload carries a formatted string; neither is settled and this frame simply picks one.</li>
+   <li><strong>The reason field imposes no maximum length</strong>, because the contract states none. If the column lands as a bounded type the field needs a counter and a limit.</li>
+   <li><strong>The confirm button is off until the reason holds a non-space character</strong>, and the field states why. An always-live button would send a request the database constraint is going to refuse.</li>
+   <li><strong>The destructive button is drawn from the error banner triad</strong> rather than from the cream accent every other submit uses, so the one control that deletes an account row does not look like an ordinary save. White on that red computes to 5.89:1, which is arithmetic on the token values and not a measured render.</li>
+   <li><strong>The refusal for a system account offers a rename button.</strong> The backend’s own message says to rename the account if it is the owner’s, so the remedy it names now has somewhere to go.</li>
+  </ol>
+
+  <h2 class="review__heading">What the screen sends, and what it must not send</h2>
+  <ol class="review__list">
+   <li><code>expectedResidual</code> is <strong>the residual string exactly as the preview handed it over</strong>. The figure on screen is formatted for reading and is never the value that travels back; the settlement compares the echo against a balance it derives under its own lock and refuses if they differ.</li>
+   <li><code>closeReason</code> is <strong>free text the owner typed, stored verbatim and never translated</strong>. Only its label, its hint and its validation message have keys.</li>
+   <li><strong>Account names and currency codes are data, not keys.</strong> They are never looked up in the dictionary. Neither is the reason. Everything else on these frames is.</li>
+   <li><strong>The account type is the one piece of data that is also a key</strong>, because <code>ImpactReportUI.tsx</code> already calls <code>t(affectedAccountType)</code> and the dictionary answers. The values printed here are the shipped ones, so the refusal list reads Income and Expense rather than income source and category budget. Two types have no entry, <code>cash</code> and <code>boundary</code>, and <code>getLangText</code> falls back to the key, so a cash account prints the literal string cash today.</li>
+   <li>Every row in a list is keyed on its own identifier — a destination on its <code>accountId</code> — <strong>never on its position in the array</strong>. A closure changes the length of exactly these lists.</li>
+   <li>Every clickable thing on these frames is a real <code>button</code> or a native control, so it has focus, a visible focus ring and an announced role.</li>
+  </ol>
+
+  <h2 class="review__heading">Tokens this screen needed and the file does not have</h2>
+  <ol class="review__list">
+   <li><strong>A placeholder fill for a skeleton.</strong> Nothing in <code>tokens.css</code> names one. On the dark surface the skeleton borrows <code>--color-surface-raised</code> and on the cream panel <code>--color-surface-disabled</code>, neither of which means "loading". A pair for the two surfaces is the shape it wants; no name is proposed here and nothing in the CSS invents one.</li>
+   <li><strong>A destructive action colour and its content colour.</strong> There is no button token for an irreversible action. The one used here is composed from <code>--color-feedback-error-content</code> and <code>--color-surface-inverse</code>, which is a banner colour pressed into service as a button ground.</li>
+   <li><strong>Nothing else was missing.</strong> Every other value on this page resolves to a token declared in <code>frontend/src/styles/tokens.css</code>, copied here value for value.</li>
+  </ol>
+
+  <h2 class="review__heading">What is deliberately avoided</h2>
+  <ol class="review__list">
+   <li><code>--radius-lg</code> is not consumed. Three stylesheets in this same lazy route write <code>--radius-lg: 0.5rem</code> into the global <code>:root</code>, so a panel built on it would render at one value here and another in the app. The panels use <code>--radius-md</code>.</li>
+   <li>Every class is prefixed <code>close-</code>. The generic names in this codebase are declared in several stylesheets at equal specificity and the winner depends on which lazy route loaded last.</li>
+   <li>The reset at the top of this file reproduces the universal-selector font size from <code>index.css</code> on purpose, so the CSS here has to survive it. Every inline element restates <code>font-size: inherit</code>. That <code>16px</code> is the only raw pixel value outside the token block and the media query conditions, and it is a verbatim copy.</li>
+   <li>No <code>prefers-color-scheme</code> block. The one in the codebase is inverted and this screen does not extend it.</li>
+  </ol>
+
+  <h2 class="review__heading">What has not been verified</h2>
+  <ol class="review__list">
+   <li><strong>The Spanish has not been read by a native speaker.</strong> It was written to match the length of the English so the layout holds in both, which is a layout decision, not a copy review.</li>
+   <li><strong>The typeface is a fallback.</strong> Outfit is fetched by <code>index.css</code> from Google Fonts and this file makes no external request, so line lengths and letterforms here are not the app’s.</li>
+   <li><strong>The three-across grid above 1024px is the review shell’s, not the app’s.</strong> The screen itself is a single centred column at every width.</li>
+   <li><strong>The focused settlement option draws two rings.</strong> The radio carries its own 2px ring and the card around it lights up as well, because <code>.close-option:focus-within</code> repeats it at card size. Both are legible in the screenshots; whether the pair reads as noise is a judgement on a real screen. If it does, the rule to delete is <code>.close-option:focus-within</code> and the radio keeps its own.</li>
+   <li><strong>The dialogs are drawn inside a 360px frame with a static scrim.</strong> Focus trapping, the Escape key and scrim-click dismissal are behaviour, not layout, and none of it is exercised here.</li>
+  </ol>
+ </section>
+
+</main>
+
+
+<script>
+ /* Every string the owner reads, keyed. The shape mirrors the module's own
+    dictionary in editionAndDeletion/utils/languages.ts: a flat record of
+    camelCase keys grouped by the component that consumes them. Nothing here
+    edits that file; this is the list of keys the close screen would add to it.
+
+    What is NOT here, deliberately: the reason the owner types, account names,
+    account types, currency codes and amounts. Those are data, and a key would
+    turn a value into a lookup that fails on the first name nobody translated. */
+ const closeDictionary = {
+  en: {
+   /* CloseAccountPage */
+   closePageTitle: 'Close account',
+   closeBackButtonLabel: 'Back',
+   closeOutcomePageTitle: 'Account closed',
+
+   /* CloseAccountIdentity */
+   closeBalanceToSettleLabel: 'Balance to settle',
+   closeBalanceHeldLabel: 'Balance held',
+   closeSpentThroughLabel: 'Spent through this account',
+   closeBalanceCaption: 'Read from your ledger a moment ago. If a transaction lands before you confirm, FinTrack refuses the close and shows you the new figure.',
+   closeBalanceReadCaption: 'Read from your ledger a moment ago.',
+   closeBalanceZeroCaption: 'Nothing to move. The account is already empty, so closing it writes no movement of any kind.',
+   closeBudgetBalanceCaption: 'This is what you have spent under this category, not money the account holds. There is nothing here to move out.',
+   closeBalanceNotLoadedCaption: 'Not loaded.',
+
+   /* CloseSettlementChoice */
+   closePolicyLegend: 'Where does this balance go?',
+   closePolicyTransferName: 'Move it to another account',
+   closePolicyTransferDetail: 'The whole balance is transferred in one movement. Your net worth does not change.',
+   closePolicyDiscardName: 'Discard it',
+   closePolicyDiscardDetail: 'The balance leaves your accounts and is recorded against FinTrack\u2019s internal compensation account. Nothing is erased from your history and no other balance of yours changes.',
+   closeDestinationLabel: 'Destination',
+   closeDestinationCountHint: 'accounts can receive this balance: your open bank accounts in this currency.',
+   closeDiscardOnlyTitle: 'This balance can only be discarded',
+   closeDiscardOnlyMessage: 'Moving it needs another open bank account in the same currency, and you have none. Discarding records this balance against FinTrack\u2019s internal compensation account: it stops counting towards your net worth, and nothing is erased from your history.',
+   closeCreateBankAccountButton: 'Create a bank account instead',
+
+   /* CloseReasonField */
+   closeReasonLabel: 'Why are you closing it?',
+   closeReasonRequiredTag: 'required',
+   closeReasonPlaceholder: 'I stopped using it in March',
+   closeReasonHint: 'Your own words. It is stored with the account\u2019s registry entry and it is the only record of why this was done.',
+   closeReasonHintDisabled: 'Your own words, and the button stays off until you write them. It is stored with the account\u2019s registry entry and it is the only record of why this was done.',
+   closeReasonErrorEmpty: 'Write a reason. Spaces, tabs and line breaks on their own are not accepted.',
+
+   /* CloseDisclosures */
+   closeIrreversibleTitle: 'This cannot be undone',
+   closeIrreversibleMessage: 'There is no way to reopen a closed account. Your transactions stay and keep naming this account, so your history still reads correctly \u2014 but the account itself is gone from your accounts for good.',
+   closeIrreversibleBudgetMessage: 'There is no way to reopen a closed account or to restore its budget.',
+   closeBudgetWarningTitle: 'The budget goes with the account',
+   closeBudgetWarningMessage: 'Closing {name} deletes its budget. What you already spent stays in your history and in the months that have passed; the planned amount for this month and every month after it does not survive. The current month is closed off at zero.',
+
+   /* CloseRefusal */
+   closeRefusalBalanceTitle: 'This account still holds money',
+   closeRefusalBalanceMessage: '{name} holds {amount} and an account of this type has to reach zero before it can be closed. Move the balance into one of your bank accounts first; the close screen will then have nothing left to settle.',
+   closeRefusalTypesZeroLabel: 'Types that must reach zero',
+   closeRefusalTypesAnyLabel: 'Types that close at any balance',
+   closeMoveBalanceOutButton: 'Move the balance out',
+   closeBackToAccountButton: 'Back to the account',
+   closeRefusalSystemTitle: 'This account belongs to FinTrack',
+   closeRefusalSystemMessage: '{name} is the account FinTrack posts closures and reversals against, so the figures on both sides of those movements stay in balance. It cannot be closed, deleted or reversed. If this is an account of your own that happens to carry that name, rename it and try again.',
+   closeRenameAccountButton: 'Rename this account',
+   closeBackToAccountsButton: 'Back to my accounts',
+
+   /* CloseError */
+   closeLoadErrorTitle: 'We could not load this account',
+   closeLoadErrorMessage: 'The balance and the list of accounts that could receive it did not arrive, so there is nothing safe to confirm. Nothing was closed and nothing was moved.',
+   closeStaleResidualTitle: 'The balance changed while you were reading',
+   closeStaleResidualMessage: 'A transaction landed on this account after the screen loaded. Nothing was closed and nothing was moved. Load the new figure and decide again.',
+   closeStaleConfirmedLabel: 'You confirmed',
+   closeStaleNowLabel: 'It now holds',
+   closeRetryButton: 'Try again',
+
+   /* CloseConfirmationModal */
+   closeConfirmTitle: 'Close this account?',
+   closeConfirmLede: 'This is the last step. Read what is about to happen, then confirm.',
+   closeConfirmAccountLabel: 'Account',
+   closeConfirmResidualLabel: 'Balance being settled',
+   closeConfirmDestinationLabel: 'Goes to',
+   closeConfirmPolicyLabel: 'Settlement',
+   closeConfirmNothingToSettle: 'Nothing to settle',
+   closeConfirmReasonLabel: 'Reason you wrote',
+   closeConfirmLosesLabel: 'What you lose',
+   closeConfirmLosesAccount: 'The account itself. It disappears from your lists and cannot be chosen anywhere.',
+   closeConfirmLosesBudget: 'The budget of this category, from this month on. The months already spent keep their figures.',
+   closeConfirmLosesReopen: 'Any way back. There is no undo and no reopening.',
+   closeConfirmKeepsHistory: 'Nothing else. Every transaction stays and still names this account.',
+   closeConfirmProceedButton: 'Yes, close it',
+   closeConfirmBackButton: 'Go back',
+
+   /* CloseStatusModal */
+   closeExecutingTitle: 'Closing the account',
+   closeExecutingMessage: 'Settling the balance and recording the closure. Do not leave this screen.',
+
+   /* CloseOutcomeView */
+   closeOutcomeSuccessTitle: '{name} is closed',
+   closeOutcomeSuccessMessage: 'It no longer appears among your accounts, and it cannot be reopened.',
+   closeOutcomeMovedLabel: 'Balance moved',
+   closeOutcomeReasonLabel: 'Reason recorded',
+   closeOutcomeClosedOnLabel: 'Closed on',
+   closeOutcomeHistoryNote: 'Every transaction that ever named this account is still in your history and still names it. What is gone is the account itself: it is not in your lists, it receives nothing, and it cannot be chosen anywhere.',
+   closeOutcomeBackButton: 'Back to my accounts',
+
+   /* shared */
+   closeCancelButton: 'Cancel',
+   closeSubmitButton: 'Close account permanently',
+   closeSubmitDiscardButton: 'Close and discard the balance',
+
+   /* Account types. ImpactReportUI.tsx already calls t(affectedAccountType),
+      so bank, investment, debtor, income_source and category_budget exist
+      and these are their shipped values, copied verbatim. cash and boundary
+      are the two the dictionary lacks, and getLangText falls back to the key,
+      so a cash account prints the literal cash on screen today. */
+   bank: 'Bank',
+   cash: 'Cash',
+   investment: 'Investment',
+   debtor: 'Debtor/Lender',
+   income_source: 'Income',
+   category_budget: 'Expense',
+   boundary: 'System'
+  },
+
+  es: {
+   closePageTitle: 'Cerrar cuenta',
+   closeBackButtonLabel: 'Volver',
+   closeOutcomePageTitle: 'Cuenta cerrada',
+
+   closeBalanceToSettleLabel: 'Saldo por liquidar',
+   closeBalanceHeldLabel: 'Saldo que mantiene',
+   closeSpentThroughLabel: 'Gastado a trav\u00e9s de esta cuenta',
+   closeBalanceCaption: 'Le\u00eddo de tus movimientos hace un momento. Si entra una transacci\u00f3n antes de que confirmes, FinTrack rechaza el cierre y te muestra la cifra nueva.',
+   closeBalanceReadCaption: 'Le\u00eddo de tus movimientos hace un momento.',
+   closeBalanceZeroCaption: 'No hay nada que mover. La cuenta ya est\u00e1 vac\u00eda, as\u00ed que cerrarla no genera ning\u00fan movimiento.',
+   closeBudgetBalanceCaption: 'Esto es lo que has gastado en esta categor\u00eda, no dinero que la cuenta tenga. Aqu\u00ed no hay nada que sacar.',
+   closeBalanceNotLoadedCaption: 'No se pudo cargar.',
+
+   closePolicyLegend: '\u00bfAd\u00f3nde va este saldo?',
+   closePolicyTransferName: 'Pasarlo a otra cuenta',
+   closePolicyTransferDetail: 'El saldo completo se transfiere en un solo movimiento. Tu patrimonio no cambia.',
+   closePolicyDiscardName: 'Descartarlo',
+   closePolicyDiscardDetail: 'El saldo sale de tus cuentas y queda registrado contra la cuenta interna de compensaci\u00f3n de FinTrack. No se borra nada de tu historial y ning\u00fan otro saldo tuyo cambia.',
+   closeDestinationLabel: 'Cuenta destino',
+   closeDestinationCountHint: 'cuentas pueden recibir este saldo: tus cuentas bancarias abiertas en esta moneda.',
+   closeDiscardOnlyTitle: 'Este saldo solo se puede descartar',
+   closeDiscardOnlyMessage: 'Para moverlo hace falta otra cuenta bancaria abierta en la misma moneda, y no tienes ninguna. Descartarlo registra este saldo contra la cuenta interna de compensaci\u00f3n de FinTrack: deja de contar en tu patrimonio y no se borra nada de tu historial.',
+   closeCreateBankAccountButton: 'Crear una cuenta bancaria',
+
+   closeReasonLabel: '\u00bfPor qu\u00e9 la cierras?',
+   closeReasonRequiredTag: 'obligatorio',
+   closeReasonPlaceholder: 'Dej\u00e9 de usarla en marzo',
+   closeReasonHint: 'Con tus palabras. Se guarda en el registro de la cuenta y es la \u00fanica constancia de por qu\u00e9 se hizo esto.',
+   closeReasonHintDisabled: 'Con tus palabras, y el bot\u00f3n sigue apagado hasta que las escribas. Se guarda en el registro de la cuenta y es la \u00fanica constancia de por qu\u00e9 se hizo esto.',
+   closeReasonErrorEmpty: 'Escribe un motivo. Espacios, tabulaciones y saltos de l\u00ednea por s\u00ed solos no se aceptan.',
+
+   closeIrreversibleTitle: 'Esto no se puede deshacer',
+   closeIrreversibleMessage: 'No hay forma de reabrir una cuenta cerrada. Tus transacciones se quedan y siguen nombrando esta cuenta, as\u00ed que tu historial se sigue leyendo bien \u2014 pero la cuenta en s\u00ed desaparece de tus cuentas para siempre.',
+   closeIrreversibleBudgetMessage: 'No hay forma de reabrir una cuenta cerrada ni de recuperar su presupuesto.',
+   closeBudgetWarningTitle: 'El presupuesto se va con la cuenta',
+   closeBudgetWarningMessage: 'Cerrar {name} elimina su presupuesto. Lo que ya gastaste se queda en tu historial y en los meses que pasaron; el monto planificado para este mes y para los siguientes no sobrevive. El mes en curso se cierra en cero.',
+
+   closeRefusalBalanceTitle: 'Esta cuenta todav\u00eda tiene dinero',
+   closeRefusalBalanceMessage: '{name} tiene {amount} y una cuenta de este tipo debe llegar a cero antes de poder cerrarse. Pasa primero el saldo a una de tus cuentas bancarias; despu\u00e9s la pantalla de cierre ya no tendr\u00e1 nada que liquidar.',
+   closeRefusalTypesZeroLabel: 'Tipos que deben llegar a cero',
+   closeRefusalTypesAnyLabel: 'Tipos que cierran con cualquier saldo',
+   closeMoveBalanceOutButton: 'Sacar el saldo',
+   closeBackToAccountButton: 'Volver a la cuenta',
+   closeRefusalSystemTitle: 'Esta cuenta es de FinTrack',
+   closeRefusalSystemMessage: '{name} es la cuenta contra la que FinTrack registra los cierres y las reversiones, para que las cifras de ambos lados de esos movimientos cuadren. No se puede cerrar, ni borrar, ni revertir. Si es una cuenta tuya que casualmente lleva ese nombre, c\u00e1mbiale el nombre y vuelve a intentarlo.',
+   closeRenameAccountButton: 'Cambiar el nombre de la cuenta',
+   closeBackToAccountsButton: 'Volver a mis cuentas',
+
+   closeLoadErrorTitle: 'No pudimos cargar esta cuenta',
+   closeLoadErrorMessage: 'El saldo y la lista de cuentas que podr\u00edan recibirlo no llegaron, as\u00ed que no hay nada seguro que confirmar. No se cerr\u00f3 nada y no se movi\u00f3 nada.',
+   closeStaleResidualTitle: 'El saldo cambi\u00f3 mientras le\u00edas',
+   closeStaleResidualMessage: 'Entr\u00f3 una transacci\u00f3n en esta cuenta despu\u00e9s de que cargara la pantalla. No se cerr\u00f3 nada y no se movi\u00f3 nada. Carga la cifra nueva y vuelve a decidir.',
+   closeStaleConfirmedLabel: 'Confirmaste',
+   closeStaleNowLabel: 'Ahora tiene',
+   closeRetryButton: 'Reintentar',
+
+   closeConfirmTitle: '\u00bfCerrar esta cuenta?',
+   closeConfirmLede: 'Este es el \u00faltimo paso. Lee lo que est\u00e1 por pasar y confirma.',
+   closeConfirmAccountLabel: 'Cuenta',
+   closeConfirmResidualLabel: 'Saldo que se liquida',
+   closeConfirmDestinationLabel: 'Va a',
+   closeConfirmPolicyLabel: 'Liquidaci\u00f3n',
+   closeConfirmNothingToSettle: 'No hay nada que liquidar',
+   closeConfirmReasonLabel: 'Motivo que escribiste',
+   closeConfirmLosesLabel: 'Qu\u00e9 pierdes',
+   closeConfirmLosesAccount: 'La cuenta en s\u00ed. Desaparece de tus listas y ya no se puede elegir en ninguna parte.',
+   closeConfirmLosesBudget: 'El presupuesto de esta categor\u00eda, de este mes en adelante. Los meses ya gastados conservan sus cifras.',
+   closeConfirmLosesReopen: 'Cualquier vuelta atr\u00e1s. No hay deshacer ni reapertura.',
+   closeConfirmKeepsHistory: 'Nada m\u00e1s. Todas las transacciones se quedan y siguen nombrando esta cuenta.',
+   closeConfirmProceedButton: 'S\u00ed, cerrarla',
+   closeConfirmBackButton: 'Volver',
+
+   closeExecutingTitle: 'Cerrando la cuenta',
+   closeExecutingMessage: 'Liquidando el saldo y registrando el cierre. No salgas de esta pantalla.',
+
+   closeOutcomeSuccessTitle: '{name} qued\u00f3 cerrada',
+   closeOutcomeSuccessMessage: 'Ya no aparece entre tus cuentas y no se puede reabrir.',
+   closeOutcomeMovedLabel: 'Saldo trasladado',
+   closeOutcomeReasonLabel: 'Motivo registrado',
+   closeOutcomeClosedOnLabel: 'Cerrada el',
+   closeOutcomeHistoryNote: 'Cada transacci\u00f3n que alguna vez nombr\u00f3 esta cuenta sigue en tu historial y la sigue nombrando. Lo que desaparece es la cuenta: no est\u00e1 en tus listas, no recibe nada y no se puede elegir en ninguna parte.',
+   closeOutcomeBackButton: 'Volver a mis cuentas',
+
+   closeCancelButton: 'Cancelar',
+   closeSubmitButton: 'Cerrar la cuenta definitivamente',
+   closeSubmitDiscardButton: 'Cerrar y descartar el saldo',
+
+   bank: 'Banco',
+   cash: 'Efectivo',
+   investment: 'Inversi\u00f3n',
+   debtor: 'Pr\u00e9stamo',
+   income_source: 'Ingreso',
+   category_budget: 'Gasto',
+   boundary: 'Sistema'
+  }
+ };
+
+ /* The module's translateText(key) takes no parameters, so a sentence naming
+    the account has no way to receive it. This is what the helper would need. */
+ const fill = (text, vars) =>
+  Object.keys(vars || {}).reduce(
+   (out, name) => out.split('{' + name + '}').join(vars[name]),
+   text
+  );
+
+ const applyLanguage = (lang) => {
+  const table = closeDictionary[lang];
+
+  document.querySelectorAll('[data-i18n]').forEach((node) => {
+   const value = table[node.dataset.i18n];
+   if (value === undefined) return;
+   const vars = node.dataset.i18nVars ? JSON.parse(node.dataset.i18nVars) : null;
+   node.textContent = fill(value, vars);
+  });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
+   const value = table[node.dataset.i18nPlaceholder];
+   if (value !== undefined) node.setAttribute('placeholder', value);
+  });
+
+  document.querySelectorAll('[data-i18n-label]').forEach((node) => {
+   const value = table[node.dataset.i18nLabel];
+   if (value !== undefined) node.setAttribute('aria-label', value);
+  });
+
+  document.querySelectorAll('.close-page, .close-scrim').forEach((node) => {
+   node.setAttribute('lang', lang);
+  });
+
+  document.querySelectorAll('.review__lang').forEach((button) => {
+   button.classList.toggle('is-active', button.dataset.lang === lang);
+   button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
+  });
+ };
+
+ document.querySelectorAll('.review__lang').forEach((button) => {
+  button.addEventListener('click', () => applyLanguage(button.dataset.lang));
+ });
+
+ applyLanguage('en');
+</script>
+
+</body>
+</html>

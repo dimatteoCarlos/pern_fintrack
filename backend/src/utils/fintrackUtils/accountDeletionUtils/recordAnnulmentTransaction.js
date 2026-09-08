@@ -23,10 +23,33 @@ AL ELIMINAR TARGET, SE REVIERTE:
 2. Anulación: Slack → Cliente B (+$50)   // Reverse Loss
 */
 // Overview's overviewInvestmentRepository.js, overviewMonthlyRepository.js and
-// overviewTransactionRepository.js filter transactions on this exact prefix
-// (NOT LIKE '<prefix>%'). Changing the string here without updating those
-// four filters breaks them silently: annulment rows would start counting as
-// ordinary activity, with no error anywhere.
+// overviewTransactionRepository.js filter transactions on this exact prefix.
+// Changing the string here without updating them breaks them silently:
+// annulment rows would start counting as ordinary activity, with no error
+// anywhere.
+//
+// "Silently" means two different things depending on which card reads the rows,
+// and only one of them is harmless-looking (pern-fintrack-cf, 2026-09-07). On
+// the investment card both prefix-keyed terms sit in the same comparison, so a
+// row moving between them conserves the total and the reconciliation notice
+// cannot fire - wrong composition, right sum. On the profit-and-loss figure a
+// single annulment leg enters the realised total as if it were a real gain, the
+// figure moves, and nothing compares that figure to anything. The rows do not
+// cancel there: the affected leg sits on the owner's account and its opposite on
+// the compensation account.
+//
+// FIVE predicates, not four, and they do not all point the same way (counted
+// 2026-09-07 after pern-fintrack-cf found this comment had drifted). Two
+// exclusions in overviewTransactionRepository.js, one in
+// overviewMonthlyRepository.js, and in overviewInvestmentRepository.js a PAIR
+// that splits on this string: realised profit excludes the prefixed rows and
+// the closure adjustment includes them. The earlier wording said four and
+// described them all as NOT LIKE, which hid the positive one - the filter most
+// likely to be missed, since it is the only one that would start summing
+// nothing rather than summing too much.
+//
+// The count is the fragile part of this comment, not the list: a filter added
+// in Overview lands in a file this module does not own and nothing here fails.
 export const RTA_ANNULMENT_TARGET_PREFIX = 'RTA Annulment Target(';
 
 /**
@@ -201,6 +224,18 @@ export const recordAnnulmentTransaction = async (client, annulmentData) => {
       ),
     );
 
+    // BOTH LEGS OR NEITHER, and before migration 031 that is a money statement
+    // rather than a tidiness one. The affected account can BE the compensation
+    // account: a target created with a starting amount and never used since has
+    // one qualifying row, its own opening, whose counterparty is the boundary -
+    // so both rows below are written on that single account, equal and opposite.
+    // Pre-031 the compensation account is typed bank (031's retype selects
+    // account_name = 'slack' AND account_type_id = 1) and the Overview's bank
+    // balance reads types bank and cash with no annulment-prefix filter at all
+    // (pern-fintrack-cf, in their files). So the pair lands inside the owner's
+    // bank balance and that figure is right only because the two cancel. These
+    // inserts share the caller's transaction and commit together; writing one
+    // leg alone, on a retry path or a refactor, moves the owner's bank balance.
     const [resultInsertAffectedAccount, resultInsertSlackAccount] =
       await Promise.all([
         client.query(insertQuery, Object.values(affectedTransactionOption)),
