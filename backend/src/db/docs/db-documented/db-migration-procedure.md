@@ -408,6 +408,13 @@ the registry parity line, and the foreign keys into the account identity. A
 figure that differs is a divergence to explain before moving on, not a rounding
 error.
 
+**The pair is a schema reading and does not answer a question about data.**
+`db:state` reports tables, constraints, ledger rows and the registry parity
+count; it does not report what any row holds. So an empty `production-runs/`
+says no migration reached production through a runner, and says nothing at all
+about whether production carries the rows a card sums. A claim about data needs
+its own query against the copy, named and dated like any other measurement.
+
 ---
 
 ## 6. What must never be done
