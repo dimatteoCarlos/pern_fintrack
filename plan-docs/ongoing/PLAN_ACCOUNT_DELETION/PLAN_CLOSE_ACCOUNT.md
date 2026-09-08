@@ -516,6 +516,36 @@ for `pocket_saving_accounts`. **Two of the four extension tables are live and tw
 are empty by construction:** `category_budget_accounts` and `debtor_accounts` get
 rows; `income_source_accounts` and `pocket_saving_accounts` never have.
 
+**Why that table and not another: the edit path never had the type.**
+`accountEditController.js:318-322` declares the map that chooses which extension
+table an edit writes to —
+
+```js
+const allowedTables = {
+  category_budget: 'category_budget_accounts',
+  pocket_saving: 'pocket_saving_accounts',
+  debtor: 'debtor_accounts',
+};
+```
+
+— three keys, and `income_source` is not one of them. The absence has a cause
+rather than being an oversight nobody can explain. (Measured by the migration
+session, verified here.)
+
+**The map cannot produce a broken statement, and the reason is not where it
+looks.** `:326` reads `const tableName = allowedTables[account_type_name];` and
+`:361` interpolates it directly into `` UPDATE ${tableName} SET ``, with no guard
+between the two — so on its face an `income_source` edit builds `UPDATE
+undefined SET`. It cannot happen: the switch that fills `specificFields` starts
+at `:89` and has exactly three cases — `pocket_saving` (`:90`),
+`category_budget` (`:104`) and `debtor` (`:185`) — with **no `default`**, so for
+every other type the object stays empty and `if
+(Object.keys(specificFields).length > 0)` at `:317` never opens the block. The
+switch and the map carry the same three keys, and the refusal lives at `:317`,
+not between `:326` and `:361`. Recorded because the opposite conclusion was
+reported and is wrong: five types are missing from that map, not one, and none
+of them can reach the interpolation.
+
 **The owner ruled on the measurement, the same day and in one line:** *yo creo
 que esa tabla es descartable y habria que eliminarla, esto es tarea para
 migration.* So the table is dropped, and **the work is assigned to the migration
@@ -532,6 +562,22 @@ and three facts it needs before writing the file:
   for the drop.
 - **The migration suspension is the owner's to lift**, and this ruling assigns
   the task without saying when it runs. Nothing in CLOSE depends on it.
+- **A production count comes before the drop, and a local rehearsal cannot
+  stand in for it.** `DROP TABLE` has a rollback that recreates the structure
+  and can never recreate a row. Production's tables were built by the runtime
+  builder long before the chain existed, so whatever wrote accounts then is not
+  what writes them now, and no code either session can read proves the table is
+  empty there. The asymmetry that makes this sharp: `initializeDatabase()` never
+  runs on the deployed backend, so the boot path cannot recreate the table in
+  production — the drop is permanent exactly where the risk is — while on a
+  developer machine the next boot recreates it and the mistake repairs itself.
+  (Migration session's analysis; the production read is the owner's alone.)
+- **`pocket_saving_accounts` is not the same case and must not be dropped with
+  it.** It has no `INSERT` either, but it is a value in the map above, it is
+  special-cased by name at `accountEditController.js:353` for the
+  `desired_date_source` branch, and `:361` updates through it — a live
+  executable write path that `income_source_accounts` does not have. Same
+  measurement on the writer side, opposite conclusion.
 
 Nothing else in this plan changes: nobody designing the close writes a stamp, a
 guard or a cleanup for a table that has never held a row.
