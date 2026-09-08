@@ -377,6 +377,11 @@ If 035 has not run when the merge lands, the three above meet a relation that
 does not exist: the Overview page errors rather than degrading, and the close
 fails on its stamp.
 
+Counted and classified on 2026-09-08, against `main` at `3ad15e40` and
+`origin/feat/vercel-serverless` at its head of that date. Re-run the grep before
+acting on this: the ten is a fact about a commit, not about the project, and a
+merge into either branch changes it.
+
 The order is therefore forced in one direction only. Running the chain early
 costs nothing, because the deployed code ignores what it adds. Deploying the
 code early breaks the Overview page and the deletion path at once, against a
