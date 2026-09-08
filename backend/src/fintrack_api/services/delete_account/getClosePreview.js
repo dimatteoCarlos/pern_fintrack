@@ -38,7 +38,11 @@
 
 import { createError } from '../../../utils/errorHandling.js';
 import { derivedAccountBalanceSql } from '../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
-import { listTransferDestinations } from './getCloseTransferDestinations.js';
+// RETIRED 2026-09-08 with the settlement. CLOSE moves nothing out, so there is
+// no destination for the owner to pick and no list to offer. The import is kept
+// commented rather than deleted: the module it names is still the frozen
+// eligibility rule, and a later revert-to-active ruling may need it again.
+// import { listTransferDestinations } from './getCloseTransferDestinations.js';
 
 // NUMERIC, then handed over as text: this is the figure the owner is about to
 // confirm, and the pg driver's float conversion would round it on the way out.
@@ -97,11 +101,15 @@ export const getClosePreview = async (db, userId, targetAccountId) => {
   }
 
   const row = rows[0];
-  const destinations = await listTransferDestinations(
-    db,
-    userId,
-    targetAccountId,
-  );
+
+  // RETIRED 2026-09-08. This query ran on every close preview and on every
+  // deletion assessment to build a list CLOSE can no longer act on.
+  //
+  // const destinations = await listTransferDestinations(
+  //   db,
+  //   userId,
+  //   targetAccountId,
+  // );
 
   return {
     targetAccount: {
@@ -109,16 +117,21 @@ export const getClosePreview = async (db, userId, targetAccountId) => {
       accountName: row.account_name,
       accountTypeName: row.account_type_name,
       currencyCode: row.currency_code,
-      // Text, as the driver handed it over. This is the value the confirmation
-      // echoes back; the frontend formats it for display but must send back
-      // what it received, not what it rendered.
+      // Text, as the driver handed it over.
+      //
+      // WHAT THIS FIGURE IS FOR CHANGED ON 2026-09-08 and the name did not.
+      // It used to be the amount CLOSE would move out, echoed back by the
+      // confirmation so a stale figure could be refused. CLOSE settles nothing
+      // now: it REFUSES any balance that is not zero. So this is the figure
+      // that decides whether the close will be accepted at all, and the screen
+      // shows it to explain a refusal rather than to price a transfer.
       residual: row.account_balance,
     },
-    destinations,
-    // An empty list is a legitimate answer, not an error: an owner whose only
-    // bank account is the one being closed has nowhere to transfer to and must
-    // use DISCARD. The count travels beside the list so the screen can render
-    // that as its own state rather than as an empty dropdown.
-    destinationCount: destinations.length,
+    // FROZEN EMPTY 2026-09-08, not removed. Both keys stay in the response so
+    // no consumer reads undefined off a shape that used to carry them - the
+    // frontend deploys separately from the backend, and a key that disappears
+    // fails silently where a key that is empty does not.
+    destinations: [],
+    destinationCount: 0,
   };
 };

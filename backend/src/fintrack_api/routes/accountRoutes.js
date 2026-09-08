@@ -164,10 +164,17 @@ router.get(
 // Purpose: Executes SOFT, HARD, CLOSE or RTA deletion atomically.
 // Path: DELETE /api/fintrack/account/delete/:targetAccountId
 // Payload (RTA): Must contain deletionType, impactReport, and targetAccountName in the body.
-// Payload (CLOSE): deletionType, policy ('DISCARD' | 'TRANSFER'),
-//   expectedResidual (the residual read from the preview route above, sent back
-//   unchanged - the settlement refuses with 409 if the balance moved since),
-//   and under TRANSFER destinationAccountId, an id from that same preview.
+// Payload (CLOSE): deletionType and closeReason, a non-empty string.
+//   closeReason is mandatory - migration 035's
+//   chk_close_reason_accompanies_closure refuses a closure stamp with no reason
+//   and refuses one made only of whitespace - so the service raises 400 before
+//   taking the lock rather than surfacing a constraint name.
+//
+//   RETIRED 2026-09-08 with the settlement: this line used to name policy
+//   ('DISCARD' | 'TRANSFER'), expectedResidual and destinationAccountId. CLOSE
+//   settles nothing now, so none of the three has anything to drive. A request
+//   that still sends them is ignored rather than refused, because the frontend
+//   deploys separately from the backend.
 // ====================================
 // 📝 Route for final deletion (Soft or Atomic Hard Delete)
 // DELETE /api/fintrack/account/delete/:accountId

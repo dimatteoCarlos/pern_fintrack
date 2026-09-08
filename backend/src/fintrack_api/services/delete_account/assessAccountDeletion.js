@@ -85,7 +85,11 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
  // execution then refuses with a 409 the owner has no way to have predicted.
  const isSettled = residual === 0;
 
- const canTransfer = closePreview.destinationCount > 0;
+ // RETIRED 2026-09-08 with the settlement. It decided which policies to offer,
+ // and CLOSE takes no policy now. destinationCount is frozen at 0 upstream, so
+ // this would read false for every account and say nothing.
+ //
+ // const canTransfer = closePreview.destinationCount > 0;
 
  // The part of this account's balance that the annulment's own rows do not
  // account for: the residual, less what RTA will move onto other accounts, less
@@ -139,29 +143,49 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
   options: [
    {
     deletionType: DELETION_TYPE_CLOSE,
-    available: true,
-    // Settling is what a close IS, not a precondition it can fail: an account
-    // holding nothing still closes, it just has no residual to move.
+    // WAS true UNCONDITIONALLY, and that was the assessment offering an option
+    // the engine refuses. CLOSE stopped settling on 2026-09-08 and started
+    // refusing a nonzero balance outright, so an account holding anything
+    // cannot close. Offering it anyway sent the owner to a 400 they had no way
+    // to predict - the exact failure this endpoint exists to prevent.
+    available: isSettled,
+    // The refusal quoted before the owner meets it, in the same shape HARD
+    // uses below, naming the two routes that do accept a nonzero balance.
+    reason: isSettled
+     ? undefined
+     : `This account holds ${closePreview.targetAccount.residual} and cannot be closed until that is zero. Move the balance out with a transfer, or use RTA to reverse the account's effects on other accounts.`,
+    // INVERTED IN MEANING 2026-09-08, same field, same value, honest again.
+    // It used to mean "the close will have to settle something". CLOSE settles
+    // nothing now, so it means what it says: a settlement is REQUIRED of the
+    // owner, before CLOSE will run at all.
     requiresSettlement: !isSettled,
+    // FROZEN EMPTY upstream, kept so a consumer reads an empty list rather
+    // than undefined. See the same note in getClosePreview.js.
     destinations: closePreview.destinations,
     destinationCount: closePreview.destinationCount,
-    // An owner whose only other bank account of this currency is the one being
-    // closed has nowhere to transfer to and must discard. Stated here so the
-    // screen can present it as the answer it is, rather than as an empty
-    // dropdown the owner reads as a loading failure.
-    availablePolicies: canTransfer ? ['DISCARD', 'TRANSFER'] : ['DISCARD'],
-    // The account row survives, so its pocket allocations do too - the erasure
-    // tail is the only thing that deletes them and a close never runs it. The
-    // allocations are then backed by an account settled to zero, which is a
-    // consequence worth showing rather than a defect to fix here.
-    removesPocketAllocations: false,
+    // RETIRED 2026-09-08. CLOSE took a policy - DISCARD or TRANSFER - deciding
+    // what happened to the residual. It disposes of no residual now, so there
+    // is no policy to pick. The key stays and the list is empty: a screen that
+    // renders a radio group over it renders nothing, which is correct.
+    availablePolicies: [],
+    // WAS false, on two premises that both stopped holding on 2026-09-08.
+    // The row does not survive - CLOSE deletes it - and the close does not
+    // leave the allocations standing: its first step releases every one the
+    // account was backing, through the pocket module's own release, per
+    // (pocket, source account) pair. An owner reading false here would have
+    // been told their pockets keep their backing across a close.
+    removesPocketAllocations: true,
+    // Still true, and now true for a different reason. It used to hold because
+    // the user_accounts row survived. It holds because account_registry keeps
+    // the account's identity under the same account_id, so every transaction,
+    // pocket allocation and budget month that names it still resolves.
     keepsHistory: true,
-    // One thing decides whether the name returns to circulation: does a row
-    // survive. verifyAccountExistence matches on owner, lowercased name and
-    // lowercased type with no state test, and the schema carries no unique
-    // index on the name, so any surviving row holds its name against a new
-    // creation forever. CLOSE keeps the row, so the name stays taken.
-    releasesAccountName: false,
+    // WAS false because CLOSE kept the row. It deletes it now, and the rule
+    // the old comment states is what makes this flip: verifyAccountExistence.js
+    // reads FROM user_accounts alone at :21, with no state test and no
+    // reference to account_registry, so once the row is gone the name is free.
+    // The registry row keeps the history without holding the name.
+    releasesAccountName: true,
    },
    {
     deletionType: DELETION_TYPE_SOFT,
@@ -212,7 +236,7 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
     // OTHER accounts and is the answer to a different question.
     reason: isSettled
      ? undefined
-     : `This account holds ${closePreview.targetAccount.residual} and cannot be erased until that is settled. Close it to move the residual out, or use RTA instead if the account's effects on other accounts should be reversed.`,
+     : `This account holds ${closePreview.targetAccount.residual} and cannot be erased until that is settled. CLOSE refuses the same balance, so move it out with a transfer first, or use RTA if the account's effects on other accounts should be reversed.`,
     removesPocketAllocations: true,
     keepsHistory: false,
     releasesAccountName: true,
