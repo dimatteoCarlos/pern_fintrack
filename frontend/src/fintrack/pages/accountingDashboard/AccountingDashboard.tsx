@@ -66,15 +66,19 @@ const ACCOUNT_TYPE_DETAIL_PAGE: { [key: string]: string } = {
   category_budget: `/fintrack/budget/account`,
 };
 
-// Where the owner goes to open an account: OVERVIEW, and not the creation form
-// underneath it. The form is reached FROM there, so sending the reader straight
-// to it would skip the screen that owns the decision -- and it would put a
-// second door on a form Overview already opens, which is a second entry to keep
-// in step with the first.
+// The creation form, opened from this screen directly. It replaces a route to
+// Overview, argued there on the grounds that a second door is a second entry to
+// keep in step with the first. That cost is accepted: this board is where the
+// inventory is managed and it already lists every type, so sending the reader to
+// Overview to open an account took them off the screen they were working on.
+//
+// Both doors pass their own previousRoute, because NewAccount.tsx:417 reads it
+// for the back link. The form offers bank, investment and income_source only
+// (constants.ts:155-168); debtor and category_budget keep their own forms.
 //
 // Absolute, like the map above, because this dashboard is declared beside those
 // routes rather than under them.
-const OPEN_ACCOUNT_ROUTE = '/fintrack/overview';
+const OPEN_ACCOUNT_ROUTE = '/fintrack/overview/new_account';
 //---TYPE DEFINITIONS
 type AccountType = keyof typeof ACCOUNT_TYPE_DATA;
 type ToastMessageType = 'success' | 'error' | 'info' | 'warning';
@@ -568,12 +572,14 @@ const AccountingDashboard = () => {
               -- it is solved by another word -- so offering one there would
               answer a question the reader did not ask.
 
-              It leads to Overview, which is where accounts are opened, and
-              not to the creation form under it: the form is reached from
-              there, and jumping past that screen would skip the one that owns
-              the decision. */}
+              It reaches the form directly now, so it carries the same return
+              route the header control does. */}
           {!isFiltered && (
-            <Link to={OPEN_ACCOUNT_ROUTE} className='accounting-empty__action'>
+            <Link
+              to={OPEN_ACCOUNT_ROUTE}
+              state={{ previousRoute: location.pathname }}
+              className='accounting-empty__action'
+            >
               <OpenAccountSvg className='accounting-empty__actionIcon' />
               Add account
             </Link>
@@ -688,12 +694,38 @@ const AccountingDashboard = () => {
               siblings would need the second offset by the first's height, and
               that height is not a constant. */}
           <div className='accounting__stickyHead'>
-            <Link to={originRoute} className='accounting__header'>
-              <div className='accounting__header--icon'>
-                <LeftArrowSvg />
-              </div>
-              <div className='accounting__title'>{'Accounting'}</div>
-            </Link>
+            {/* Three children rather than one link wrapping the row. The
+                create control cannot sit inside the back link -- an anchor
+                inside an anchor is invalid -- so the back affordance narrows to
+                the arrow it always was and the title stops being clickable. */}
+            <div className='accounting__header'>
+             <Link
+              to={originRoute}
+              className='accounting__header--icon'
+              aria-label='Back'
+             >
+              <LeftArrowSvg />
+             </Link>
+
+             <div className='accounting__title'>{'Accounting'}</div>
+
+             {/* Icon only: the title is centred on the row, and a label here
+                 would push it off centre at 360px. The same drawing the empty
+                 state uses, so one mark carries one meaning on this screen. */}
+             <Link
+              to={OPEN_ACCOUNT_ROUTE}
+              state={{ previousRoute: location.pathname }}
+              className='accounting__openAccount'
+              aria-label='Open account'
+              title='Open account'
+             >
+              <OpenAccountSvg
+               className='accounting__openAccount-glyph'
+               aria-hidden='true'
+               focusable='false'
+              />
+             </Link>
+            </div>
 
             {/* Always rendered, whatever the inventory holds: a field that
                 appears past a threshold shifts every group down the moment

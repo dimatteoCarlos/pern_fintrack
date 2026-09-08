@@ -77,18 +77,13 @@
  justify-content: center;
  width: 100%;
  max-width: var(--layout-width-min);
- padding: var(--space-4) 0;
+ /* The side padding is one touch target wide, so the centred title cannot run
+    under the back arrow or the create control pinned to the row's ends. Both
+    are absolute, so they sit outside this padding rather than inside it. */
+ padding: var(--space-4) var(--size-touch-target);
  /* No margin-bottom: .accounting__stickyHead separates the title from the
     search with its own gap. A margin here would stack on top of that gap and
     make the pinned block taller than the two rows need. */
-}
-
-/* The row is a Link, so the ring belongs to it. The rule it replaces put
-   :focus on the icon div inside, which never receives focus. */
-.accounting__header:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
- outline-offset: var(--border-width-thick);
- border-radius: var(--radius-sm);
 }
 
 .accounting__title {
@@ -99,6 +94,9 @@
  text-align: center;
 }
 
+/* The back affordance. It used to be a div inside a Link that wrapped the
+   whole row; it is the Link now, which is why the ring moved here from
+   .accounting__header. */
 .accounting__header--icon {
  position: absolute;
  left: 0;
@@ -111,6 +109,12 @@
  transition: opacity var(--motion-normal);
 }
 
+.accounting__header--icon:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+ border-radius: var(--radius-sm);
+}
+
 /* The asset hardcodes its stroke, so the colour above only reaches the
    drawing by naming the path. */
 .accounting__header--icon path {
@@ -121,6 +125,53 @@
 .accounting__header--icon:hover,
 .accounting__header--icon:active {
  opacity: 0.7;
+}
+
+/* Opening an account, from the board that manages them. Pinned to the right
+   end of the title row: the row was empty there, so the control costs the
+   pinned head no height, and the head is sticky, so it stays reachable in a
+   group of seventeen.
+
+   Icon only, at the minimum tappable size. It declares no disabled state
+   because it is an anchor and :disabled never matches one -- the same set of
+   states .accounting-empty__action declares, for the same reason. */
+.accounting__openAccount {
+ position: absolute;
+ right: 0;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-touch-target);
+ height: var(--size-touch-target);
+ border-radius: var(--radius-full);
+ color: var(--color-content-on-dark-muted);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.accounting__openAccount:hover {
+ background-color: var(--color-surface-raised);
+ color: var(--color-content-on-dark);
+}
+
+.accounting__openAccount:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.accounting__openAccount:active {
+ background-color: var(--color-surface-sunken);
+}
+
+/* Sized off the spacing scale, like the empty state's copy of the same drawing:
+   the size scale starts at 2rem, which is the whole control rather than the
+   mark in it. Every stroke in the asset is currentColor, so the glyph takes the
+   colour the states above set on the link. */
+.accounting__openAccount-glyph {
+ display: block;
+ width: var(--space-5);
+ height: var(--space-5);
+ flex-shrink: 0;
 }
 
 /* The inventory filter. Full width like the groups under it, so the field and
@@ -708,6 +759,7 @@ button {
  .accounting__scrollJump,
  .accounting__scrollJump-glyph,
  .accounting__header--icon,
+ .accounting__openAccount,
  .accountingSearch,
  .accountingSearch__clear,
  .account-group__toggle,
