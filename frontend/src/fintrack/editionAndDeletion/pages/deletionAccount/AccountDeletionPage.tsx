@@ -346,28 +346,16 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
             // showStatusIndicator
           />
 
-          {/* 🎯 MAIN CONTENT AREA */}
-          <main className='main-content '>
-            <h2 className='content-title'>{getReportTitle()}</h2>
+          {/* 🎯 THE OTHER THREE METHODS: SOFT, CLOSE and HARD, none of
+              them described by the impact report below.
 
-            {/* 🎯 DYNAMIC CONTENT */}
-            {renderReportContent()}
-
-            {/* 🎯 ACTION BUTTON (only if report is loaded successfully) */}
-            {!isLoadingReport && !reportError && (
-              <div className='action-section '>
-                <ProceedButtonUI
-                  onClick={() => setIsModalOpen(true)}
-                  t={translateText}
-                  disabled={isExecutingDeletion}
-                />
-              </div>
-            )}
-          </main>
-
-          {/* 🎯 OTHER DELETION METHODS: SOFT and HARD, both reachable
-              independently of the RTA impact report above
-              (ACCOUNT_DELETION_METHODS.md §6) */}
+              ABOVE THE REPORT, NOT UNDER IT. The report is one method's
+              consequences, not the page's subject, and its table is as long as
+              the data - thirteen affected accounts push anything beneath it
+              more than a screen down, which is where the owner could not find
+              the close button on 2026-09-08. The choice of method precedes the
+              report that describes one of them
+              (ACCOUNT_DELETION_METHODS.md §6). */}
           <section className='deletion-methods-section'>
             <h2 className='deletion-methods-title'>
               {translateText('otherMethodsSectionTitle')}
@@ -402,6 +390,26 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               </button>
             </div>
           </section>
+
+          {/* 🎯 MAIN CONTENT AREA */}
+          <main className='main-content '>
+            <h2 className='content-title'>{getReportTitle()}</h2>
+
+            {/* 🎯 DYNAMIC CONTENT */}
+            {renderReportContent()}
+
+            {/* 🎯 ACTION BUTTON (only if report is loaded successfully) */}
+            {!isLoadingReport && !reportError && (
+              <div className='action-section '>
+                <ProceedButtonUI
+                  onClick={() => setIsModalOpen(true)}
+                  t={translateText}
+                  disabled={isExecutingDeletion}
+                />
+              </div>
+            )}
+          </main>
+
         </>
       )}
 
