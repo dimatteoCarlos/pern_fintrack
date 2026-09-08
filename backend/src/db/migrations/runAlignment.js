@@ -13,8 +13,13 @@
  * WHAT IT DOES NOT DO. It does not decide when the alignment runs and it does
  * not reach production: NODE_ENV=production is refused outright, and the
  * destination has to be named in DB_EXPECTED and match what the connection
- * reports. Deciding that production is ready is Carlos's, and the migration
- * freeze stands until the deployment process is defined.
+ * reports. Deciding that production is ready is Carlos's, and he authorizes
+ * each production migration individually.
+ *
+ * IT HAS NO WORK LEFT TO DO ON THE LIVE DATABASE. The alignment ran on Supabase
+ * on 2026-08-22 and its ledger row is there, so the refusal below fires. What
+ * this runner is for is every production-shaped copy built after that: a
+ * rehearsal restored from the dump needs it, production does not.
  *
  * WHY IT DOES NOT WRAP THE FILE IN A TRANSACTION. The file carries its own
  * BEGIN and COMMIT, unlike the chain migrations, and says so in its header:
@@ -71,13 +76,15 @@ function resolveTarget() {
 }
 
 async function runAlignment() {
- // Two independent refusals, as in runMigrations. This one answers "is this
- // the production mode", which the freeze asks; assertExpectedDatabase below
- // answers "is this the database you meant", which the mode cannot answer.
+ // Two independent refusals, as in runMigrations. This one answers "is this a
+ // deployed process migrating itself", which keys on the environment variable;
+ // assertExpectedDatabase below answers "is this the database you meant", which
+ // the mode cannot answer.
  if (isProduction()) {
   console.error(
    pc.red('\n❌ The alignment is not allowed under NODE_ENV=production.\n') +
-    pc.gray('   Production runs are frozen until the deployment process is defined.\n'),
+    pc.gray('   This guard stops a deployed process from migrating itself.\n') +
+    pc.gray('   An operator runs it from a shell where NODE_ENV is not production.\n'),
   );
   process.exit(1);
  }

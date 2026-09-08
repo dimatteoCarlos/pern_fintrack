@@ -155,9 +155,11 @@ export async function assertExpectedDatabase(client, script) {
  // production database's own name.
  //
  // So the destination is also classified by address, and a run that leaves this
- // machine has to say so. The freeze on production runs stands until the
- // deployment process is defined, which makes an off-machine destination the
- // exact thing that should not happen by accident.
+ // machine has to say so. Production runs are no longer suspended - Carlos
+ // lifted that on 2026-09-08 - and they are authorized one at a time, so an
+ // off-machine destination is still the exact thing that must not happen by
+ // accident. The refusal is what makes it deliberate rather than what makes it
+ // impossible.
  //
  // AN ALLOWLIST OF ADDRESSES, NOT A DENYLIST OF NAMES. schemaParity.js tests
  // the connection string against /prod|supabase/i, which matches a spelling
@@ -175,7 +177,7 @@ export async function assertExpectedDatabase(client, script) {
    pc.red(`\n❌ ${script} refuses to run: the destination is not this machine.\n`) +
     pc.gray(`   This connection reached ${where}.\n`) +
     pc.gray('   DB_EXPECTED confirms a name, and a remote database can carry any name.\n') +
-    pc.gray('   Production runs are frozen until the deployment process is defined.\n') +
+    pc.gray('   A production run is authorized one at a time, by Carlos, for named files.\n') +
     pc.gray('   Set DB_REMOTE_OK=1 to state that an off-machine destination is meant.\n'),
   );
   process.exit(1);

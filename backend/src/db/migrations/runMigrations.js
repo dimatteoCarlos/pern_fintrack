@@ -53,10 +53,12 @@ function resolveTarget() {
 }
 
 async function runMigrations() {
- // Two independent refusals. This one answers "is this the production mode",
- // which the migration freeze asks; assertExpectedDatabase below answers "is
- // this the database you meant", which is the question the mode cannot answer.
- // Refuting one does not retire the other.
+ // Two independent refusals. This one answers "is this a deployed process
+ // migrating itself", which keys on the environment variable and not on the
+ // destination; assertExpectedDatabase below answers "is this the database you
+ // meant", which is the question the mode cannot answer. Refuting one does not
+ // retire the other, and neither of them was Carlos's suspension of production
+ // runs, which was lifted on 2026-09-08 with no code change.
  if (isProduction()) {
   console.error(pc.red('\n❌ Migrations are not allowed under NODE_ENV=production.\n'));
   process.exit(1);
