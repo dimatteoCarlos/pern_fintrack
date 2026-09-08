@@ -344,6 +344,37 @@ undoing three of 035's seven repoints with no error. Measured 2026-09-08.
 `db:align` refuses a second run for that reason. To rehearse again, build a new
 database from the dump.
 
+### 5.C The chain runs before the code deploy, decided 2026-09-08
+
+**Schema first, then code.** Decided by Carlos on 2026-09-08, and for this batch
+it is not a preference between two workable orders.
+
+The reason is measurable today. Five files on `main` reference
+`account_registry` — `overviewAccountRepository.js`, `accountIdentity.js`,
+`transactionRowShape.js`, `deleteAccountService.js` and
+`assessAccountDeletion.js` — and **zero files on `origin/feat/vercel-serverless`
+do**. So the deployed backend has no reader of the registry at all, which is why
+production is sound today with 035 unapplied. The moment `main` merges into the
+deploy branch, those five reach production; if 035 has not run by then, every
+one of them queries a table that does not exist.
+
+The order is therefore forced in one direction only. Running the chain early
+costs nothing, because the deployed code ignores what it adds. Deploying the
+code early breaks the Overview page and the deletion path at once, against a
+missing relation.
+
+**What makes the reverse order safe in general, and why it does not apply
+here.** A migration can precede its code when it is additive, and every file
+from `013` to `036` is: new tables, new columns, new catalog rows, repointed
+foreign keys. None removes a column or a table the deployed code reads. The one
+class that would force code first is a `NOT NULL` on a column the running code
+does not fill, and section 3 states that rule separately because it survives
+this decision.
+
+The consequence for the branch: `main` must not merge into
+`feat/vercel-serverless` until the chain has run against production. That is a
+sequencing constraint on the merge, not a second decision.
+
 ### 5.3 Back up production, immediately before writing
 
 ```bash
