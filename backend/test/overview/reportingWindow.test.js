@@ -88,6 +88,7 @@ test('the published window carries the period and not the trend bounds', () => {
  const served = servedWindow(window);
 
  assert.deepEqual(Object.keys(served).sort(), [
+  'currentMonth',
   'isCurrentMonth',
   'periodEnd',
   'periodStart',
@@ -96,4 +97,20 @@ test('the published window carries the period and not the trend bounds', () => {
  assert.equal(served.referenceMonth, '2026-09-01');
  assert.equal(served.periodEnd, '2026-09-07');
  assert.equal(Object.isFrozen(served), true);
+});
+
+// The case a month control breaks on. Served a closed month, isCurrentMonth is
+// false and says nothing about which month the ceiling is, so the ceiling has to
+// be its own field or a forward step has no bound to compare against.
+test('the ceiling is published on a closed month, not only on the running one', () => {
+ const closed = servedWindow(makeReportingWindow('2026-03-01', '2026-09-01', '2026-09-07'));
+
+ assert.equal(closed.referenceMonth, '2026-03-01');
+ assert.equal(closed.currentMonth, '2026-09-01');
+ assert.equal(closed.isCurrentMonth, false);
+
+ const running = servedWindow(makeReportingWindow('2026-09-01', '2026-09-01', '2026-09-07'));
+
+ assert.equal(running.currentMonth, '2026-09-01');
+ assert.equal(running.isCurrentMonth, true);
 });

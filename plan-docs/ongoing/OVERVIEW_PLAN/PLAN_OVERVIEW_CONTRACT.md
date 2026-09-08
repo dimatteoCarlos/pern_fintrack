@@ -804,8 +804,13 @@ type GetOverviewParams = {
 // explicit that a flow never fabricates the days an unfinished month has left.
 // The same value reaches card.window.periodEnd on every card from this same
 // object, so a payload cannot name two different ends for one period.
+// currentMonth is the ceiling the 422 is raised against, and it is a field of
+// its own because isCurrentMonth cannot stand in for it: the flag says whether
+// the served month IS the ceiling and never says which month that is, so a
+// client served any earlier month has no bound to offer a forward step.
 type ServedWindow = {
  referenceMonth: string;  // YYYY-MM-01 — echoed even when the request named no month
+ currentMonth: string;    // YYYY-MM-01 — the latest month that may be requested
  periodStart: string;     // YYYY-MM-01 — the first day of that month
  periodEnd: string;       // YYYY-MM-DD — month end, or today for the month in course
  isCurrentMonth: boolean;
