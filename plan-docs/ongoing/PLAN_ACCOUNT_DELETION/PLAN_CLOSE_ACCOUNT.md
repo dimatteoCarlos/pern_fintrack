@@ -1955,6 +1955,97 @@ account and an account the old mechanism erased both carry a null `closed_at`.
 They are told apart by presence in `user_accounts`, which is the resolution rule
 of 7.3, not by any column of the registry.
 
+**The name and the parts can already disagree, and CLOSE is where that stops
+being repairable.** The registry stamps `account_name` alongside `category_name`
+and `subcategory` by the owner's ruling of 2026-09-08, and the convention is that
+the first is the other two plus the nature joined by slashes. **One real account
+breaks it, and a migration in the chain is what breaks it.** Measured by the
+migration session on a throwaway restore of the production dump, run under the
+owner's authorisation to test against the local copy and never against
+production: `013_normalize_category_budget_name_case.sql` rewrote 27 account
+names and backed up 28 rows, and account 122 is the difference.
+
+| Column | After 013 |
+|---|---|
+| `user_accounts.account_name` | `bolsas/plasticas /other` — internal space kept |
+| `category_budget_accounts.category_name` + `subcategory` | `bolsas` + `plasticas` — space gone |
+
+**Both statements call `LOWER(TRIM(...))`, on different strings.** The name
+`UPDATE` at `013:44-50` trims the whole name, where the space is internal and
+survives, so the already-lowercase row fails its own `WHERE` and is skipped. The
+parts `UPDATE` at `013:52-56` trims the subcategory alone, where the same space
+is trailing. The backup `INSERT` at `:31-42` catches the row through its
+`subcategory` arm, which is why 28 rows are backed up and 27 names changed.
+
+**Before the migration the two agree, which inverts what the finding is.**
+Measured in the backup table the migration itself writes: the stored subcategory
+was `plasticas ` with the trailing space, and the name was composed from that
+untrimmed part, so `bolsas` + `plasticas ` + `other` is exactly
+`bolsas/plasticas /other`. **The convention held until 013 ran.** The divergence
+is not a pre-existing defect the migration exposes; the migration creates it.
+
+**And the same migration is what makes the repair possible, which is why the
+state is self-correcting rather than merely broken.** `normalizeAccountName` is
+`String(text).trim().toLowerCase()` (`helpers.js:56`) — it trims the ends and
+never collapses an internal space. Recomposing from the *original* part would
+rebuild `bolsas/plasticas /other` and heal nothing. The edit path yields the
+consistent name **only because 013 already trimmed the part it recomposes from**.
+Neither of the two statements alone leaves a state that fixes itself: the parts
+`UPDATE` opens the window and supplies the correction, and the name `UPDATE`'s
+skip is what leaves the window open in between.
+
+**Today this heals itself and after CLOSE it cannot.**
+`accountEditController.js:174-176` recomposes `account_name` from the stored
+parts on any edit of a `category_budget` account, including a PATCH carrying no
+category field, and the comment at `:143-147` states the intent: *"It also
+repairs a name corrupted by an earlier partial edit."* **That is the only
+recomposition site in `backend/src`** — one hit across the whole sweep, and
+neither the close path nor the delete path is among them. So account 122
+converges on its next edit of any kind. **But CLOSE deletes the account row, and
+with it the edit path**, so an account closed while divergent leaves a registry
+row whose stamped name and stamped parts disagree with no statement left that
+could reconcile them.
+
+**No constraint binds the stamped name to the stamped parts, ruled by the
+migration session as chain owner and by this plan as registry owner.** Two
+reasons, and the second is the one to quote.
+
+**First, the creation order forbids it.** The extension row is inserted after the
+account row — `category_budget_accounts.account_id` is a primary key referencing
+`user_accounts`, so the order is structural, and the insert sits at
+`accountCategoryCreationcontroller.js:321`. At the moment the BEFORE INSERT
+trigger writes the registry row, the parts do not exist yet, so the registry
+cannot assert anything about them.
+
+**Second, and this is the reason that generalises: a CHECK is a rule about every
+row that will ever be written, and the registry's rows are records of something
+that already happened.** A constraint there would not prevent a bad state, it
+would prevent *recording* a state that exists anyway. Account 122 is closed by an
+owner who did nothing wrong, and the close fails — not because the closure is
+invalid, but because a migration trimmed one column and skipped another months
+earlier. **The one account that documents the 013 asymmetry would become the one
+account that cannot be closed.** The guard would protect the schema from the
+truth.
+
+**That is a ruling about this relationship and not a licence to drop constraints
+from the registry.** The line: a constraint that describes the registry's own row
+belongs, and a constraint that describes the world the row is about does not. The
+closure timestamp and its reason appearing and disappearing together is a
+property of the record itself and stays a CHECK (7.2.1). The name agreeing with
+the parts is a property of the account's history, which the registry observes and
+does not govern.
+
+**Where the divergence surfaces instead: a read, not a constraint.** A query
+listing closed accounts whose stamped name is not the composition of its stamped
+parts costs nothing, refuses no closure, and stays correct when a future partial
+edit produces the same shape — which `accountEditController.js:143-148` records
+as having happened once already. Not specified here and not required by any
+block; noted so that whoever wants it knows where it goes.
+
+**What the design does require** is that a reader take the name from
+`account_name` and never rebuild it from the parts — which 7.3 already says for a
+different reason.
+
 **7.2.2 The trigger, and what makes it new here.** A BEFORE INSERT row trigger on
 `user_accounts` that inserts `(account_id, user_id)` into the registry. Two
 creation controllers plus the boot path cannot be kept honest by convention,
