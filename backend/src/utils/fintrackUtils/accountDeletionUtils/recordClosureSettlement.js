@@ -18,10 +18,21 @@ import {
 // binding is read when a settlement is written and never while the module
 // evaluates; the same cycle already exists between the controller and the
 // deletion service.
-import {
-  CLOSE_POLICY_DISCARD,
-  CLOSE_POLICY_TRANSFER,
-} from '../../../fintrack_api/controllers/accountDeleteController.js';
+// RETIRED 2026-09-08. This whole module wrote CLOSE's settlement pair and has
+// no caller since the owner ruled that CLOSE moves no money. It stays on disk
+// with its body intact; the import below is commented because the two
+// constants it names are themselves commented out in the controller, so this
+// file would fail to link rather than sit idle if anything imported it.
+//
+// Nothing here is safe to revive on its own. The rows this writer produced
+// carry movement_type_id 10, and overviewInvestmentRepository.js:130 reads
+// that type as the investment card's closure adjustment. Reviving the writer
+// without deciding what that card should show is how the figure moves with no
+// author.
+// import {
+//   CLOSE_POLICY_DISCARD,
+//   CLOSE_POLICY_TRANSFER,
+// } from '../../../fintrack_api/controllers/accountDeleteController.js';
 
 /*
  * CLOSE settlement, both policies (PLAN_ACCOUNT_DELETION.md §3.1/§4.1 step 4:

@@ -26,13 +26,22 @@ export const DELETION_TYPE_HARD = 'HARD';
 export const DELETION_TYPE_SOFT = 'SOFT';
 export const DELETION_TYPE_CLOSE = 'CLOSE';
 
-// CLOSE's two settlement policies (PLAN_ACCOUNT_DELETION.md §3.1/§4.1 step 4).
-// DISCARD sends the residual to the system's compensation account, TRANSFER to
-// an account the owner picks from the eligible ones. Both implemented as of
-// 2026-09-07; the eligibility rule is frozen in the plan doc and lives in
-// getCloseTransferDestinations.js.
-export const CLOSE_POLICY_DISCARD = 'DISCARD';
-export const CLOSE_POLICY_TRANSFER = 'TRANSFER';
+// RETIRED 2026-09-08, kept commented per the standing rule. CLOSE's two
+// settlement policies: DISCARD sent the residual to the system's compensation
+// account, TRANSFER to an account the owner picked from the eligible ones.
+//
+// The owner withdrew both from the close operation on 2026-09-08. TRANSFER
+// survives as an ordinary Tracker operation - what ended is TRANSFER as the
+// internal settlement mechanism of a closure. DISCARD has no successor: an
+// account with a balance is now refused, and the owner moves the money out
+// through the transfer screen before closing.
+//
+// Uncommenting these two lines is not enough to bring the policies back. The
+// flow that read them is commented in deleteAccountService.js, and three
+// imports there - recordClosureSettlement, assertTransferDestinationEligible
+// and getCurrencyCode - are commented with it.
+// export const CLOSE_POLICY_DISCARD = 'DISCARD';
+// export const CLOSE_POLICY_TRANSFER = 'TRANSFER';
 
 export const ADMIN_ACTION = 'ADMIN_ACTION';
 export const USER_ACTION = 'USER_ACTION';
@@ -277,31 +286,30 @@ export const executeAccountDeletion = async (req, res, next) => {
     targetAccountName = req.body.targetAccountName;
   }
 
-  // CLOSE-only: which settlement policy to apply, and under TRANSFER the
-  // account the owner picked to receive the residual. Ignored by every other
-  // deletion type.
+  // RETIRED 2026-09-08. CLOSE took three body fields to drive its settlement:
+  // which policy to apply, the account the owner picked to receive the
+  // residual, and the residual they were shown so the service could refuse a
+  // request whose figure had gone stale. CLOSE settles nothing now, so none of
+  // the three has anything to drive.
   //
-  // The destination is passed through raw rather than parsed here. The service
-  // validates it inside its own transaction, with the row locked, because an
-  // eligibility answered in the controller would be answered before the lock
-  // and could be stale by the time the settlement writes.
-  const policy =
-    deletionType === DELETION_TYPE_CLOSE ? req.body.policy : undefined;
-
-  const destinationAccountId =
-    deletionType === DELETION_TYPE_CLOSE
-      ? req.body.destinationAccountId
-      : undefined;
-
-  // The residual the owner was shown, echoed back with the confirmation, and
-  // passed through raw for the same reason as the destination: the figure it
-  // has to match is derived inside the service's own lock, and a comparison
-  // made here would be against a balance another transaction can still change
-  // before the settlement runs.
-  const expectedResidual =
-    deletionType === DELETION_TYPE_CLOSE
-      ? req.body.expectedResidual
-      : undefined;
+  // A request that still sends them is not refused - the fields are read by
+  // nobody rather than rejected - because the frontend deploys separately from
+  // the backend, so there is an interval in which the old screen posts to the
+  // new service. Ignoring the fields keeps that interval working; rejecting
+  // them would break it.
+  //
+  // const policy =
+  //   deletionType === DELETION_TYPE_CLOSE ? req.body.policy : undefined;
+  //
+  // const destinationAccountId =
+  //   deletionType === DELETION_TYPE_CLOSE
+  //     ? req.body.destinationAccountId
+  //     : undefined;
+  //
+  // const expectedResidual =
+  //   deletionType === DELETION_TYPE_CLOSE
+  //     ? req.body.expectedResidual
+  //     : undefined;
 
   try {
     console.log(
@@ -327,9 +335,9 @@ export const executeAccountDeletion = async (req, res, next) => {
       userRole,
       deletionType,
       targetAccountName,
-      policy,
-      destinationAccountId,
-      expectedResidual,
+      // policy,
+      // destinationAccountId,
+      // expectedResidual,
     );
 
     // 4. SUCCESS RESPONSE
