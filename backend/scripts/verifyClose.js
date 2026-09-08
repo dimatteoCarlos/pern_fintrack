@@ -5,6 +5,17 @@
 //
 //   node scripts/verifyClose.js
 //   node scripts/verifyClose.js --account 42
+//   node scripts/verifyClose.js --expect fintrack_dev
+//
+// IT REFUSES TO RUN AGAINST ANYTHING BUT A NAMED LOCAL DATABASE. The target is
+// decided entirely by DATABASE_URI, and dbEnvironmentConfig.js gives
+// `development` and `production` byte-identical bodies - both read that one
+// variable - so this script cannot learn what it is connected to from the
+// configuration. It asks the server instead, and stops unless all three
+// answers hold: the database is the one named with --expect, the server is on
+// a loopback address, and the connection is not encrypted. The three together
+// are an allowlist; a name check alone is not, because a managed database can
+// be called anything.
 //
 // Run it from `backend/`: the database configuration calls dotenv.config(),
 // which reads .env relative to the working directory.
@@ -35,6 +46,16 @@
 // 035_create_account_registry.sql applied. Without it the run fails with
 // relation "account_registry" does not exist, which is the honest answer.
 //
+// IT FABRICATES ITS OWN SUBJECT WHEN THE DATABASE HAS NONE. A closable
+// account is one of the six closing types sitting at zero, and a working
+// database usually has none: an account at zero is an account nobody uses. A
+// probe that skips in that case reports nothing and looks like it passed, so
+// this one creates a bank account at zero inside the transaction instead. It
+// is thinner evidence - a fabricated account carries no transactions and no
+// pocket allocations, so those two assertions hold trivially - and the run
+// says so on the line that announces it. Pass --account <id> to close a real
+// one.
+//
 // WHAT IT DELIBERATELY DOES NOT COVER. The HTTP layer - the controller's
 // payload reading and the ownership check that runs before the engine. Those
 // refuse bad input; this checks what happens to good input, which is the half
@@ -52,7 +73,10 @@ const readOption = (flag, fallback) => {
 };
 
 const REQUESTED_ACCOUNT = readOption('--account', null);
+const EXPECTED_DATABASE = readOption('--expect', 'fintrack_dev');
 const REASON = 'verifyClose.js probe, rolled back';
+
+const LOOPBACK = new Set(['127.0.0.1', '::1', '0.0.0.0']);
 
 // The four types that must reach zero before they close, and the two that carry
 // no balance condition. Both lists are the service's, restated here so a
@@ -102,10 +126,50 @@ const expectRefusal = async (client, label, run) => {
  }
 };
 
+// Asked of the server, not of the configuration, and answered before a
+// transaction is opened. host() rather than a cast to text: the inet type
+// carries its netmask, so the cast yields '::1/128' and no loopback literal
+// would ever match it. A rolled-back probe is still a probe that wrote rows
+// and took locks on whatever it reached; the place to stop is before that.
+const assertLocalDatabase = async (target) => {
+ const { rows } = await target.query(
+  `SELECT current_database() AS db_name,
+          COALESCE(host(inet_server_addr()), 'unix-socket') AS server_address,
+          COALESCE(
+            (SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid()),
+            false
+          ) AS encrypted`,
+ );
+ const { db_name, server_address, encrypted } = rows[0];
+
+ const refusals = [];
+ if (db_name !== EXPECTED_DATABASE) {
+  refusals.push(`connected to "${db_name}", expected "${EXPECTED_DATABASE}"`);
+ }
+ if (server_address !== 'unix-socket' && !LOOPBACK.has(server_address)) {
+  refusals.push(`the server is at ${server_address}, which is not local`);
+ }
+ if (encrypted) {
+  refusals.push('the connection is encrypted, which a local server does not require');
+ }
+
+ if (refusals.length > 0) {
+  throw new Error(
+   `refusing to run: ${refusals.join('; ')}. Nothing was written.`,
+  );
+ }
+
+ console.log(
+  `Database: ${db_name} at ${server_address}, unencrypted. Proceeding.`,
+ );
+};
+
 const client = await pool.connect();
 let rolledBack = false;
 
 try {
+ await assertLocalDatabase(client);
+
  await client.query('BEGIN');
 
  // ------------------------------------------------------------------ target
@@ -129,19 +193,71 @@ try {
      [ZERO_BALANCE_TYPES],
     );
 
- if (candidate.rows.length === 0) {
-  console.log(
-   'No account of a balance-holding type sits at zero on this database, so the',
+ // The subject is fabricated only when the data has none. Its owner, its type
+ // and its currency are all taken from rows that already exist, so no catalog
+ // is invented and every foreign key is satisfied by something real.
+ let fabricated = false;
+ let subject = candidate;
+
+ if (candidate.rows.length === 0 && !REQUESTED_ACCOUNT) {
+  const seed = await client.query(
+   `SELECT ua.user_id, ua.currency_id
+      FROM user_accounts ua
+     WHERE ua.deleted_at IS NULL
+     ORDER BY ua.account_id
+     LIMIT 1`,
   );
-  console.log(
-   'close itself cannot be exercised. Pass --account <id> to name one, or move a',
+  const bankType = await client.query(
+   `SELECT account_type_id FROM account_types WHERE account_type_name = 'bank'`,
   );
-  console.log('balance to zero first. Nothing was written.');
+
+  if (seed.rows.length === 0 || bankType.rows.length === 0) {
+   console.log(
+    'This database has no account to take an owner and a currency from, or no',
+   );
+   console.log('bank account type, so nothing can be fabricated either.');
+   await client.query('ROLLBACK');
+   rolledBack = true;
+   process.exitCode = 0;
+  } else {
+   const created = await client.query(
+    `INSERT INTO user_accounts(
+       user_id,
+       account_name,
+       account_type_id,
+       currency_id,
+       account_starting_amount,
+       account_balance,
+       account_start_date,
+       updated_at
+     ) VALUES ($1, $2, $3, $4, 0, 0, CURRENT_DATE, NOW())
+     RETURNING account_id`,
+    [
+     seed.rows[0].user_id,
+     'verifyClose.js probe account',
+     bankType.rows[0].account_type_id,
+     seed.rows[0].currency_id,
+    ],
+   );
+   subject = await readAccount(client, created.rows[0].account_id);
+   fabricated = true;
+   console.log(
+    'No account of a closing type sits at zero here, so one was fabricated',
+   );
+   console.log(
+    'inside the transaction. It has no transactions and no pocket allocations,',
+   );
+   console.log('so those two assertions prove less than they would on real data.');
+  }
+ }
+
+ if (subject.rows.length === 0) {
+  console.log('No account to close. Nothing was written.');
   await client.query('ROLLBACK');
   rolledBack = true;
   process.exitCode = 0;
  } else {
-  const target = candidate.rows[0];
+  const target = subject.rows[0];
   const accountId = target.account_id;
   const userId = target.user_id;
   const typeName = String(target.account_type_name ?? '');
@@ -155,14 +271,14 @@ try {
   // Both are raised before anything is written, and both are the operation's
   // documented behaviour rather than error handling around it.
   await expectRefusal(client, 'an empty reason is refused', () =>
-   processCloseAccount(client, userId, accountId, candidate, new Date(), ''),
+   processCloseAccount(client, userId, accountId, subject, new Date(), ''),
   );
 
   await expectRefusal(
    client,
    'a whitespace-only reason is refused',
    () =>
-    processCloseAccount(client, userId, accountId, candidate, new Date(), '   '),
+    processCloseAccount(client, userId, accountId, subject, new Date(), '   '),
   );
 
   // The zero-balance refusal, probed on a different account: one of the same
@@ -224,7 +340,7 @@ try {
    client,
    userId,
    accountId,
-   candidate,
+   subject,
    new Date(),
    REASON,
   );
@@ -325,17 +441,39 @@ try {
   await client.query('ROLLBACK');
   rolledBack = true;
 
+  // What the rollback has to restore depends on what was there before it. A
+  // real account has to come back open on both columns; a fabricated one was
+  // created inside the same transaction and has to be gone, along with the
+  // registry row its trigger wrote.
   const restored = await client.query(
    'SELECT deleted_at, closed_at FROM user_accounts WHERE account_id = $1',
    [accountId],
   );
-  check(
-   'the account this probe closed is back, open on both columns',
-   restored.rows.length === 1 &&
-    restored.rows[0].deleted_at === null &&
-    restored.rows[0].closed_at === null,
-   `${restored.rows.length} row(s)`,
+  const registryAfterRollback = await client.query(
+   'SELECT 1 FROM account_registry WHERE account_id = $1',
+   [accountId],
   );
+
+  if (fabricated) {
+   check(
+    'the fabricated account left nothing behind in user_accounts',
+    restored.rows.length === 0,
+    `${restored.rows.length} row(s)`,
+   );
+   check(
+    'the fabricated account left nothing behind in account_registry',
+    registryAfterRollback.rows.length === 0,
+    `${registryAfterRollback.rows.length} row(s)`,
+   );
+  } else {
+   check(
+    'the account this probe closed is back, open on both columns',
+    restored.rows.length === 1 &&
+     restored.rows[0].deleted_at === null &&
+     restored.rows[0].closed_at === null,
+    `${restored.rows.length} row(s)`,
+   );
+  }
 
   const allPassed = results.every(Boolean);
   console.log('');
