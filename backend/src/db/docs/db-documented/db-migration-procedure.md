@@ -252,8 +252,9 @@ the before-reading of 5.6 — but not knowing it costs nothing.
 
 **A person at a terminal, running the repository's own scripts.** Decided by
 Carlos on 2026-09-08 after the three candidates were weighed. It is not the
-permanent answer; it is the right answer for a first run of nineteen files that
-have never executed against production.
+permanent answer; it is the right answer for the six files of 5.4, which
+introduce a table every reader of `account_registry` depends on and have never
+executed against production.
 
 Why not a step in the Vercel build. `backend/vercel.json` uses the legacy
 `builds` format with `@vercel/node` on `index.js` and declares no
@@ -452,10 +453,27 @@ a connection failure leaves an empty file and `pg_dump` does not always shout.
 ### 5.4 Apply
 
 ```bash
-DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run db:align
 DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run db:migrate
 ```
 
+- **One command, not two, and `db:align` is not the one that was dropped by
+ mistake.** An earlier version of this block opened with `db:align` against
+ production. That was wrong and this section contradicted its own opening: the
+ alignment ran on Supabase on 2026-08-22 and its ledger row is there, so
+ `db:align` refuses. The refusal is correct and typing the command is still a
+ defect, because an operator who sees a refusal on the first line of a
+ production procedure has to decide whether the document or the runner is wrong
+ while connected to production.
+- **What is pending is `031` through `036` — six files, not nineteen.** The
+ record puts production at `030` with the alignment applied and the ledger at 31
+ rows, read 2026-09-06. Nineteen is the rehearsal's number, and it is right
+ there: a rehearsal copy starts from the 2026-08-21 dump, so it needs the
+ alignment plus `013` and `018`-`035`. Production has moved since that dump was
+ taken: the runs of 2026-08-27 and 2026-09-06 carried it to `030`.
+- **The count above is a record, and 5.0 is what turns it into a measurement.**
+ Read the ledger before writing. If it does not show 31 rows ending at
+ `030_add_jpy_currency.sql`, stop: the pending set is not the one this section
+ names and neither is the authorization Carlos gave for it.
 - **`DB_REMOTE_OK` is required and is the point.** Without it the run refuses,
  because `DB_EXPECTED` confirms a name and a remote database can carry any name.
  Setting it is the operator stating that an off-machine destination is meant.
@@ -467,9 +485,10 @@ DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run db:migrate
  process from migrating itself and does nothing to an operator's shell. Lifting
  the suspension required no code change and this guard stays.
 - **`db:align` runs once per database, ever.** It refuses if the ledger already
- carries its row.
-- Read the last line of each. A refusal prints the database it reached, which is
- the whole point of reaching it before writing.
+ carries its row. That is why it is absent from the block above and present in
+ 5.2: a rehearsal copy is a new database every time, production is not.
+- Read the last line of the run. A refusal prints the database it reached, which
+ is the whole point of reaching it before writing.
 
 ### 5.5 The ledger registers itself
 
