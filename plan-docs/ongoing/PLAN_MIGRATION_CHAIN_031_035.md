@@ -184,13 +184,82 @@ to `user_accounts` rather than replace it.
 present and creating nothing, so the seven repointed keys do not collide with
 `initDatabase.js`.
 
-**The alignment script has no runner and its ledger row was typed by hand.**
+**The alignment script had no runner and its ledger row was typed by hand.**
 `src/db/migrations/supabase/001_production_alignment.sql` exists on disk, and
 nothing under `backend/src` or `backend/scripts` reads that path, applies it, or
 writes the row `supabase/001_production_alignment.sql` that
 `fintrack_prod_rehearsal` carries. This is a measured answer to the third open
 decision in section 6, how a production run gets recorded: on the one database
 where it has already happened, by hand.
+
+### The whole production sequence, rehearsed from the raw dump
+
+**Run on 2026-09-08 on Carlos's instruction**, after he authorised local database
+scripts. `fintrack_prod_rehearsal_full` was created from `fintrack_prod_data`
+with `CREATE DATABASE ... TEMPLATE`, which only reads the dump, and then taken
+through the three steps a production run would be. `fintrack_prod_rehearsal` was
+left alone so the earlier measurement survives.
+
+| step | command | effect |
+|---|---|---|
+| 1 | `CREATE DATABASE fintrack_prod_rehearsal_full TEMPLATE fintrack_prod_data` | the 2026-08-21 dump: 0 ledger rows, 100 accounts, 785 transactions |
+| 2 | `db:align` | the ledger goes to 17 rows and the schema to production-plus-alignment |
+| 3 | `db:migrate` | 19 files: `013` first, then `018` through `035` |
+
+**Nineteen files, not eighteen, and `013` is the first of them.** The alignment
+stamps `001`-`012` and `014`-`017` and leaves `013` out on purpose, so
+`runMigrations` runs `013_normalize_category_budget_name_case.sql` immediately
+after it. That is why `account_name_case_backup_013` exists on a rehearsed copy
+even though the alignment's header lists it as chain-only: the header measured
+the state after step 2, and step 3 changes it.
+
+**The sequence from zero reproduces the copy built incrementally, exactly.**
+`fintrack_prod_rehearsal_full` against `fintrack_prod_rehearsal`: 205 columns,
+113 constraints, 46 indexes and 2 triggers, identical on every one, and the same
+99 accounts, 780 transactions, 94 category budgets and 94 allocations.
+
+**`fintrack_dev` is not a model of production's schema, and the difference is
+three tables.** `budget_policies`, `budget_policy_allocations` and
+`budget_frequency_types` exist on `fintrack_dev` and on no production-shaped
+database, because `fintrack_dev` ran `010_create_budget_tables.sql` before commit
+`3b72371f` of 2026-08-12 removed those three `CREATE TABLE` statements from it.
+Nothing on the request path reads any of the three: `budget_policies` and
+`budget_policy_allocations` have zero references in `backend/src`, and
+`budget_frequency_types` is read only by `initDatabase.js` and `populateDB.js`,
+which never run on the deployed backend. The difference is inert today and it is
+still the reason a rehearsal has to be built from the dump rather than compared
+against `fintrack_dev`.
+
+**Everything else matches.** The only other difference is the one the alignment's
+header already records: `user_roles`' CHECK renders as one cast per element on
+the aligned copy and as `ARRAY[...]::text[]` on the chain-built one, and both
+accept the same four strings.
+
+#### The alignment is not idempotent once the chain has run on top
+
+**Measured, and it is the sharpest answer the register has to the question of
+what happens when a deployment fails halfway.** The file's header says
+*"Idempotent throughout: every step is guarded, so re-running changes nothing"*.
+A second `db:align` on `fintrack_prod_rehearsal_full`, after the chain had
+reached 035, returned `transactions_account_id_fkey`,
+`transactions_source_account_id_fkey` and
+`transactions_destination_account_id_fkey` to `user_accounts`. Three of 035's
+seven repoints undone; the fourth key on the same table,
+`transactions_opening_for_account_id_fkey`, stayed on `account_registry` because
+step 8 does not name it. No statement failed and nothing in the output said
+anything had changed.
+
+**Step 8 is an unconditional `DROP CONSTRAINT` then `ADD CONSTRAINT`**, and it is
+right that way for the run it was written for: production's `transactions` table
+already existed, so the `RESTRICT` rule declared inside `CREATE TABLE IF NOT
+EXISTS` never arrived and only an `ALTER` could deliver it.
+
+**The hazard was created by writing the runner, and the runner is what closes
+it.** Until `db:align` existed the file could only be applied by hand, and on the
+live database step 8 was added five days after the file ran, so it never executed
+from there. `db:align` now refuses when the ledger already carries the alignment
+row and says why. The rehearsal database was rebuilt from the dump afterwards and
+matches again.
 
 ---
 
