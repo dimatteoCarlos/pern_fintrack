@@ -139,6 +139,8 @@ reportTitleWithImpact:string;
  closeOnlyPageTitle: string;
  closeOnlyDetailsTitle: string;
  closeOnlyBlockedNotice: string;
+ relatedAccountsSummary: string;
+ relatedAccountsNote: string;
  closeAccountBudgetWarning: string;
  closeOnlySectionTitle: string;
  closeOnlySectionDescription: string;
@@ -337,7 +339,9 @@ reportTitleWithImpact:"Impact on Affected Accounts",
 
   closeOnlyPageTitle: "Close Account",
   closeOnlyDetailsTitle: "Account to Close",
-  closeOnlyBlockedNotice: "This account still holds a balance, so it cannot be closed yet. Bring it to zero with ordinary movements, or use the annulment below, which adjusts the affected accounts.",
+  closeOnlyBlockedNotice: "This account still holds a balance, so it cannot be closed yet. Bring it to zero with ordinary movements and then close it, which keeps its name on every movement that mentions it. The other route is the annulment, under Related accounts: it adjusts the accounts this one has moved money with and removes this one without keeping its name.",
+  relatedAccountsSummary: "Related accounts",
+  relatedAccountsNote: "The accounts this one has moved money with. New balance and net adjustment show what annulling this account would do to each of them - the close changes none of these figures.",
   closeAccountBudgetWarning: "This account carries a budget. The budget is deleted with the account, and the close cannot be undone.",
   closeOnlySectionTitle: "Close this account",
   closeOnlySectionDescription: "Closing removes the account and keeps its history: every movement that names it stays readable, under the same name it had. The balance must be zero first.",
@@ -491,7 +495,9 @@ totalNetAdjustment: 'Ajuste Neto Total:',
 
   closeOnlyPageTitle: "Cierre de Cuenta",
   closeOnlyDetailsTitle: "Cuenta a Cerrar",
-  closeOnlyBlockedNotice: "Esta cuenta todavía tiene saldo, así que aún no se puede cerrar. Llévelo a cero con movimientos normales, o use la anulación de abajo, que ajusta las cuentas afectadas.",
+  closeOnlyBlockedNotice: "Esta cuenta todavía tiene saldo, así que aún no se puede cerrar. Llévelo a cero con movimientos normales y ciérrela: su nombre queda en cada movimiento que la menciona. La otra vía es la anulación, dentro de Cuentas relacionadas: ajusta las cuentas con las que esta movió dinero y la elimina sin conservar su nombre.",
+  relatedAccountsSummary: "Cuentas relacionadas",
+  relatedAccountsNote: "Las cuentas con las que esta movió dinero. El saldo nuevo y el ajuste neto muestran lo que le haría a cada una anular esta cuenta; el cierre no cambia ninguna de esas cifras.",
   closeAccountBudgetWarning: "Esta cuenta tiene un presupuesto asociado. El presupuesto se elimina junto con la cuenta, y el cierre no se puede deshacer.",
   closeOnlySectionTitle: "Cerrar esta cuenta",
   closeOnlySectionDescription: "El cierre elimina la cuenta y conserva su historia: todo movimiento que la nombra sigue siendo legible, con el nombre que tenía. El saldo debe estar en cero primero.",
