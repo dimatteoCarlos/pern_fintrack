@@ -409,6 +409,392 @@ defect.
 
 ---
 
+### 3.8 The whole-app impact of deleting the row — measured
+
+**The owner asked for this on 2026-09-07** — *quiero que evalues el impacto de
+eliminar la fila de una cuenta de la tabla user_accounts, porque hay kpis que se
+tienen que calcular, historicos que se tienen que mantener, valores futuros de
+budget que se van con la ida de una cuenta de category_budget; veamos el impacto
+en forma integral y sus efectos a lo largo de la app.*
+
+**The short answer, and it is not the one the rest of this plan assumed.** The
+zero condition of 5.1 makes **today's** figures agree. It does nothing at all for
+the history, and the codebase says so in its own words, in a comment written
+before this plan existed.
+
+#### 3.8.1 The comment that already answers the question
+
+`overviewAccountRepository.js:175-181`, immediately above
+`ACCOUNT_IDS_BY_TYPE_QUERY`:
+
+```
+// No deleted_at filter, for the same reason the expense set has none and the
+// catalog's D1/P1/H1 state none: a soft-deleted account still owns the balance
+// it held in the months before it was closed, and the balance series would bend
+// at the month of the deletion if those rows vanished. Closing an account writes
+// a compensating movement (R212's annulment rows), so a closed account
+// contributes 0 to today's figure without being filtered out of yesterday's.
+```
+
+**Both halves of that sentence fail under CLOSE, at the same time.**
+
+- *if those rows vanished* — CLOSE makes them vanish. Not soft-deleted with
+  `deleted_at`: physically gone, which is the ruling in 1 and 2.
+- *closing an account writes a compensating movement* — **CLOSE writes no
+  transaction of any kind.** Section 2 states it: *never modifies or reverts a
+  transaction, writes no transaction of its own*. Nothing compensates.
+
+The Overview module's balance series is built on the premise that a closed
+account keeps its `user_accounts` row. CLOSE removes the premise.
+
+#### 3.8.2 The arithmetic, so this is not an argument about a comment
+
+`MONTHLY_BALANCE_QUERY` (`overviewBalanceRepository.js:65-81`) computes a past
+month as today's stock minus everything that moved after it:
+
+```sql
+    b.current_balance - COALESCE(SUM(t.amount), 0) AS total_amount   -- :68
+  FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
+  CROSS JOIN (
+    SELECT COALESCE(SUM(${DERIVED_BALANCE}), 0) AS current_balance   -- :71
+    FROM user_accounts ua                                            -- :72
+    WHERE ua.account_id = ANY($1::int[])                             -- :73
+  ) b
+  LEFT JOIN transactions t
+    ON t.account_id = ANY($1::int[])                                 -- :76
+   AND t.transaction_actual_date >= ${nextMonthStart('m.month', '$4')}
+```
+
+`$1` is the id array `ACCOUNT_IDS_BY_TYPE_QUERY` returns, built `FROM
+user_accounts ua` at `overviewAccountRepository.js:182-184`. **The stock term and
+the flow term are filtered by the same array, so they fall together.** Take a
+`bank` account holding 500 in March, emptied to zero in September and closed the
+same day:
+
+| state | its part of `current_balance` | its movements after March | March reads |
+|---|---|---|---|
+| open | 0 | −500 | **500** |
+| soft-deleted today | 0 (row kept; no `deleted_at` filter in the set) | −500 | **500** |
+| **row deleted, as CLOSE does** | 0 (no row to sum) | 0 (id absent from `$1`) | **0** |
+
+**The zero condition is what makes the first column agree, and it is exactly why
+the third row is invisible until someone opens March.** Today's total is
+identical in all three states. March moves from 500 to 0 with no figure on
+today's screen contradicting another.
+
+#### 3.8.3 Four mechanisms, and each needs a different remedy
+
+A transaction row survives the close in every case. Whether its money reaches a
+figure depends on which of these the reading query uses:
+
+| # | Mechanism | The statement that does it | What repointing the six keys fixes |
+|---|---|---|---|
+| 1 | **Inner join from `transactions` to `user_accounts`** | `JOIN user_accounts ua ON ua.account_id = tr.account_id` (`transactionRowShape.js:83`) | **nothing.** The join fails on the missing row whatever the foreign key says |
+| 2 | **Id set built from `user_accounts`, applied to `transactions`** | `t.account_id = ANY($1::int[])` where `$1` came from `SELECT ua.account_id FROM user_accounts ua` | **nothing.** The id is absent from the array |
+| 3 | **Stock read directly off `user_accounts`** | `SUM(${DERIVED_BALANCE}) ... FROM user_accounts ua` (`dashboardController.js:58`, `overviewPageRepository.js:81`) | **nothing.** No row, no term |
+| 4 | **Cascade** | `ON DELETE CASCADE` on the four extension keys and on `account_name_case_backup_013` | **nothing.** The rows are destroyed, not orphaned |
+
+**Repointing the six keys makes the `DELETE` succeed. It does not make one
+figure correct.** The two are separate pieces of work and this plan has only
+specified the first.
+
+#### 3.8.4 The eleven references, and what each does when the row goes
+
+| # | Column | Declared at | On delete | Effect |
+|---|---|---|---|---|
+| 1 | `income_source_accounts.account_id` | `002_accounts.sql:122-125` | CASCADE | row destroyed. Ruled droppable (5.2) |
+| 2 | `category_budget_accounts.account_id` | `002_accounts.sql:140-143` | CASCADE | row destroyed. Ruled intended (10.1) |
+| 3 | `debtor_accounts.account_id` | `002_accounts.sql:165-168` | CASCADE | row destroyed. Ruled intended |
+| 4 | `debtor_accounts.selected_account_id` | `002_accounts.sql:179-180` | **SET NULL** | **a different account's row is silently modified** — 3.8.7 |
+| 5 | `pocket_saving_accounts.account_id` | `002_accounts.sql:191-194` | CASCADE | the type no longer exists (5.3) |
+| 6 | `transactions.account_id` | `018:35-36` | RESTRICT | blocks the delete; repointed |
+| 7 | `transactions.source_account_id` | `018:38-39` | RESTRICT | blocks the delete; repointed |
+| 8 | `transactions.destination_account_id` | `018:41-42` | RESTRICT | blocks the delete; repointed |
+| 9 | `transactions.opening_for_account_id` | `022:66-67` | RESTRICT | blocks the delete; repointed |
+| 10 | `pocket_allocations.source_account_id` | `020:149-150` | RESTRICT | blocks the delete; repointed (6.5) |
+| 11 | `account_name_case_backup_013.account_id` | `013:24` | CASCADE | **destroys the only copy of the original capitalization** — 3.8.6 |
+| 12 | `budget_monthly_allocations.account_id` | `010:42-43` | CASCADE **from #2** | the whole budget series, through the second cascade (3.5, 3.7) |
+
+**Eleven direct references and one indirect.** The count of nine that the
+repointing design was written against (4.3) was taken before #11 was found; the
+number of *repointed* keys is still six, because #11 cascades rather than
+restricts, but it is not therefore harmless.
+
+#### 3.8.5 The figures, one row each
+
+| Figure | Computed at | Mechanism | What happens when the row goes |
+|---|---|---|---|
+| Balance total per account type | `dashboardController.js:58` | 3 | the account's term disappears; zero today by 5.1, so no visible move |
+| Monthly balance series | `overviewBalanceRepository.js:65-81` | 3 + 2 | **every elapsed month bends** — 3.8.2 |
+| Bank and cash headline | `overviewPageRepository.js:69-84` (`BANK_BALANCE_QUERY`) | 3 | same shape: the reference month's figure loses the account's contribution for every past month |
+| Investment figures | `overviewInvestmentRepository.js:86-107` (`INVESTMENT_FIGURES_QUERY`) | 3 + 2 | `FROM user_accounts ua` at `:104` for the stock, `t.account_id = ANY($1::int[])` at `:108` for the contributed capital; both terms fall together |
+| Debt receivable, payable, settled count | `overviewBalanceRepository.js:154-180` (`DEBT_DOMAIN_FIELDS_QUERY`) | 3 | **a debtor closed at zero is the definition of a settled debtor, and closing it removes it from `COUNT(*) FILTER (WHERE balance = 0 AND has_movement)`** |
+| Uncategorized expense | `overviewAccountRepository.js:32-39` (`EXPENSE_ACCOUNT_IDS_QUERY`) | 2 | the comment at `:20-26` protects this figure from the *extension* row being removed; **the account row going is the case it does not cover** and the spending leaves the set entirely |
+| Income | `overviewAccountRepository.js:74-81` (`INCOME_ACCOUNT_IDS_QUERY`) | 2 | a closed `income_source` — exempt from the zero condition by ruling — takes its history with it |
+| Profit and loss | `overviewAccountRepository.js:150-158` (`PNL_ACCOUNT_IDS_QUERY`) | 2 | both sides fall, and the sign of the residual depends on which side was larger |
+| Period-over-period deltas, every domain at once | `overviewAccountRepository.js:212-216` (`OLDEST_ACCOUNT_DATE_QUERY`) | 3 | **the statement is `SELECT MIN(ua.created_at) ... FROM user_accounts ua WHERE ua.user_id = $1` — no id array and no type predicate, so it reads the whole population rather than a set that loses one member.** Closing the owner's first account moves the delta guard forward for every domain simultaneously, on figures that have nothing to do with the closed account. (Sharpened by the Overview session; the shape verified here.) |
+| Recent activity list | `transactionRowShape.js:83` | 1 | rows drop out of the list |
+| Pocket allocations listing | `overviewPocketRepository.js:108-135` | 1 | count and listing disagree — 6.5 |
+| Pocket committed total | `overviewPocketRepository.js:81` | none | safe: no `user_accounts` in the statement |
+| Account ledger and running balance | `derivedBalance.js:238-259` (`ledgerBody`) | 1 | `JOIN user_accounts ua ON ua.account_id = tr.account_id` at `:255-256`, so the series returns **no rows at all** |
+| Dashboard, nine statements | `dashboardController.js:588, 648, 718, 742, 788, 826, 849, 959, 1080` | 1 | each is `JOIN user_accounts ua ON tr.account_id = ua.account_id`; the transactions vanish from every one |
+| Transaction list with counterparties | `transactionController.js:1051, 1058, 1060` | none | `LEFT JOIN` on all three; the row survives with a null name |
+| Category name on a transaction | `dashboardMonthlyTotalAmountByType.js:121, 133, 135` | none | `COALESCE(cba.category_name, ua.account_name)` over a `LEFT JOIN`; degrades correctly (3.6) |
+
+#### 3.8.6 What exists nowhere else once the row is gone
+
+| Datum | Column | Survives? | Where, or why not |
+|---|---|---|---|
+| Account name, and with it the category, subcategory and nature | `user_accounts.account_name` | **yes** | stamped on the registry before the delete (4); the composite is the category (3.6) |
+| Type, currency | `user_accounts.account_type_id`, `currency_id` | **yes** | stamped on the registry (4) |
+| Opening amount | `user_accounts.account_starting_amount` | **the value yes, the arithmetic no** | see below |
+| Creation timestamp | `user_accounts.created_at` | **no** | read by `OLDEST_ACCOUNT_DATE_QUERY` (`:213`); not stamped by the registry design in 4.3 |
+| Account start date | `user_accounts.account_start_date` | **no** | read at `getTransactionsForAccountById.js:97-100` beside the starting amount |
+| Original capitalization of a budget category | `account_name_case_backup_013.account_name` | **no, and the table says so** | its own comment at `013:21-22`: *Lowercasing is destructive: the original capitalization exists nowhere else once it is overwritten.* The cascade at `:24` destroys the backup, and migration 013's DOWN stops being real for that account — bounded and assessed in 3.8.12 |
+| Budget amount and its FX pair | `category_budget_accounts.budget`, `original_budget`, six FX columns | **no** | ruled (10.1) |
+| Monthly budget history | `budget_monthly_allocations` | **no unless fix 1 of 3.7 is taken** | second cascade (3.5) |
+
+**The opening amount is the subtle one, and it is a correction to an assumption
+worth stating.** The value is not lost: `derivedBalance.js:15-16` records that
+*an account carries its opening in `user_accounts.account_starting_amount` and
+again as an account-opening transaction*, and `accountCreationController.js:344-350`
+writes that transaction with `amount: convertedAmount` and
+`opening_for_account_id: account_basic_data.account_id`. That row survives the
+close, because `opening_for_account_id` is one of the six repointed keys.
+
+**What breaks is the reader.** `ledgerBody` reads the opening off the column
+(`derivedBalance.js:244`) and deliberately excludes the transaction that carries
+it a second time:
+
+```sql
+            CASE WHEN tr.movement_type_id = ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID}
+                   AND tr.account_id = tr.opening_for_account_id
+              THEN 0 ELSE tr.amount END
+```
+
+Delete the row and that exclusion turns a duplicate into a hole. **Any design
+that keeps the ledger readable after the close has to invert this test for a
+closed account** — take the opening from the transaction, since the column is
+what is gone. That is a change to a file this plan does not own.
+
+#### 3.8.7 A side effect on an account nobody closed
+
+`002_accounts.sql:179-180`:
+
+```sql
+  selected_account_id  INT REFERENCES user_accounts(account_id)
+    ON DELETE SET NULL,
+```
+
+**Closing a `bank` or `cash` account silently blanks the settlement account of
+every debtor that had chosen it.** The debtor is not the account being closed,
+nothing in the close names those debtors, and no message is produced. The
+neighbouring column `selected_account_name VARCHAR(50)` at `:182` keeps the text
+of a link that no longer exists, so the debtor screen shows a name pointing at
+nothing.
+
+#### 3.8.8 Future budget values
+
+3.7 covers the retroactive half of the owner's budget question. The forward half
+is a different statement and it is worse, because it never terminates:
+`getAllocationForMonth` (`budgetAllocationRepository.js:48-53`) resolves a month
+as the last row at or before it — `AND budget_month <= $2` at `:51` followed by
+`ORDER BY budget_month DESC` at `:52`. **A surviving series with no
+terminating zero publishes the closed category's final budget into every future
+month, without end.** The terminating zero in fix 1 of 3.7 is what stops it, and
+it is required by every design that keeps the rows, not only by that one.
+
+#### 3.8.9 The frontend
+
+The frontend issues no SQL. Every effect above arrives as a short payload or a
+null field, and the interface has no way to tell that from an empty account.
+Fifty files under `frontend/src/fintrack` name `account_name` or `accountId`;
+the ones the close reaches are:
+
+- **`AccountDetail.tsx` and `OverviewAccountReading.tsx`** — the account no
+  longer resolves, and the running balance arrives empty (mechanism 1 on
+  `ledgerBody`).
+- **`CategoryDetail.tsx`, `CategoryDetailReading.tsx`, `ListAccountOfCategory.tsx`**
+  — a closed budget category disappears from the category screens, past months
+  included.
+- **`PocketFundingAccounts.tsx` and `PocketAllocationModal.tsx`** — the released
+  commitment is correct, the row that recorded the release is not listed (6.5).
+- **`Expense.tsx`, `Income.tsx`, `PnL.tsx`, `Transfer.tsx`, `Debts.tsx`,
+  `ListOfDebtors.tsx`** — transaction rows drop out silently.
+- **`useAccountExistence.ts`** — the index is built from `/account/allAccounts`
+  keyed by `account_id`, so a closed name becomes free again the moment the row
+  goes. That is the behaviour 10.2 relies on, and it is the one place where the
+  deletion helps rather than costs.
+
+**One project rule is broken by every case above.** `CLAUDE.md` requires that a
+missing figure render as a skeleton or a dash, never as `0`. A bent history is a
+wrong number, not a missing one, and no frontend state can represent it.
+
+#### 3.8.10 What it costs to make the delete safe
+
+| Work | Owner | Status |
+|---|---|---|
+| Repoint the six keys at the registry | this plan (4.3) | designed |
+| Stamp name, type, currency and starting amount before the delete | this plan (4.3) | designed |
+| Release the pocket commitment | this plan (6) | designed |
+| Terminating zero on the budget series | this plan (3.7 fix 1) | **open — the owner has not chosen among the four** |
+| Repoint `budget_monthly_allocations.account_id` | this plan (3.7 fix 1) | **open, same decision** |
+| Classify the twelve Overview reads and decide each one | overview module | **not designed anywhere** — enumerated in 3.8.11; nine are visible on this branch and three arrive with the merge from `main` |
+| Invert the opening-row exclusion in `ledgerBody` for a closed account | `derivedBalance.js`, peer-owned | **not designed anywhere** |
+| Decide what happens to `account_name_case_backup_013` | migration session | **assessed in 3.8.12** — bounded loss, severity low, their proposal is a retirement-register entry rather than a gate on CLOSE |
+| Decide whether a debtor whose settlement account is closed is warned | this plan | **not raised before this section** |
+
+**Three of these were not visible before this assessment**, and the honest
+statement is that the erasure is a larger change than the repointing design
+implies. The alternative — keeping the row and marking it — was refused by the
+owner in 1 and is not reopened here; what is recorded is what the refusal costs.
+
+#### 3.8.12 The name-case backup: what is actually lost, and what nobody can answer
+
+**The migration session assessed the eleventh reference after it was reported,
+and the loss is bounded** — which the raw finding did not say. Measured here as
+well:
+
+- **Nothing in the running application ever selects from that table.** The four
+  occurrences of the name in the backend are the `CREATE` at
+  `013_normalize_category_budget_name_case.sql:23`, the `INSERT` at `:30`, the
+  commented-out DOWN at `:63-75`, and `schemaParity.js:34`, which only declares
+  it an accepted chain-only difference. **The DOWN is the table's only reader.**
+- **Only rows that actually differed were ever backed up.** The `INSERT`'s
+  `WHERE` at `:36-41` captures an account only when
+  `ua.account_name <> LOWER(TRIM(ua.account_name))` or one of the two
+  `category_budget_accounts` columns differs the same way. For an account already
+  lowercase the DOWN was a no-op before CLOSE existed, so nothing is lost.
+- **The loss is therefore exactly this set:** `category_budget` accounts whose
+  name carried uppercase before 013 ran, and which the owner later closes.
+
+**That set has been counted, and it is not small.** The migration session was
+authorized by the owner to measure against the production copy held locally
+(*lo que si puedes ir probando es en la copia de produccion que esta en local*)
+and sized 013 by its own predicates without executing it:
+
+| What 013 would do on that copy | Rows |
+|---|---|
+| `INSERT` at `013:30-42` backs up | 28 |
+| `UPDATE` at `013:44-50` rewrites `user_accounts.account_name` | 27 |
+| `UPDATE` at `013:52-56` rewrites `category_budget_accounts` | 12 |
+
+**Twenty-eight of the ninety-four `category_budget` accounts in that copy**, with
+real spellings: `Restorante/D'luchis/want`, `aceites/OLIVA/want`,
+`Agua/Bolsa 6.5l/must`, `Verduras/Chanpiñon/other`, `cereales/FETTUCCINE/want`,
+`pan/TOSTADA CL/want`. Closing any one of them after 013 destroys the only copy
+of that spelling.
+
+**No two accounts collapse into one name.** Grouping the ninety-four by
+`LOWER(TRIM(account_name))` returns no group with more than one member, so 013 is
+a spelling change and not a merge — the one way it could have been worse than
+described.
+
+**The copy is dated 2026-08-21 and predates the alignment**, so it is evidence
+about what the data was, not about what production is today. The migration
+session states the same caveat itself and gives the case that proves it: the copy
+holds one `pocket_saving_accounts` row (account 108, `cash_loc_chinita`) while
+`020_create_pocket_tables.sql:18-24` records four counts of zero measured on
+2026-08-24 — 020's own header says the owner deleted the last pocket account that
+day, so the copy corroborates the header instead of contradicting it. **Anything
+measured on that copy is evidence about 2026-08-21.** (Counts measured by the
+migration session under the owner's authorization; not re-run here, since that
+authorization was given to them.)
+
+**The migration session's severity call, recorded with its reasoning rather than
+as a verdict:** low, and CLOSE should not be gated on it. Rolling 013 back would
+return the database to the two-forms state the migration existed to end, since
+both writing paths — `accountEditController.js` and
+`accountCategoryCreationcontroller.js` — now write the canonical lowercase form
+unconditionally. Their proposal is to state it in the retirement register:
+**013's DOWN becomes partial once account deletion ships.**
+
+**What no session can settle, and it is not a detail.** Whether that table exists
+in production at all is unresolved. `001_production_alignment.sql:32-33` records
+that *account_name_case_backup_013 exists only on the chain — migration 013 is
+deliberately not reproduced here*, and its ledger step lists 001-012 and 014-017,
+skipping 013 on purpose. But `runMigrations.js:89-98` reads the whole directory,
+sorts it, and runs everything absent from the ledger — and filename order puts
+013 before 018. **If the production run of 2026-08-27 that delivered
+`018_alter_transactions_account_fks_to_restrict.sql` went through the chain
+runner, then 013 ran with it**, and production carries both the table and a
+lowercasing `UPDATE` that was never rehearsed. **The fork is now stated
+sharply:** either someone inserted 013 into production's ledger by hand — nothing
+in the repository records such an insert — or those twenty-seven names were
+rewritten on 2026-08-27 by a chain run whose own author had deliberately excluded
+that migration. The local copy cannot settle it, because it predates the
+alignment. The alignment header's parity note
+describes 2026-08-26 and is stale for anything after it. Settling this needs a
+read of production's `migrations` table, which is the owner's alone, and
+production migrations are frozen by his instruction of 2026-09-07. (Reported by
+the migration session; the chain-side anchors verified here, the production
+question left open.)
+
+---
+
+#### 3.8.11 The Overview reads enumerated, and why a sample is dangerous here
+
+**A list of the worst cases invites a fix that repairs those and leaves the
+rest.** The Overview session enumerated the full set on its own branch and the
+count was measured here independently. **Nine statements on `feat/deletion` take
+`user_accounts` as the driving table across the four Overview repositories:**
+
+| File | Lines with `FROM user_accounts ua` as the driving table |
+|---|---|
+| `overviewAccountRepository.js` | `:34`, `:76`, `:152`, `:184`, `:214` |
+| `overviewBalanceRepository.js` | `:72`, `:173` |
+| `overviewInvestmentRepository.js` | `:104` |
+| `overviewPageRepository.js` | `:81` |
+
+**Twelve is the number for the fix and nine is what is visible from here.**
+`main` already carries the three statements this branch has not received, and
+this was measured rather than taken on report: `git log --oneline
+main..feat/deletion -- backend/src/fintrack_api/services/overview_services/db`
+returns **nothing**, so not one of this branch's seventeen commits touches those
+files and `main` is a strict superset of them rather than a variant.
+`git rev-list --left-right --count main...feat/deletion` returns `17 17`. The
+three arrive with the merge, without anyone writing a line:
+
+| Statement | On `main` |
+|---|---|
+| `MONTHLY_BALANCE_BY_ACCOUNT_QUERY` | declared at `:147`, reads `CROSS JOIN user_accounts ua` at `:159` |
+| the second investment read | `:196` |
+| `FREE_CASH_QUERY`'s account read | `:193` |
+
+**One of those twelve is invisible to the obvious search, and this plan's own
+count missed it for that reason.** `MONTHLY_BALANCE_BY_ACCOUNT_QUERY` takes the
+account table as `CROSS JOIN user_accounts ua`, not as `FROM user_accounts ua`,
+so a search for the `FROM` form returns eleven and not twelve. **A sweep for
+reads of this table matches both forms or it under-reports.** (Count from the
+Overview session; the `CROSS JOIN` at `main :159` opened and verified here.)
+
+The same drift explains the line numbers: this branch's
+`overviewBalanceRepository.js` declares only `MONTHLY_BALANCE_QUERY` at `:65` and
+`DEBT_DOMAIN_FIELDS_QUERY` at `:154`, while `main` declares three and puts
+`DEBT_DOMAIN_FIELDS_QUERY` at `:203`. **Anyone acting on either list re-measures
+on the branch they are editing** — and takes twelve as the size of the work.
+
+**They do not all fail the same way, but the example offered for that was
+measured and does not hold.** The Overview session cited `user_accounts` sitting
+inside an `EXISTS` correlated as `WHERE pa.source_account_id = ua.account_id`,
+where a missing account would flip a flag rather than lower a total. Opened on
+`main`: that read is a scalar `SUM` subquery inside `FREE_CASH_QUERY`, not an
+`EXISTS`, and `user_accounts` at `:193` is the driving table of the CTE — so the
+account leaves the CTE and lowers `free_cash`. **The only `EXISTS` in the four
+files is at `overviewBalanceRepository.js:212`**, and it is correlated to
+`transactions`, not to `user_accounts`: `EXISTS (SELECT 1 FROM transactions t
+WHERE t.account_id = ua.account_id ...)`, the `has_movement` flag. When the
+account row goes, its CTE row goes with it and that flag is never evaluated at
+all. **So all twelve fail the same way after all, by mechanism 3 of 3.8.3.** The
+Overview session opened `FREE_CASH_QUERY` on `main` and withdrew the instance —
+*your correction is right and my counter-example was wrong* — so this is settled
+between the two sessions rather than left as a disagreement. **The caution that
+each read is classified before any of them is changed is kept anyway**, on the
+grounds that twelve statements sharing one mechanism still differ in what a
+missing account does to the figure each one publishes.
+
+---
+
 ## 4. The historical identity
 
 ### 4.1 The problem, measured
@@ -981,9 +1367,45 @@ is wrong — see the next paragraph.)
 **The committed total is safe and needs nothing.**
 `MONTHLY_ALLOCATED_NET_QUERY` at `overviewPocketRepository.js:81` joins `pockets`
 and `pocket_allocations` only and never `user_accounts`, so the release rows land
-correctly in the monthly series and in its transaction count. The sibling that
-reads the same key inside an `EXISTS` at `overviewPageRepository.js:190` cannot
-match a non-existent account and is safe too.
+correctly in the monthly series and in its transaction count.
+
+**A second statement was recorded here as safe and is not — retracted on
+measurement.** An earlier draft said the same key is read inside an `EXISTS` at
+`overviewPageRepository.js:190`, which *cannot match a non-existent account and
+is safe too*. Both halves are wrong. That statement does not exist on this branch
+at all; on `main` it is `FREE_CASH_QUERY` (`overviewPageRepository.js:175-204`),
+and the read is a scalar subquery, not an `EXISTS`:
+
+```sql
+      COALESCE((
+        SELECT SUM(pa.amount)
+        FROM pocket_allocations pa
+        WHERE pa.source_account_id = ua.account_id          -- main :190
+          AND pa.allocation_actual_date < (SELECT next_month_start FROM bounds)
+      ), 0) AS allocated
+    FROM user_accounts ua                                    -- main :193
+    JOIN account_types act ON act.account_type_id = ua.account_type_id
+    WHERE ua.user_id = $1
+      AND act.account_type_name IN ('bank', 'cash')
+```
+
+`user_accounts` is the driving table of the `per_account` CTE, so a closed `bank`
+or `cash` account leaves the CTE entirely and takes its `balance` and its
+`allocated` with it. `SELECT COALESCE(SUM(GREATEST(balance - allocated, 0)), 0)
+AS free_cash` at `main :198` then reports a smaller free-cash figure. **It is the
+stock-read failure of 3.8.3, not an exception to it.** The claim reached this plan
+through a relay, was written down without being opened, and is corrected here
+rather than deleted.
+
+**And it carries the signature of every other figure in 3.8: today identical,
+elapsed months wrong.** For the current month the closed account contributes
+nothing whether the row exists or not — the zero condition of 5.1 puts `balance`
+at zero, and the release of 6.4 puts `allocated` at zero, so
+`GREATEST(0 - 0, 0)` is zero either way. **It is a past reference month that
+breaks**: the account did hold a balance then and did hold allocations then, both
+terms fall together with the row, and the free-cash figure for that month drops
+by what the account actually had free. (Refinement measured by the Overview
+session on `main`; the outer statement at `:198` opened and verified here.)
 
 **This is the cost of repointing that one key, not of the erasure**, and it is
 recorded here so the repointing is decided with its consumer in view. The fix is
@@ -1135,10 +1557,28 @@ design.
   counterparty** — a nulled origin or destination plus a marker inside the
   description — and **deletes the account's own rows without a trace.** The
   second half is not recoverable.
-- **The close method already half exists**: declared in the controller
-  (`accountDeleteController.js`), accepting a policy in the request body, with a
-  route that transfers the residual balance. The new design removes that
-  money-moving half entirely.
+- **The close method already half exists, and the owner ruled on it on
+  2026-09-07** — *DELETION_TYPE_CLOSE, con politicas TRANSFER/DISCARD, ruta de
+  preview y un expectedResidual que mueve dinero, eso correspondia a un plan
+  original que lo estamos refactorizando, y tu formas parte de eso.* So the name
+  is not contested: the money-moving implementation is what this plan replaces,
+  and the constant keeps its spelling. What exists today, all in
+  `accountDeleteController.js` unless stated:
+  - `export const DELETION_TYPE_CLOSE = 'CLOSE';` at `:27`, beside `RTA` `:24`,
+    `HARD` `:25` and `SOFT` `:26`.
+  - `export const CLOSE_POLICY_DISCARD = 'DISCARD';` at `:34` and
+    `export const CLOSE_POLICY_TRANSFER = 'TRANSFER';` at `:35`.
+  - `getCloseAccountPreview` at `:145`, behind the route
+    `/delete/close_preview/:targetAccountId`.
+  - `req.body.policy` at `:289`, `req.body.destinationAccountId` at `:292-293`
+    and `req.body.expectedResidual` at `:302-303`.
+  - `deleteAccountService.js:860`, whose own comment reads *6c MARK: CLOSE keeps
+    the row* — the opposite of what CLOSE now means.
+  - `const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = true;` at
+    `deleteAccountService.js:628`.
+  **Per the standing rule that code is commented rather than deleted, each of
+  these is commented out with the date and this section as the reason**, in the
+  same way 10.1 rules for the other three methods.
 
 ---
 
@@ -1159,6 +1599,7 @@ design.
 | The pocket saving type | it does not exist; any surviving rows are deleted physically — already done by an applied migration, see 5.2 |
 | The zero condition, on the four money types | derived balance equal to zero, for `bank`, `cash`, `investment` and `debtor` only |
 | The close reason | a new field on the close, stored on the registry row |
+| The new CLOSE keeps the name `CLOSE` | *DELETION_TYPE_CLOSE, con politicas TRANSFER/DISCARD, ruta de preview y un expectedResidual que mueve dinero, eso correspondia a un plan original que lo estamos refactorizando, y tu formas parte de eso*. The money-moving implementation behind that constant is what is being replaced, not something to coexist with — see 9 for the six sites |
 | The other three methods | their route registrations and their service bodies are commented out, not removed |
 | The migration ledger read | authorized and performed |
 | The close screen is not commissioned yet | *no hacer nada*, 2026-09-07, in answer to whether the design session should be given phase four now |
@@ -1242,6 +1683,33 @@ deferred**, and the owner closed them in opposite directions on the same day:
 ## 11. Measurements no session can make
 
 Both are production reads, and no session queries production.
+
+**Partially superseded on 2026-09-07, and the distinction is what matters.** The
+owner authorized the migration session to test against **the production copy held
+locally** — *lo que si puedes ir probando es en la copia de produccion que esta
+en local*. That is not production: the copy is `fintrack_prod_data`, 1 user, 100
+`user_accounts`, 785 transactions, an empty `migrations` table and no
+`account_name_case_backup_013`, which is exactly the state
+`001_production_alignment.sql` describes production as being in **before** the
+alignment ran. **The copy is the dump of 2026-08-21 and everything measured on it
+is evidence about that date**, not about production today. The second local
+database, `fintrack_rehearsal`, holds no users, accounts or transactions and is a
+chain-built empty database stopped at 030 — not a copy of anything.
+
+Two questions this plan had deferred are answered on that copy, and both are
+recorded as measurements of 2026-08-21:
+
+| Question | Answer on the copy | What it settles |
+|---|---|---|
+| The row count of `income_source_accounts` | **zero**, while two accounts are typed `income_source` — `From_CDDS` (51) and `local chinita` (107), neither with an extension row | the empty-by-construction finding of 5.2 now rests on production data, not only on the development database |
+| How many accounts are named `slack` | **one**, `account_id` 45, typed `bank` | the unstated precondition of migration 031 holds in that copy |
+
+**What the copy cannot answer stays open**: whether the migration chain has run
+in production, and which migration filenames production's `migrations` table
+names. Both need a read of production itself, both are the owner's alone, and
+production migrations are frozen by his instruction of the same day. (Measured by
+the migration session under the owner's authorization; not re-run here, because
+that authorization was given to them and a relayed grant is not a grant.)
 
 **The first one was specified wrongly in the draft of this plan, and the
 correction matters more than the count.** Counting rows with a null origin or
