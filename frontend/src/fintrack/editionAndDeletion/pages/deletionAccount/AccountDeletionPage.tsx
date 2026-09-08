@@ -499,6 +499,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
                   onClick={() => setIsModalOpen(true)}
                   t={translateText}
                   disabled={isExecutingDeletion}
+                  variant='secondary'
                 />
               </div>
             )}
