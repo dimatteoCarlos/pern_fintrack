@@ -127,16 +127,20 @@ type CardProps = {
 const DomainCard = ({ label, nature, tier, children, sub }: CardProps) => (
  <article className='domainCard'>
   <div className='domainCard__head'>
-   <span className='domainCard__name'>
-    {tier && <span className={`statusSquare statusSquare--${tier}`} />}
-    <span className='domainCard__label'>{label}</span>
-   </span>
+   <span className='domainCard__label'>{label}</span>
    <span className='domainCard__scope'>{nature}</span>
   </div>
 
   <div className='domainCard__figures'>{children}</div>
 
-  <div className='domainCard__sub'>{sub}</div>
+  {/* The square sits ON the subordinate line and not beside the card's name.
+      It qualifies a reading, so it belongs next to the sentence that states
+      the reading - against the name it would look like part of the title and
+      say nothing about which figure it grades. */}
+  <div className='domainCard__sub'>
+   {tier && <span className={`statusSquare statusSquare--${tier}`} />}
+   <span>{sub}</span>
+  </div>
  </article>
 );
 

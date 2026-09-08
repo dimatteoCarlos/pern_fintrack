@@ -473,7 +473,13 @@ a.icon {
  color: var(--color-content-on-dark-subtle);
 }
 
+/* The square and the sentence it grades are one statement, so they share a
+   row, the same way the monthly snapshot puts its mark on the variance line. */
 .overviewLayout .domainCard__sub {
+ display: flex;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: var(--space-2);
  font-size: var(--font-size-xs);
  line-height: 1.4;
  color: var(--color-content-on-dark-muted);
@@ -706,13 +712,4 @@ a.icon {
 .overviewLayout .statusSquare--unknown {
  background: transparent;
  border: 1px solid var(--color-content-on-dark-subtle);
-}
-
-/* The square sits to the left of the card's name, so a reader scanning the
-   column of names crosses every mark on the way down. */
-.overviewLayout .domainCard__name {
- display: flex;
- align-items: center;
- gap: var(--space-2);
- min-width: 0;
 }
