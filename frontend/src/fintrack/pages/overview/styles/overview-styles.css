@@ -375,6 +375,14 @@ a.icon {
  width: 100%;
 }
 
+/* One card that holds a whole block, so it keeps the grid's gap and drops its
+   column count. It beats the two media queries below on specificity and not on
+   order - they select one class under .overviewLayout and this selects two, so
+   moving it in the file would not change which one applies. */
+.overviewLayout .domainCards--single {
+ grid-template-columns: 1fr;
+}
+
 @media (min-width: 480px) {
  .overviewLayout .domainCards {
   grid-template-columns: repeat(2, 1fr);
