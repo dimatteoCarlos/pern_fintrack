@@ -142,19 +142,18 @@
 -- exchange_rate_query_coverage (023) is one measure over many rows.
 --
 -- NO FOREIGN KEY ON account_id INTO user_accounts, and this is the design rather
--- than an omission. Two reasons, both demonstrated by the migration session on
+-- than an omission. One reason, demonstrated by the migration session on
 -- fintrack_dev inside a transaction that was always rolled back, using only
--- CREATE TEMP TABLE ... ON COMMIT DROP and a pg_temp function:
---   1. The trigger below writes this row from inside a BEFORE INSERT on
---      user_accounts, so the parent row does not exist yet. With the foreign key
---      present the probe failed with "insert or update on table violates foreign
---      key constraint" - the registry INSERT is its own statement inside the
---      function, so its referential check fires at the end of THAT statement,
---      before the outer insert completes. They expected it to pass, on the
---      reasoning that referential integrity runs in internal AFTER ROW triggers
---      firing at end of statement, and recorded the correction under their name.
---   2. The registry must outlive user_accounts. The same probe deleted the
---      parent row with no foreign key present and the registry row survived it.
+-- CREATE TEMP TABLE ... ON COMMIT DROP and a pg_temp function: the registry must
+-- outlive user_accounts. The probe deleted the parent row with no foreign key
+-- present and the registry row survived it.
+--
+-- A SECOND REASON STOOD HERE AND IS WITHDRAWN, 2026-09-08. It said the parent
+-- row does not exist yet, because the trigger wrote from inside a BEFORE INSERT.
+-- The trigger is AFTER INSERT now, so the parent row does exist and the timing
+-- forbids nothing. Read that before concluding the key may now be added: the
+-- reason above is the one that was always carrying the decision, and a key into
+-- a table whose rows are deleted at closure would refuse every closure.
 --
 -- account_created_at DEVIATES FROM THE PLAN'S COLUMN LIST, deliberately. Section
 -- 4.6 names the column created_at, after the source column it stamps
@@ -277,7 +276,7 @@ CREATE INDEX IF NOT EXISTS idx_account_registry_closed
 -- ============================================================================
 --
 -- Two creation controllers plus the boot path write accounts, and convention
--- cannot keep three writers honest. A BEFORE INSERT row trigger is the version
+-- cannot keep three writers honest. An AFTER INSERT row trigger is the version
 -- no writer can forget.
 --
 -- THIS IS THE SCHEMA'S FIRST SIDE-EFFECTING TRIGGER, and it is worth stating
@@ -286,10 +285,15 @@ CREATE INDEX IF NOT EXISTS idx_account_registry_closed
 -- trigger that INSERTs into another table is a step up in what this schema does,
 -- taken deliberately and for the reason above.
 --
--- NEW.account_id CARRIES THE SEQUENCE VALUE INSIDE A BEFORE INSERT TRIGGER on a
--- SERIAL column, because the column default is evaluated before the trigger
--- fires. Measured by the migration session in the same rolled-back probe,
--- because the whole design rests on it.
+-- AFTER INSERT RATHER THAN BEFORE, decided 2026-09-08. Both timings see the
+-- account id, because a SERIAL default is evaluated before either one fires, so
+-- the choice is settled by what each does when the outer INSERT produces no row.
+-- A BEFORE ROW trigger runs before ON CONFLICT is arbitrated, so a writer adding
+-- ON CONFLICT DO NOTHING to user_accounts would leave an identity behind for an
+-- account that was never written. None of the three writers carries a conflict
+-- clause today - transactionController.js:289, checkAndInsertAccount.js:114 and
+-- insertAccount.js:21 - so the hazard is latent rather than live. AFTER costs
+-- nothing and cannot produce it.
 --
 -- ONE HAZARD NO AUTOMATED CHECK WILL CATCH (7.1). db:parity builds both paths
 -- from scratch and compares tables and columns, so it is structurally blind to a
@@ -300,12 +304,19 @@ CREATE INDEX IF NOT EXISTS idx_account_registry_closed
 CREATE OR REPLACE FUNCTION fn_register_account_identity()
 RETURNS TRIGGER AS $$
 BEGIN
- -- ON CONFLICT DO NOTHING, not because a conflict is expected - account ids are
- -- never reissued - but so that re-running the backfill in section 3 against
- -- rows this trigger already wrote is a no-op rather than a failure.
+ -- NO ON CONFLICT CLAUSE, and the omission is the point. An earlier version
+ -- swallowed the conflict so that re-running the backfill in section 3 would not
+ -- fail against rows this trigger had written - but that backfill inserts into
+ -- account_registry directly and never fires this trigger, so nothing it does
+ -- reaches this statement. What does reach it is a reissued account id: TRUNCATE
+ -- TABLE ... RESTART IDENTITY CASCADE at initDatabase.js:300 resets the
+ -- user_accounts sequence while this table, which no foreign key ties to it,
+ -- keeps every row. The next account is then issued id 1 and meets the registry
+ -- row of a different account 1, carrying its closure stamp, its category and
+ -- its currency. Swallowed, the new account inherits them in silence. Raised,
+ -- the insert stops on the one state that must never pass.
  INSERT INTO account_registry (account_id, user_id)
- VALUES (NEW.account_id, NEW.user_id)
- ON CONFLICT (account_id) DO NOTHING;
+ VALUES (NEW.account_id, NEW.user_id);
 
  RETURN NEW;
 END;
@@ -314,7 +325,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS trg_register_account_identity ON user_accounts;
 
 CREATE TRIGGER trg_register_account_identity
- BEFORE INSERT ON user_accounts
+ AFTER INSERT ON user_accounts
  FOR EACH ROW
  EXECUTE FUNCTION fn_register_account_identity();
 
