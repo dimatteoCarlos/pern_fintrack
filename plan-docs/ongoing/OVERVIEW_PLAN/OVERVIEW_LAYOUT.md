@@ -283,7 +283,10 @@ type MonthlySnapshotEntry = {
  domainMonthlyActual: number;
  activeMonthAverage3m: number | null;
  activeMonthAverage12m: number | null;
+ activeMonths3m: number;             // el denominador del promedio de tres
+ activeMonths12m: number;            // el denominador del promedio de doce
  varianceVsAverage: number | null;   // contra el de DOCE, no contra el de tres
+ yearToDate: number;                 // ano calendario corrido, todos los meses
  currency: string;
  meta: SectionMeta;
 };
