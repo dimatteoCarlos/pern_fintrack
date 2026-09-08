@@ -1,4 +1,4 @@
-# PLAN_MIGRATION_CHAIN_031_035 — five migrations written, none applied
+# PLAN_MIGRATION_CHAIN_031_035 — five written, 035 applied locally
 
 **State: open, 2026-09-08.** This is a live register of the queued half of the
 migration chain. It exists because five migration files were written for the
@@ -111,7 +111,7 @@ proof the repoint happened.
   account still typed `bank` enters net worth and the account inventory with no
   error anywhere. Whoever applies 031 should expect a wrong figure, not a crash,
   as the sign that it has not run.
-- **`fintrack_dev` has 031 through 034 applied and 035 not.** Read on 2026-09-08
+- **`fintrack_dev` had 031 through 034 applied and 035 not, before the run recorded below.** Read on 2026-09-08
   on Carlos's instruction, read-only, against the database the connection
   reported as `fintrack_dev` at `::1:5432`. The ledger holds 35 rows ending at
   `034_add_account_closed_at.sql`, executed 2026-09-07. The schema agrees: the
@@ -123,6 +123,60 @@ proof the repoint happened.
   `to_regclass('public.budget_monthly_allocations')` returns the table, so the
   seventh key has something to repoint and the `to_regclass` branch at the top of
   035 takes the path that alters it.
+
+### 035 is applied on the two local databases, and on nothing else
+
+**Run on 2026-09-08 on Carlos's instruction**, *"aplica 035 contra base local y
+contra una copia de la bd de produccion en local"*, with `DB_EXPECTED` naming
+each destination and `db:state` read before and after each run. Production was
+not reached and no connection was opened to it.
+
+**Four local databases exist and only two were candidates.** The choice is the
+whole answer to "a local copy of the production database", because the runner
+applies every pending file rather than the one named.
+
+| database | users / accounts / transactions | ledger before | what it is |
+|---|---|---|---|
+| `fintrack_dev` | 2 / 31 / 139 | 35 rows, 035 pending | the local development database |
+| `fintrack_prod_rehearsal` | 1 / 99 / 780 | 35 rows plus the alignment row, 035 pending | the production dump with `supabase/001_production_alignment.sql` and the chain to 034 applied |
+| `fintrack_prod_data` | 1 / 100 / 785 | **0 rows**, all 35 pending | the raw 2026-08-21 dump. Its schema exists and its ledger is empty, so `db:migrate` would attempt `001` against populated tables. Left untouched, and it is what makes the rehearsal reproducible |
+| `fintrack_rehearsal` | 0 / 0 / 0 | 30 rows | an empty scaffold, not a copy of anything |
+
+**Both runs applied exactly one file.** `035_create_account_registry.sql` was the
+only pending entry on each; every earlier file was skipped by name.
+
+**The measured effect, identical in shape on both.** `account_registry` holds one
+row per live account — 31 on `fintrack_dev`, 99 on `fintrack_prod_rehearsal` —
+and no row without an account, which is the expected reading while no account has
+ever been closed. Seven foreign keys moved from `user_accounts` and
+`category_budget_accounts` onto `account_registry`, all `RESTRICT`. Five remain
+on `user_accounts`, all `CASCADE`, so the row is now deletable.
+
+**Zero closed accounts on both, which is what makes the DOWN honest.**
+`user_accounts.closed_at IS NOT NULL` counts 0 on each. Section 5 of the
+migration states its DOWN is truthful only until the first `category_budget`
+account is closed; that condition holds today on both databases.
+
+**One key changed its delete action, not just its target.**
+`debtor_accounts_selected_account_id_fkey` was `ON DELETE SET NULL` into
+`user_accounts` and is now `RESTRICT` into `account_registry`. The migration
+documents this as the sixth of six removing a cleanup rather than a refusal, and
+the measurement confirms it happened.
+
+**A twelfth referrer exists that 035 does not touch, and does not need to.**
+`account_name_case_backup_013.account_name_case_backup_013_account_id_fkey`,
+left by `013_normalize_category_budget_name_case.sql`, still points at
+`user_accounts`. Section 4 of the migration says *"the only references left to it
+are the four extension primary keys, which cascade"*; the count is five, not
+four, and the conclusion survives because this one cascades too.
+
+**The alignment script has no runner and its ledger row was typed by hand.**
+`src/db/migrations/supabase/001_production_alignment.sql` exists on disk, and
+nothing under `backend/src` or `backend/scripts` reads that path, applies it, or
+writes the row `supabase/001_production_alignment.sql` that
+`fintrack_prod_rehearsal` carries. This is a measured answer to the third open
+decision in section 6, how a production run gets recorded: on the one database
+where it has already happened, by hand.
 
 ---
 
