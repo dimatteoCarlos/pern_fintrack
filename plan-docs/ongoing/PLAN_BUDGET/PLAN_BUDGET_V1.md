@@ -1147,6 +1147,59 @@ Two categories, and only the first is acted on during the sequence:
 > stored column — both now read `SUM(${DERIVED_BALANCE})`. The column being inventoried
 > for retirement is `cba.budget`, and it is still read at both sites.
 
+> **Re-measured 2026-09-08 — the three tables are not gone, and whether a
+> database holds them is decided by its ledger, not by this repository.**
+> `010_create_budget_tables.sql` created `budget_frequency_types`,
+> `budget_policies` and `budget_policy_allocations` until commit `3b72371f`
+> rewrote that file in place on 2026-08-12 to create `budget_monthly_allocations`
+> instead. The runner executes only what the ledger does not name, so a database
+> that applied `010` before that date keeps all three permanently, and no file in
+> the chain drops them.
+>
+> **The testable condition: a database at ledger 034 holds the three tables if
+> and only if its `migrations` table names `012_backfill_budget_policies.sql`**,
+> the file the same commit deleted. `fintrack_dev` names it and holds them; the
+> production copy taken 2026-08-21 names neither and holds none. **So this
+> register's drop is a no-op on every database built by the current chain and a
+> real drop on `fintrack_dev`.** One query decides which, so the retirement
+> statement stops being a claim about the world and becomes a check.
+>
+> **The `populateDB.js:59` row overstates the boot line.** It says the boot logs
+> `6/7` instead of `6/6`. Measured on three databases: `fintrack_dev` logs
+> `(2/7)`, `fintrack_rehearsal` and `fintrack_prod_data` log `(1/7)`. Six of the
+> seven seeded catalogs own no sequence at all, which `populateDB.js:49-51`
+> records as deliberate — `pg_get_serial_sequence` returns NULL for a plain INT
+> and the realign skips it. The row's conclusion holds and its reason is right;
+> only the two counts were assumed rather than read from a boot.
+>
+> **Four comment sites stated this register's own premise backwards and are
+> corrected.** Each said the tables are still in the schema and that a migration
+> will drop them, which inverts the cause: they are absent from a correctly built
+> database and present only where an applied migration was edited underneath it.
+> `initDatabase.js` and `populateDB.js` in `a74fbc1e`, `budgetConfig.js` in
+> `1f77defc`, `getAccountController.js` in `b50429a0`.
+>
+> **Two of those failed differently, and a sweep for one never finds the other.**
+> A note naming a table nothing reads is a stale premise:
+> `getAccountController.js` said the budget endpoints price from
+> `budget_policy_allocations`, where the repositories under `budget_services/db/`
+> read `budget_monthly_allocations` six times and that table never. A note naming
+> a route no longer mounted is a dead pointer that still parses as an
+> instruction: the same block named `GET /api/fintrack/budget/summary` as the
+> replacement, and `budgetRoutes.js` mounts four routes with no `/summary` among
+> them. Anyone following it writes a client against a 404.
+>
+> **The `calculateBudgetMetrics` inventory, item 11, re-measured the same day —
+> it shrank and the anchors moved again.** The local copy is
+> `getAccountController.js:77` and **both its callers are commented out**, at
+> `:242` and `:1005`, the header recording the retirement on 2026-09-07. One live
+> call survives, `getAccountDataById.js:94`, guarded by
+> `account_type_name === 'category_budget'`. The dashboard still has two legacy
+> `budget` reads, at `dashboardController.js:195-196` and `:364`, **and they use
+> different table aliases** — `SUM(st.budget)` joined at `:200`,
+> `SUM(cba.budget)` joined at `:370` — so a grep on `cba.budget` finds one of the
+> two and reports the inventory as half its size.
+
 Running register. Each entry states what was measured, not what is assumed:
 
 | Artifact | Lines | Measurement |
