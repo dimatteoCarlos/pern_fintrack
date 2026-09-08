@@ -287,19 +287,28 @@ matches again.
 - **Measured 2026-09-08: the row exists on three databases and is used on
   none.** `movement_type_id` 10 is in `movement_types` on `fintrack_dev`,
   `fintrack_prod_rehearsal` and `fintrack_prod_rehearsal_full`, and the count of
-  `transactions` carrying it is 0 on each. Nothing under `backend/src` inserts a
-  transaction with it either: every occurrence of `'account-closure'` outside
-  `sql_migrations` declares the catalog — `createTables.js` at the two INSERTs
-  and the CHECK, `populateDB.js` in its two catalog arrays — and none of them
-  writes a transaction.
-- **The open question is not whether to ship 032, which is already shipped.** It
-  is whether that row is a placeholder for a writer still owed or a fossil of the
-  retired settlement. The two look identical in the schema and lead to different
-  work: the first leaves someone owing a writer, the second makes the row and the
-  `transaction_types` row beside it dead weight for a later migration to remove
-  deliberately. Carlos's answer to the deletion session's balance question decides
-  it — if a balance has to reach zero through ordinary movements, no closure
-  transaction is ever written and the row has no future writer.
+  `transactions` carrying it is 0 on each.
+- **The writer exists and is live code with no caller, which is not the same as
+  absent.** This session first reported that nothing under `backend/src` inserts
+  the type, and that was wrong: `recordClosureSettlement.js` carries an
+  uncommented `INSERT INTO transactions` writing it, and its own header says
+  *"RETIRED 2026-09-08. This whole module wrote CLOSE's settlement pair"*. What
+  it lacks is a caller — the import at `deleteAccountService.js:35` and the call
+  at `:1000` are both commented. The first report searched for the literal `10`
+  and the string `'account-closure'`, and the code names the value:
+  `export const ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID = 10` in `derivedBalance.js`,
+  under a comment stating the idiom is *"a named export, never an inlined
+  literal"*. A search for a value cannot find it where the codebase has agreed
+  never to write it.
+- **The row has two live readers, so it is not dead weight.**
+  `overviewInvestmentRepository.js` matches it twice, once alone as the
+  investment card's closure adjustment and once beside the P/L type. Dropping the
+  catalog row would leave two live predicates matching a value the catalog no
+  longer admits.
+- **So the open decision is not the migration's.** It is whether the investment
+  card should still account for a closure type nothing writes, which is Overview's
+  question before it is a schema question. Corrected by the deletion session, who
+  own the writer; the row counts above are this session's and stand.
 - **035 was corrected twice before ever being applied**, in
   `fix(db): 035 trigger fires after and fails loud`. The identity trigger moved
   from `BEFORE INSERT` to `AFTER INSERT`, and the `ON CONFLICT (account_id) DO
