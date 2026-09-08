@@ -215,6 +215,33 @@ Production is Supabase. The connection string lives in `backend/.env` as
 `DATABASE_URI_SUPABASE`, commented out on purpose, and in the Vercel project as
 `DATABASE_URI`.
 
+### 5.Z The suspension is lifted, 2026-09-08
+
+Carlos suspended production migrations until the process was defined. The
+process is this section, and he lifted the suspension on 2026-09-08. What that
+changes is permission, not method: every condition in 5.B still binds, and the
+runner is still a person at a terminal.
+
+**It required no code change.** The `NODE_ENV=production` refusal in `db:align`
+and `db:migrate` was never the suspension — see 5.4 — and it stays.
+
+**The open question about `013` does not gate the run.** Whether
+`013_normalize_category_budget_name_case.sql` ran against production on
+2026-08-27 is still unknown, and it was treated as a precondition because the
+chain applies it first. Measured on 2026-09-08 against a copy of
+`fintrack_prod_rehearsal_full`, where 013 had already run: with its ledger row
+deleted so the runner would apply it again, a second run left the account count,
+the `account_name_case_backup_013` row count and the `md5` fingerprints of both
+`user_accounts.account_name` and `category_budget_accounts`
+`category_name`/`subcategory` byte-identical.
+
+The file is idempotent by construction and the measurement agrees with the
+reading: the table is `CREATE TABLE IF NOT EXISTS`, the backup insert carries
+`ON CONFLICT (account_id) DO NOTHING` over a `SELECT` already filtered to
+un-normalized rows, and both `UPDATE`s are guarded by
+`WHERE x <> LOWER(TRIM(x))`. So the answer is still worth having — it belongs in
+the before-reading of 5.6 — but not knowing it costs nothing.
+
 ### 5.A Who runs it, decided 2026-09-08
 
 **A person at a terminal, running the repository's own scripts.** Decided by
@@ -420,8 +447,12 @@ DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run db:migrate
  because `DB_EXPECTED` confirms a name and a remote database can carry any name.
  Setting it is the operator stating that an off-machine destination is meant.
 - **`NODE_ENV` must not be `production` in the shell that runs these.** Both
- scripts refuse under it. That refusal is the migration freeze and lifting it is
- Carlos's decision, made once, not a step in a procedure.
+ scripts refuse under it, and an earlier version of this bullet called that
+ refusal the migration freeze. It never was. The freeze was Carlos's suspension
+ of production migrations until the process was defined; this guard keys on the
+ environment variable and not on the destination, so it stops a **deployed**
+ process from migrating itself and does nothing to an operator's shell. Lifting
+ the suspension required no code change and this guard stays.
 - **`db:align` runs once per database, ever.** It refuses if the ledger already
  carries its row.
 - Read the last line of each. A refusal prints the database it reached, which is
