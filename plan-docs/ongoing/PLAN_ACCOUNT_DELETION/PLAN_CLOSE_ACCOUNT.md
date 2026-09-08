@@ -1971,12 +1971,58 @@ mechanism already erased are a different problem and block 0 owns it**: their
 ids are recoverable only where a surviving reference still names them, and 4.4
 records that such a row can carry nothing but nulls anyway.
 
-**7.2.4 The seven keys.** Six repointed from `user_accounts` to the registry —
-the three on `transactions`, `opening_for_account_id`,
-`pocket_allocations.source_account_id`, `debtor_accounts.selected_account_id` —
-and the seventh, `budget_monthly_allocations.account_id`, repointed from
-`category_budget_accounts`. **The four extension primary keys are not touched**
-and keep `ON DELETE CASCADE` by the owner's ruling of 2026-09-07.
+**7.2.4 The seven keys.** Six repointed from `user_accounts` to the registry, and
+the seventh, `budget_monthly_allocations.account_id`, repointed from
+`category_budget_accounts`.
+
+**`transactions` carries four of the six, not three.** An earlier draft wrote
+*the three on `transactions`, `opening_for_account_id`, …*, which sends a reader
+looking for the opening marker on another table. Read from `pg_constraint` on
+both local databases by the migration session, identical lists, so this is the
+chain's shape rather than one database's:
+
+| Repointed | Today's rule |
+|---|---|
+| `transactions_account_id_fkey` | RESTRICT |
+| `transactions_source_account_id_fkey` | RESTRICT |
+| `transactions_destination_account_id_fkey` | RESTRICT |
+| `transactions_opening_for_account_id_fkey` | RESTRICT |
+| `pocket_allocations_source_account_id_fkey` | RESTRICT |
+| `debtor_accounts_selected_account_id_fkey` | **SET NULL** |
+
+**Not repointed: five, all CASCADE** — the four extension primary keys, kept by
+the owner's ruling of 2026-09-07, plus
+`account_name_case_backup_013_account_id_fkey`.
+
+**One of the six changes behaviour in the opposite direction from the other five,
+and it has to be ruled rather than absorbed.** Five are RESTRICT, so repointing
+them **removes a refusal**. The sixth is `ON DELETE SET NULL`
+(`002_accounts.sql:179-180`), so repointing it **removes a cleanup**: today,
+deleting a bank account nulls every debtor's `selected_account_id`; after the
+repoint the delete no longer touches it and the pointer survives, naming a closed
+account.
+
+**That is the behaviour this design wants, and the reason is the same one the
+registry exists for.** Today's SET NULL destroys the historical fact of which
+account a debtor was opened against — the same class of loss as 3.8. Under the
+registry the surviving id still resolves, so the fact is preserved instead of
+erased. **What must not survive with it is the stale name.**
+
+**`selected_account_name` is written once, at creation, and never maintained.**
+Measured here, correcting a relayed claim that it is written in exactly one
+place: it is inserted with the debtor row at
+`accountCreationController.js:785` and `:795`, set to NULL once by
+`020_create_pocket_tables.sql:386`, and read at `getAccountController.js:836`.
+**`accountEditController` never touches it**, so renaming the referenced account
+already leaves it stale today, before any of this. **The reader takes the name
+through the id — live from `user_accounts`, historical from the registry — and
+`selected_account_name` stays what it already is: a creation-time snapshot no
+statement maintains.** That is 7.3's resolution rule applied to this column, and
+it needs no schema change.
+
+**The seventh key is confirmed against the catalog too**:
+`budget_monthly_allocations_account_id_fkey` is `ON DELETE CASCADE` into
+`category_budget_accounts` on both databases, exactly as 4.6 records.
 
 **The seventh is dropped by the name Postgres generated**, because the
 declaration is inline and unnamed:
@@ -2004,6 +2050,48 @@ account absent                    → read historical identity from the registry
 the owner ruled out that framing — *no hay que reconstruir la historia modificando
 transactions*.
 
+**A read branches on presence in `user_accounts`, never on `closed_at IS NULL`.**
+The registry cannot tell a live account from one the old mechanism erased —
+both carry a null `closed_at` (7.2.1) — so the column answers a different
+question than the one a reader is asking. **The Overview module already satisfies
+this by absence**: measured across
+`backend/src/fintrack_api/services/overview_services/`, there is **no executable
+predicate on `closed_at`, `deleted_at` or any soft-delete flag**; the three hits
+are comment text at `overviewAccountRepository.js:8`, `:13` and `:196`. Its id
+sets read `FROM user_accounts` with no such filter, deliberately, because an
+account deleted last week still spent money while it existed. (Measured by the
+Overview session, verified here.)
+
+**But the header that justifies that choice rests on a claim the code no longer
+supports, and block 2 replaces the reasoning rather than re-anchoring the
+citation.** `overviewAccountRepository.js:12-16` reads:
+
+```js
+// Deleting an account is a soft delete (deleteAccountService.js:362-372 marks
+// deleted_at and nothing else), so its transactions survive the account.
+```
+
+Measured at HEAD on `main`, `deleteAccountService.js:362-372` is the **erase**
+block — its own comment reads *6. Erase the target: detach and scrub every
+surviving reference to it, then drop its own rows and the account*, with
+`await eraseAccountTail(dbClient, userId, targetAccountId, accountName)` at
+`:367` and a log at `:369` reading *ERASED*. The soft-delete
+`UPDATE user_accounts ua SET deleted_at = CURRENT_TIMESTAMP` now lives at `:513`.
+**The citation names the opposite mechanism.**
+
+**And the consequence is not cosmetic.** Omitting a `deleted_at` filter protects
+the reconciliation only on the path where the row survives. On the erase path the
+row is gone from `user_accounts`, so the account never enters the id set, no
+filter is involved, and the breakdown loses the spending exactly as the comment
+says it must not. **The header claims a guarantee the module does not have — and
+CLOSE makes that path the only path.** So block 2 does not fix a citation; it
+makes the claim true for the first time, by resolving the absent account through
+the registry.
+
+**Editing that comment is not this plan's to do.** It belongs to a set of
+sixteen comment corrections the Overview session found in its own module and has
+not opened, pending the owner's answer on whether to open them.
+
 **Four mechanisms, and each takes a different edit.** 3.8.3 enumerates them; the
 join is only the first:
 
@@ -2012,20 +2100,35 @@ join is only the first:
 | An inner join to `user_accounts` taken only to read a name | becomes a resolution against the registry, or a LEFT JOIN plus a coalesce over the two sources |
 | A driving table that is `user_accounts` | the row set has to come from the registry for elapsed periods, not from the live table |
 | An id array built from `user_accounts` and then used as `= ANY($1)` | the array has to include closed ids when the question is about an elapsed period |
-| An aggregate over live accounts — `MIN(ua.created_at)` at `overviewAccountRepository.js:213` | the window's own start date moves when the oldest account closes; it reads the registry or it reports a different period |
+| An aggregate over live accounts — `MIN(ua.created_at)` in `OLDEST_ACCOUNT_DATE_QUERY` (`overviewAccountRepository.js:212-213` on this branch, `:231-232` on `main`) | the window's own start date moves when the oldest account closes. **This is the worst of the four**, see the delta guard below |
 
 **The single widest edit is one shared string.** `TRANSACTION_ROW_SOURCE` opens
 with `JOIN user_accounts ua ON ua.account_id = tr.account_id` and feeds eight
 statements on `main` and six on this branch (4.6), so all of them move together
 and cannot drift apart.
 
-**Two pairs behave oppositely and the difference is the review criterion.** The
-domain teaser's page query and its `COUNT(*)` both carry the shared source, so
-they drop the same rows and cannot disagree. The pocket pair does not:
-`ALLOCATIONS_PAGE_QUERY` joins `user_accounts` and `ALLOCATIONS_COUNT_QUERY` does
-not (6.5), so they disagree by exactly the rows a closed account owns — a count
-the listing cannot fill and an empty trailing page. **Any statement changed in
-this block is checked against its partner, not on its own.**
+**A page query and its `COUNT(*)` are reviewed as a pair, never one at a time.**
+The domain teaser's two statements both carry the shared source, so they drop the
+same rows and cannot disagree. The pocket pair used to be the counter-example and
+**is now the worked repair**, landed by the Overview session on `main` at
+`79f061e4` and verified here:
+
+- `ALLOCATIONS_FILTER` (`overviewPocketRepository.js:112`) is the single `WHERE`
+  clause, interpolated into `ALLOCATIONS_PAGE_QUERY` at `:140` and into
+  `ALLOCATIONS_COUNT_QUERY` at `:148`, with the same three placeholders. The two
+  cannot disagree about which rows the month holds.
+- `LEFT JOIN user_accounts ua ON ua.account_id = pa.source_account_id` at `:138`.
+  The join supplied `account_name` and nothing else — amount, date, `pocket_id`
+  and `source_account_id` all sit on `pocket_allocations` — so **a close now
+  costs the name and no longer costs the row**.
+- `sourceAccountName: row.sourceAccountName ?? null` at `:236`, so a reader
+  branches on a null value rather than on a missing key, and registry-sourced
+  identity has a field to land in.
+
+**The other two joins in that file stay inner deliberately**: an allocation cannot
+outlive its pocket, and `currencies` is a catalog nothing deletes from. That is
+the shape this block reproduces elsewhere — LEFT only where the row must survive
+the absence, and a shared filter so the pair cannot drift.
 
 **The budget read is the one with four removals and it is the acceptance test of
 this block.** A `category_budget` account closed in September must leave March's
@@ -2033,6 +2136,32 @@ budget figure unchanged, and its own series must end at zero from the closing
 month on. If closing an account moves an elapsed month, the block is not done —
 that is the owner's rule, *una accion sobre la cuenta en septiembre no puede
 modificar retrospectivamente marzo*.
+
+**The test is not complete at "the total is unchanged", and the oldest-account
+aggregate is why.** Measured by the Overview session, verified here: that
+aggregate is the guard on the period delta.
+
+```js
+const hasCompletePriorPeriod = (oldestAccountDate, priorMonth) =>   // makeDomainCard.js:35
+ oldestAccountDate !== null && oldestAccountDate < priorMonth;      // :36
+```
+
+It is read at `:57`, and when it turns false `makePeriodDelta` returns
+`delta: null` — **the figure disappears rather than changing**, which is quieter
+than a wrong number.
+
+**Four of the six cards route through it**, verified by following the import:
+expense, income and pnl call `getOldestAccountDate` directly
+(`overviewExpenseService.js:88`, `overviewIncomeService.js:86`,
+`overviewPnlService.js:80`), and debt reaches it through `readStockDomain`
+(`stockDomainCalculator.js:110`, whose only caller is
+`overviewDebtService.js:64`). Pocket and investment do not.
+
+**So closing the owner's oldest account can make the delta vanish from four cards
+at once, retroactively, for a month that already had a complete prior period** —
+the guard compares one date against the prior month and reads today's account set
+whatever month is being served. **The acceptance test is therefore: March's total
+unchanged AND March's `delta` still non-null.**
 
 **One failure mode to guard explicitly**: a registry-sourced row that reaches
 `makeCategoryGroups` with a null `categoryName` throws on
@@ -2313,7 +2442,9 @@ deferred**, and the owner closed them in opposite directions on the same day:
 - **What happens to the debtor's copied account-name column: nothing, and its
   reference stops blanking.** `debtor_accounts.selected_account_id` is repointed
   at the registry, which is a different account from the one the debtor row
-  belongs to, so the ruling above does not reach it.
+  belongs to, so the ruling above does not reach it. **7.2.4 now states this as a
+  behaviour change and gives the reason**: it is the one repointed key that
+  removes a cleanup rather than a refusal.
 
 ---
 
