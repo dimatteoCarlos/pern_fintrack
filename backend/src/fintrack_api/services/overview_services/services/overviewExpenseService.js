@@ -29,6 +29,9 @@ import {
 import { makeExpenseCard, NO_BUDGET_NOTICE } from '../core/makeExpenseCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
 import { makeCategoryBreakdown } from '../core/makeCategoryBreakdown.js';
+import { makeExpenseAnalysis } from '../core/makeExpenseAnalysis.js';
+import { wantsAnalysis } from '../core/analysisLevels.js';
+import { TREND_MONTHS } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 export const overviewExpenseService = {
@@ -40,19 +43,33 @@ export const overviewExpenseService = {
   * inside each calculator — otherwise six domains would each hold their own
   * copy of the same rule.
   *
+  * analysis adds no statement in this domain at any level, and that is worth
+  * stating rather than leaving to be discovered: the category ranking is already
+  * published and already follows the selected month, and the per-category budget
+  * variance is inside those ranked rows. Only the series widens.
+  *
   * @param {object} pool - Database pool
   * @param {string} userId - UUID from the token, never from the client body
-  * @param {object} request - { window, page, pageSize }
+  * @param {object} request - { window, page, pageSize, analysis }
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'expense'
   */
  async getExpenseDomainData(
   pool,
   userId,
-  { window, page, pageSize, includeTransactionRows = true },
+  { window, page, pageSize, includeTransactionRows = true, analysis },
   timeZone = 'UTC',
  ) {
-  const { referenceMonth, priorMonth, trendStart, periodStart, periodEnd } = window;
+  const {
+   referenceMonth,
+   priorMonth,
+   trendStart,
+   analysisStart,
+   periodStart,
+   periodEnd,
+  } = window;
+
+  const withAnalysis = wantsAnalysis(analysis);
 
   // The id set every figure on this page is computed over, deleted categories
   // included (D19). Read once and passed to all three consumers: if categories
@@ -61,7 +78,13 @@ export const overviewExpenseService = {
   const accountIds = await getExpenseAccountIds(pool, userId);
 
   const [months, oldestAccountDate, transactions, budgetStatus] = await Promise.all([
-   getMonthlyExpense(pool, accountIds, trendStart, referenceMonth, timeZone),
+   getMonthlyExpense(
+    pool,
+    accountIds,
+    withAnalysis ? analysisStart : trendStart,
+    referenceMonth,
+    timeZone,
+   ),
    getOldestAccountDate(pool, userId, timeZone),
    getExpenseTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
     page,
@@ -123,12 +146,25 @@ export const overviewExpenseService = {
     totalRows: transactions.totalRows,
    },
    // Whole, never paginated: six points are the series, and a page of a trend
-   // is not a trend.
-   trend: makeTrendSeries(months),
+   // is not a trend. Cut to TREND_MONTHS explicitly, so the card's chart is the
+   // same six points whether or not the request carried an analysis.
+   trend: makeTrendSeries(months, TREND_MONTHS),
    // Whole for a different reason: the Pareto's running total is only correct
    // over the complete set, so a page of it would carry a cumulative figure
    // that means nothing.
    categories: makeCategoryBreakdown(budgetStatus.categories),
+   ...(withAnalysis
+    ? {
+       analysis: makeExpenseAnalysis({
+        level: analysis,
+        months,
+        // Both terms off the card, so the decomposition sums back to the
+        // figure the card publishes rather than to a second reading of it.
+        totalAmount: card.totalAmount,
+        categorizedExpense: card.categorizedExpense,
+       }),
+      }
+    : {}),
   };
  },
 };

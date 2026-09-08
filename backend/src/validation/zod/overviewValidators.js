@@ -14,6 +14,7 @@
 
 import { z } from 'zod';
 import { monthBound } from './budgetValidators.js';
+import { ANALYSIS_LEVELS } from '../../fintrack_api/services/overview_services/core/analysisLevels.js';
 
 // The six domains of §3 of the contract. A literal list rather than a catalog
 // read: a domain is a calculator this module either has or does not have, not a
@@ -91,6 +92,18 @@ export const overviewDomainQuerySchema = z.object({
  }).max(MAX_PAGE_SIZE, {
   message: `pageSize must not exceed ${MAX_PAGE_SIZE}`,
  }).default(DEFAULT_PAGE_SIZE),
+ // The depth of the level-2 section, and the one query parameter with no
+ // default: absent means no analysis, so a client that has not been updated
+ // receives exactly the payload it received before this existed. The levels are
+ // imported and never restated — a second list of them here could only drift
+ // from the one the builders read.
+ //
+ // An unrecognised value answers 400 naming the key rather than being read as
+ // "no analysis". Asking for a depth this server does not have is a mistake, and
+ // silently serving a shallower payload would look like an empty result.
+ analysis: z.enum(ANALYSIS_LEVELS, {
+  message: `analysis must be one of: ${ANALYSIS_LEVELS.join(', ')}`,
+ }).optional(),
 }).strict();
 /**
  * GET /overview/activity

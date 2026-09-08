@@ -19,10 +19,23 @@
 // account with different histories is worse than a row that no figure explains.
 
 import { getInvestmentAccountIds } from '../db/overviewAccountRepository.js';
-import { getInvestmentFigures } from '../db/overviewInvestmentRepository.js';
+import {
+ getContributionHistory,
+ getInvestmentBalanceByAccount,
+ getInvestmentFigures,
+} from '../db/overviewInvestmentRepository.js';
 import { getInvestmentTransactionsPage } from '../db/overviewTransactionRepository.js';
 import { makeInvestmentCard } from '../core/makeInvestmentCard.js';
+import { makeInvestmentAnalysis } from '../core/makeInvestmentAnalysis.js';
+import { isFullAnalysis, wantsAnalysis } from '../core/analysisLevels.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
+
+// The most funding events one response will carry. The history is unbounded
+// below on purpose — a history cut at thirteen months is not a history — so an
+// owner who has funded weekly for a decade has a real one that no single response
+// should try to hold. The newest page of it is served and the count beside it
+// says what was left out.
+const CONTRIBUTION_HISTORY_LIMIT = 50;
 
 export const overviewInvestmentService = {
  /**
@@ -30,25 +43,48 @@ export const overviewInvestmentService = {
   *
   * @param {object} pool - Database pool
   * @param {string} userId - UUID from the token, never from the client body
-  * @param {object} request - { window, page, pageSize, includeTransactionRows }
+  * The derived level of the analysis costs no statement: the reconciliation is
+  * the four terms of the card compared against each other, so asking for it adds
+  * a subtraction and nothing else. Only the full level reads the database again.
+  *
+  * @param {object} request - { window, page, pageSize, includeTransactionRows, analysis }
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'investment'
   */
  async getInvestmentDomainData(
   pool,
   userId,
-  { window, page, pageSize, includeTransactionRows = true },
+  { window, page, pageSize, includeTransactionRows = true, analysis },
   timeZone = 'UTC',
  ) {
   const accountIds = await getInvestmentAccountIds(pool, userId);
 
-  const [figures, transactions] = await Promise.all([
+  const [figures, transactions, balances, contributions] = await Promise.all([
    getInvestmentFigures(pool, accountIds, timeZone, window.referenceMonth),
    getInvestmentTransactionsPage(pool, accountIds, window.referenceMonth, timeZone, {
     page,
     pageSize,
     includeRows: includeTransactionRows,
    }),
+   // Both at the full level only, and both at the reference month, which is the
+   // cut every figure on this card already shares.
+   isFullAnalysis(analysis)
+    ? getInvestmentBalanceByAccount(
+       pool,
+       accountIds,
+       timeZone,
+       window.referenceMonth,
+      )
+    : undefined,
+   isFullAnalysis(analysis)
+    ? getContributionHistory(
+       pool,
+       accountIds,
+       timeZone,
+       window.referenceMonth,
+       CONTRIBUTION_HISTORY_LIMIT,
+      )
+    : undefined,
   ]);
 
   const card = makeInvestmentCard({
@@ -70,6 +106,18 @@ export const overviewInvestmentService = {
     pageSize,
     totalRows: transactions.totalRows,
    },
+   ...(wantsAnalysis(analysis)
+    ? {
+       analysis: makeInvestmentAnalysis({
+        level: analysis,
+        // The card itself, so the reconciliation compares the four figures the
+        // card published rather than a second read of the same statement.
+        card,
+        balances,
+        contributions,
+       }),
+      }
+    : {}),
   };
  },
 };

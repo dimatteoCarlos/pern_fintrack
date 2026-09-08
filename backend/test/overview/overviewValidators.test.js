@@ -90,3 +90,28 @@ test('activity shares the page-size ceiling and rejects an unknown parameter', (
  assert.throws(() => overviewActivityQuerySchema.parse({ limit: 20 }));
  assert.throws(() => overviewActivityQuerySchema.parse({ month: '2026-08' }));
 });
+
+test('the analysis level is opt-in and absent by default', () => {
+ // Absent means no level-2 section, which is what keeps a client that has not
+ // been updated receiving exactly the payload it received before.
+ assert.equal(overviewDomainQuerySchema.parse({}).analysis, undefined);
+ assert.equal(overviewDomainQuerySchema.parse({ analysis: 'derived' }).analysis, 'derived');
+ assert.equal(overviewDomainQuerySchema.parse({ analysis: 'full' }).analysis, 'full');
+});
+
+test('an unknown analysis level answers 400 naming the key', () => {
+ // Served as "no analysis" instead, a typo would return a shallower payload
+ // that looks like a domain with nothing to decompose.
+ assert.throws(
+  () => overviewDomainQuerySchema.parse({ analysis: 'deep' }),
+  /analysis must be one of: derived, full/,
+ );
+ assert.throws(() => overviewDomainQuerySchema.parse({ analysis: '' }));
+});
+
+test('the page endpoint takes no analysis level', () => {
+ // §11 gives the page no paginated list and no level-2 section: it is the
+ // overview of every domain, and a depth parameter there would be a request for
+ // six analyses at once.
+ assert.throws(() => overviewPageQuerySchema.parse({ analysis: 'derived' }));
+});

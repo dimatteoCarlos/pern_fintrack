@@ -17,12 +17,23 @@
 // No trend (§12). The catalog defines no monthly debt flow to draw a series
 // from, and the field is absent rather than null for the same reason §6 omits
 // return % instead of publishing it empty.
+//
+// Level 2 refuses the net series as well, and that refusal is the point of the
+// level rather than an omission in it. The net balance series is already fetched
+// here and would cost nothing to publish, but a net position that has not moved
+// is exactly what hides both legs doubling — which is the reading level 2 exists
+// to stop. So both debt analyses are per counterparty, from one new statement,
+// at the full level only.
 
 import {
  getDebtAccountIds,
 } from '../db/overviewAccountRepository.js';
-import { getDebtDomainFields } from '../db/overviewBalanceRepository.js';
+import {
+ getDebtDomainFields,
+ getMonthlyBalanceByAccount,
+} from '../db/overviewBalanceRepository.js';
 import { getDebtTransactionsPage } from '../db/overviewTransactionRepository.js';
+import { makeDebtAnalysis } from '../core/makeDebtAnalysis.js';
 import { readStockDomain } from './stockDomainCalculator.js';
 
 const DEBT_DOMAIN = {
@@ -31,6 +42,12 @@ const DEBT_DOMAIN = {
  getTransactionsPage: getDebtTransactionsPage,
  publishesTrend: false,
  getDomainFields: getDebtDomainFields,
+ // The one statement both level-2 debt analyses come from. Per counterparty per
+ // month, so the ranking at the reference month and the two legs over the window
+ // are folds of one result set rather than two reads that have to agree about
+ // the same month.
+ getAnalysisRows: getMonthlyBalanceByAccount,
+ makeAnalysis: makeDebtAnalysis,
 };
 
 export const overviewDebtService = {

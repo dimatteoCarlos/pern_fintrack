@@ -118,6 +118,49 @@ export async function getMonthlyBalance(pool, accountIds, from, to, timeZone = '
  }));
 }
 
+// One row per account per month: the balance each counterparty held at the close
+// of each month of the window.
+//
+// It is the statement above with the aggregation removed, and the two agree by
+// arithmetic rather than by review: that one sums the accounts' derived balances
+// and then subtracts everything after the cut, this one subtracts per account
+// first. Addition does not care about the order, so summing these rows for a
+// month gives that month's total exactly.
+//
+// One statement serves both level-2 debt analyses, which is the reason it is
+// shaped this way instead of as two. The reference month's rows are the
+// counterparty ranking; the same rows folded by sign per month are the two legs
+// over time. Built as two statements, the ranking's largest debtor could
+// disagree with the last point of the series it appears in.
+//
+// generate_series stays on the LEFT of the account set for D18's reason, restated
+// once more for a stock cut per account: a month in which nothing moved is the
+// balance carried unchanged, not a gap. CROSS JOIN and not LEFT JOIN because the
+// account set is the inner side and is fixed for the whole window — every account
+// has a row in every month, whatever it held.
+//
+// The sign is left ALONE and the split is the caller's. A debtor balance is
+// positive when the user is owed and negative when the user owes
+// (movementInputHandler.js:32-53), and the two legs are magnitudes the card
+// publishes under names that carry the direction. Splitting here would put the
+// convention in two places.
+const MONTHLY_BALANCE_BY_ACCOUNT_QUERY = `
+  SELECT
+    m.month::date::text AS month,
+    ua.account_id,
+    ua.account_name,
+    ${DERIVED_BALANCE} - COALESCE((
+      SELECT SUM(t.amount)
+      FROM transactions t
+      WHERE t.account_id = ua.account_id
+        AND t.transaction_actual_date >= ${nextMonthStart('m.month', '$4')}
+    ), 0) AS balance
+  FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
+  CROSS JOIN user_accounts ua
+  WHERE ua.account_id = ANY($1::int[])
+  ORDER BY m.month, ua.account_id
+`;
+
 // The three fields the debt card adds to the base card (D39, D43), all read at
 // the close of the reference month.
 //
@@ -219,4 +262,44 @@ export async function getDebtDomainFields(
   receivable: toAmount(row.receivable ?? 0),
   settledCount: Number(row.settled_count ?? 0),
  };
+}
+
+/**
+ * The balance of each account of a set at the close of every month of a window.
+ *
+ * The rows of one month sum to what getMonthlyBalance reports for that month, by
+ * arithmetic rather than by agreement.
+ *
+ * An empty accountIds returns an empty array, not a series of zeros. A user with
+ * no accounts of this kind has nothing to distribute across counterparties, and
+ * a series of zero-valued months would state that they have counterparties all
+ * sitting at zero.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - the same set the position is computed over
+ * @param {string} from - first month of the window, as 'YYYY-MM-01'
+ * @param {string} to - last month, inclusive, as 'YYYY-MM-01'
+ * @param {string} timeZone - IANA zone of the account owner
+ * @returns {Promise<Array<{month: string, accountId: number, accountName: string, balance: number}>>}
+ */
+export async function getMonthlyBalanceByAccount(
+ pool,
+ accountIds,
+ from,
+ to,
+ timeZone = 'UTC',
+) {
+ const { rows } = await pool.query(MONTHLY_BALANCE_BY_ACCOUNT_QUERY, [
+  accountIds ?? [],
+  from,
+  to,
+  timeZone,
+ ]);
+
+ return rows.map((row) => ({
+  month: row.month,
+  accountId: row.account_id,
+  accountName: row.account_name,
+  balance: toAmount(row.balance ?? 0),
+ }));
 }

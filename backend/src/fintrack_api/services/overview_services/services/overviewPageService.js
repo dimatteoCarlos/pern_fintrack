@@ -52,13 +52,13 @@ import { makeHeroSection } from '../core/makeHeroSection.js';
 import { makeAllCard } from '../core/makeAllCard.js';
 import { makeMonthlySnapshot } from '../core/makeMonthlySnapshot.js';
 import { makeFinancialGoals } from '../core/makeFinancialGoals.js';
-import { shiftMonths } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
-// MS3's window. Thirteen points, not twelve: the reference month is the figure
-// being judged and the twelve before it are what it is judged against, so the
-// month under study never enters its own baseline.
-const SNAPSHOT_HISTORY_MONTHS = 12;
+// MS3's window is no longer derived here. Thirteen points — the reference month
+// is the figure being judged and the twelve before it are what it is judged
+// against — is a property of the reporting period, and the resolver publishes it
+// as analysisStart. This page and every level-2 section now take that bound from
+// one place instead of each shifting the reference month for itself.
 
 // The calculators are asked for cards, so the page is a request for one row it
 // will not read. pageSize cannot be 0 — the validators reject it and the SQL
@@ -77,10 +77,8 @@ export const overviewPageService = {
   * @returns {Promise<object>} GetOverviewData
   */
  async getOverviewPage(pool, userId, { window }, timeZone = 'UTC') {
-  const { referenceMonth, periodStart, periodEnd } = window;
+  const { referenceMonth, analysisStart, periodStart, periodEnd } = window;
   const cardRequest = { window, ...CARD_ONLY };
-
-  const snapshotStart = shiftMonths(referenceMonth, -SNAPSHOT_HISTORY_MONTHS);
 
   const [
    expense,
@@ -125,8 +123,8 @@ export const overviewPageService = {
   // same accounts that produced the card's figure, so MS1 and the card cannot
   // disagree.
   const [expenseMonths, incomeMonths, pocketMonths] = await Promise.all([
-   getMonthlyExpense(pool, expenseAccountIds, snapshotStart, referenceMonth, timeZone),
-   getMonthlyIncome(pool, incomeAccountIds, snapshotStart, referenceMonth, timeZone),
+   getMonthlyExpense(pool, expenseAccountIds, analysisStart, referenceMonth, timeZone),
+   getMonthlyIncome(pool, incomeAccountIds, analysisStart, referenceMonth, timeZone),
    // Pocket's snapshot is a FLOW even though its card is a stock (D28). All four
    // entries of the widget have to be the same kind of quantity or MS4 subtracts
    // an average of movements from a balance.
@@ -134,7 +132,7 @@ export const overviewPageService = {
    // Read over the allocation ledger and scoped by user rather than by a set of
    // accounts: a pocket is a plan now, not an account, so there is no account set
    // to pass. Same figure the board publishes as the month's net movement.
-   getMonthlyAllocatedNet(pool, userId, snapshotStart, referenceMonth, timeZone),
+   getMonthlyAllocatedNet(pool, userId, analysisStart, referenceMonth, timeZone),
   ]);
 
   const hero = makeHeroSection({

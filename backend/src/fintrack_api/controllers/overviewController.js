@@ -160,7 +160,9 @@ export async function getOverviewDomain(req, res, next) {
   if (!userId) return;
 
   const { domain } = overviewDomainParamsSchema.parse(req.params);
-  const { month, page, pageSize } = overviewDomainQuerySchema.parse(req.query);
+  const { month, page, pageSize, analysis } = overviewDomainQuerySchema.parse(
+   req.query,
+  );
 
   const calculator = DOMAIN_CALCULATORS[domain];
 
@@ -179,7 +181,15 @@ export async function getOverviewDomain(req, res, next) {
   const window = await resolveWindowOr422(res, timeZone, month);
   if (!window) return;
 
-  const data = await calculator(pool, userId, { window, page, pageSize }, timeZone);
+  // analysis travels with the request rather than being resolved per domain:
+  // every calculator reads the same key, and one that has no level-2 section
+  // ignores it.
+  const data = await calculator(
+   pool,
+   userId,
+   { window, page, pageSize, analysis },
+   timeZone,
+  );
 
   res.status(200).json({
    status: 200,

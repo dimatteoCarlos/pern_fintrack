@@ -36,8 +36,12 @@ import {
  getMonthlyAllocated,
  getAllocationsPage,
 } from '../db/overviewPocketRepository.js';
+import { getBankBalance, getFreeCash } from '../db/overviewPageRepository.js';
 import { makeDomainCard } from '../core/makeDomainCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
+import { makePocketAnalysis } from '../core/makePocketAnalysis.js';
+import { isFullAnalysis, wantsAnalysis } from '../core/analysisLevels.js';
+import { TREND_MONTHS } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 // Said when the owner has planned no pocket at all. The card still publishes 0
@@ -53,26 +57,50 @@ export const overviewPocketService = {
   *
   * @param {object} pool - Database pool
   * @param {string} userId - UUID from the token, never from the client body
-  * @param {object} request - { window, page, pageSize, includeTransactionRows }
+  * The board is already asked for and only its summary is read. Level 2 is where
+  * the per-pocket rows that came back in the same call stop being discarded, so
+  * "which plans are on track" costs no statement at all.
+  *
+  * @param {object} request - { window, page, pageSize, includeTransactionRows, analysis }
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'pocket'
   */
  async getPocketDomainData(
   pool,
   userId,
-  { window, page, pageSize, includeTransactionRows = true },
+  { window, page, pageSize, includeTransactionRows = true, analysis },
   timeZone = 'UTC',
  ) {
-  const { referenceMonth, trendStart, periodStart, periodEnd } = window;
+  const { referenceMonth, trendStart, analysisStart, periodStart, periodEnd } =
+   window;
 
-  const [board, months, allocations] = await Promise.all([
+  const withAnalysis = wantsAnalysis(analysis);
+
+  const [board, months, allocations, bankBalance, freeCash] = await Promise.all([
    pocketBoardService.getBoard(pool, userId, timeZone, referenceMonth),
-   getMonthlyAllocated(pool, userId, trendStart, referenceMonth, timeZone),
+   getMonthlyAllocated(
+    pool,
+    userId,
+    withAnalysis ? analysisStart : trendStart,
+    referenceMonth,
+    timeZone,
+   ),
    getAllocationsPage(pool, userId, referenceMonth, timeZone, {
     page,
     pageSize,
     includeRows: includeTransactionRows,
    }),
+   // The two page-level reads, at the full level only. Free cash is the one
+   // figure of this module that cannot be composed from two totals: the floor is
+   // applied per account before the sum, so an overcommitted account contributes
+   // nothing instead of a credit against a healthy one, and no arithmetic over
+   // the committed total recovers it.
+   isFullAnalysis(analysis)
+    ? getBankBalance(pool, userId, referenceMonth, timeZone)
+    : undefined,
+   isFullAnalysis(analysis)
+    ? getFreeCash(pool, userId, referenceMonth, timeZone)
+    : undefined,
   ]);
 
   const { summary } = board;
@@ -135,7 +163,26 @@ export const overviewPocketService = {
     pageSize,
     totalRows: allocations.totalRows,
    },
-   trend: makeTrendSeries(months),
+   // Cut to TREND_MONTHS explicitly, so the card's chart is the same six points
+   // whether or not the request asked for an analysis.
+   trend: makeTrendSeries(months, TREND_MONTHS),
+   ...(withAnalysis
+    ? {
+       analysis: makePocketAnalysis({
+        level: analysis,
+        months,
+        // The board's own rows, republished and never recomputed, which is what
+        // makes this section and the board screen agree by construction rather
+        // than by review.
+        pockets: board.pockets,
+        // The card's figure, so the three terms of the decomposition include
+        // the one the card publishes rather than a second reading of it.
+        committed: card.totalAmount,
+        bankBalance,
+        freeCash,
+       }),
+      }
+    : {}),
   };
  },
 };

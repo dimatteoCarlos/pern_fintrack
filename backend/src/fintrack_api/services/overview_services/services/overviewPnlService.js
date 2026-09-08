@@ -26,6 +26,8 @@ import {
  makePeriodDelta,
  NO_PRIOR_PERIOD_NOTICE,
 } from '../core/makeDomainCard.js';
+import { makePnlAnalysis } from '../core/makePnlAnalysis.js';
+import { wantsAnalysis } from '../core/analysisLevels.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 export const overviewPnlService = {
@@ -34,17 +36,31 @@ export const overviewPnlService = {
   *
   * @param {object} pool - Database pool
   * @param {string} userId - UUID from the token, never from the client body
-  * @param {object} request - { window, page, pageSize }
+  * analysis widens the monthly statement and nothing else. The card still
+  * publishes no series; the analysis publishes one over the window's long bound,
+  * off the query the delta already runs, so this domain gains a series without
+  * gaining a second statement that could disagree with the delta.
+  *
+  * @param {object} request - { window, page, pageSize, analysis }
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'pnl'
   */
  async getPnlDomainData(
   pool,
   userId,
-  { window, page, pageSize, includeTransactionRows = true },
+  { window, page, pageSize, includeTransactionRows = true, analysis },
   timeZone = 'UTC',
  ) {
-  const { referenceMonth, priorMonth, trendStart, periodStart, periodEnd } = window;
+  const {
+   referenceMonth,
+   priorMonth,
+   trendStart,
+   analysisStart,
+   periodStart,
+   periodEnd,
+  } = window;
+
+  const withAnalysis = wantsAnalysis(analysis);
 
   // Read once and passed to both consumers, so the figure and the list are the
   // same rows. R212's exclusion lives in the statements rather than here: it
@@ -54,7 +70,13 @@ export const overviewPnlService = {
   const accountIds = await getPnlAccountIds(pool, userId);
 
   const [months, oldestAccountDate, transactions] = await Promise.all([
-   getMonthlyPnl(pool, accountIds, trendStart, referenceMonth, timeZone),
+   getMonthlyPnl(
+    pool,
+    accountIds,
+    withAnalysis ? analysisStart : trendStart,
+    referenceMonth,
+    timeZone,
+   ),
    getOldestAccountDate(pool, userId, timeZone),
    getPnlTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
     page,
@@ -119,6 +141,18 @@ export const overviewPnlService = {
     pageSize,
     totalRows: transactions.totalRows,
    },
+   ...(withAnalysis
+    ? {
+       analysis: makePnlAnalysis({
+        level: analysis,
+        months,
+        // Both terms off the card, so the two parts partition the figure the
+        // card published instead of a second read over the same rows.
+        totalAmount: card.totalAmount,
+        realizedFromInvestment: card.realizedFromInvestment,
+       }),
+      }
+    : {}),
   };
  },
 };

@@ -60,6 +60,17 @@ export const monthEndDate = (month) => {
 // stability a visual series does not need.
 export const TREND_MONTHS = 6;
 
+// Thirteen points, and the reason the number is odd: the reference month is the
+// figure being judged and the twelve before it are what it is judged against, so
+// the month under study never enters its own baseline.
+//
+// The same span the monthly snapshot already averaged over. It used to be a
+// constant of the page service, which derived its own start month from the
+// reference one — a second place deriving a month bound, which is the defect
+// class the period end was just moved out of. One window resolves the period and
+// every reader takes its bounds from it.
+export const ANALYSIS_MONTHS = 13;
+
 /**
  * The window every domain calculator reads from, derived once.
  *
@@ -85,11 +96,18 @@ export const TREND_MONTHS = 6;
  * skew, or a request that straddles midnight on the last day of a month — can
  * cost a day at the edge and can never report a date outside the month served.
  *
+ * analysisStart is the long window, and it is resolved here for the same reason
+ * trendStart is: two readers shifting their own months are two answers to how
+ * far back a series reaches. Every domain gets it whether or not it publishes a
+ * long series, because a window is the period of the request and not a menu each
+ * consumer picks from.
+ *
  * @param {string} referenceMonth - 'YYYY-MM-01', already checked against the ceiling
  * @param {string} currentMonth - 'YYYY-MM-01' on the owner's calendar, from the database
  * @param {string} today - 'YYYY-MM-DD' on the owner's calendar
  * @returns {{referenceMonth: string, priorMonth: string, trendStart: string,
- *   periodStart: string, periodEnd: string, isCurrentMonth: boolean}}
+ *   analysisStart: string, periodStart: string, periodEnd: string,
+ *   isCurrentMonth: boolean}}
  */
 export const makeReportingWindow = (referenceMonth, currentMonth, today) => {
  if (!currentMonth || !today) {
@@ -105,6 +123,7 @@ export const makeReportingWindow = (referenceMonth, currentMonth, today) => {
   referenceMonth,
   priorMonth: shiftMonths(referenceMonth, -1),
   trendStart: shiftMonths(referenceMonth, -(TREND_MONTHS - 1)),
+  analysisStart: shiftMonths(referenceMonth, -(ANALYSIS_MONTHS - 1)),
   periodStart: referenceMonth,
   periodEnd: isCurrentMonth && today < monthEnd ? today : monthEnd,
   isCurrentMonth,

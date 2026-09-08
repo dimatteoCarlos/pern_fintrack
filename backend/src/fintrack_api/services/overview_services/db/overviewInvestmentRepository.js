@@ -168,6 +168,80 @@ const INVESTMENT_FIGURES_QUERY = `
   CROSS JOIN bounds b
 `;
 
+// The portfolio distributed across its accounts, at the same cut as the card.
+//
+// It is the `accounts` CTE of the statement above with the name added, and that
+// is deliberate rather than a duplication to fold away: the rows have to sum to
+// the ledger balance the card publishes, and the surest way to guarantee that is
+// for them to be the same expression at the same bound. Written as an
+// independent statement it could differ by a predicate and the shares would sum
+// to something other than one.
+//
+// A zero-balance account comes back as a row. An account the owner opened and
+// emptied is a different situation from one they never had, and only a row can
+// say so.
+const INVESTMENT_BALANCE_BY_ACCOUNT_QUERY = `
+  WITH bounds AS (
+    SELECT (($3::date + INTERVAL '1 month') AT TIME ZONE $2) AS next_month_start
+  )
+  SELECT
+    ua.account_id,
+    ua.account_name,
+    ${DERIVED_BALANCE} - COALESCE((
+      SELECT SUM(t.amount)
+      FROM transactions t
+      WHERE t.account_id = ua.account_id
+        AND t.transaction_actual_date >= (SELECT next_month_start FROM bounds)
+    ), 0) AS balance
+  FROM user_accounts ua
+  WHERE ua.account_id = ANY($1::int[])
+  ORDER BY ua.account_id
+`;
+
+// When money was put in, and how much each time — §4.4's series of EVENTS.
+//
+// The predicate is V5's, exactly: movement type transfer, positive amount, before
+// the cut. It excludes the account opening for the reason V5 does — the catalog
+// rules that an owner with nothing beyond the opening has made no contribution,
+// and opening an account once is not a habit — so an empty history here and the
+// card's "no contribution recorded" notice are the same condition rather than
+// two that usually agree.
+//
+// Unbounded below, because a history bounded at thirteen months is not a history.
+// Bounded above by the reference month like every other figure on this card, and
+// bounded in SIZE by the caller's limit: an owner who funds weekly for a decade
+// has a real history that no single response should try to carry, so the newest
+// page of it is served and the count says what was left out.
+const CONTRIBUTION_HISTORY_QUERY = `
+  SELECT
+    t.transaction_id,
+    t.account_id,
+    ua.account_name,
+    t.amount AS amount,
+    (t.transaction_actual_date AT TIME ZONE $2)::date::text AS contribution_date
+  FROM transactions t
+  JOIN user_accounts ua ON ua.account_id = t.account_id
+  WHERE t.account_id = ANY($1::int[])
+    AND t.movement_type_id = ${TRANSFER_MOVEMENT_TYPE_ID}
+    AND t.amount > 0
+    AND t.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $2)
+  ORDER BY t.transaction_actual_date DESC, t.transaction_id DESC
+  LIMIT $4
+`;
+
+// How many events the page above was cut out of. A second statement over the
+// same filter rather than a window function beside a limited page, the same
+// choice every list in this module makes: a count computed beside a limited page
+// is a count of the page.
+const CONTRIBUTION_HISTORY_COUNT_QUERY = `
+  SELECT COUNT(*) AS total_rows
+  FROM transactions t
+  WHERE t.account_id = ANY($1::int[])
+    AND t.movement_type_id = ${TRANSFER_MOVEMENT_TYPE_ID}
+    AND t.amount > 0
+    AND t.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $2)
+`;
+
 /**
  * The raw figures behind the Investment card, read at the reference month.
  *
@@ -206,5 +280,82 @@ export async function getInvestmentFigures(pool, accountIds, timeZone = 'UTC', r
    || row.days_since_last_contribution === undefined
    ? null
    : Number(row.days_since_last_contribution),
+ };
+}
+
+/**
+ * The balance of each investment account at the close of the reference month.
+ *
+ * The rows sum to the ledger balance the card publishes, by construction rather
+ * than by agreement: the expression and the bound are the ones that produced it.
+ *
+ * An empty accountIds returns an empty array, which the caller reports as an
+ * absent portfolio rather than as a distribution over nothing.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - the user's investment accounts
+ * @param {string} timeZone - IANA zone of the account owner
+ * @param {string} referenceMonth - 'YYYY-MM-01', the month the balances are read at
+ * @returns {Promise<Array<{accountId: number, accountName: string, balance: number}>>}
+ */
+export async function getInvestmentBalanceByAccount(
+ pool,
+ accountIds,
+ timeZone = 'UTC',
+ referenceMonth,
+) {
+ const { rows } = await pool.query(INVESTMENT_BALANCE_BY_ACCOUNT_QUERY, [
+  accountIds ?? [],
+  timeZone,
+  referenceMonth,
+ ]);
+
+ return rows.map((row) => ({
+  accountId: row.account_id,
+  accountName: row.account_name,
+  balance: toAmount(row.balance ?? 0),
+ }));
+}
+
+/**
+ * The funding events on the investment accounts, newest first, and how many
+ * exist in total.
+ *
+ * totalRows is the whole history and rows is the newest `limit` of it, so a
+ * caller can say that the list is a page rather than the history. The two are
+ * equal for every owner whose history fits, which is the ordinary case.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - the user's investment accounts
+ * @param {string} timeZone - IANA zone of the account owner
+ * @param {string} referenceMonth - 'YYYY-MM-01', the cut every figure of this card shares
+ * @param {number} limit - the most events this response will carry
+ * @returns {Promise<{rows: Array<object>, totalRows: number}>}
+ */
+export async function getContributionHistory(
+ pool,
+ accountIds,
+ timeZone = 'UTC',
+ referenceMonth,
+ limit,
+) {
+ const parameters = [accountIds ?? [], timeZone, referenceMonth];
+
+ // Both statements in flight at once: the count does not depend on the page and
+ // the page does not depend on the count.
+ const [events, total] = await Promise.all([
+  pool.query(CONTRIBUTION_HISTORY_QUERY, [...parameters, limit]),
+  pool.query(CONTRIBUTION_HISTORY_COUNT_QUERY, parameters),
+ ]);
+
+ return {
+  rows: events.rows.map((row) => ({
+   transactionId: row.transaction_id,
+   accountId: row.account_id,
+   accountName: row.account_name,
+   amount: toAmount(row.amount ?? 0),
+   contributionDate: row.contribution_date,
+  })),
+  totalRows: Number(total.rows[0]?.total_rows ?? 0),
  };
 }
