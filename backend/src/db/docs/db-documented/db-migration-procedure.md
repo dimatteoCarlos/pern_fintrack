@@ -215,9 +215,51 @@ Production is Supabase. The connection string lives in `backend/.env` as
 `DATABASE_URI_SUPABASE`, commented out on purpose, and in the Vercel project as
 `DATABASE_URI`.
 
-The procedure below is what the alignment file was rehearsed against on
-2026-08-26, and what its execution has to follow. Each step exists because of
-something that can go wrong; none of them is ceremony.
+### 5.A Who runs it, decided 2026-09-08
+
+**A person at a terminal, running the repository's own scripts.** Decided by
+Carlos on 2026-09-08 after the three candidates were weighed. It is not the
+permanent answer; it is the right answer for a first run of nineteen files that
+have never executed against production.
+
+Why not a step in the Vercel build. `backend/vercel.json` uses the legacy
+`builds` format with `@vercel/node` on `index.js` and declares no
+`buildCommand`, so the step does not exist and would have to be added. That is
+the smaller objection. The larger one is that a build runs on **every**
+deployment, on every retry, and on preview deployments, while `db:align` must
+run **exactly once** — a second run undoes three of migration 035's seven
+repoints and says nothing. Automating it would also start by lifting
+`db:migrate`'s own refusal under `NODE_ENV=production`, which is the freeze
+itself.
+
+Why not Supabase's migration tooling. The repository has never used it: there is
+no `supabase/` directory at the root and no `config.toml`. The one path carrying
+that name, `src/db/migrations/supabase/001_production_alignment.sql`, is a loose
+file and not a CLI layout. Adopting it means re-expressing thirty-five
+migrations plus the alignment in another format and living with two ledgers.
+
+**The evolution, when the chain is at parity and each deploy carries at most one
+small file: not the build step but a manually dispatched GitHub Action** — the
+same person deciding, with the record kept for free. It is not proposed yet
+because it puts production credentials into CI secrets, which is a new exposure
+and a separate decision.
+
+### 5.B The three conditions the decision carries
+
+The manual run as it was performed on 2026-08-22 is not good enough on its own:
+it left `align.log` at the repository root and a ledger row typed by hand under
+a name no runner produces. All three conditions are what make the manual run
+auditable.
+
+1. **Through `db:align` and `db:migrate`, never through `psql`.** The runner
+ writes the ledger row inside the same transaction as the schema it names. A
+ file applied with `psql` does not register itself, which is how
+ `supabase/001_production_alignment.sql` came to be recorded by hand.
+2. **With `DB_EXPECTED` and `DB_REMOTE_OK` typed explicitly.** Two deliberate
+ assertions rather than one: which database, and that the destination leaves
+ this machine. `assertExpectedDatabase` refuses without either.
+3. **With `db:state` captured before and after, into the repository.** That is
+ the record. A `.log` at the repository root is not one.
 
 ### 5.0 Prove which database you are about to write to
 
@@ -244,7 +286,10 @@ and the branch difference was invisible to every check that looked at the ledger
 rather than at the file. Confirm the pending files read the way the rehearsal
 proved them.
 
-### 5.1 Rehearse on a copy of production data
+### 5.1 Rehearse the whole sequence on a copy of production data
+
+The rehearsal is the sequence, not the last file of it. Rehearsed end to end for
+the first time on 2026-09-08.
 
 ```bash
 pg_dump "$PROD_URI" -f prod_full.sql
@@ -255,22 +300,49 @@ psql -U postgres -d fintrack_prod_data -f prod_full.sql
 Keep the dump **outside the repository**: it contains real names, emails and
 balances. Delete it once the rehearsal is over.
 
-Then clone that control into a disposable database and run the migration there —
-`CREATE DATABASE fintrack_rehearsal TEMPLATE fintrack_prod_data;` copies schema
-and data without going through a dump file, and leaves the control untouched.
+`fintrack_prod_data` is then the untouched control and never receives a
+migration — its ledger is empty, so `db:migrate` would attempt `001` against
+populated tables. Clone it into the database that does:
+
+```
+CREATE DATABASE fintrack_prod_rehearsal_full TEMPLATE fintrack_prod_data;
+```
+
+```bash
+DB_NAME=fintrack_prod_rehearsal_full DB_EXPECTED=fintrack_prod_rehearsal_full npm run db:state
+DB_NAME=fintrack_prod_rehearsal_full DB_EXPECTED=fintrack_prod_rehearsal_full npm run db:align
+DB_NAME=fintrack_prod_rehearsal_full DB_EXPECTED=fintrack_prod_rehearsal_full npm run db:migrate
+```
+
+**The chain step runs nineteen files, not eighteen.** The alignment stamps
+`001`-`012` and `014`-`017` and leaves `013` out deliberately, so the runner
+takes `013_normalize_category_budget_name_case.sql` first and `018` through
+`035` after it. That is where `account_name_case_backup_013` comes from on a
+rehearsed copy.
 
 ### 5.2 Verify on two axes
 
 - **Schema**: compare the rehearsal against a database built by running the
  chain from zero. They must agree column by column, and also on constraints,
- indexes, triggers, defaults and functions.
+ indexes, triggers, defaults and functions. Two differences are expected and
+ documented: the `user_roles` CHECK renders differently and accepts the same
+ four strings, and `budget_policies`, `budget_policy_allocations` and
+ `budget_frequency_types` exist only on a chain-built database, because
+ `fintrack_dev` ran `010` before commit `3b72371f` removed their `CREATE TABLE`
+ statements.
 - **Data**: compare the rehearsal against the untouched control with a
  fingerprint — row counts, sums, and `md5(string_agg(...))` of the name columns.
  A migration that adds structure must not move a single existing value.
 
-Run the migration a **second** time on the rehearsal. Every counter must come
-back zero and the last line must be `COMMIT`. That is the idempotency proof, and
-it is what caught the `ON CONFLICT` defect described above.
+**Do not re-run the alignment as an idempotency proof.** An earlier version of
+this section said to run the migration a second time and expect every counter at
+zero. That holds for a chain file, which the runner skips by name. It is false
+for `supabase/001_production_alignment.sql` once the chain has run on top: its
+step 8 is an unconditional `DROP CONSTRAINT` then `ADD CONSTRAINT`, and a second
+run returns three of the four `transactions` foreign keys to `user_accounts`,
+undoing three of 035's seven repoints with no error. Measured 2026-09-08.
+`db:align` refuses a second run for that reason. To rehearse again, build a new
+database from the dump.
 
 ### 5.3 Back up production, immediately before writing
 
@@ -285,35 +357,56 @@ a connection failure leaves an empty file and `pg_dump` does not always shout.
 ### 5.4 Apply
 
 ```bash
-psql "$PROD_URI" -f path/to/migration.sql
+DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run db:align
+DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run db:migrate
 ```
 
-- The file's own transaction, when it has one, is sufficient. Do **not** add
- `-1` to a file that carries `BEGIN`/`COMMIT`: it nests a second transaction and
- produces confusing warnings.
-- Add `-1` to a chain file, which has no transaction of its own and would
- otherwise autocommit statement by statement — leaving the database half
- migrated if one of them fails.
-- Read the last line. `COMMIT` means applied; `ROLLBACK` means nothing was
- written and production is untouched, which is the good failure.
+- **`DB_REMOTE_OK` is required and is the point.** Without it the run refuses,
+ because `DB_EXPECTED` confirms a name and a remote database can carry any name.
+ Setting it is the operator stating that an off-machine destination is meant.
+- **`NODE_ENV` must not be `production` in the shell that runs these.** Both
+ scripts refuse under it. That refusal is the migration freeze and lifting it is
+ Carlos's decision, made once, not a step in a procedure.
+- **`db:align` runs once per database, ever.** It refuses if the ledger already
+ carries its row.
+- Read the last line of each. A refusal prints the database it reached, which is
+ the whole point of reaching it before writing.
 
-### 5.5 Register it in the ledger
+### 5.5 The ledger registers itself
 
-A file executed with `psql` does **not** register itself — that is the runner's
-job, and the runner did not run. Without the row, a future deployment executes
-it again.
+Nothing to do. `db:migrate` writes one row per file inside that file's own
+transaction, and step 9 of the alignment writes its own row plus the sixteen
+chain rows it makes true, inside the transaction that makes them true.
+
+The manual `INSERT` below is the fallback for a file that was applied outside
+the runner, and applying a file outside the runner is what condition 1 forbids.
+It is kept because `supabase/001_production_alignment.sql` was recorded that way
+on 2026-08-22 and a reader of that ledger deserves to know how the row got there.
 
 ```sql
 INSERT INTO migrations (filename) VALUES ('NNN_name.sql')
 ON CONFLICT (filename) DO NOTHING;
 ```
 
-### 5.6 Read the final state
+### 5.6 Read the final state and keep it
 
-Count the ledger rows, the rows of any table the migration created, and whatever
-the migration claims to have normalized. Compare against the numbers the
-rehearsal produced. A figure that differs is a divergence to explain before
-moving on, not a rounding error.
+```bash
+NO_COLOR=1 DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run --silent db:state \
+ > src/db/docs/db-documented/production-runs/<YYYY-MM-DD>-after.txt
+```
+
+The same command before the run, into `<YYYY-MM-DD>-before.txt`. Commit both.
+Two files per run, in the repository, is the answer to how a production run is
+recorded — verifiable by anyone later, unlike a `.log` at the repository root.
+
+`--silent` drops npm's own two-line banner and `NO_COLOR=1` drops the escape
+sequences `picocolors` still emits when the output is redirected. Without both,
+the record is a file of terminal control codes rather than a reading.
+
+Compare the pair against the numbers the rehearsal produced: the ledger rows,
+the registry parity line, and the foreign keys into the account identity. A
+figure that differs is a divergence to explain before moving on, not a rounding
+error.
 
 ---
 
@@ -327,6 +420,11 @@ moving on, not a rounding error.
  file and rebuild locally; breaking a local database is an accepted cost, a
  broken chain is not.
 - **Never run `db:reset` against anything but a disposable local database.**
+- **Never run `db:align` twice against the same database.** Its step 8 is an
+ unconditional `DROP CONSTRAINT` then `ADD CONSTRAINT` and a second run returns
+ three of the four `transactions` foreign keys to `user_accounts`, undoing three
+ of 035's seven repoints without failing. `db:align` refuses it; the rule exists
+ for anyone tempted to apply the file another way.
 - **Never commit a production dump.** It holds personal data.
 - **Never deploy a `NOT NULL` before the code that fills it.** Section 3.
 
