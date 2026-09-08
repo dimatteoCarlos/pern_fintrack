@@ -42,6 +42,17 @@ import { assessDeletionImpact } from './getAnnulmentImpactReport.js';
 // import { assertTransferDestinationEligible } from './getCloseTransferDestinations.js';
 // import { getCurrencyCode } from '../../../utils/currencyLookup.js';
 
+// Block 3 step 1. Both are reused rather than reimplemented, on the owner's
+// ruling of 2026-09-08: the close does not write its own version of a release
+// or of a budget decision, it calls the ones the modules already own.
+import { pocketAllocationService } from '../pocket_services/services/pocketAllocationService.js';
+import {
+ resolveCurrentMonth,
+ writeAllocation,
+} from '../budget_services/db/budgetAllocationRepository.js';
+import { getUserTimeZone } from '../../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { ACCOUNTING_CURRENCY_CODE } from '../../config/fintrackConfig.js';
+
 // The name the system reserves for the compensation counterpart. Belongs in
 // accountUtils.js beside NOT_BOUNDARY_ACCOUNT; declared here because that file
 // is another session's to edit, and requested from its owner. The literal
@@ -975,6 +986,99 @@ export const processCloseAccount = async (
   // The guard stays deleted_at IS NULL and must not become closed_at IS NULL
   // while the dual-write stands: a soft-deleted account carries deleted_at and
   // no closed_at, and a closed_at guard would let this path close it.
+  // ==========================================================================
+  // BLOCK 3, FIRST HALF: what the account is holding on behalf of other things
+  // is given back BEFORE the account stops existing. Both steps run on the
+  // caller's dbClient, so they commit with the close or roll back with it.
+  // ==========================================================================
+
+  // RELEASE WHAT THE ACCOUNT COMMITTED TO POCKETS.
+  //
+  // A commitment is not money: allocating moves nothing, it only reserves part
+  // of an account's balance so the rest reads as unassigned cash. That is why
+  // this survives the zero-balance refusal above - an account can sit at zero
+  // and still be backing a pocket, because the balance fell after the
+  // commitment was made and allocating never checked it again.
+  //
+  // Enumerated per pocket rather than in one statement, because a release is
+  // per (pocket, source account) pair - the running sum of that pair is the
+  // figure the pocket module refuses to push below zero, and one total across
+  // pockets could not be checked against it. HAVING SUM > 0 leaves out pairs
+  // already settled: a zero pair has nothing to give back, and asking the
+  // module to release zero would be refused by the amount <> 0 CHECK.
+  const pocketHoldings = await dbClient.query(
+    `SELECT pa.pocket_id AS "pocketId", SUM(pa.amount)::text AS held
+       FROM pocket_allocations pa
+      WHERE pa.user_id = $1 AND pa.source_account_id = $2
+      GROUP BY pa.pocket_id
+     HAVING SUM(pa.amount) > 0`,
+    [userId, targetAccountId],
+  );
+
+  const releasedPockets = [];
+
+  for (const holding of pocketHoldings.rows) {
+    // The module's own release, on this transaction's client. It writes the
+    // compensating row through the same statement the release form does, and
+    // applies the same guards - the pair may not go below zero, the account
+    // must still be undeleted, the pocket must be the owner's.
+    //
+    // ACCOUNTING_CURRENCY_CODE, not a lookup: the module refuses any source
+    // account not kept in it, so an account that can hold a commitment is
+    // already in that unit and the conversion is an identity.
+    const released = await pocketAllocationService.release(
+      userId,
+      holding.pocketId,
+      {
+        sourceAccountId: targetAccountId,
+        amount: Number(holding.held),
+        currency: ACCOUNTING_CURRENCY_CODE,
+      },
+      dbClient,
+    );
+
+    releasedPockets.push({
+      pocketId: holding.pocketId,
+      amount: released.amount,
+    });
+  }
+
+  // THE BUDGET SERIES STOPS AT THIS MONTH.
+  //
+  // Only a category_budget account has one. The rows live in
+  // budget_monthly_allocations keyed by the extension row's account_id, so no
+  // other type reaches this and the condition is the type rather than a count.
+  //
+  // writeAllocation with `to` null is the "stop budgeting" verb the budget
+  // module already documents against itself: it deletes every decision after
+  // `from` and writes the amount at `from`, leaving the months before it
+  // untouched. That is the owner's ruling of 2026-09-08 exactly - past months
+  // preserved, a terminating zero on the current month, and no future
+  // carry-forward - reached by calling the module rather than by writing a
+  // second version of it.
+  //
+  // The FX metadata is an identity and stating it is not the silence migration
+  // 014 was written to end: zero is zero in every currency, so there is no
+  // conversion here for a rate to describe. The currency ids are the account's
+  // own, so the row reads in the same unit as the decisions before it.
+  let budgetTerminatedAt = null;
+
+  if (targetTypeName === 'category_budget') {
+    const timeZone = await getUserTimeZone(dbClient, userId);
+    const currentMonth = await resolveCurrentMonth(dbClient, timeZone);
+
+    await writeAllocation(dbClient, targetAccountId, 0, currentMonth, null, {
+      originalAmount: 0,
+      originalCurrencyId: accountCheck.rows[0].currency_id,
+      rate: 1,
+      source: 'identity',
+      fetchedAt: new Date(),
+      targetCurrencyId: accountCheck.rows[0].currency_id,
+    });
+
+    budgetTerminatedAt = currentMonth;
+  }
+
   const markResult = await dbClient.query(
     `UPDATE user_accounts
         SET closed_at = CURRENT_TIMESTAMP,
@@ -998,6 +1102,11 @@ export const processCloseAccount = async (
     // the other types it is whatever the account held, reported and left
     // alone.
     closingBalance: residual,
+    // What the close gave back before it marked the row. Reported so the close
+    // screen can name the pockets that changed rather than leaving the owner to
+    // discover it on the pocket board.
+    releasedPockets,
+    budgetTerminatedAt,
     rowCount: 1,
     // RETIRED 2026-09-08 with the settlement policies. The response used to
     // name the policy applied and the account the residual moved to; CLOSE
