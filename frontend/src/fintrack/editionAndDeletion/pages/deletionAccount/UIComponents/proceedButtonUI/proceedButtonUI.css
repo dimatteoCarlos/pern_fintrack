@@ -30,6 +30,26 @@
 
 }
 
+/* THE ALTERNATIVE ROUTE, drawn as one. Outlined on the cream panel this
+   button sits on, in the feedback-error content colour the design system
+   states is valid on inverse and on panel. It stays red because it is
+   destructive; it stops being filled because it is not what the page is for. */
+.proceed-button--secondary{
+ background-color: transparent;
+ border: var(--border-width-thin) solid var(--color-feedback-error-content);
+ box-shadow: none;
+ color: var(--color-feedback-error-content);
+}
+
+.proceed-button--secondary:hover:not(:disabled){
+ background-color: var(--color-feedback-error-surface);
+ box-shadow: none;
+}
+
+.proceed-button--secondary:focus-visible{
+ outline-color: var(--color-feedback-error-content);
+}
+
 .proceed-button:hover:not(:disabled){
 background-color: var(--proceed-button-hover);
 transform :translateY(-2px);

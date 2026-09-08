@@ -245,7 +245,7 @@ accountDetailsTitle: "Target Account Details (Deletion)",
  // loadingReportText: "Loading RTA Impact Report...",
  reportErrorTitle: "Error Loading Report:",
  reportErrorMessage: "Cannot proceed with annulment.",// without knowing financial impact.",
- proceedToDeletionButton: "Proceed to Deletion",
+ proceedToDeletionButton: "Delete with adjustment",
  finalSuccessTitle: "Success!",
 
 //Titles and headers
@@ -405,7 +405,7 @@ accountDetailsTitle: "Detalles de la Cuenta Objetivo (Borrar)",
  // loadingReportText: "Cargando Reporte de Impacto RTA...",
  reportErrorTitle: "Error al Cargar el Reporte:",
  reportErrorMessage: "No se puede proceder con la anulación.",// sin conocer el impacto financiero.",
- proceedToDeletionButton: "Proceder a la Eliminación de la cuenta",
+ proceedToDeletionButton: "Eliminar con ajuste",
  finalSuccessTitle: "¡Éxito!",
 
 //InitialConfirmationDeleteAccountUI

@@ -376,22 +376,28 @@
   transform: translateY(0);
 }
 
-/* THE ONLY METHOD OFFERED. The three above are outlined because they are a
-   menu and none of them is the answer; a button that is the page's single
-   action is not choosing between anything, so it is filled. Same warning
-   triad, so the method still reads at the cost it carries. */
+/* THE ONLY METHOD OFFERED, and the page's destructive action. It takes the
+   action-destructive token family rather than the warning triad the three
+   outlined methods use: those are a menu where none of the entries is the
+   answer, and this is the answer. The family exists for exactly this - the
+   ground of a destructive button and the content drawn on it - and it is what
+   makes this button, and not the alternative route beside it, read as what
+   the screen is for. */
 .deletion-method-button--only {
-  background-color: var(--color-feedback-warning-surface);
-  border-color: var(--color-feedback-warning-content);
+  background-color: var(--color-action-destructive-surface);
+  border-color: var(--color-action-destructive-surface);
+  color: var(--color-action-destructive-content);
 }
 
 .deletion-method-button--only:hover {
-  background-color: var(--color-feedback-warning-border);
+  background-color: var(--color-action-destructive-hover);
+  border-color: var(--color-action-destructive-hover);
   transform: translateY(-1px);
 }
 
 .deletion-method-button--only:active {
-  background-color: var(--color-feedback-warning-border);
+  background-color: var(--color-action-destructive-hover);
+  border-color: var(--color-action-destructive-hover);
   transform: translateY(0);
 }
 
