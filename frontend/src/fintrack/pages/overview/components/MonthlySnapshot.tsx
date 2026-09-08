@@ -1,5 +1,14 @@
 // frontend/src/fintrack/pages/overview/components/MonthlySnapshot.tsx
 // Block 05: the month measured against its own history, one card per domain.
+//
+// THE HEADLINE IS THE AVERAGE, not the month. The month's own figure is what
+// the domain card above already prints - domainMonthlyActual is, by its own
+// contract, "the same statement over the same accounts that produced the domain
+// card" - so a headline of that number put the same three figures on the screen
+// twice and left the block with nothing of its own to say. What this block
+// knows and the card above does not is the TYPICAL active month, so that is the
+// figure in large type and the month becomes one of the three baselines under
+// it, beside the operand it is compared against.
 // Built to propuesta-snapshot-mensual.html, which this replaces MonthlyAverage
 // with - the same three figures the old tile printed, plus the two baselines and
 // the deviation square it did not.
@@ -118,13 +127,20 @@ const tierOf = (row: MonthlySnapshotRow): Tier => {
  return 'alert';
 };
 
-const againstLine = (variance: number | null) => {
+// Names the MONTH, because the figure in large type above is now the average
+// and the variance is the month's distance from it. "above the typical active
+// month" was a complete sentence while the actual was the headline; under an
+// average headline it no longer says which of the two moved.
+const againstLine = (variance: number | null, month: string | null) => {
  if (variance === null) return 'no comparable month yet';
- if (variance === 0) return 'at the typical active month';
+
+ const period = monthLabel(month);
+
+ if (variance === 0) return `${period} is exactly at this average`;
 
  return variance > 0
-  ? 'above the typical active month'
-  : 'below the typical active month';
+  ? `${period} is above this average`
+  : `${period} is below this average`;
 };
 
 const Baseline = ({
@@ -169,8 +185,21 @@ const SnapshotCard = ({
     <span className='snapshot__period'>{monthLabel(month)}</span>
    </div>
 
+   {/* The typical active month, over twelve. The twelve and not the three for
+       the same reason the variance is read against it: a mean that already
+       moves fast cannot say whether a month is unusual. */}
    <div className='snapshot__actual'>
-    {money(row.currency, row.domainMonthlyActual)}
+    {row.activeMonthAverage12m === null
+     ? NO_FIGURE
+     : money(row.currency, row.activeMonthAverage12m)}
+   </div>
+
+   {/* The denominator, directly under the figure it divides. It used to sit on
+       a baseline cell; the headline needs it more, because a mean over one
+       active month and one over twelve print the same way and are not the same
+       claim. */}
+   <div className='snapshot__weight'>
+    typical active month · {row.activeMonths12m} of {WINDOW_MONTHS.m12} active
    </div>
 
    {/* The square and the figure are one statement, so they share a row and the
@@ -187,7 +216,7 @@ const SnapshotCard = ({
         )}`}
     </span>
     <span className='snapshot__against'>
-     {againstLine(row.varianceVsAverage)}
+     {againstLine(row.varianceVsAverage, month)}
     </span>
    </div>
 
@@ -199,13 +228,16 @@ const SnapshotCard = ({
      activeMonths={row.activeMonths3m}
      windowMonths={WINDOW_MONTHS.m3}
     />
-    <Baseline
-     label='Active mean · 12m'
-     value={row.activeMonthAverage12m}
-     currency={row.currency}
-     activeMonths={row.activeMonths12m}
-     windowMonths={WINDOW_MONTHS.m12}
-    />
+    {/* The month itself, which the headline used to be. It stays on the card
+        because it is one of the two operands of the variance above, and a
+        difference whose operands are not both on screen cannot be checked. */}
+    <div className='snapshot__baseline'>
+     <span className='snapshot__label'>{monthLabel(month)}</span>
+     <span className='snapshot__figure'>
+      {money(row.currency, row.domainMonthlyActual)}
+     </span>
+     <span className='snapshot__weight'>this month</span>
+    </div>
     <div className='snapshot__baseline'>
      <span className='snapshot__label'>Year to date</span>
      <span className='snapshot__figure'>
