@@ -222,6 +222,12 @@ process is this section, and he lifted the suspension on 2026-09-08. What that
 changes is permission, not method: every condition in 5.B still binds, and the
 runner is still a person at a terminal.
 
+**The lift is permission for the process, not for any given run.** Stated by
+Carlos on 2026-09-08, immediately after lifting it: each production migration
+is authorized by him individually. So there is no state in which a run is
+already approved because the suspension is gone — the approval is per run, and
+it is condition 4 in 5.B.
+
 **It required no code change.** The `NODE_ENV=production` refusal in `db:align`
 and `db:migrate` was never the suspension — see 5.4 — and it stays.
 
@@ -271,12 +277,12 @@ same person deciding, with the record kept for free. It is not proposed yet
 because it puts production credentials into CI secrets, which is a new exposure
 and a separate decision.
 
-### 5.B The three conditions the decision carries
+### 5.B The four conditions the decision carries
 
 The manual run as it was performed on 2026-08-22 is not good enough on its own:
 it left `align.log` at the repository root and a ledger row typed by hand under
-a name no runner produces. All three conditions are what make the manual run
-auditable.
+a name no runner produces. The first three conditions are what make the manual
+run auditable; the fourth is what makes it authorized.
 
 1. **Through `db:align` and `db:migrate`, never through `psql`.** The runner
  writes the ledger row inside the same transaction as the schema it names. A
@@ -287,6 +293,13 @@ auditable.
  this machine. `assertExpectedDatabase` refuses without either.
 3. **With `db:state` captured before and after, into the repository.** That is
  the record. A `.log` at the repository root is not one.
+4. **With Carlos's authorization for that specific run.** Stated by him on
+ 2026-09-08 when he lifted the suspension. It is not carried by the lift, not by
+ a previous run having been approved, and not by a peer session relaying that it
+ was: the authorization is per run and comes from Carlos directly. Nothing in
+ the code enforces this one — `DB_EXPECTED` and `DB_REMOTE_OK` assert which
+ database, not who agreed to it — so it is enforced by the operator naming the
+ files about to run and getting a yes for those files.
 
 ### 5.0 Prove which database you are about to write to
 
