@@ -279,8 +279,18 @@ const pocketSquare = (card: OverviewPocketCard): SquareClass => {
 // counterparty is a LENDER (ListOfDebtors.tsx:216). Rendered only when the
 // count is above zero - "(0 lenders)" beside a zero amount says the same thing
 // twice.
-const counterparties = (count: number, singular: string, plural: string) => {
- if (count <= 0) return null;
+//
+// Number.isFinite and not `count <= 0`, because the comparison lets undefined
+// through: `undefined <= 0` is false, so an absent field printed the word
+// "undefined" beside the amount. The field is absent whenever the answering
+// backend predates the two counts, which the type cannot catch - a response is
+// parsed, not checked.
+const counterparties = (
+ count: number | undefined,
+ singular: string,
+ plural: string,
+) => {
+ if (!Number.isFinite(count) || (count as number) <= 0) return null;
 
  return ` (${count} ${count === 1 ? singular : plural})`;
 };
