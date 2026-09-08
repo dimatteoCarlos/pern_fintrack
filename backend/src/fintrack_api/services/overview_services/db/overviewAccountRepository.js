@@ -306,7 +306,12 @@ export async function getPnlAccountIds(pool, userId) {
 }
 
 /**
- * The accounts of one type belonging to a user, slack excluded.
+ * The accounts of one type belonging to a user.
+ *
+ * NOT slack excluded, which this said until 2026-09-08 and the statement above
+ * has not done since the name comparison was removed from it. The type is what
+ * keeps the compensation account out, and an owner's own account named 'slack'
+ * stays in - which is the whole point of having dropped the name test.
  *
  * @param {object} pool - Database pool
  * @param {string} userId - UUID from the token, never from the client body
