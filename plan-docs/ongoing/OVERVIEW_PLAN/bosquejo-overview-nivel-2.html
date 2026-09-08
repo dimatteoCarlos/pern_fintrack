@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview Nivel 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap">
+<style>
+ *, *::before, *::after { box-sizing: border-box; }
+ img, svg { max-width: 100%; height: auto; }
+
+ /* Misma paleta de lectura que bosquejo-overview-nivel-1.html y
+    bosquejo-overview-nivel-3.html, para que los tres se lean como una serie.
+    No son tokens de la app: P5 pide los tokens reales antes de traducir
+    cualquier bloque a una hoja de estilos. */
+ :root {
+  --ground: #10161B;
+  --ground-deep: #0A0F13;
+  --sheet: #C9D6DD;
+  --sheet-ink: #1A2429;
+  --sheet-mute: #5A6E78;
+  --sheet-rule: #B0C1CA;
+  --rule: #2C3B45;
+  --rule-soft: #1D2830;
+  --paper-ink: #A9BDC7;
+  --paper-mute: #6E838E;
+  --bright: #E4EEF3;
+
+  --nat-position: #7FA6B8;
+  --nat-flow: #C98A2E;
+  --nat-trend: #6FA98C;
+  --nat-none: #6E838E;
+  --alarm: #C4553C;
+
+  --nat-position-sheet: #3E6577;
+  --nat-flow-sheet: #8A6520;
+  --nat-trend-sheet: #2F6B4F;
+
+  /* La rampa del Pareto, la misma del nivel 1, para que la distribucion se lea
+     igual en las dos pantallas. */
+  --ramp-1: #C98A2E;
+  --ramp-2: #B07E33;
+  --ramp-3: #8F6A32;
+  --ramp-4: #6E5530;
+  --ramp-5: #4E402C;
+  --ramp-6: #3C3529;
+
+  --nav-hint: #45606E;
+  --focus-ring: #7FA6B8;
+
+  --font-display: 'Chivo', system-ui, -apple-system, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, monospace;
+  --font-prose: 'Newsreader', Georgia, serif;
+
+  --s1: 0.375rem;
+  --s2: 0.75rem;
+  --s3: 1.25rem;
+  --s4: 2rem;
+  --s5: 3.25rem;
+  --s6: 5rem;
+ }
+
+ body {
+  margin: 0;
+  background: var(--ground);
+  background-image:
+   linear-gradient(var(--rule-soft) 1px, transparent 1px),
+   linear-gradient(90deg, var(--rule-soft) 1px, transparent 1px);
+  background-size: 44px 44px;
+  color: var(--paper-ink);
+  font-family: var(--font-prose);
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+ }
+
+ .wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--s5) var(--s3) var(--s6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+ }
+
+ /* ---- masthead ---- */
+
+ .masthead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: var(--s3);
+ }
+ .masthead__eyebrow {
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+ }
+ .masthead__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.9rem, 6vw, 3.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--bright);
+  margin: 0;
+  text-wrap: balance;
+ }
+ .masthead__lede {
+  margin: 0;
+  font-size: 1.08rem;
+  max-width: 62ch;
+ }
+ .masthead__note {
+  margin: 0;
+  font-size: 0.94rem;
+  color: var(--paper-mute);
+  max-width: 74ch;
+ }
+ .masthead__note b { color: var(--paper-ink); }
+
+ /* ---- bloques ---- */
+
+ .block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+ }
+ .block__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  border-left: 2px solid var(--rule);
+  padding-left: var(--s2);
+ }
+ .block__kicker {
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+ }
+ .block__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.15rem, 3.4vw, 1.55rem);
+  color: var(--bright);
+  margin: 0;
+  letter-spacing: -0.01em;
+ }
+ .block__prose {
+  margin: 0;
+  max-width: 74ch;
+ }
+ .block__prose b { color: var(--bright); }
+ .block__prose code,
+ .masthead__note code,
+ .cell code,
+ .verdict code {
+  font-family: var(--font-code);
+  font-size: 0.86em;
+  color: var(--nat-position);
+ }
+
+ /* ---- tablas ---- */
+
+ .table-scroll { overflow-x: auto; }
+
+ table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+ }
+ th, td {
+  text-align: left;
+  padding: var(--s2);
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+ }
+ th {
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+ }
+ tbody tr:last-child td { border-bottom: none; }
+ .cell--domain {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--bright);
+  white-space: nowrap;
+ }
+ .cell--none { color: var(--nat-none); font-style: italic; }
+ .cell--yes { color: var(--nat-trend); }
+ .cell code { white-space: nowrap; }
+
+ /* ---- veredicto: la respuesta a la pregunta que abre el archivo ---- */
+
+ .verdict {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--nat-flow);
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  background: var(--ground-deep);
+ }
+ .verdict__label {
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--nat-flow);
+ }
+ .verdict p { margin: 0; max-width: 74ch; }
+ .verdict b { color: var(--bright); }
+
+ /* ---- el telefono: la pantalla dibujada a 360 px ---- */
+
+ .phones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  align-items: flex-start;
+ }
+ .phone {
+  width: 360px;
+  max-width: 100%;
+  flex: none;
+  border: 1px solid var(--rule);
+  background: var(--ground-deep);
+  display: flex;
+  flex-direction: column;
+ }
+ .phone__caption {
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+  padding: var(--s2);
+  border-bottom: 1px solid var(--rule-soft);
+ }
+
+ /* la banda blanca: .layout__header de la app */
+ .hdr {
+  background: var(--bright);
+  color: var(--sheet-ink);
+  padding: var(--s2) var(--s3) var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  position: relative;
+ }
+ .hdr__back {
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  color: var(--sheet-mute);
+ }
+ .hdr__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  margin: 0;
+  letter-spacing: -0.01em;
+ }
+ .hdr__picker {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 50%);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  background: var(--ground);
+  color: var(--bright);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: var(--s1) var(--s2);
+  font-family: var(--font-code);
+  font-size: 0.76rem;
+  white-space: nowrap;
+ }
+ .hdr__arrow { color: var(--paper-mute); }
+ .hdr__arrow--off { opacity: 0.35; }
+
+ .body {
+  padding: var(--s4) var(--s2) var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+ }
+
+ /* la tarjeta del dominio, la misma que el nivel 1 muestra */
+ .card {
+  background: var(--sheet);
+  color: var(--sheet-ink);
+  border-radius: 12px;
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+ }
+ .card__kicker {
+  font-family: var(--font-code);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sheet-mute);
+ }
+ .card__amount {
+  font-family: var(--font-code);
+  font-weight: 600;
+  font-size: 1.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+ }
+ .card__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s2);
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  color: var(--sheet-mute);
+ }
+ .card__delta--up { color: var(--alarm); }
+
+ /* seccion sobre fondo oscuro */
+ .sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s2) var(--s1);
+  border-top: 1px solid var(--rule-soft);
+ }
+ .sec__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+ }
+ .sec__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--bright);
+  margin: 0;
+ }
+ .sec__nature {
+  font-family: var(--font-code);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+ }
+ .sec__nature--trend { color: var(--nat-trend); }
+ .sec__nature--dist { color: var(--nat-flow); }
+ .sec__nature--decomp { color: var(--nat-position); }
+ .sec__hint {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--paper-mute);
+  font-family: var(--font-code);
+ }
+
+ /* la serie: SVG a mano, sin libreria */
+ .spark { display: block; width: 100%; height: 76px; }
+ .spark__axis { stroke: var(--rule); stroke-width: 1; }
+ .spark__line { fill: none; stroke: var(--nat-trend); stroke-width: 2; }
+ .spark__dot { fill: var(--nat-trend); }
+ .spark__dot--last { fill: var(--bright); }
+ .spark__label {
+  font-family: var(--font-code);
+  font-size: 8px;
+  fill: var(--paper-mute);
+ }
+
+ /* la descomposicion: dos partes que suman al total de la tarjeta */
+ .split { display: flex; height: 26px; width: 100%; }
+ .split__part {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-code);
+  font-size: 0.66rem;
+  color: var(--ground-deep);
+ }
+ .split__part--a { background: var(--ramp-1); }
+ .split__part--b { background: var(--ramp-5); color: var(--paper-ink); }
+ .split__legend {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-code);
+  font-size: 0.7rem;
+  color: var(--paper-mute);
+ }
+
+ /* la distribucion ranqueada */
+ .dist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s1); }
+ .dist li { display: grid; grid-template-columns: 1fr auto; gap: var(--s2); align-items: center; }
+ .dist__bar { height: 14px; display: flex; align-items: center; }
+ .dist__fill { height: 100%; }
+ .dist__name {
+  font-family: var(--font-code);
+  font-size: 0.7rem;
+  color: var(--paper-ink);
+  padding-left: var(--s1);
+  white-space: nowrap;
+ }
+ .dist__share {
+  font-family: var(--font-code);
+  font-size: 0.7rem;
+  color: var(--paper-mute);
+  font-variant-numeric: tabular-nums;
+ }
+
+ /* LA LISTA. El bloque que la aclaratoria del 2026-09-08 define */
+ .ledger {
+  background: var(--sheet);
+  color: var(--sheet-ink);
+  border-radius: 12px;
+  padding: var(--s2);
+  display: flex;
+  flex-direction: column;
+ }
+ .ledger__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s2);
+  padding: var(--s1) var(--s1) var(--s2);
+  border-bottom: 1px solid var(--sheet-rule);
+ }
+ .ledger__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin: 0;
+ }
+ .ledger__count {
+  font-family: var(--font-code);
+  font-size: 0.7rem;
+  color: var(--sheet-mute);
+  font-variant-numeric: tabular-nums;
+ }
+ .ledger__rows { list-style: none; margin: 0; padding: 0; }
+ .ledger__rows li { border-bottom: 1px solid var(--sheet-rule); }
+ .ledger__rows li:last-child { border-bottom: none; }
+
+ /* Un boton y no un div con onClick: la fila entera abre el detalle, y una fila
+    que no es boton no tiene foco de teclado ni estado :focus-visible. */
+ .txn {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s1) var(--s2);
+  padding: var(--s2) var(--s1);
+  background: none;
+  border: 0;
+  border-radius: 2px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+ }
+ .txn__name {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+ }
+ .txn__amount {
+  font-family: var(--font-code);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+ }
+ .txn__note {
+  font-family: var(--font-prose);
+  font-size: 0.8rem;
+  color: var(--sheet-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+ }
+ .txn__date {
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  color: var(--sheet-mute);
+  font-variant-numeric: tabular-nums;
+ }
+ .txn:hover { background: var(--sheet-rule); }
+ .txn:focus-visible { outline: 2px solid var(--nat-position-sheet); outline-offset: 2px; }
+
+ .ledger__more {
+  margin-top: var(--s2);
+  width: 100%;
+  padding: var(--s2);
+  background: none;
+  border: 1px solid var(--sheet-rule);
+  border-radius: 6px;
+  font-family: var(--font-code);
+  font-size: 0.76rem;
+  color: var(--sheet-ink);
+  cursor: pointer;
+ }
+ .ledger__more:hover { background: var(--sheet-rule); }
+ .ledger__more:focus-visible { outline: 2px solid var(--nat-position-sheet); outline-offset: 2px; }
+ .ledger__more[disabled] { opacity: 0.5; pointer-events: none; }
+
+ /* los tres estados */
+ .skel {
+  background: var(--rule-soft);
+  border-radius: 4px;
+  height: 12px;
+ }
+ .skel--tall { height: 26px; }
+ .skel--w60 { width: 60%; }
+ .skel--w40 { width: 40%; }
+ .state {
+  border: 1px dashed var(--rule);
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  align-items: flex-start;
+ }
+ .state__text { margin: 0; font-size: 0.88rem; color: var(--bright); }
+ .state__detail { margin: 0; font-size: 0.8rem; color: var(--paper-mute); font-family: var(--font-code); }
+ .state__btn {
+  font-family: var(--font-code);
+  font-size: 0.76rem;
+  padding: var(--s1) var(--s2);
+  background: none;
+  border: 1px solid var(--nav-hint);
+  border-radius: 4px;
+  color: var(--bright);
+  cursor: pointer;
+ }
+ .state__btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+ /* ---- pros y contras ---- */
+
+ .weigh {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--s3);
+ }
+ .opt {
+  border: 1px solid var(--rule);
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+ }
+ .opt--won { border-color: var(--nat-trend); }
+ .opt__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--bright);
+  margin: 0;
+ }
+ .opt__tag {
+  font-family: var(--font-code);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+ }
+ .opt--won .opt__tag { color: var(--nat-trend); }
+ .opt ul { margin: 0; padding-left: var(--s3); font-size: 0.88rem; }
+ .opt li { margin-bottom: var(--s1); }
+ .opt li b { color: var(--bright); }
+
+ /* ---- brechas ---- */
+
+ .gaps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+ .gaps li {
+  border-left: 2px solid var(--alarm);
+  padding-left: var(--s2);
+  font-size: 0.94rem;
+  max-width: 78ch;
+ }
+ .gaps b { color: var(--bright); }
+ .gaps code { font-family: var(--font-code); font-size: 0.86em; color: var(--nat-position); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+ <header class="masthead">
+  <div class="masthead__eyebrow">Bosquejo · Overview · Nivel 2</div>
+  <h1 class="masthead__title">La pantalla de un dominio</h1>
+  <p class="masthead__lede">
+   El nivel 1 responde cuál es mi situación. El nivel 2 responde por qué, para
+   un dominio y un mes. Se entra desde una tarjeta del nivel 1 y se sale hacia
+   el nivel 3, que es una cuenta o un deudor.
+  </p>
+  <p class="masthead__note">
+   Escrito el 2026-09-08. Este archivo abre con la comparación que pediste
+   —<b>si es muy diferente a lo existente</b>— porque de esa respuesta depende
+   cuánto de la pantalla hay que dibujar y cuánto ya está escrito. La respuesta
+   está en el primer bloque y el resto del archivo la sostiene.
+  </p>
+ </header>
+
+ <!-- =========================================================== -->
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 1 · La comparación que pediste</div>
+   <h2 class="block__name">Qué existe hoy, medido en el código</h2>
+  </div>
+
+  <p class="block__prose">
+   No hay ninguna ruta de nivel 2. La rama de overview en <code>App.tsx</code>
+   declara un solo hijo, el índice, y las dos rutas <code>overview/accounts/:accountId</code>
+   y <code>overview/account/:accountId</code> están declaradas al lado del layout
+   y son destinos de nivel 3. Lo más cercano que existe es un enlace
+   <b>comentado</b> en <code>LastMovements.tsx:56</code> hacia
+   <code>/fintrack/overview/movements/expense</code>: alguien ya imaginó la
+   pantalla y no la construyó.
+  </p>
+
+  <p class="block__prose">
+   Lo que sí existe son tres tableros por dominio, y los tres tienen exactamente
+   la misma forma. Ninguno es un nivel 2.
+  </p>
+
+  <div class="table-scroll">
+   <table>
+    <thead>
+     <tr>
+      <th>Tablero</th>
+      <th>Ruta</th>
+      <th>Qué lista</th>
+      <th>Qué publica además</th>
+      <th>Selector de mes</th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td class="cell--domain">Presupuesto</td>
+      <td><code>budget</code></td>
+      <td>categorías de gasto — <code>ListCategory</code>, <code>Budget.tsx:48</code></td>
+      <td class="cell--none">nada; el encabezado y un botón de crear</td>
+      <td class="cell--yes">sí</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Bolsillos</td>
+      <td><code>pocket</code></td>
+      <td>bolsillos — <code>ListPocket</code>, <code>Pocket.tsx:31</code></td>
+      <td>tres lecturas del tablero — <code>PocketBoardReadings</code>, <code>Pocket.tsx:29</code></td>
+      <td class="cell--yes">sí</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Deudas</td>
+      <td><code>debts/debtors</code></td>
+      <td>deudores — <code>ListOfDebtors</code>, <code>Debtors.tsx:39</code></td>
+      <td class="cell--none">nada; un título Summary y un botón de crear</td>
+      <td class="cell--none">no</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Ingreso</td>
+      <td class="cell--none">no existe</td>
+      <td class="cell--none">—</td>
+      <td class="cell--none">—</td>
+      <td class="cell--none">—</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Inversión</td>
+      <td class="cell--none">no existe</td>
+      <td class="cell--none">—</td>
+      <td class="cell--none">—</td>
+      <td class="cell--none">—</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Resultado</td>
+      <td class="cell--none">no existe</td>
+      <td class="cell--none">—</td>
+      <td class="cell--none">—</td>
+      <td class="cell--none">—</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+
+  <div class="verdict">
+   <div class="verdict__label">La respuesta</div>
+   <p>
+    <b>Muy diferente en contenido, casi idéntico en armazón.</b> Los tres
+    tableros existentes listan <b>entidades</b> —una categoría, un bolsillo, un
+    deudor— y cada fila navega al detalle de esa entidad. El nivel 2 lista
+    <b>análisis y transacciones</b>: una serie, una distribución, una
+    descomposición y todos los movimientos del mes. Ningún tablero de hoy dibuja
+    una serie, ninguno publica una tarjeta con total, conteo y delta, y ninguno
+    lista transacciones.
+   </p>
+   <p>
+    Eso hace que la pantalla sea nueva y que <b>el armazón no lo sea</b>. La
+    banda blanca con <code>TitleHeader</code>, el selector de mes, el
+    <code>content__presentation</code> sobre <code>cards__presentation</code>,
+    el <code>CardTitle</code> y el bloque de error con reintento de
+    <code>boardState</code> se toman tal cual de los tres tableros. Lo que hay
+    que diseñar son cuatro bloques: la tarjeta, la serie, el análisis y la
+    lista.
+   </p>
+   <p>
+    Y hay una consecuencia de ruteo: <b>tres dominios de seis tendrían dos
+    pantallas</b> —el tablero de gestión y el nivel 2 de lectura— igual que una
+    cuenta ya tiene dos rutas, la de edición y la de lectura. Es el mismo patrón
+    que el nivel 3 ya resolvió y no una duplicación nueva.
+   </p>
+  </div>
+ </section>
+
+ <!-- =========================================================== -->
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 2 · El backend</div>
+   <h2 class="block__name">El nivel 2 ya está servido</h2>
+  </div>
+
+  <p class="block__prose">
+   <code>GET /overview/:domain</code> está ruteado y responde. La respuesta trae
+   la tarjeta del dominio, la lista paginada de transacciones, la serie corta y
+   —cuando la petición lo pide— la sección de análisis. La profundidad es un
+   parámetro con dos valores, <code>derived</code> y <code>full</code>: el
+   primero reordena lo que la petición de nivel 1 ya trajo y no agrega ninguna
+   sentencia; el segundo corre las consultas que hay que correr por primera vez.
+   Ausente es ninguno de los dos, y esa es la respuesta que un cliente sin
+   actualizar sigue recibiendo.
+  </p>
+
+  <p class="block__prose">
+   Los seis constructores existen. <b>Las seis pantallas no son la misma
+   pantalla</b>, y esto es lo que decide cuántos bloques dibuja cada una.
+  </p>
+
+  <div class="table-scroll">
+   <table>
+    <thead>
+     <tr>
+      <th>Dominio</th>
+      <th>Serie</th>
+      <th>Distribución</th>
+      <th>Descomposición</th>
+      <th>Lo que no tiene, y por qué</th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td class="cell--domain">Ingreso</td>
+      <td class="cell--yes">trece puntos</td>
+      <td class="cell--yes">por fuente, con la concentración de la mayor</td>
+      <td class="cell--none">ninguna</td>
+      <td>el ingreso no se parte en dos términos publicados</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Gasto</td>
+      <td class="cell--yes">trece puntos</td>
+      <td class="cell--yes">el ranking de categorías, con su acumulado</td>
+      <td class="cell--yes">categorizado contra sin categorizar</td>
+      <td>—</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Resultado</td>
+      <td class="cell--yes">trece puntos</td>
+      <td class="cell--none">ninguna</td>
+      <td class="cell--yes">inversión contra el resto</td>
+      <td>agrupa por tipo de cuenta, no por cuenta: por eso tampoco navega al nivel 3</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Inversión</td>
+      <td class="cell--none">ninguna</td>
+      <td class="cell--yes">saldo por cuenta</td>
+      <td class="cell--yes">la conciliación itemizada, con su tolerancia</td>
+      <td>una serie de una acumulación sólo sube; en su lugar va el historial de aportes</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Deuda</td>
+      <td class="cell--yes">dos series, una por pierna</td>
+      <td class="cell--yes">por contraparte</td>
+      <td class="cell--none">ninguna</td>
+      <td>una sola serie escondería que las dos piernas se duplicaron a la vez</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Bolsillo</td>
+      <td class="cell--yes">trece puntos, la posición comprometida</td>
+      <td class="cell--yes">progreso por bolsillo</td>
+      <td class="cell--yes">comprometido contra libre</td>
+      <td>un bolsillo sin meta no tiene progreso: ausente, no cero</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+
+  <p class="block__prose">
+   <b>Una decisión que la especificación deja abierta y el código ya cerró.</b>
+   <code>PLAN_OVERVIEW_LEVEL2.md</code> registra como pendiente si la diferencia
+   de la conciliación se publica con su tolerancia. El constructor de inversión
+   ya publica los cuatro términos, la diferencia <b>y</b> la tolerancia, que era
+   la condición. La especificación hay que corregirla, no volver a decidirla.
+  </p>
+ </section>
+
+ <!-- =========================================================== -->
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 3 · La pantalla</div>
+   <h2 class="block__name">Gasto, a 360 px, con datos de ejemplo</h2>
+  </div>
+
+  <p class="block__prose">
+   Gasto es el dominio que más bloques tiene, así que dibujarlo dibuja el
+   máximo. Un dominio con menos secciones no cambia el orden: la tarjeta arriba,
+   la serie debajo, los análisis después y la lista al final. <b>La lista va
+   última a propósito</b> — es la sección más larga y es la única que crece, así
+   que cualquier cosa puesta debajo de ella queda fuera del alcance del lector.
+  </p>
+
+  <div class="phones">
+
+   <div class="phone">
+    <div class="phone__caption">Estado con datos</div>
+
+    <div class="hdr">
+     <div class="hdr__back">‹ Overview</div>
+     <h3 class="hdr__title">Gasto</h3>
+     <div class="hdr__picker">
+      <span class="hdr__arrow">‹</span>
+      <span>Agosto 2026</span>
+      <span class="hdr__arrow hdr__arrow--off">›</span>
+     </div>
+    </div>
+
+    <div class="body">
+
+     <div class="card">
+      <div class="card__kicker">Total del mes</div>
+      <div class="card__amount">1.284,50</div>
+      <div class="card__meta">
+       <span>63 movimientos</span>
+       <span class="card__delta--up">+11,4 % vs julio</span>
+      </div>
+     </div>
+
+     <div class="sec">
+      <div class="sec__head">
+       <h4 class="sec__name">Trece meses</h4>
+       <span class="sec__nature sec__nature--trend">Tendencia</span>
+      </div>
+      <svg class="spark" viewBox="0 0 320 76" role="img" aria-label="Serie mensual de gasto de los últimos trece meses">
+       <line class="spark__axis" x1="0" y1="64" x2="320" y2="64"></line>
+       <polyline class="spark__line" points="8,44 34,38 60,50 86,30 112,42 138,26 164,46 190,34 216,52 242,28 268,40 294,22 312,16"></polyline>
+       <circle class="spark__dot" cx="8" cy="44" r="2"></circle>
+       <circle class="spark__dot" cx="86" cy="30" r="2"></circle>
+       <circle class="spark__dot" cx="164" cy="46" r="2"></circle>
+       <circle class="spark__dot" cx="242" cy="28" r="2"></circle>
+       <circle class="spark__dot--last" cx="312" cy="16" r="3.5"></circle>
+       <text class="spark__label" x="0" y="74">ago 25</text>
+       <text class="spark__label" x="286" y="74">ago 26</text>
+      </svg>
+      <p class="sec__hint">El último punto es el mes en pantalla. Los doce anteriores son contra qué se lo juzga.</p>
+     </div>
+
+     <div class="sec">
+      <div class="sec__head">
+       <h4 class="sec__name">Categorizado y sin categorizar</h4>
+       <span class="sec__nature sec__nature--decomp">Descomposición</span>
+      </div>
+      <div class="split">
+       <div class="split__part split__part--a" style="width: 82%;">82 %</div>
+       <div class="split__part split__part--b" style="width: 18%;">18 %</div>
+      </div>
+      <div class="split__legend">
+       <span>1.053,29 con categoría</span>
+       <span>231,21 sin categoría</span>
+      </div>
+      <p class="sec__hint">Los dos términos suman al total de la tarjeta, no a una segunda lectura de él.</p>
+     </div>
+
+     <div class="sec">
+      <div class="sec__head">
+       <h4 class="sec__name">Por categoría</h4>
+       <span class="sec__nature sec__nature--dist">Distribución</span>
+      </div>
+      <ul class="dist">
+       <li>
+        <div class="dist__bar"><div class="dist__fill" style="width: 100%; background: var(--ramp-1);"></div><span class="dist__name">Mercado</span></div>
+        <span class="dist__share">31 %</span>
+       </li>
+       <li>
+        <div class="dist__bar"><div class="dist__fill" style="width: 74%; background: var(--ramp-2);"></div><span class="dist__name">Vivienda</span></div>
+        <span class="dist__share">23 %</span>
+       </li>
+       <li>
+        <div class="dist__bar"><div class="dist__fill" style="width: 52%; background: var(--ramp-3);"></div><span class="dist__name">Transporte</span></div>
+        <span class="dist__share">16 %</span>
+       </li>
+       <li>
+        <div class="dist__bar"><div class="dist__fill" style="width: 38%; background: var(--ramp-4);"></div><span class="dist__name">Servicios</span></div>
+        <span class="dist__share">12 %</span>
+       </li>
+       <li>
+        <div class="dist__bar"><div class="dist__fill" style="width: 24%; background: var(--ramp-5);"></div><span class="dist__name">Ocio</span></div>
+        <span class="dist__share">7 %</span>
+       </li>
+      </ul>
+      <p class="sec__hint">Cada fila navega al nivel 3. Es la misma fila que define el bosquejo de nivel 3.</p>
+     </div>
+
+     <div class="ledger">
+      <div class="ledger__head">
+       <h4 class="ledger__title">Movimientos del mes</h4>
+       <span class="ledger__count">20 de 63</span>
+      </div>
+      <ul class="ledger__rows">
+       <li>
+        <button type="button" class="txn">
+         <span class="txn__name">Mercado / Supermercado / Necesario</span>
+         <span class="txn__amount">86,40</span>
+         <span class="txn__note">compra semanal</span>
+         <span class="txn__date">28/08/2026</span>
+        </button>
+       </li>
+       <li>
+        <button type="button" class="txn">
+         <span class="txn__name">Transporte / Combustible / Necesario</span>
+         <span class="txn__amount">52,00</span>
+         <span class="txn__note">—</span>
+         <span class="txn__date">27/08/2026</span>
+        </button>
+       </li>
+       <li>
+        <button type="button" class="txn">
+         <span class="txn__name">Ocio / Restaurante / Discrecional</span>
+         <span class="txn__amount">31,75</span>
+         <span class="txn__note">cumpleaños</span>
+         <span class="txn__date">26/08/2026</span>
+        </button>
+       </li>
+       <li>
+        <button type="button" class="txn">
+         <span class="txn__name">Servicios / Electricidad / Necesario</span>
+         <span class="txn__amount">74,10</span>
+         <span class="txn__note">—</span>
+         <span class="txn__date">25/08/2026</span>
+        </button>
+       </li>
+      </ul>
+      <button type="button" class="ledger__more">Cargar 20 más</button>
+     </div>
+
+    </div>
+   </div>
+
+   <div class="phone">
+    <div class="phone__caption">Los tres estados de fetch</div>
+
+    <div class="hdr">
+     <div class="hdr__back">‹ Overview</div>
+     <h3 class="hdr__title">Gasto</h3>
+     <div class="hdr__picker">
+      <span class="hdr__arrow">‹</span>
+      <span>Cargando…</span>
+      <span class="hdr__arrow hdr__arrow--off">›</span>
+     </div>
+    </div>
+
+    <div class="body">
+
+     <div class="card">
+      <div class="card__kicker">Total del mes</div>
+      <div class="skel skel--tall skel--w60"></div>
+      <div class="card__meta">
+       <span class="skel skel--w40" style="width: 5rem;"></span>
+      </div>
+     </div>
+     <p class="sec__hint">Cargando: el esqueleto tiene la altura de la cifra, así que nada salta cuando llega.</p>
+
+     <div class="state" role="alert">
+      <p class="state__text">No se pudo cargar el gasto del mes.</p>
+      <p class="state__detail">The requested month is later than the current month (2026-09).</p>
+      <button type="button" class="state__btn">Reintentar</button>
+     </div>
+     <p class="sec__hint">Error: el mensaje del servidor entero. Ninguna cifra sobrevive a una petición fallida, así que ninguna se dibuja.</p>
+
+     <div class="state">
+      <p class="state__text">No hubo gasto en agosto de 2026.</p>
+      <p class="state__detail">Ni serie, ni ranking, ni lista. La serie sí se dibuja: un mes en cero es un punto real.</p>
+     </div>
+     <p class="sec__hint">Vacío: es distinto de error y distinto de cero. Un mes sin gasto no tiene distribución, y la distribución está ausente y no vacía.</p>
+
+    </div>
+   </div>
+
+  </div>
+ </section>
+
+ <!-- =========================================================== -->
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 4 · La aclaratoria del 2026-09-08</div>
+   <h2 class="block__name">Todas las transacciones del dominio y del período</h2>
+  </div>
+
+  <p class="block__prose">
+   El endpoint pagina: la página por omisión es de veinte filas y el techo que
+   el validador acepta es cien. La instrucción dice que la lista debe renderizar
+   <b>todas</b> las del dominio y del período. Las dos cosas no se contradicen
+   —lo que hay que decidir es dónde vive el "todas": en una sola respuesta o en
+   la pantalla que las acumula.
+  </p>
+
+  <div class="weigh">
+   <div class="opt opt--won">
+    <div class="opt__tag">Recomendada</div>
+    <h3 class="opt__name">Paginar y acumular en la pantalla</h3>
+    <ul>
+     <li><b>A favor:</b> ninguna respuesta queda sin techo, y el techo del validador conserva su razón de ser — <code>pageSize</code> llega del cliente.</li>
+     <li><b>A favor:</b> la primera pintura es de veinte filas, no de las que haya.</li>
+     <li><b>A favor:</b> el total ya viaja en la respuesta, así que la pantalla puede decir <b>20 de 63</b> y el lector verifica que están todas en vez de suponerlo.</li>
+     <li><b>A favor:</b> ningún análisis se calcula sobre las filas acumuladas — la serie, el ranking y la descomposición vienen del servidor y no dependen de cuántas páginas se hayan traído.</li>
+     <li><b>En contra:</b> exige estado de acumulación y una llave de fila estable, que hoy no existe.</li>
+    </ul>
+   </div>
+
+   <div class="opt">
+    <div class="opt__tag">Descartada</div>
+    <h3 class="opt__name">Subir el techo de página</h3>
+    <ul>
+     <li><b>A favor:</b> una sola petición, sin estado de acumulación, la lista completa en la primera pintura.</li>
+     <li><b>En contra:</b> la respuesta queda sin techo. Un mes con miles de movimientos construye miles de filas de veinticuatro columnas y las envía completas.</li>
+     <li><b>En contra:</b> contradice la razón escrita del tope, que es que el tamaño de página llega del cliente. Subirlo no la atiende, la posterga.</li>
+     <li><b>En contra:</b> el usuario espera por la última fila antes de ver la primera.</li>
+    </ul>
+   </div>
+  </div>
+
+  <div class="verdict">
+   <div class="verdict__label">La decisión y su condición</div>
+   <p>
+    <b>Paginar y acumular</b>, con el conteo visible. Y la condición que la hace
+    segura es la regla que ya quedó como criterio de aceptación: <b>la fila
+    lleva su propia identidad y el componente la lee de la fila.</b>
+   </p>
+   <p>
+    Hoy no se cumple. <code>ListContent.tsx:55</code> escribe
+    <code>key={index}</code> mientras la fila ya trae <code>transactionId</code>
+    y el manejador de clic lo usa en la línea siguiente. Con una sola página eso
+    no se nota. Acumulando páginas sí: la llave es la posición en el arreglo, y
+    al agregar filas React reutiliza el nodo equivocado. <b>La acumulación no se
+    implementa antes de que la llave sea el identificador de la transacción.</b>
+   </p>
+  </div>
+ </section>
+
+ <!-- =========================================================== -->
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 5 · La fila</div>
+   <h2 class="block__name">Qué hay que arreglar en el componente que ya lista movimientos</h2>
+  </div>
+
+  <p class="block__prose">
+   <code>ListContent</code> es el único componente de la app que renderiza
+   transacciones, y el nivel 2 lo va a reutilizar: la fila del teaser de cinco y
+   la fila de la lista completa son la misma fila. Antes de reutilizarlo hay
+   tres cosas medidas que corregir, y ninguna es de estilo.
+  </p>
+
+  <div class="table-scroll">
+   <table>
+    <thead>
+     <tr>
+      <th>Sitio</th>
+      <th>Qué hace hoy</th>
+      <th>Qué rompe al acumular páginas</th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td><code>ListContent.tsx:55</code></td>
+      <td>llave por posición en el arreglo</td>
+      <td>al agregar una página, React reutiliza el nodo de otra fila; el modal puede abrir la transacción equivocada</td>
+     </tr>
+     <tr>
+      <td><code>ListContent.tsx:55-56</code></td>
+      <td>la fila es un contenedor con <code>onClick</code>, no un botón</td>
+      <td>no recibe foco de teclado y no tiene <code>:focus-visible</code>; con veinte filas se nota poco y con doscientas es la única forma de recorrerlas</td>
+     </tr>
+     <tr>
+      <td><code>LastMovements.tsx:28-41</code></td>
+      <td>sin datos fabrica una fila con nombre Account Name, monto 0 y <code>transactionId: 0</code></td>
+      <td>una cifra ausente se dibuja como cero, y la fila falsa es clicable: abre el detalle de la transacción cero</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+
+  <p class="block__prose">
+   La tercera no es del nivel 2 y aparece acá porque es el mismo componente. Se
+   registra y se arregla donde vive.
+  </p>
+ </section>
+
+ <!-- =========================================================== -->
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 6 · Lo que queda abierto</div>
+   <h2 class="block__name">Brechas</h2>
+  </div>
+
+  <ul class="gaps">
+   <li>
+    <b>La ruta no está decidida.</b> El enlace comentado dice
+    <code>/fintrack/overview/movements/expense</code>; el endpoint dice
+    <code>/overview/:domain</code>. Recomiendo <code>overview/:domain</code>
+    como hijo del layout, porque la pantalla comparte el selector de mes y la
+    tarjeta, y un hijo del layout los hereda en vez de repetirlos.
+   </li>
+   <li>
+    <b>Ningún token de la app está asignado todavía.</b> Los colores de este
+    archivo son de lectura. La serie, la rampa de la distribución y los dos
+    términos de la descomposición necesitan tokens reales antes de traducirse a
+    una hoja de estilos, y ninguno existe hoy.
+   </li>
+   <li>
+    <b>Qué profundidad pide la pantalla.</b> <code>derived</code> no agrega
+    sentencias y <code>full</code> sí. Un dominio como deuda paga dos series
+    mensuales por pierna. Falta decidir si la pantalla pide <code>full</code> de
+    entrada o si el bloque caro se pide cuando el lector lo abre.
+   </li>
+   <li>
+    <b>Tres dominios quedarían con dos pantallas.</b> Presupuesto, bolsillos y
+    deudas ya tienen tablero de gestión. Falta decidir si el nivel 2 los enlaza
+    o si el tablero absorbe las secciones de análisis.
+   </li>
+   <li>
+    <b>La especificación tiene una decisión vencida.</b> Lista como abierta la
+    publicación de la diferencia de conciliación con su tolerancia, y el
+    constructor de inversión ya publica las dos.
+   </li>
+   <li>
+    <b>No hay prueba de frontend en el repositorio.</b> Vale para este bloque
+    como para el selector de mes: la llave de la fila y la acumulación se
+    verifican a mano hasta que exista.
+   </li>
+  </ul>
+ </section>
+
+</div>
+</body>
+</html>
