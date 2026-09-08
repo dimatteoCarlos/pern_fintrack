@@ -172,9 +172,9 @@ El estado se midió en el código, no se leyó del plan.
 | **P1b** | que banco e inversión obedezcan el mes de referencia | **HECHA**, commits `4f9be6a0` y `229286df` | un saldo pasado de banco y uno de inversión se reconstruyen bien; el mes en curso es mes a la fecha | — |
 | **P2** | reapuntar Pocket al modelo de plan | **HECHA**, commits `f4b999d9` y `f0388039` | objetivo, asignado, restante y progreso de Overview **igualan** los del tablero de Pocket, cifra por cifra | — |
 | **P3** | completar y corregir los indicadores de nivel 1 | **HECHA en el código** | `netWorth − liquidNetWorth == receivable` · gasto = categorizado + sin categorizar · las piernas de deuda coinciden en magnitud con el endpoint legacy | el monto sin categorizar se queda en nivel 2 por orden de Carlos: esa cifra debería ser cero |
-| **P4** | el contrato de la API | **HECHA**, sin comitear | el contrato está congelado y los tests de contrato pasan (69 pasan hoy) | el bloque no está comiteado |
+| **P4** | el contrato de la API | **HECHA**, commits `4b99fffa` y `7ba6761e` | el contrato está congelado y los tests de contrato pasan (69 pasan hoy) | — |
 | **P5** | frontend | **NO EMPEZADA** | **que la pantalla viva no tenga ninguna dependencia del endpoint de saldos por tipo para ninguna cifra de Overview** | ningún componente importa ninguna ruta de Overview |
-| **P6** | nivel 2 | **HECHA en el backend**, sin comitear | las seis pantallas de dominio tienen su análisis servido a las dos profundidades | 16 archivos modificados y 10 sin seguimiento; comitear es decisión de Carlos |
+| **P6** | nivel 2 | **BACKEND HECHO**, commit `7ba6761e` | las seis pantallas de dominio tienen su análisis servido a las dos profundidades | el renderer — tendencias, desgloses y Pareto —, que es trabajo de P5 y no una segunda etapa de backend |
 
 La condición de salida de P5 es la única que importa para el usuario: hoy esa
 pantalla hace **cinco llamadas para construir tres cifras**.
