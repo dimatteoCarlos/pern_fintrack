@@ -216,11 +216,31 @@ export type MonthlySnapshot = {
  meta: OverviewMeta;
 };
 
+// The three figures of block 05, and there is no fourth. No percentage is
+// published: a rate would have to be divided in the browser, which means the
+// browser deciding what a target of null or zero means, and the server already
+// answers that by withholding the target.
+export type OverviewFinancialGoals = {
+ // Always a number. It counts EVERY pocket, including the ones with no target:
+ // money set aside is set aside whether or not it was promised to a goal.
+ goalsTotalBalance: number;
+ // null and never 0 when no pocket carries a target. An absent target is not a
+ // target of zero, which would state that a goal was set and reached.
+ goalsTotalTarget: number | null;
+ // The plain subtraction, NOT floored: an owner who saved past the goal reads a
+ // negative remainder, and clamping it would report the goal as exactly met.
+ // null whenever the target is.
+ goalsTotalRemaining: number | null;
+ currency: string;
+ meta: OverviewMeta;
+};
+
 // The slice of the payload the frontend reads today.
 export type GetOverviewData = {
  window: ServedWindow;
  hero: OverviewHero;
  domainCards: OverviewDomainCards;
+ financialGoals: OverviewFinancialGoals;
  // An array and not a map, which is how the server sends it. Three entries, in
  // the order income, expense, pocket.
  monthlySnapshot: MonthlySnapshot[];

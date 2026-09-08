@@ -10,6 +10,7 @@ import { useFetch } from '../../hooks/useFetch.ts';
 // UI COMPONENTS
 import AccountBalance from './components/AccountBalance.tsx';
 import DomainCards from './components/DomainCards.tsx';
+import FinancialGoals from './components/FinancialGoals.tsx';
 import MonthlyAverage from './components/MonthlyAverage.tsx';
 import LastMovements, {
   LastMovementType,
@@ -446,6 +447,11 @@ function Overview() {
             them from here would have made this page fetch a month of its own,
             and the two months would drift the moment the picker moved. */}
         <MonthlyAverage />
+
+        {/* Block 05, in the sketch's own order: the goals read at the close of
+            the same month the cards above are cut to. Store-backed like the two
+            above it, so the page still makes one request for all three. */}
+        <FinancialGoals />
 
         {
           <OpenAddEditBtn
