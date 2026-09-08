@@ -23,6 +23,7 @@
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import {
@@ -77,6 +78,21 @@ const monthLabel = (month: string | null) => {
 };
 
 type Tier = 'calm' | 'watch' | 'alert' | 'unknown';
+
+// The class the shared StatusSquare appends, from the vocabulary
+// helpers/pocketStatus.ts already spells. The tier stays this file's own word
+// because the delta text beside the square is modified by it too, and the two
+// are one reading: mapping here keeps ONE square component on the page rather
+// than a second one declared for this block.
+//
+// 'calm' maps to the bare square, which paints the base teal. 'unknown' has no
+// counterpart in that vocabulary and is declared in overview-styles.css.
+const SQUARE_CLASS: Record<Tier, string> = {
+ calm: '',
+ watch: 'warning',
+ alert: 'alert',
+ unknown: 'unknown',
+};
 
 // The tier is read against the TWELVE-month mean and never the three: a month
 // compared to a mean that already moves fast cannot say whether it is unusual.
@@ -161,7 +177,7 @@ const SnapshotCard = ({
        square never appears without it. Both take the tier, unlike the sketch
        which gave them different ones: one reading gets one colour. */}
    <div className='snapshot__variance'>
-    <span className={`statusSquare statusSquare--${tier}`} />
+    <StatusSquare alert={SQUARE_CLASS[tier]} />
     <span className={`snapshot__delta snapshot__delta--${tier}`}>
      {row.varianceVsAverage === null
       ? NO_FIGURE

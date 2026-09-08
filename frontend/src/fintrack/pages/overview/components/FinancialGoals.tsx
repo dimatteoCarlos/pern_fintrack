@@ -8,15 +8,22 @@
 // its headline and the other two under the rule, which is the shape the monthly
 // snapshot already uses for a figure and the baselines behind it.
 //
-// THE SQUARE HAS NO ALERT TIER HERE and the absence is deliberate. A goal that
+// THE SQUARE HAS NO ALERT LEVEL HERE and the absence is deliberate. A goal that
 // is not reached yet is not late, because financialGoals publishes no due date -
 // nothing in it can be overdue. What CAN be late is a pocket commitment, and
 // that reading is already on the Pocket domain card, which grades overdueCount.
 // Painting an unreached goal red would put urgency on the page that nobody
 // measured.
+//
+// The scale is the pocket module's (helpers/pocketStatus.ts) and not one of this
+// file's own, because the question is the same one: how far a saved figure is
+// against a target it was promised to. That scale inverts the budget's -
+// approaching the target is the point - and this block is the other place in
+// the app where that inversion applies.
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import { OverviewFinancialGoals } from '../../../types/overviewTypes';
@@ -24,11 +31,6 @@ import { OverviewFinancialGoals } from '../../../types/overviewTypes';
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
 const NO_FIGURE = '—';
-
-// Below this share of the target the card says so. Above it the goals are under
-// way and the mark stays calm - a permanent ochre square on every set of goals
-// in progress would train the reader to ignore it.
-const COVERAGE_LIMIT = 0.5;
 
 const money = (currency: string, value: number) =>
  currencyFormat(currency, value, formatNumberCountry);
@@ -47,22 +49,36 @@ const monthLabel = (month: string | null) => {
  });
 };
 
-type Tier = 'calm' | 'watch' | 'unknown';
+// The class the shared StatusSquare appends, from the pocket module's
+// vocabulary. Only two of its seven levels are reachable from this block and
+// the rest are not, which is a property of what financialGoals publishes rather
+// than a simplification: without a due date nothing can be overdue or at risk,
+// and without a pace nothing can be ahead or behind. What is left is at the
+// target and short of it.
+//
+// The share the level is read from stays a comparison and never becomes a
+// published rate - see coverageLine below.
+type SquareClass = 'neutral' | 'info' | 'unknown';
 
-const tierOf = (goals: OverviewFinancialGoals): Tier => {
+const squareOf = (goals: OverviewFinancialGoals): SquareClass => {
  // No pocket carries a target, so there is nothing to be short of. An absent
  // target is not a target of zero, which would state that a goal was set and
  // reached.
  if (!goals.goalsTotalTarget) return 'unknown';
 
  // Not floored, so a negative remainder is an owner who saved past the goal.
+ // 'info' and not the bare square: the pocket module calls being past the
+ // target notable rather than merely fine, because it is the one reading that
+ // points at money the owner can move.
  if (goals.goalsTotalRemaining !== null && goals.goalsTotalRemaining <= 0) {
-  return 'calm';
+  return 'info';
  }
 
- const coverage = goals.goalsTotalBalance / goals.goalsTotalTarget;
-
- return coverage < COVERAGE_LIMIT ? 'watch' : 'calm';
+ // Under way, which asks nothing of the owner. The invented half-target
+ // threshold this replaces was a rule nothing in the app or the contract
+ // declared, and it painted an ochre square on every set of goals in its first
+ // half - a mark the reader would learn to ignore.
+ return 'neutral';
 };
 
 // The sentence beside the square, in money and never as a rate. The share the
@@ -95,7 +111,7 @@ function FinancialGoals() {
  const { goalsTotalBalance, goalsTotalTarget, goalsTotalRemaining, currency } =
   financialGoals;
 
- const tier = tierOf(financialGoals);
+ const square = squareOf(financialGoals);
 
  const amount = (value: number | null) =>
   value === null ? NO_FIGURE : money(currency, value);
@@ -125,7 +141,7 @@ function FinancialGoals() {
      <div className='snapshot__actual'>{money(currency, goalsTotalBalance)}</div>
 
      <div className='snapshot__variance'>
-      <span className={`statusSquare statusSquare--${tier}`} />
+      <StatusSquare alert={square} />
       <span className='snapshot__against'>{coverageLine(financialGoals)}</span>
      </div>
 

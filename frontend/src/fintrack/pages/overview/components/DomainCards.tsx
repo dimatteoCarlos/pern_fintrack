@@ -10,9 +10,15 @@
 // NO BARS AND NO SECOND FIGURE OF EQUAL WEIGHT. The cards publish far more than
 // they draw - pocket alone carries seven figures - and level 1 shows the
 // headline and one subordinate line. The rest belongs to level 2.
+//
+// ORDER. PnL sits last and not third. The first five answer "where do I stand"
+// in the order the owner reads them - what came in, what went out, what is
+// owed, what is committed, what is held - and the realised result is a
+// conclusion drawn over them rather than a sixth of the same kind.
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import {
@@ -65,50 +71,117 @@ const deltaLine = (delta: number | null, currency: string) => {
  return `${delta > 0 ? '▲' : '▼'} ${money(currency, Math.abs(delta))} vs prior month`;
 };
 
-// The health mark, the same one the monthly snapshot carries. 'unknown' is an
-// outlined square and means the reading could not be taken; it is NOT calm,
-// because no answer is not a good answer.
+// The same clause with the arrow PAINTED, and it is used on Income alone.
 //
-// FOUR CARDS OF SIX GET ONE. Income and Debt are deliberately without, and the
-// reason is that nothing they publish is a health statement: an income below
-// last month's is a smaller month, not an unhealthy one, and owing more than
-// you are owed is the ordinary condition of having a mortgage. A square on
-// either would be a rule invented in the browser, and an indicator nobody can
-// justify is worse than an absent one.
-//
-// The mark is never the SIGN of the amount. --color-amount-positive and
-// --color-amount-negative carry the same teal and the same dusty red for that
-// other question, which is why no figure on this page is painted with them:
-// two colour systems on one card cannot both be read.
-type Tier = 'calm' | 'watch' | 'alert' | 'unknown';
+// The colour says direction and not health, which is the debts module's rule
+// (ListOfDebtors.tsx:239): the words "vs prior month" already carry the
+// reading, and the hue is the second carrier for the eye that scans the column.
+// Income is the only card where a direction is unambiguous and the only card
+// with no status square, and both halves of that matter - --color-amount-* and
+// the square's palette are the same teal and the same rose, so a card wearing
+// both would be asking the reader to tell two colour systems apart at 12px.
+const coloredDeltaLine = (delta: number | null, currency: string) => {
+ if (delta === null) return NO_PRIOR_MONTH;
+ if (delta === 0) return `no change vs prior month`;
 
-// One account holding more than this share of the holdings is worth pointing
-// at. concentration is a ratio in 0-1, the opposite scale to pocket's progress.
-const CONCENTRATION_LIMIT = 0.5;
+ const direction = delta > 0 ? 'up' : 'down';
+
+ return (
+  <>
+   <span className={`domainCard__delta--${direction}`}>
+    {delta > 0 ? '▲' : '▼'} {money(currency, Math.abs(delta))}
+   </span>{' '}
+   vs prior month
+  </>
+ );
+};
+
+// The class the shared StatusSquare appends, and it is the vocabulary the
+// pocket module already spells in helpers/pocketStatus.ts rather than a set
+// invented for this page. '' is the bare square, which paints the base teal and
+// means the reading was taken and asks nothing of the owner.
+//
+// 'unknown' is the one addition, and it is NOT calm: no answer is not a good
+// answer. It has no counterpart in the pocket scale because a served pocket
+// always carries a level, while an overview card can be missing the figure its
+// reading depends on.
+//
+// FOUR CARDS OF SIX GET ONE. Income, Debt and Investment are deliberately
+// without. Nothing income publishes is a health statement - a smaller month is
+// a smaller month - owing more than you are owed is the ordinary condition of
+// having a mortgage, and investment carries no target to be measured against
+// yet. A square on any of the three would be a rule invented in the browser,
+// and an indicator nobody can justify is worse than an absent one.
+type SquareClass = '' | 'neutral' | 'info' | 'warning' | 'alert' | 'unknown';
 
 // Over budget, measured against categorizedExpense and not against totalAmount.
 // budgetVariance is budgetAmount minus what was spent inside a live category, so
 // it is NEGATIVE when the budget was exceeded. Null is a month with no budget in
 // force anywhere, which is an absent decision and not a breach.
-const expenseTier = (card: OverviewExpenseCard): Tier => {
+const expenseSquare = (card: OverviewExpenseCard): SquareClass => {
  if (card.budgetVariance === null) return 'unknown';
  if (card.budgetVariance < 0) return 'alert';
 
  // Spending that lost its category is not counted against the budget, so the
  // card can be inside its budget and still not know where the month went.
- return card.hasUncategorizedExpense ? 'watch' : 'calm';
+ return card.hasUncategorizedExpense ? 'warning' : '';
+};
+
+// The budget verdict in words, which is what the card was missing: it printed
+// the budget as a bare figure beside the spend and left the comparison to the
+// reader. budgetVariance is the comparison, already computed by the server.
+const budgetClause = (card: OverviewExpenseCard) => {
+ if (card.budgetVariance === null) return null;
+
+ return card.budgetVariance < 0
+  ? `over budget by ${money(card.currency, Math.abs(card.budgetVariance))}`
+  : `${money(card.currency, card.budgetVariance)} left of budget`;
 };
 
 // A losing month is the one health statement this card can make out of what it
 // publishes, and it is the only card where the sign of the figure and the
 // reading are the same thing.
-const pnlTier = (card: OverviewPnlCard): Tier =>
- card.totalAmount < 0 ? 'alert' : 'calm';
+const pnlSquare = (card: OverviewPnlCard): SquareClass =>
+ card.totalAmount < 0 ? 'alert' : '';
 
-const pocketTier = (card: OverviewPocketCard): Tier => {
+// The pocket reading, against the TARGET, on the scale helpers/pocketStatus.ts
+// declares for one pocket. That scale inverts the budget's: approaching the
+// target is the point, so a pocket at 63% is not warned for succeeding.
+//
+// Three of the seven levels are reachable from an aggregate and four are not.
+// ahead, onTrack and behind need a pace ratio against one deadline, and a total
+// over every pocket has no single deadline to compute one from - so the middle
+// of the scale collapses to 'neutral', which is the class onTrack itself takes.
+// completed is a TICK and not a square in that module; here the aggregate can
+// only be at or past its target, which is 'info' - notable, not wrong.
+//
+// progress is a rate OVER 100, not a ratio in 0-1.
+const POCKET_TARGET_REACHED = 100;
+
+const pocketSquare = (card: OverviewPocketCard): SquareClass => {
+ // A deadline that passed outranks every other reading, exactly as it does on
+ // the pocket board.
  if (card.overdueCount > 0) return 'alert';
+ if (!card.target) return 'unknown';
+ if (card.progress >= POCKET_TARGET_REACHED) return 'info';
 
- return card.uncoveredCount > 0 ? 'watch' : 'calm';
+ // A pocket with nothing funding it is short of the plan without being late,
+ // which is what the amber level says on the board.
+ return card.uncoveredCount > 0 ? 'warning' : 'neutral';
+};
+
+// "(2 lenders)" beside the leg, which is what the card could not say: an amount
+// alone does not distinguish one obligation from nine.
+//
+// The vocabulary is the debts module's and is taken from the SIGN, not from the
+// leg's own name: a balance below zero is money the user owes, so its
+// counterparty is a LENDER (ListOfDebtors.tsx:216). Rendered only when the
+// count is above zero - "(0 lenders)" beside a zero amount says the same thing
+// twice.
+const counterparties = (count: number, singular: string, plural: string) => {
+ if (count <= 0) return null;
+
+ return ` (${count} ${count === 1 ? singular : plural})`;
 };
 
 type CardProps = {
@@ -118,10 +191,10 @@ type CardProps = {
  // natures have no token of their own and inventing one would put an
  // unreviewed value in the palette.
  nature: 'flow' | 'position';
- // Absent on the two cards that publish no health statement, and absent is not
- // 'unknown': one says the domain has no such reading, the other says this
+ // Absent on the three cards that publish no health statement, and absent is
+ // not 'unknown': one says the domain has no such reading, the other says this
  // month's could not be taken.
- tier?: Tier;
+ square?: SquareClass;
  children: React.ReactNode;
  sub: React.ReactNode;
 };
@@ -131,7 +204,7 @@ type CardProps = {
 // width they needed, which is what forced every caption down to a size that
 // could not be read. The month is stated once above the grid and the card keeps
 // the half that differs between cards: the nature.
-const DomainCard = ({ label, nature, tier, children, sub }: CardProps) => (
+const DomainCard = ({ label, nature, square, children, sub }: CardProps) => (
  <article className='domainCard'>
   <div className='domainCard__head'>
    <span className='domainCard__label'>{label}</span>
@@ -145,7 +218,7 @@ const DomainCard = ({ label, nature, tier, children, sub }: CardProps) => (
       the reading - against the name it would look like part of the title and
       say nothing about which figure it grades. */}
   <div className='domainCard__sub'>
-   {tier && <span className={`statusSquare statusSquare--${tier}`} />}
+   {square !== undefined && <StatusSquare alert={square} />}
    <span>{sub}</span>
   </div>
  </article>
@@ -162,6 +235,8 @@ function DomainCards() {
 
  const { income, expense, pnl, debt, pocket, investment } = domainCards;
 
+ const budget = budgetClause(expense);
+
  return (
   <>
    <div className='presentation__card__title__container flx-row-sb'>
@@ -177,7 +252,7 @@ function DomainCards() {
    <DomainCard
     label='Income'
     nature='flow'
-    sub={deltaLine(income.delta, income.currency)}
+    sub={coloredDeltaLine(income.delta, income.currency)}
    >
     <div className='domainCard__figure'>
      {money(income.currency, income.totalAmount)}
@@ -187,16 +262,16 @@ function DomainCards() {
    <DomainCard
     label='Expense'
     nature='flow'
-    tier={expenseTier(expense)}
+    square={expenseSquare(expense)}
     sub={
      <>
+      {/* The budget verdict leads, because it is the clause the square
+          grades. Absent when no budget is in force or the categories span
+          currencies, and the clause disappears with it rather than printing a
+          zero budget. */}
+      {budget}
+      {budget && ' · '}
       {deltaLine(expense.delta, expense.currency)}
-      {/* The budget is a separate clause and not a second figure: it answers
-          what was decided, while the headline answers what was spent. Absent
-          when no budget is in force or the categories span currencies, and the
-          clause disappears with it rather than printing a zero budget. */}
-      {expense.budgetAmount !== null &&
-       ` · budget ${money(expense.currency, expense.budgetAmount)}`}
      </>
     }
    >
@@ -206,9 +281,75 @@ function DomainCards() {
    </DomainCard>
 
    <DomainCard
+    label='Debt'
+    nature='position'
+    sub={deltaLine(debt.delta, debt.currency)}
+   >
+    {/* Two legs and not one net. A net of −$550 does not distinguish "you owe
+        550" from "you are owed 1,750 and you owe 2,300", which are opposite
+        situations. Both print as positive magnitudes: the direction is in the
+        wording, so a negative would be a double negative.
+
+        Coloured by direction, the debts module's rule and its two tokens
+        (debts-styles.css:457-463). The colour is the SECOND carrier - the
+        words beside each figure say the same thing, which is what keeps the
+        rows readable in monochrome and to an eye that cannot separate the two
+        hues. */}
+    <div className='domainCard__figure domainCard__figure--split'>
+     <span className='domainCard__leg'>
+      You owe{counterparties(debt.payableCount, 'lender', 'lenders')}
+     </span>
+     <b className='domainCard__amount--owing'>
+      {money(debt.currency, debt.payable)}
+     </b>
+    </div>
+    <div className='domainCard__figure domainCard__figure--split'>
+     <span className='domainCard__leg'>
+      You&rsquo;re owed
+      {counterparties(debt.receivableCount, 'debtor', 'debtors')}
+     </span>
+     <b className='domainCard__amount--owed'>
+      {money(debt.currency, debt.receivable)}
+     </b>
+    </div>
+   </DomainCard>
+
+   <DomainCard
+    label='Pocket · committed'
+    nature='position'
+    square={pocketSquare(pocket)}
+    sub={
+     pocket.target
+      ? `${money(pocket.currency, pocket.target)} target · ${money(
+         pocket.currency,
+         pocket.remaining,
+        )} remaining`
+      : 'no target set on any pocket'
+    }
+   >
+    <div className='domainCard__figure'>
+     {money(pocket.currency, pocket.totalAmount)}
+    </div>
+   </DomainCard>
+
+   <DomainCard
+    label='Investment'
+    nature='position'
+    sub={
+     investment.accountCount === 1
+      ? '1 account — the count is as of today'
+      : `${investment.accountCount} accounts — the count is as of today`
+    }
+   >
+    <div className='domainCard__figure'>
+     {money(investment.currency, investment.ledgerBalance)}
+    </div>
+   </DomainCard>
+
+   <DomainCard
     label='PnL'
     nature='flow'
-    tier={pnlTier(pnl)}
+    square={pnlSquare(pnl)}
     sub={
      <>
       {deltaLine(pnl.delta, pnl.currency)}
@@ -227,64 +368,6 @@ function DomainCards() {
     <div className='domainCard__figure'>
      {pnl.totalAmount > 0 ? '+' : ''}
      {money(pnl.currency, pnl.totalAmount)}
-    </div>
-   </DomainCard>
-
-   <DomainCard
-    label='Debt'
-    nature='position'
-    sub={
-     debt.settledCount === 1
-      ? '1 debt settled at close'
-      : `${debt.settledCount} debts settled at close`
-    }
-   >
-    {/* Two legs and not one net. A net of −$550 does not distinguish "you owe
-        550" from "you are owed 1,750 and you owe 2,300", which are opposite
-        situations. Both print as positive magnitudes: the direction is in the
-        wording, so a negative would be a double negative. */}
-    <div className='domainCard__figure domainCard__figure--split'>
-     <span className='domainCard__leg'>You owe</span>
-     <b>{money(debt.currency, debt.payable)}</b>
-    </div>
-    <div className='domainCard__figure domainCard__figure--split'>
-     <span className='domainCard__leg'>You&rsquo;re owed</span>
-     <b>{money(debt.currency, debt.receivable)}</b>
-    </div>
-   </DomainCard>
-
-   <DomainCard
-    label='Pocket · committed'
-    nature='position'
-    tier={pocketTier(pocket)}
-    sub={
-     pocket.delta === null
-      ? NO_PRIOR_MONTH
-      : `${pocket.delta >= 0 ? '▲' : '▼'} ${money(
-         pocket.currency,
-         Math.abs(pocket.delta),
-        )} committed in the month`
-    }
-   >
-    <div className='domainCard__figure'>
-     {money(pocket.currency, pocket.totalAmount)}
-    </div>
-   </DomainCard>
-
-   <DomainCard
-    label='Investment'
-    nature='position'
-    tier={
-     investment.concentration > CONCENTRATION_LIMIT ? 'watch' : 'calm'
-    }
-    sub={
-     investment.accountCount === 1
-      ? '1 account — the count is as of today'
-      : `${investment.accountCount} accounts — the count is as of today`
-    }
-   >
-    <div className='domainCard__figure'>
-     {money(investment.currency, investment.ledgerBalance)}
     </div>
    </DomainCard>
    </section>

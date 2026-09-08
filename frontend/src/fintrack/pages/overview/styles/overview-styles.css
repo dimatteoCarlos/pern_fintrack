@@ -696,6 +696,17 @@ a.icon {
    for that other question, which is exactly why no figure on this page is
    painted with them. Two colour systems on one card would collide. */
 
+/* Overview draws the SHARED StatusSquare (BoxComponents.tsx) and no longer a
+   square of its own. The page had declared a second vocabulary - calm, watch,
+   alert - for the same job the pocket board, the budget board and the debtor
+   list already do with one, so the same reading wore two different colours
+   depending on which screen it was on.
+
+   Only two rules are left here. The first is a layout correction the shared
+   rule cannot make, because it does not know it sits in a flex row; the second
+   is the one level that vocabulary has no class for.
+
+   Retired and kept commented per the standing rule on deletions:
 .overviewLayout .statusSquare {
  flex: none;
  width: var(--space-3);
@@ -715,11 +726,65 @@ a.icon {
  background: var(--color-status-alert);
 }
 
-/* Empty and outlined, never calm. No reading is not a healthy reading, and a
-   filled square would assert something nobody measured. */
+   Empty and outlined, never calm. No reading is not a healthy reading, and a
+   filled square would assert something nobody measured.
+
 .overviewLayout .statusSquare--unknown {
  background: transparent;
  border: 1px solid var(--color-content-on-dark-subtle);
+}
+*/
+
+/* The shared square is a flex item here, and .domainCard__sub is a flex row
+   that wraps. Without this the square is the one child with no content and is
+   the first thing the row takes width from. */
+.overviewLayout .status__square {
+ flex: none;
+}
+
+/* The one level the shared vocabulary has no class for: the reading could not
+   be taken. Empty and outlined, never calm - no answer is not a good answer,
+   and a filled square of any hue would state one.
+
+   It has no counterpart on the pocket board because a served pocket always
+   carries a level, while an overview card can be missing the very figure its
+   reading depends on: a month with no budget in force, a set of goals with no
+   target, a variance with no comparable month behind it. */
+.overviewLayout .status__square.unknown {
+ background-color: transparent;
+ border: var(--border-width-thin) solid var(--color-content-on-dark-subtle);
+}
+
+/*------------*/
+/* The two debt legs, coloured by DIRECTION and not by health, which is the
+   debts module's rule and its two tokens (debts-styles.css:457-463). Both
+   figures print as magnitudes with the direction in the words beside them, so
+   the colour is the SECOND carrier: the rows read the same in monochrome and to
+   an eye that cannot separate teal from rose.
+
+   The debt card is one of the three that carry no status square, and that is
+   what makes this safe. --color-amount-positive is the same teal as
+   --color-status-ok and --color-amount-negative the same rose as
+   --color-status-alert, so a card wearing both systems would be asking the
+   reader to tell two meanings apart at one hue. */
+.overviewLayout .domainCard__amount--owed {
+ color: var(--color-amount-positive);
+}
+
+.overviewLayout .domainCard__amount--owing {
+ color: var(--color-amount-negative);
+}
+
+/* The income delta's arrow, on the same rule and for the same reason: income is
+   the other card with no square, and up and down are a direction rather than a
+   verdict. Only the arrow and the figure are painted - the words "vs prior
+   month" stay in the running colour, so the clause still reads as a sentence. */
+.overviewLayout .domainCard__delta--up {
+ color: var(--color-amount-positive);
+}
+
+.overviewLayout .domainCard__delta--down {
+ color: var(--color-amount-negative);
 }
 
 /*------------*/
