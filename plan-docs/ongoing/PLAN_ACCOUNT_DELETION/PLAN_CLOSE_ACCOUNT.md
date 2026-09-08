@@ -1900,13 +1900,60 @@ constraints stated rather than assumed:
 
 - **No foreign key on `account_id` into `user_accounts`.** The trigger writes the
   registry row before the account row exists, and the registry outlives it. This
-  omission is the design, not a gap.
+  omission is the design, not a gap. **Demonstrated rather than reasoned**, below.
 - **`user_id` NOT NULL**, and it is the only stamp written at creation beside the
   id itself.
-- **`close_reason` NOT NULL when `closed_at` is not null**, by the owner's
-  ruling. A row that has not been closed carries neither, so the rule is a CHECK
-  over the pair, not a column-level NOT NULL — a column-level one would refuse
-  every row the trigger writes at creation.
+- **The closure pair is a CHECK, not a column-level NOT NULL** — a column-level
+  one would refuse every row the trigger writes at creation. The exact predicate
+  is below, because the obvious spelling does not enforce what the owner ruled.
+
+**Why the foreign key really fails, tested and not inferred.** The migration
+session ran a probe against `fintrack_dev` inside one transaction that was always
+rolled back, using only `CREATE TEMP TABLE ... ON COMMIT DROP` and a `pg_temp`
+function, and reported zero surviving objects afterwards on every run. Three
+results, recorded as theirs:
+
+| Probe | Result |
+|---|---|
+| `account_id INT PRIMARY KEY REFERENCES parent(account_id)` plus a BEFORE INSERT trigger writing into it | **fails** — *insert or update on table "probe_registry" violates foreign key constraint*. The registry INSERT is its own statement inside the function, so its referential check fires at the end of THAT statement, before the outer insert completes |
+| the same with the foreign key removed | **succeeds**, and the registry receives the row: `NEW.account_id` carries the sequence value inside a BEFORE INSERT trigger |
+| `DELETE FROM parent` with no foreign key | **succeeds and the registry row survives it** — the registry outliving `user_accounts` is now demonstrated, not assumed |
+
+They expected the first to pass, on the reasoning that referential integrity runs
+in internal AFTER ROW triggers firing at end of statement. It does not, and they
+recorded the correction under their own name.
+
+**The mandatory reason needs a stricter predicate than "not null", and this is a
+defect in an earlier draft of this section.** *Mandatory, free text* is not what
+`CHECK (closed_at IS NULL OR close_reason IS NOT NULL)` enforces: measured, that
+shape **accepts an empty string and accepts a run of spaces** — exactly the row
+the requirement exists to prevent. The obvious repair is also insufficient:
+`length(btrim(close_reason)) > 0` **accepts a newline and tabs**, because
+one-argument `btrim` strips spaces only. The predicate that holds, verified across
+eight cases by the migration session:
+
+```sql
+CONSTRAINT chk_close_reason_accompanies_closure CHECK (
+ (closed_at IS NULL) = (close_reason IS NULL)
+ AND (close_reason IS NULL OR close_reason ~ '[^[:space:]]')
+)
+```
+
+**It accepts** both null — the row the trigger writes at creation — a real closure
+with both present, and a reason padded around real text. **It refuses** a closure
+with no reason, an empty string, spaces, a newline and tabs, and a reason with no
+closure.
+
+**That last case is a biconditional and it is deliberate.** An earlier draft said
+*a reason is required when a closure exists*, which is an implication and would
+accept a reason with no closure. The only writers are the trigger, which writes
+both null, and CLOSE, which writes both, so a reason without a closure can only
+come from a bug or a hand-written row, and refusing it costs nothing.
+
+**One thing the null pair does not distinguish, and does not need to.** A live
+account and an account the old mechanism erased both carry a null `closed_at`.
+They are told apart by presence in `user_accounts`, which is the resolution rule
+of 7.3, not by any column of the registry.
 
 **7.2.2 The trigger, and what makes it new here.** A BEFORE INSERT row trigger on
 `user_accounts` that inserts `(account_id, user_id)` into the registry. Two
