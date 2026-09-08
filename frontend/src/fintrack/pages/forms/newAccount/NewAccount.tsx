@@ -419,7 +419,7 @@ function NewAccount() {
             // on the property read and the page never rendered.
             to={location.state?.previousRoute || '/dashboard'}
             relative='path'
-            className='iconLeftArrow'
+            className='backArrow backArrow--dark'
           >
             <LeftArrowLightSvg />
           </Link>

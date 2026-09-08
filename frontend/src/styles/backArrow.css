@@ -1,0 +1,122 @@
+/* frontend/src/styles/backArrow.css
+
+   The back arrow pinned at the left of a title row. Seventeen views draw it and
+   one answered a pointer: .accounting__header--icon. The other sixteen declared
+   position and nothing else, and .iconArrowLeftDark:hover set
+   background-color: transparent, which is the default and therefore not a
+   state. So on sixteen screens the control gave no sign it was one.
+
+   Loaded from main.tsx and not from a page stylesheet. AccountingDashboard
+   mounts outside <Layout />, which is the only importer of generalStyles.css,
+   and the forms views ship as lazy chunks whose CSS arrives after the entry
+   bundle. The entry bundle is the one file every route has.
+
+   Two modifiers naming the SURFACE the arrow lands on, not its own colour,
+   which is what the design system prescribes for a shared control. The classes
+   being replaced named the opposite: .iconArrowLeftDark was the one on the
+   WHITE header .layout__header paints. */
+
+.backArrow {
+ position: absolute;
+ left: 0;
+ /* .title__header is absolute and full width, so without this the h1 covers
+    the arrow and swallows the click. The forms views set no z-index and their
+    title is a flex sibling, so raising it changes nothing there. */
+ z-index: var(--z-raised);
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ flex-shrink: 0;
+ /* --size-icon and not --size-touch-target: 32px around the 19px drawing
+    leaves a ring of six, which reads as a state on the mark; at 44px the fill
+    reads as a panel behind it. Same disc as .accounting__openAccount. */
+ width: var(--size-icon);
+ height: var(--size-icon);
+ border-radius: var(--radius-full);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* The tappable area the disc gives up, unpainted and hit-testable, so a finger
+   still gets the full --size-touch-target. Target minus drawn, in that order:
+   reversed, the calc resolves positive and inset shrinks the box. */
+.backArrow::after {
+ content: '';
+ position: absolute;
+ inset: calc((var(--size-touch-target) - var(--size-icon)) / -2);
+}
+
+/* Both assets hardcode their stroke, so colour would not reach the drawing
+   without naming the path. LeftArrowDarkSvg.svg additionally carries
+   fill="#141414" on its root, which the path inherits and uses to fill the
+   region its three segments close; on the inverted hover that fill is the same
+   value as the disc behind it. Corrected here and not in the asset: the files
+   are shared with other views and editing them is its own change. */
+.backArrow path {
+ stroke: currentColor;
+ fill: none;
+}
+
+/* On the dark app surface, --color-surface-app.
+   The fourteen forms views, EditAccount and AccountingDashboard. */
+.backArrow--dark {
+ color: var(--color-content-on-dark-muted);
+}
+
+.backArrow--dark:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.backArrow--dark:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.backArrow--dark:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+/* On the white header .layout__header, --light.
+   TitleHeader, shared by Budget, Debts, Overview and Pocket.
+
+   The same creme fill as the dark surface, on Carlos's call of 2026-09-08 to
+   see it rendered. What it costs, measured: --color-accent is #e8e4da and the
+   header is #ffffff, so the disc measures 1.27:1 against its own background,
+   where WCAG 2.2 SC 1.4.11 asks 3:1 of a non-text control indicator. The mark
+   inside it stays readable at 14.6:1; it is the disc that barely appears, so
+   the hover reads as the arrow darkening rather than as a filled control.
+
+   The alternative measured against the same header was
+   --color-content-primary as the fill with --color-accent as the ink, at
+   17.6:1. It is one line here and nothing else changes. */
+.backArrow--light {
+ color: var(--color-content-primary);
+}
+
+.backArrow--light:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.backArrow--light:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
+}
+
+/* Darker than the hover fill, so a press reads as a press. This one does clear
+   3:1 against the white header on its own. */
+.backArrow--light:active {
+ background-color: var(--color-content-secondary);
+ color: var(--color-accent);
+}
+
+/* No :disabled arm. Every site is a react-router Link, which renders an <a>,
+   and an <a> never matches :disabled. */
+
+@media (prefers-reduced-motion: reduce) {
+ .backArrow {
+  transition: none;
+ }
+}

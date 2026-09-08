@@ -472,7 +472,7 @@ export function EditAccount(): JSX.Element {
             state={returnState}
             className='form__header main__title--container '
           >
-            <div className='form__header--icon iconLeftArrow'>
+            <div className='form__header--icon backArrow backArrow--dark'>
               {<LeftArrowSvg />}
             </div>
             <div className='form__title'>{'Edit Account'}</div>

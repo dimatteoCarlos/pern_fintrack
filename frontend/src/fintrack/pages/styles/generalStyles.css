@@ -151,28 +151,35 @@ body {
   padding: 0;
 }
 
+/* Replaced by .backArrow and .backArrow--light in styles/backArrow.css.
+
+   Two defects the replacement settles. The names state the opposite of where
+   the classes mount: .iconArrowLeftDark was TitleHeader's, and TitleHeader
+   sits on .layout__header, which paints --light. And its hover set
+   background-color: transparent, which is the initial value, so the one
+   selector that named a hover declared no state at all.
+
+   .iconArrowLeftLight had no render site in the whole tree.
+
 .iconArrowLeftDark,
 .iconArrowLeftLight {
   display: flex;
-  /* padding: 0.5rem 0.75rem; */
-  /* border-radius: 0.5rem; */
   position: absolute;
   left: 0rem;
   cursor: pointer;
   z-index: 1;
-  /* border: 1px solid var(--dark); */
 }
 
 .iconArrowLeftDark:hover,
 .iconArrowLeftDark:active,
 .iconArrowLeftDark:focus {
-  /* background-color: rgba(232, 228, 218, 0.5); */
   background-color: transparent;
 }
 
 .iconArrowLeftLight:hover {
   background-color: rgba(41, 41, 41, 1);
 }
+*/
 
 .pt-2 {
   padding-top: 2rem;

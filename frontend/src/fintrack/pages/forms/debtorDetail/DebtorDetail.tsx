@@ -257,7 +257,7 @@ function DebtorDetail() {
             <Link
               to={previousRoute}
               relative='path'
-              className='iconLeftArrow'
+              className='backArrow backArrow--dark'
               aria-label='Go back'
             >
               <LeftArrowLightSvg aria-hidden='true' />
