@@ -179,6 +179,64 @@
   line-height: 1.5;
 }
 
+/* =======================================
+   RELATED ACCOUNTS, an accordion
+   =======================================
+   A native details/summary rather than a built widget: the disclosure state,
+   the keyboard handling and the accessible name come with the element, and
+   nothing here has to reimplement them. */
+
+.account-relations {
+  margin-top: var(--space-6);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-inverse);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.account-relations__summary {
+  padding: var(--space-4);
+  color: var(--color-content-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: background-color var(--motion-fast);
+}
+
+.account-relations__summary:hover {
+  background-color: var(--color-surface-panel);
+}
+
+/* index.css removes the outline globally, so the ring is declared here. The
+   summary sits on the white surface, so the strong border token is the one
+   that reads against it. */
+.account-relations__summary:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: calc(var(--border-width-thick) * -1);
+}
+
+.account-relations__summary:active {
+  background-color: var(--color-surface-panel);
+}
+
+.account-relations__summary:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.account-relations__body {
+  padding: 0 var(--space-4) var(--space-4) var(--space-4);
+}
+
+/* What the figures below are and are not. Secondary content, because it is
+   read once and then skipped. */
+.account-relations__note {
+  margin: 0 0 var(--space-4) 0;
+  color: var(--color-content-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
 /* The refusal, stated on the panel rather than inside the dialog.
    THE INFO TRIAD, NOT THE WARNING ONE, and the distinction is what the notice
    and the button beneath it are. This is a condition the owner can meet, and

@@ -104,6 +104,10 @@ const AccountDeletionView = ({
   const [isSoftModalOpen, setIsSoftModalOpen] = useState(false);
   const [isHardModalOpen, setIsHardModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  // Whether the account-relations section is expanded. It also decides whether
+  // the report is fetched at all: the section is closed on arrival, so an
+  // owner who never opens it never pays for the request.
+  const [isRelationsOpen, setIsRelationsOpen] = useState(false);
   // const prevAccountIdRef = useRef(targetAccountId);
   //-------------------------------------------
   //----------------------------------
@@ -167,7 +171,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
   } = useRTAImpactAndDeletion(
     targetAccountId,
     targetAccountName,
-    isAnnulmentOffered,
+    isRelationsOpen,
   );
 
   //----------------------------------
@@ -398,6 +402,55 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
             // showStatusIndicator
           />
 
+          {/* WHICH ACCOUNTS THIS ONE IS ENTANGLED WITH, as information about
+              the account rather than as a step in an operation. It sits under
+              the account card for that reason, and above the method, because
+              it is something to read before choosing.
+
+              CLOSED ON ARRIVAL, AND THAT IS WHAT MAKES IT FREE. The report is
+              a request, and gating the fetch on the section being open means
+              an owner who does not ask for it never pays for it.
+
+              THE COLUMNS BELONG TO THE ANNULMENT, NOT TO THE CLOSE. New
+              balance and net adjustment are a projection of what annulling
+              this account would do to each row; the close changes none of
+              them. The note inside says so, because a table headed "new
+              balance" on a close screen would otherwise read as the close's
+              own consequence. */}
+          <details
+            className='account-relations'
+            onToggle={(event) =>
+              setIsRelationsOpen(event.currentTarget.open)
+            }
+          >
+            <summary className='account-relations__summary'>
+              {translateText('relatedAccountsSummary')}
+            </summary>
+
+            <div className='account-relations__body'>
+              <p className='account-relations__note'>
+                {translateText('relatedAccountsNote')}
+              </p>
+
+              <h3 className='content-title'>{getReportTitle()}</h3>
+
+              {renderReportContent()}
+
+              {/* The annulment runs from here, where its own projection is on
+                  screen. Offered only while the balance refuses the close -
+                  it is the alternative to closing, not a step towards it. */}
+              {isAnnulmentOffered && !isLoadingReport && !reportError && (
+                <div className='action-section'>
+                  <ProceedButtonUI
+                    onClick={() => setIsModalOpen(true)}
+                    t={translateText}
+                    disabled={isExecutingDeletion}
+                  />
+                </div>
+              )}
+            </div>
+          </details>
+
           {/* 🎯 THE METHODS THIS SCREEN OFFERS. One of them today,
               CLOSE, by the owner's instruction of 2026-09-08
               (deletionMethodPolicy.ts); three of them when that flag is off,
@@ -468,33 +521,6 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               )}
             </div>
           </section>
-
-          {/* The RTA annulment: its impact report and the button that runs
-              it. Withdrawn from this screen while CLOSE is the only method
-              it offers (deletionMethodPolicy.ts). The service, its route and
-              its request path are untouched. */}
-          {isAnnulmentOffered && (
-            <>
-            {/* 🎯 MAIN CONTENT AREA */}
-            <main className='main-content '>
-              <h2 className='content-title'>{getReportTitle()}</h2>
-
-              {/* 🎯 DYNAMIC CONTENT */}
-              {renderReportContent()}
-
-              {/* 🎯 ACTION BUTTON (only if report is loaded successfully) */}
-              {!isLoadingReport && !reportError && (
-                <div className='action-section '>
-                  <ProceedButtonUI
-                    onClick={() => setIsModalOpen(true)}
-                    t={translateText}
-                    disabled={isExecutingDeletion}
-                  />
-                </div>
-              )}
-            </main>
-            </>
-          )}
 
         </>
       )}
