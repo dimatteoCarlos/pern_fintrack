@@ -1,0 +1,129 @@
+-- 036_cap_close_reason_length.sql
+--
+-- ============================================================================
+-- Migration 036: caps account_registry.close_reason at 255 characters with a
+--   named table CHECK, so an unbounded string supplied by the client can no
+--   longer be stored at whatever length it arrives.
+-- Depends on: 035_create_account_registry.sql, which declares the table, the
+--   column as TEXT, and chk_close_reason_accompanies_closure.
+-- Decided by: Carlos on 2026-09-08. The recommendation he approved was to cap
+--   it in the database rather than in the form, because a limit enforced only
+--   in the frontend is not honoured by a second writer.
+-- Measured before writing: fintrack_dev, fintrack_prod_rehearsal and
+--   fintrack_prod_rehearsal_full on 2026-09-08, read-only. The registry holds
+--   31, 99 and 99 rows respectively and exactly zero carry a close_reason on
+--   any of them, so the constraint validates against no existing value and
+--   cannot fail on adoption. fintrack_prod_data, the untouched dump, has no
+--   account_registry at all.
+-- ============================================================================
+--
+-- WHY THE COLUMN NEEDED A CAP AT ALL
+--
+-- close_reason is free text typed by the account's owner and sent in the DELETE
+-- body. Nothing between the request and the column limits it: the textarea in
+-- CloseAccountUI.tsx declares no maxLength, useCloseAccount.ts only trims, and
+-- deleteAccountService.js only refuses an empty or whitespace-only string. The
+-- column is TEXT, which in Postgres is bounded by the 1GB field limit and by
+-- nothing else. So the largest close_reason the system accepts today is the
+-- largest body the server accepts, which is not a decision anybody made about
+-- what a closure reason is.
+--
+-- WHY 255
+--
+-- Three readings agree on it. It is the widest VARCHAR in the chain, carried by
+-- account_name, category_name, subcategory and display_name, so it is already
+-- this schema's answer to "a line of text a person typed". The frontend's own
+-- truncation helper in frontend/src/fintrack/helpers/functions.ts defaults to
+-- 255 for the same kind of value. And the field is a three-row textarea, which
+-- shows roughly that much at once - a limit the owner meets at the edge of what
+-- they can see is a limit they can understand.
+--
+-- WHY A CHECK AND NOT VARCHAR(255)
+--
+-- Three reasons, in order of weight.
+--
+-- The rule stays where the other rule about this column already is. 035 states
+-- what close_reason may be through a named table constraint; a second named
+-- constraint is found by the same reader looking in the same place, while a
+-- type change states half the rules in the column definition and half below it.
+--
+-- Moving the cap later is then a constraint swap and not a type change. If 255
+-- turns out to be short, DROP CONSTRAINT and ADD CONSTRAINT is cheap and
+-- reversible; ALTER COLUMN TYPE is neither.
+--
+-- And the reversal loses nothing. Dropping this constraint restores exactly the
+-- prior state, which is why the DOWN section below carries no warning of the
+-- kind 034's does.
+--
+-- length() AND NOT octet_length()
+--
+-- The owner types characters, so the limit counts characters. octet_length()
+-- would give an accented reason fewer characters than an unaccented one of the
+-- same visible length, which is a rule nobody could explain to the person
+-- hitting it.
+--
+-- WHAT THIS DOES NOT DO, AND WHO OWNS IT
+--
+-- A request carrying 300 characters now fails inside the transaction with a
+-- constraint violation, which handlePostgresError turns into a 400, but a 400
+-- naming a constraint rather than the field. Two changes belong outside this
+-- file and outside this file's owner:
+--   - deleteAccountService.js should refuse an over-long reason before it takes
+--     the row lock, the way it already mirrors
+--     chk_close_reason_accompanies_closure, so the caller is told which field
+--     is wrong.
+--   - CloseAccountUI.tsx should declare maxLength={255} on the textarea and
+--     show the existing CharacterCounter, so the owner never reaches the
+--     refusal in the first place.
+-- Both are the deletion session's. The database is the enforcement; the form is
+-- the courtesy, and the point of the decision was that the courtesy is not the
+-- enforcement.
+--
+-- NO BOOT-PATH COUNTERPART, FOR THE REASON 035 HAS NONE
+--
+-- createTables.js declares no account_registry: the note above
+-- addFxAuditColumns() states that this path takes all four pieces of 035 or
+-- none of them, and none is what it takes today. A counterpart for a constraint
+-- on a table the boot path does not create would be a statement against a
+-- missing relation. When 035's counterpart is written, this cap is part of what
+-- it must carry, and the constraint to read back from an applied database is
+-- chk_close_reason_length.
+--
+-- RETIREMENT REGISTER
+--
+-- This constraint retires nothing, because there is no application-side length
+-- check anywhere to retire. That absence is the reason the migration exists,
+-- and it is why there is no entry in plan-docs/completed/PLAN_MIGRATION_CHAIN.md
+-- for this file.
+--
+-- ============================================================================
+
+-- UP ------------------------------------------------------------------------
+--
+-- No BEGIN or COMMIT here, and that is required rather than a preference.
+-- runMigrations.js opens one transaction per file and writes the ledger row
+-- inside it; a file that opened its own would close the runner's, leaving the
+-- ledger row outside the transaction that made it true.
+--
+-- The DROP first makes the pair re-runnable by hand on a database where an
+-- earlier attempt left the constraint behind. The runner never re-runs a file
+-- it has recorded, so this is for a hand-applied retry, not for the chain.
+
+ALTER TABLE account_registry
+ DROP CONSTRAINT IF EXISTS chk_close_reason_length;
+
+ALTER TABLE account_registry
+ ADD CONSTRAINT chk_close_reason_length
+ CHECK (close_reason IS NULL OR length(close_reason) <= 255);
+
+-- DOWN ----------------------------------------------------------------------
+--
+-- Run manually. Reversing is lossless: the constraint stores nothing and
+-- dropping it returns the column to unbounded TEXT, which is the state every
+-- row already satisfies.
+--
+-- BEGIN;
+-- ALTER TABLE account_registry
+--  DROP CONSTRAINT IF EXISTS chk_close_reason_length;
+-- DELETE FROM migrations WHERE filename = '036_cap_close_reason_length.sql';
+-- COMMIT;
