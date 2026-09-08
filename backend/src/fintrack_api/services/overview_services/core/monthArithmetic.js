@@ -105,9 +105,9 @@ export const ANALYSIS_MONTHS = 13;
  * @param {string} referenceMonth - 'YYYY-MM-01', already checked against the ceiling
  * @param {string} currentMonth - 'YYYY-MM-01' on the owner's calendar, from the database
  * @param {string} today - 'YYYY-MM-DD' on the owner's calendar
- * @returns {{referenceMonth: string, priorMonth: string, trendStart: string,
- *   analysisStart: string, periodStart: string, periodEnd: string,
- *   isCurrentMonth: boolean}}
+ * @returns {{referenceMonth: string, currentMonth: string, priorMonth: string,
+ *   trendStart: string, analysisStart: string, periodStart: string,
+ *   periodEnd: string, isCurrentMonth: boolean}}
  */
 export const makeReportingWindow = (referenceMonth, currentMonth, today) => {
  if (!currentMonth || !today) {
@@ -121,6 +121,10 @@ export const makeReportingWindow = (referenceMonth, currentMonth, today) => {
 
  return Object.freeze({
   referenceMonth,
+  // Carried out rather than consumed and dropped. It is the ceiling
+  // resolveWindowOr422 raises its 422 against, so a client that cannot read it
+  // discovers the bound only by asking for a month and being refused.
+  currentMonth,
   priorMonth: shiftMonths(referenceMonth, -1),
   trendStart: shiftMonths(referenceMonth, -(TREND_MONTHS - 1)),
   analysisStart: shiftMonths(referenceMonth, -(ANALYSIS_MONTHS - 1)),
@@ -136,15 +140,28 @@ export const makeReportingWindow = (referenceMonth, currentMonth, today) => {
  * The trend bounds stay inside: a client reading a series gets the month on
  * every point of it, so priorMonth and trendStart would be the same months
  * under a second name. What a client cannot derive is which month it was served
- * when it named none, and where inside that month the figures stop.
+ * when it named none, where inside that month the figures stop, and which month
+ * is the latest it may ask for.
+ *
+ * currentMonth is that last one, and isCurrentMonth does not cover it: the flag
+ * says whether the served month IS the ceiling and never says which month the
+ * ceiling is, so a client on any earlier month has no bound to offer. A month
+ * control computing it from the browser clock is the defect this module exists
+ * to remove.
  *
  * One definition for both endpoints. Two handlers each picking their own fields
  * would be two answers to "what period is this", which is the question the
  * whole window exists to answer once.
  *
  * @param {object} window - a window from makeReportingWindow
- * @returns {{referenceMonth: string, periodStart: string, periodEnd: string,
- *   isCurrentMonth: boolean}}
+ * @returns {{referenceMonth: string, currentMonth: string, periodStart: string,
+ *   periodEnd: string, isCurrentMonth: boolean}}
  */
-export const servedWindow = ({ referenceMonth, periodStart, periodEnd, isCurrentMonth }) =>
- Object.freeze({ referenceMonth, periodStart, periodEnd, isCurrentMonth });
+export const servedWindow = ({
+ referenceMonth,
+ currentMonth,
+ periodStart,
+ periodEnd,
+ isCurrentMonth,
+}) =>
+ Object.freeze({ referenceMonth, currentMonth, periodStart, periodEnd, isCurrentMonth });
