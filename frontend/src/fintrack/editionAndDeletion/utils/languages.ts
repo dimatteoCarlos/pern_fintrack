@@ -141,6 +141,11 @@ reportTitleWithImpact:string;
  closeOnlyBlockedNotice: string;
  relatedAccountsSummary: string;
  relatedAccountsNote: string;
+ relatedAccountsHeading: string;
+ relatedAccountsTitle: string;
+ relatedAccountsLede: string;
+ relatedAccountsNoneTitle: string;
+ relatedAccountsNoneMessage: string;
  closeAccountBudgetWarning: string;
  closeOnlySectionTitle: string;
  closeOnlySectionDescription: string;
@@ -341,7 +346,12 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   closeOnlyDetailsTitle: "Account to Close",
   closeOnlyBlockedNotice: "This account still holds a balance, so it cannot be closed yet. Bring it to zero with ordinary movements and then close it, which keeps its name on every movement that mentions it. The other route is the annulment, under Related accounts: it adjusts the accounts this one has moved money with and removes this one without keeping its name.",
   relatedAccountsSummary: "Related accounts",
-  relatedAccountsNote: "The accounts this one has moved money with. New balance and net adjustment show what annulling this account would do to each of them - the close changes none of these figures.",
+  relatedAccountsNote: "New balance and net adjustment show what annulling this account would do to each of these accounts. The close changes none of these figures.",
+  relatedAccountsHeading: "Accounts this one has moved money with",
+  relatedAccountsTitle: "{count} accounts share movements with this one",
+  relatedAccountsLede: "Closing this account leaves every balance above exactly as it is. The movements they share with it keep its name, because the closed account is recorded before its row is removed.",
+  relatedAccountsNoneTitle: "No shared movements",
+  relatedAccountsNoneMessage: "This account has not moved money with any other account.",
   closeAccountBudgetWarning: "This account carries a budget. The budget is deleted with the account, and the close cannot be undone.",
   closeOnlySectionTitle: "Close this account",
   closeOnlySectionDescription: "Closing removes the account and keeps its history: every movement that names it stays readable, under the same name it had. The balance must be zero first.",
@@ -497,7 +507,12 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   closeOnlyDetailsTitle: "Cuenta a Cerrar",
   closeOnlyBlockedNotice: "Esta cuenta todavía tiene saldo, así que aún no se puede cerrar. Llévelo a cero con movimientos normales y ciérrela: su nombre queda en cada movimiento que la menciona. La otra vía es la anulación, dentro de Cuentas relacionadas: ajusta las cuentas con las que esta movió dinero y la elimina sin conservar su nombre.",
   relatedAccountsSummary: "Cuentas relacionadas",
-  relatedAccountsNote: "Las cuentas con las que esta movió dinero. El saldo nuevo y el ajuste neto muestran lo que le haría a cada una anular esta cuenta; el cierre no cambia ninguna de esas cifras.",
+  relatedAccountsNote: "El saldo nuevo y el ajuste neto muestran lo que le haría a cada una de estas cuentas anular esta. El cierre no cambia ninguna de esas cifras.",
+  relatedAccountsHeading: "Cuentas con las que esta ha movido dinero",
+  relatedAccountsTitle: "{count} cuentas comparten movimientos con esta",
+  relatedAccountsLede: "Cerrar esta cuenta deja los saldos de arriba exactamente como están. Los movimientos que comparten con ella conservan su nombre, porque la cuenta cerrada queda registrada antes de que se elimine su fila.",
+  relatedAccountsNoneTitle: "Sin movimientos compartidos",
+  relatedAccountsNoneMessage: "Esta cuenta no ha movido dinero con ninguna otra cuenta.",
   closeAccountBudgetWarning: "Esta cuenta tiene un presupuesto asociado. El presupuesto se elimina junto con la cuenta, y el cierre no se puede deshacer.",
   closeOnlySectionTitle: "Cerrar esta cuenta",
   closeOnlySectionDescription: "El cierre elimina la cuenta y conserva su historia: todo movimiento que la nombra sigue siendo legible, con el nombre que tenía. El saldo debe estar en cero primero.",

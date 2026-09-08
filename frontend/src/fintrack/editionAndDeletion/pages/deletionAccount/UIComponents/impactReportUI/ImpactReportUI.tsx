@@ -18,6 +18,16 @@ type ImpactReportUIPropsType = {
   totalNetAdjustmentAmount: number | null;
   unattributedAmount: number | null;
   unattributedTransactionCount: number | null;
+  // WHETHER THE ANNULMENT'S PROJECTION IS SHOWN, and it is the difference
+  // between two readings of the same rows. New balance, net adjustment, the
+  // folded total and the unattributed amount are all what ANNULLING this
+  // account would do to the accounts listed. CLOSE changes none of them, so on
+  // a screen offering only CLOSE those four are columns of figures that will
+  // never happen. What survives is true either way: which accounts share
+  // movements with this one, what they are, and what they hold today.
+  //
+  // Defaults to true, so every existing caller keeps the report it had.
+  isProjectionShown?: boolean;
   // language?:LanguageKeyType;
   t: (key: keyof DictionaryDataType) => string;
 };
@@ -30,6 +40,7 @@ const ImpactReportUI = ({
   totalNetAdjustmentAmount,
   unattributedAmount,
   unattributedTransactionCount,
+  isProjectionShown = true,
   t,
 }: ImpactReportUIPropsType) => {
   // The total is read, not summed here. A reduce over report is short by
@@ -41,7 +52,9 @@ const ImpactReportUI = ({
   // reason the rows do not add up to the total, so the screen states it
   // rather than leaving the reader to find the gap.
   const showsUnattributed =
-    unattributedAmount !== null && unattributedAmount !== 0;
+    isProjectionShown &&
+    unattributedAmount !== null &&
+    unattributedAmount !== 0;
 
   //Replace {count}
   const formatImpactReportTitle = (title: string) =>
@@ -54,11 +67,21 @@ const ImpactReportUI = ({
   //RENDER
   return (
     <div className='impact-report-container '>
-      <div className='impact-report-warning'>
+      <div
+        className={
+          isProjectionShown
+            ? 'impact-report-warning'
+            : 'impact-report-warning impact-report-warning--informational'
+        }
+      >
         <p className='impact-warning-title '>
-          {formatImpactReportTitle(t('impactDetectedTitle'))}
+          {formatImpactReportTitle(
+            t(isProjectionShown ? 'impactDetectedTitle' : 'relatedAccountsTitle'),
+          )}
         </p>
-        <p className='impact-warning-message'>{t('impactDetectedMessage')}</p>
+        <p className='impact-warning-message'>
+          {t(isProjectionShown ? 'impactDetectedMessage' : 'relatedAccountsLede')}
+        </p>
       </div>
 
       <div className='impact-report-table-wrapper'>
@@ -70,8 +93,8 @@ const ImpactReportUI = ({
             <tr>
               <th>{t('affectedAccountColumn')}</th>
               <th>{t('currentBalanceColumn')}</th>
-              <th>{t('newBalanceColumn')}</th>
-              <th>{t('netAdjustmentColumn')}</th>
+              {isProjectionShown && <th>{t('newBalanceColumn')}</th>}
+              {isProjectionShown && <th>{t('netAdjustmentColumn')}</th>}
               <th>{t('affectedAccountTypeColumn')}</th>
             </tr>
           </thead>
@@ -86,21 +109,25 @@ const ImpactReportUI = ({
                   {row.affectedAccountCurrencyCode}
                 </td>
 
-                <td className='new-balance'>
-                  {(
-                    row.affectedAccountCurrentBalance +
-                    row.affectedAccountNetAdjustmentAmount
-                  ).toFixed(2)}{' '}
-                  {row.affectedAccountCurrencyCode}
-                </td>
+                {isProjectionShown && (
+                  <td className='new-balance'>
+                    {(
+                      row.affectedAccountCurrentBalance +
+                      row.affectedAccountNetAdjustmentAmount
+                    ).toFixed(2)}{' '}
+                    {row.affectedAccountCurrencyCode}
+                  </td>
+                )}
 
-                <td
-                  className={`net-adjustment
+                {isProjectionShown && (
+                  <td
+                    className={`net-adjustment
         ${row.affectedAccountNetAdjustmentAmount >= 0 ? 'positive' : 'negative'}`}
-                >
-                  {row.affectedAccountNetAdjustmentAmount.toFixed(2)}{' '}
-                  {row.affectedAccountCurrencyCode}
-                </td>
+                  >
+                    {row.affectedAccountNetAdjustmentAmount.toFixed(2)}{' '}
+                    {row.affectedAccountCurrencyCode}
+                  </td>
+                )}
 
                 <td className='account-type'>
                   {t(`${row.affectedAccountType as keyof DictionaryDataType}`)}
@@ -111,6 +138,7 @@ const ImpactReportUI = ({
         </table>
       </div>
 
+      {isProjectionShown && (
       <p className='impact-report-total'>
         {t('totalNetAdjustment')}
         <span
@@ -127,6 +155,7 @@ const ImpactReportUI = ({
             : '—'}
         </span>
       </p>
+      )}
 
       {showsUnattributed && (
         <p className='impact-report-unattributed'>
