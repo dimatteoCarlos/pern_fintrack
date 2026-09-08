@@ -180,6 +180,78 @@ async function reportRegistry(client) {
   const action = ON_DELETE[k.on_delete] || k.on_delete;
   console.log(`    ${k.parent.padEnd(24)} <- ${k.child}.${k.conname}  [${action}]`);
  }
+
+ if (present.t) await reportRepointed(client);
+}
+
+// The seven keys migration 035 moves onto the registry, by the column that
+// carries them rather than by the constraint name, which Postgres generates.
+const REPOINTED_KEYS = [
+ ['transactions', 'account_id'],
+ ['transactions', 'source_account_id'],
+ ['transactions', 'destination_account_id'],
+ ['transactions', 'opening_for_account_id'],
+ ['pocket_allocations', 'source_account_id'],
+ ['debtor_accounts', 'selected_account_id'],
+ ['budget_monthly_allocations', 'account_id'],
+];
+
+/**
+ * How many of the seven point at account_registry, and what the rest are doing.
+ *
+ * The list above already prints every key, but counting it requires knowing
+ * which seven to look for. This states the tally, because the table's presence
+ * is what the Overview reads take as proof the repoint happened and a
+ * boot-built database can carry the table with four keys behind it. Asked for
+ * by the Overview session on 2026-09-08, for exactly that reason.
+ *
+ * A key that is absent because its table or column is absent is reported apart
+ * from one that points somewhere else: the first is another migration's debt,
+ * the second is a repoint that did not run.
+ */
+async function reportRepointed(client) {
+ const pointed = [];
+ const elsewhere = [];
+ const missing = [];
+
+ for (const [table, column] of REPOINTED_KEYS) {
+  const {
+   rows: [{ present: hasColumn }],
+  } = await client.query(
+   'SELECT EXISTS (SELECT 1 FROM information_schema.columns' +
+    ' WHERE table_name = $1 AND column_name = $2) AS present',
+   [table, column],
+  );
+
+  if (!hasColumn) {
+   missing.push(`${table}.${column}`);
+   continue;
+  }
+
+  const { rows } = await client.query(
+   'SELECT c.confrelid::regclass::text AS parent FROM pg_constraint c' +
+    ' JOIN pg_class rel ON rel.oid = c.conrelid' +
+    ' JOIN pg_attribute att ON att.attrelid = rel.oid' +
+    '  AND att.attnum = ANY (c.conkey)' +
+    " WHERE rel.relname = $1 AND c.contype = 'f' AND att.attname = $2",
+   [table, column],
+  );
+
+  if (rows[0]?.parent === 'account_registry') pointed.push(`${table}.${column}`);
+  else elsewhere.push(`${table}.${column} -> ${rows[0]?.parent ?? 'no key'}`);
+ }
+
+ const all = pointed.length === REPOINTED_KEYS.length;
+ console.log(
+  (all ? pc.green : pc.yellow)(
+   `\n  ${pointed.length} of ${REPOINTED_KEYS.length} repointed keys reach account_registry`,
+  ),
+ );
+
+ for (const k of elsewhere) console.log(pc.red(`    not repointed: ${k}`));
+ for (const k of missing) {
+  console.log(pc.yellow(`    absent, owed by another migration: ${k}`));
+ }
 }
 
 /**
