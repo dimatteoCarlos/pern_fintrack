@@ -45,7 +45,11 @@
 /* Page Container. The product's dark ground, which is what the mockup draws
    and what every other board in the application sits on. */
 .account-deletion-page {
-  min-height: 100vh;
+  /* dvh and not vh: on a mobile browser 100vh is measured against the viewport
+     with the address bar COLLAPSED, so a page whose content fits exactly still
+     stands taller than the visible area while the bar is showing and scrolls by
+     a sliver that never goes away. dvh follows the bar. */
+  min-height: 100dvh;
   background-color: var(--color-surface-app);
   padding: var(--space-8);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -440,5 +444,76 @@
 
   .deletion-method-button {
     flex: 1 1 0;
+  }
+}
+
+/* ============================================
+   DEGRADING BY VIEWPORT HEIGHT
+
+   The same two heights the budget and pocket boards already answer at, and the
+   same idiom: only outer padding, section margins and the page title move. No
+   control height and no type inside a panel changes, because a control that
+   takes two sizes for one reason is a control the reader cannot learn.
+
+   What this cannot do is guarantee the page never scrolls. The tallest state
+   the screen has - a balance refusing the close, so the notice and the second
+   route are both drawn - is taller than a short viewport by content, not by
+   spacing, and the honest answer there is a scroll rather than a paragraph
+   with words removed from it.
+============================================ */
+@media (max-height: 735px) {
+  .account-deletion-page {
+    padding: var(--space-4);
+  }
+
+  .page-header {
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-2);
+  }
+
+  .main-content {
+    padding: var(--space-4);
+    margin-top: var(--space-4);
+  }
+
+  .account-relations {
+    margin-top: var(--space-4);
+  }
+
+  .deletion-methods-section {
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .action-section {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+  }
+}
+
+@media (max-height: 568px) {
+  .account-deletion-page {
+    padding: var(--space-2);
+  }
+
+  .page-header {
+    margin-bottom: var(--space-2);
+  }
+
+  /* One step down the scale, and only here. The title is the one piece of type
+     on this page that is a heading rather than content, so it is the one that
+     can give a line back without a figure or a sentence losing size. */
+  .page-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .main-content,
+  .deletion-methods-section {
+    padding: var(--space-3);
+    margin-top: var(--space-2);
+  }
+
+  .account-relations {
+    margin-top: var(--space-2);
   }
 }
