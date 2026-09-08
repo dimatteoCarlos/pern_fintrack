@@ -15,6 +15,11 @@ import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
+import {
+ OverviewExpenseCard,
+ OverviewPnlCard,
+ OverviewPocketCard,
+} from '../../../types/overviewTypes';
 
 // The locale is the reader's, never the amount's. Taken from the amount's own
 // currency, Intl leaves every currency unmarked and the dollar, the Colombian
@@ -53,6 +58,52 @@ const deltaLine = (delta: number | null, currency: string) => {
  return `${delta > 0 ? '▲' : '▼'} ${money(currency, Math.abs(delta))} vs prior month`;
 };
 
+// The health mark, the same one the monthly snapshot carries. 'unknown' is an
+// outlined square and means the reading could not be taken; it is NOT calm,
+// because no answer is not a good answer.
+//
+// FOUR CARDS OF SIX GET ONE. Income and Debt are deliberately without, and the
+// reason is that nothing they publish is a health statement: an income below
+// last month's is a smaller month, not an unhealthy one, and owing more than
+// you are owed is the ordinary condition of having a mortgage. A square on
+// either would be a rule invented in the browser, and an indicator nobody can
+// justify is worse than an absent one.
+//
+// The mark is never the SIGN of the amount. --color-amount-positive and
+// --color-amount-negative carry the same teal and the same dusty red for that
+// other question, which is why no figure on this page is painted with them:
+// two colour systems on one card cannot both be read.
+type Tier = 'calm' | 'watch' | 'alert' | 'unknown';
+
+// One account holding more than this share of the holdings is worth pointing
+// at. concentration is a ratio in 0-1, the opposite scale to pocket's progress.
+const CONCENTRATION_LIMIT = 0.5;
+
+// Over budget, measured against categorizedExpense and not against totalAmount.
+// budgetVariance is budgetAmount minus what was spent inside a live category, so
+// it is NEGATIVE when the budget was exceeded. Null is a month with no budget in
+// force anywhere, which is an absent decision and not a breach.
+const expenseTier = (card: OverviewExpenseCard): Tier => {
+ if (card.budgetVariance === null) return 'unknown';
+ if (card.budgetVariance < 0) return 'alert';
+
+ // Spending that lost its category is not counted against the budget, so the
+ // card can be inside its budget and still not know where the month went.
+ return card.hasUncategorizedExpense ? 'watch' : 'calm';
+};
+
+// A losing month is the one health statement this card can make out of what it
+// publishes, and it is the only card where the sign of the figure and the
+// reading are the same thing.
+const pnlTier = (card: OverviewPnlCard): Tier =>
+ card.totalAmount < 0 ? 'alert' : 'calm';
+
+const pocketTier = (card: OverviewPocketCard): Tier => {
+ if (card.overdueCount > 0) return 'alert';
+
+ return card.uncoveredCount > 0 ? 'watch' : 'calm';
+};
+
 type CardProps = {
  label: string;
  // 'flow' is measured across the month, 'position' is read at its close. The
@@ -60,6 +111,10 @@ type CardProps = {
  // natures have no token of their own and inventing one would put an
  // unreviewed value in the palette.
  nature: 'flow' | 'position';
+ // Absent on the two cards that publish no health statement, and absent is not
+ // 'unknown': one says the domain has no such reading, the other says this
+ // month's could not be taken.
+ tier?: Tier;
  children: React.ReactNode;
  sub: React.ReactNode;
 };
@@ -69,10 +124,13 @@ type CardProps = {
 // width they needed, which is what forced every caption down to a size that
 // could not be read. The month is stated once above the grid and the card keeps
 // the half that differs between cards: the nature.
-const DomainCard = ({ label, nature, children, sub }: CardProps) => (
+const DomainCard = ({ label, nature, tier, children, sub }: CardProps) => (
  <article className='domainCard'>
   <div className='domainCard__head'>
-   <span className='domainCard__label'>{label}</span>
+   <span className='domainCard__name'>
+    {tier && <span className={`statusSquare statusSquare--${tier}`} />}
+    <span className='domainCard__label'>{label}</span>
+   </span>
    <span className='domainCard__scope'>{nature}</span>
   </div>
 
@@ -118,6 +176,7 @@ function DomainCards() {
    <DomainCard
     label='Expense'
     nature='flow'
+    tier={expenseTier(expense)}
     sub={
      <>
       {deltaLine(expense.delta, expense.currency)}
@@ -138,6 +197,7 @@ function DomainCards() {
    <DomainCard
     label='PnL'
     nature='flow'
+    tier={pnlTier(pnl)}
     sub={
      <>
       {deltaLine(pnl.delta, pnl.currency)}
@@ -185,6 +245,7 @@ function DomainCards() {
    <DomainCard
     label='Pocket · committed'
     nature='position'
+    tier={pocketTier(pocket)}
     sub={
      pocket.delta === null
       ? NO_FIGURE
@@ -202,6 +263,9 @@ function DomainCards() {
    <DomainCard
     label='Investment'
     nature='position'
+    tier={
+     investment.concentration > CONCENTRATION_LIMIT ? 'watch' : 'calm'
+    }
     sub={
      investment.accountCount === 1
       ? '1 account — the count is as of today'

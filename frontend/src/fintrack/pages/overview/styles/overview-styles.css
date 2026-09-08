@@ -609,32 +609,6 @@ a.icon {
  gap: var(--space-2);
 }
 
-.overviewLayout .snapshot__square {
- flex: none;
- width: var(--space-3);
- height: var(--space-3);
- border-radius: var(--radius-xs);
-}
-
-.overviewLayout .snapshot__square--calm {
- background: var(--color-status-ok);
-}
-
-.overviewLayout .snapshot__square--watch {
- background: var(--color-status-warning);
-}
-
-.overviewLayout .snapshot__square--alert {
- background: var(--color-status-alert);
-}
-
-/* Empty and outlined, never calm. No comparable month is not a healthy month,
-   and a filled square would assert a reading nobody measured. */
-.overviewLayout .snapshot__square--unknown {
- background: transparent;
- border: 1px solid var(--color-content-on-dark-subtle);
-}
-
 .overviewLayout .snapshot__delta {
  font-size: var(--font-size-sm);
  font-weight: 600;
@@ -698,4 +672,47 @@ a.icon {
  font-size: var(--font-size-xs);
  color: var(--color-content-on-dark-subtle);
  font-variant-numeric: tabular-nums;
+}
+
+/*------------*/
+/* The status square, shared by the domain cards and the monthly snapshot. One
+   mark with one meaning: how the figure above it is doing, on a three-step
+   reading plus an explicit "nothing to say". It is NOT the sign of the amount -
+   --color-amount-positive and --color-amount-negative carry the same two hues
+   for that other question, which is exactly why no figure on this page is
+   painted with them. Two colour systems on one card would collide. */
+
+.overviewLayout .statusSquare {
+ flex: none;
+ width: var(--space-3);
+ height: var(--space-3);
+ border-radius: var(--radius-xs);
+}
+
+.overviewLayout .statusSquare--calm {
+ background: var(--color-status-ok);
+}
+
+.overviewLayout .statusSquare--watch {
+ background: var(--color-status-warning);
+}
+
+.overviewLayout .statusSquare--alert {
+ background: var(--color-status-alert);
+}
+
+/* Empty and outlined, never calm. No reading is not a healthy reading, and a
+   filled square would assert something nobody measured. */
+.overviewLayout .statusSquare--unknown {
+ background: transparent;
+ border: 1px solid var(--color-content-on-dark-subtle);
+}
+
+/* The square sits to the left of the card's name, so a reader scanning the
+   column of names crosses every mark on the way down. */
+.overviewLayout .domainCard__name {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ min-width: 0;
 }

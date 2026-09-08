@@ -161,7 +161,7 @@ const SnapshotCard = ({
        square never appears without it. Both take the tier, unlike the sketch
        which gave them different ones: one reading gets one colour. */}
    <div className='snapshot__variance'>
-    <span className={`snapshot__square snapshot__square--${tier}`} />
+    <span className={`statusSquare statusSquare--${tier}`} />
     <span className={`snapshot__delta snapshot__delta--${tier}`}>
      {row.varianceVsAverage === null
       ? NO_FIGURE
