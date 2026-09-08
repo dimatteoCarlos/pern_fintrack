@@ -222,6 +222,56 @@ worked around. That migration performed a one-time lowercasing of names, and an
 account whose name no longer exists has no original capitalization worth
 restoring.
 
+### The screen offers one method
+
+On 2026-09-08 the owner ruled, looking at the deletion screen, that only CLOSE
+is contemplated there. Four things on it said otherwise: the page title, the
+action line on the account card, a section headed "Other deletion methods", and
+three buttons. `CLOSE_IS_THE_ONLY_METHOD` in
+`frontend/src/fintrack/editionAndDeletion/config/deletionMethodPolicy.ts`
+decides it now.
+
+**A flag, not deleted markup.** The RTA annulment, the reversible deactivation
+and the erasure are reachable services with their own routes; only their entry
+point on that screen is withdrawn, and turning it back on is one edit.
+
+Two consequences had to be handled rather than left. The account card named the
+RTA annulment unconditionally and now takes the action from a prop. And the
+page still requested the impact report, where a failed request sets an error
+the page reads as a finished operation — which would have replaced the close
+screen with an error view for an operation nobody started; the hook takes
+`isReportWanted` and skips the fetch.
+
+**What no longer has a path from that screen: an account holding a balance.**
+CLOSE refuses one, and the annulment that used to settle it is no longer
+offered. Put to the owner on 2026-09-08 and not yet answered.
+
+### The closure movement type has readers and no writer
+
+Measured in the files on 2026-09-08.
+
+- **The writer exists and is retired.**
+  `recordClosureSettlement.js` holds a live `INSERT INTO transactions` at
+  `:235` carrying movement type 10, and no caller: every import of it is
+  commented out (`deleteAccountService.js:35` and `:1000`). Its header records
+  the retirement, made the day CLOSE stopped moving money.
+- **Two live predicates still read that type.**
+  `overviewInvestmentRepository.js:148` reads it as the investment card's
+  closure adjustment, and `:153` folds it in beside the profit-and-loss type
+  for the realised figure. The constant is `ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID`
+  at `derivedBalance.js:61`.
+- **The migration session measured zero rows carrying it** on `fintrack_dev`,
+  `fintrack_prod_rehearsal` and `fintrack_prod_rehearsal_full` — their
+  measurement, recorded as theirs. Production was not read.
+
+**The open decision is not whether to remove the catalog row.** Rows carrying
+that type could exist on production, written before the settlement was retired,
+and if they do those two predicates are the only things that account for them.
+So the question is what the investment card should show for a closure type
+nothing writes, which belongs to Overview before it belongs to a migration. The
+migration session will write nothing touching the catalog until the owner
+decides.
+
 ### Still open, and the owner rules
 
 - **Whether the closing reason has a maximum length.** It is stored as
