@@ -333,6 +333,58 @@ relaxed by the lifting: through `db:align` and `db:migrate` and never `psql`,
 `DB_EXPECTED` and `DB_REMOTE_OK` typed explicitly, `db:state` captured before
 and after. Nothing in this module runs it or may run it.
 
+### Fourteen queries wait on the production chain run
+
+Two modules break the same promise for the same reason and are unblocked by the
+same event. Recording it once here, at Overview's request, rather than in two
+documents each naming its own half.
+
+**The promise.** The close dialog tells the owner that the history stays and
+that every movement naming the account remains readable. The registry stamp is
+what makes that true in the DATA. It is not what makes it true on SCREEN.
+
+**Where it is broken.** `dashboardController.js` carries nine INNER joins onto
+`user_accounts` and no LEFT JOIN anywhere in the file. They come in two shapes
+and they lose different rows:
+
+| Shape | Sites | What leaves the answer |
+|---|---|---|
+| joined on the counterparty (`destination_account_id` / `source_account_id`) | `:588`, `:648` | other accounts' movements where the closed one was the counterparty |
+| joined on the row's owner (`tr.account_id = ua.account_id`) | `:718`, `:742`, `:788`, `:826`, `:855`, `:968`, `:1091` | **the closed account's own movements** |
+
+The owner shape is the one that contradicts the dialog. `transactions.account_id`
+still holds the id after a close, and this is measured in the code rather than
+inferred from the foreign key being repointed: `processCloseAccount` performs no
+write to `transactions` at all. Its body contains no `INSERT`, `UPDATE` or
+`DELETE` against that table, and none of the three helpers it awaits
+(`lockAndDeriveBalances`, `pocketAllocationService.release`, `writeAllocation`)
+writes to it either. Every writer of `transactions` in the backend belongs to the
+annulment (`eraseAccountTail.js`, `recordAnnulmentTransaction.js`), to ordinary
+movements (`recordTransaction.js`), or to `recordClosureSettlement.js`, whose
+only call site is commented out at `deleteAccountService.js:282`. So the rows
+survive with their id and the join is what removes them.
+
+**The fix exists and cannot be applied yet.** `accountIdentityCte` in
+`utils/fintrackUtils/accountDataRetrieval/accountIdentity.js` LEFT JOINs
+`user_accounts` onto `account_registry`, COALESCEs the name, type, currency and
+start date off the registry row, and derives `is_closed` from the join being
+null. Its own header states the precondition: on a database without
+`account_registry` it fails with `relation "account_registry" does not exist`.
+
+`overviewAccountRepository.js` already embeds it in five statements (`:44`,
+`:88`, `:191`, `:221`, `:255`), so Overview breaks whole rather than partially
+against such a database.
+
+**Nine plus five is fourteen queries behind one event**, the chain running
+against production. Until it does:
+
+- `dashboardController.js` must NOT be moved onto the CTE. Today it omits rows
+  for closed accounts, of which production has none, because CLOSE cannot run
+  there at all — `deleteAccountService.js:1226` raises `42P01` on the missing
+  table. After a premature swap it would fail outright, and the dashboard is a
+  wider surface than one operation.
+- The ordering is the owner's to set. Raised 2026-09-08, not answered.
+
 **The closing reason is capped in the database, not in the form.** A limit that
 lives only in the interface is not honoured by a second writer, and the column
 is what every writer meets. The length itself is the migration session's to
