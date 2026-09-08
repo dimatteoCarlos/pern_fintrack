@@ -20,6 +20,7 @@
   --sheet: #C9D6DD;
   --sheet-ink: #1A2429;
   --sheet-mute: #5A6E78;
+  --sheet-rule: #B0C1CA;
   --rule: #2C3B45;
   --rule-soft: #1D2830;
   --paper-ink: #A9BDC7;
@@ -308,6 +309,39 @@
   white-space: nowrap;
   min-width: 3.6em;
   text-align: right;
+ }
+
+ /* Pocket no lleva participacion, y por eso no usa .row__share. La cifra de esa
+    fila es el avance contra la meta de cada pocket: no es una parte de un total
+    y las filas no suman 100. Ponerla en la misma columna y con el mismo formato
+    que las participaciones de gasto e ingreso invita a leerla como una parte de
+    la suma, asi que aqui es otro objeto — una barra de avance mas la cifra
+    rotulada contra su propia meta. Fallo de Carlos, 2026-09-08. */
+ .row__progress {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s1);
+  white-space: nowrap;
+ }
+ .row__progress-track {
+  width: 2.6em;
+  height: 4px;
+  flex: none;
+  border-radius: 2px;
+  background: var(--sheet-rule);
+  overflow: hidden;
+ }
+ .row__progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--nat-position-sheet);
+ }
+ .row__progress-label {
+  font-family: var(--font-code);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--sheet-mute);
  }
 
  /* El chevron en reposo. Presente y de bajo enfasis, porque una afordancia que
@@ -751,7 +785,10 @@
       <button type="button" class="row" aria-label="Abrir viaje japón">
        <span class="row__label"><span class="row__swatch" style="background: var(--nat-position-sheet)"></span><span class="row__name">viaje japón</span></span>
        <span class="row__amount">2.800,00</span>
-       <span class="row__share">70 %</span>
+       <span class="row__progress">
+        <span class="row__progress-track"><span class="row__progress-fill" style="width: 70%"></span></span>
+        <span class="row__progress-label">70 % de su meta</span>
+       </span>
        <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
       </button>
      </li>
@@ -759,7 +796,10 @@
       <button type="button" class="row" aria-label="Abrir fondo de emergencia">
        <span class="row__label"><span class="row__swatch" style="background: var(--nat-position-sheet)"></span><span class="row__name">fondo de emergencia</span></span>
        <span class="row__amount">2.400,00</span>
-       <span class="row__share">48 %</span>
+       <span class="row__progress">
+        <span class="row__progress-track"><span class="row__progress-fill" style="width: 48%"></span></span>
+        <span class="row__progress-label">48 % de su meta</span>
+       </span>
        <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
       </button>
      </li>
@@ -767,12 +807,16 @@
       <button type="button" class="row" aria-label="Abrir cambio de portátil">
        <span class="row__label"><span class="row__swatch" style="background: var(--nat-position-sheet)"></span><span class="row__name">cambio de portátil</span></span>
        <span class="row__amount">1.200,00</span>
-       <span class="row__share">80 %</span>
+       <span class="row__progress">
+        <span class="row__progress-track"><span class="row__progress-fill" style="width: 80%"></span></span>
+        <span class="row__progress-label">80 % de su meta</span>
+       </span>
        <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
       </button>
      </li>
     </ul>
     <p class="sheet__note">El enlace se arma con el <code>pocketId</code> que la fila ya publica. <b>Ninguna conversión a id de cuenta y ninguna búsqueda entre la fila y la URL</b> — un pocket es un plan, no una cuenta.</p>
+    <p class="sheet__note"><b>La cifra de la derecha no es una participación y las filas no suman 100.</b> Cada una es el avance contra la meta de su propio pocket, así que lleva barra y rótulo y no la columna de participación que usan gasto e ingreso. 70, 48 y 80 no se comparan entre sí: comparan cada plan consigo mismo.</p>
    </div>
 
    <div class="sheet">
@@ -853,7 +897,7 @@
    <li><b>El desglose de nivel 2 no tiene mockup.</b> Este archivo define la fila y su afordancia, no el bloque que la contiene: el encabezado, el orden, el corte de la cola y los estados de carga del desglose siguen sin dibujar, y eso bloquea el commit 6 de P5. La fila aquí se dibuja sobre un panel crema genérico porque es la superficie que el sistema declara para paneles de datos, no porque el desglose esté decidido.</li>
    <li><b>El texto de la fila sin destino está inventado.</b> "sin cuenta de origen" es una etiqueta que ningún constructor publica: el backend manda un aviso cuando alguna fila trae <code>accountId</code> nulo, y no manda una etiqueta para esa fila. Hay que decidir qué dice, y decidirlo es del lado del producto.</li>
    <li><b>El chevron como afordancia es una elección de este bosquejo, no una regla del sistema.</b> Ningún otro componente de FinTrack marca hoy una fila de lista como abrible, así que no hay precedente que copiar. Si aparece uno, gana el precedente.</li>
-   <li><b>La participación de pocket no es una participación del total.</b> En los otros desgloses el porcentaje es la parte del total; en pocket es el avance contra la meta de cada pocket, que no suma 100. Se dibuja en la misma columna y eso puede leerse mal — queda por decidir si lleva otra columna o otro formato.</li>
+   <li><b>Cerrada el 2026-09-08: la cifra de pocket no se presenta como participación del total.</b> En los otros desgloses el porcentaje es la parte del total; en pocket es el avance contra la meta de cada pocket, que no suma 100. Sale de la columna de participación y pasa a barra de avance con el rótulo <i>de su meta</i>, que es un objeto distinto de un número de porcentaje y no se puede leer como una parte de la suma.</li>
   </ol>
  </section>
 
