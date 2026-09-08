@@ -29,6 +29,31 @@ const ON_DELETE = { a: 'NO ACTION', r: 'RESTRICT', c: 'CASCADE', n: 'SET NULL', 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'src/db/migrations/sql_migrations');
 
 /**
+ * The alignment script lives beside the chain rather than in it, and the ledger
+ * of fintrack_prod_rehearsal records it under the prefixed name
+ * 'supabase/001_production_alignment.sql'. Nothing in backend/src applies it or
+ * writes that row, so the row was typed by hand; the reader still has to know
+ * the file exists or it reports a legitimate row as an orphan.
+ */
+const ALIGNMENT_DIR = path.join(process.cwd(), 'src/db/migrations/supabase');
+
+function filesOnDisk() {
+ const chain = fs
+  .readdirSync(MIGRATIONS_DIR)
+  .filter((f) => f.endsWith('.sql'))
+  .sort();
+
+ const alignment = fs.existsSync(ALIGNMENT_DIR)
+  ? fs
+     .readdirSync(ALIGNMENT_DIR)
+     .filter((f) => f.endsWith('.sql'))
+     .map((f) => `supabase/${f}`)
+  : [];
+
+ return { chain, all: [...chain, ...alignment] };
+}
+
+/**
  * Same override runMigrations honours, for the same reason: a rehearsal copy
  * lives on the same server under another name, and reading it must not require
  * editing DATABASE_URI. Reading a database before migrating it is the whole
@@ -60,17 +85,16 @@ async function reportLedger(client) {
   return;
  }
 
- const onDisk = fs
-  .readdirSync(MIGRATIONS_DIR)
-  .filter((f) => f.endsWith('.sql'))
-  .sort();
+ const { chain, all } = filesOnDisk();
 
  const names = new Set(recorded.map((r) => r.filename));
- const pending = onDisk.filter((f) => !names.has(f));
- const orphaned = recorded.filter((r) => !onDisk.includes(r.filename));
+ // Only the chain can be pending. The alignment script is applied by hand and
+ // is not something db:migrate would ever run.
+ const pending = chain.filter((f) => !names.has(f));
+ const orphaned = recorded.filter((r) => !all.includes(r.filename));
  const last = recorded[recorded.length - 1];
 
- console.log(`  ${recorded.length} rows, ${onDisk.length} files on disk`);
+ console.log(`  ${recorded.length} rows, ${all.length} files on disk`);
  if (last) {
   console.log(`  last executed: ${last.filename} on ${last.executed_at.toISOString()}`);
  }
