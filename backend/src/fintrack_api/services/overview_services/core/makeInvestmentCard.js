@@ -87,6 +87,8 @@ export const UNRECONCILED_BALANCE_NOTICE =
  *   these accounts, never null: 0 means none was ever deleted
  * @param {number|null} figures.largestBalance - the biggest single balance, null with no accounts
  * @param {number|null} figures.daysSinceLastContribution - V5
+ * @param {number} figures.transactionCount - movements on these accounts in the
+ *   reference month, the one field this card shares with the other five
  * @param {string} figures.currency
  * @param {string[]} [figures.notices]
  * @returns {object} frozen InvestmentCard
@@ -98,6 +100,7 @@ export const makeInvestmentCard = ({
  realizedPnl,
  closureAdjustment,
  largestBalance,
+ transactionCount,
  daysSinceLastContribution,
  currency,
  notices = [],
@@ -152,6 +155,11 @@ export const makeInvestmentCard = ({
   // creation date the figures query does not read, so it is a change to that
   // statement rather than to this one.
   accountCount,
+  // The only field of the shared card shape this card carries. It exists
+  // because the page's transactionCountAll sums one count per domain and no
+  // other domain counts an investment movement, so without it the page reports
+  // a total that is short by every one of them.
+  transactionCount,
   capitalContributed,
   ledgerBalance,
   realizedPnl,

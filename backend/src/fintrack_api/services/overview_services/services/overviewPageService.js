@@ -163,9 +163,15 @@ export const overviewPageService = {
     totalExpensePeriod: expense.card.totalAmount,
     netDebtPosition: debt.card.totalAmount,
     totalPocketBalance: pocket.card.totalAmount,
+    // Six counts and not five. Investment was absent and no other domain
+    // counts an investment movement — expense counts movement types 1 and 6 on
+    // category_budget accounts, income counts income, debt counts debt, pocket
+    // counts allocations, pnl counts pnl — so the total was short by every
+    // movement of type investment.
     domainCounts: [
      income.card.transactionCount,
      expense.card.transactionCount,
+     investment.card.transactionCount,
      debt.card.transactionCount,
      pocket.card.transactionCount,
      pnl.card.transactionCount,

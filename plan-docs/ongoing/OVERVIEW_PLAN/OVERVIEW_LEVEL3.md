@@ -107,7 +107,7 @@ decision, and a level-3 commit that changes the target screen has left Overview.
 | item | why it is not level-3 work |
 |---|---|
 | the four route paths | the destination folders exist under `frontend/src/fintrack/pages/forms/`; the live URL of each has to be read from `App.tsx` when the link is wired, not assumed from the folder name |
-| the missing investment transaction count | a level-1 defect: `transactionCountAll` sums five domain counts and omits investment. Recorded in `OVERVIEW_PLAN.md`, section 4 |
+| the investment transaction count | it was a level-1 defect, not level-3 work, and it is fixed: the card carries `transactionCount` and the page sums six counts |
 | the mockup for the six level-2 screens | still absent, and level 3 cannot be drawn before the row it hangs off is |
 
 ---
