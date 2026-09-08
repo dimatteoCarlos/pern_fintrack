@@ -27,8 +27,9 @@ design can advance; they can still move.
 | Method conceptualization | received, evaluated, accepted with three measured collisions |
 | Matrix by account type | settled: six types close, one never does, one no longer exists |
 | Historical identity design | the registry, ruled by the migration session; its extension half reversed by the owner on 2026-09-07 |
-| Schema | designed, not written; the migration suspension still holds |
-| Phases | defined |
+| Schema | specified, not written; the migration suspension still holds |
+| Historical identity contract | **closed by the owner on 2026-09-08** — fourteen columns, 4.6 |
+| Implementation spec | written against the closed contract, section 7 |
 | Frontend | not started; the screen goes to the design session |
 
 ---
@@ -524,16 +525,16 @@ today's screen contradicting another.
 A transaction row survives the close in every case. Whether its money reaches a
 figure depends on which of these the reading query uses:
 
-| # | Mechanism | The statement that does it | What repointing the six keys fixes |
+| # | Mechanism | The statement that does it | What repointing the seven keys fixes |
 |---|---|---|---|
 | 1 | **Inner join from `transactions` to `user_accounts`** | `JOIN user_accounts ua ON ua.account_id = tr.account_id` (`transactionRowShape.js:83`) | **nothing.** The join fails on the missing row whatever the foreign key says |
 | 2 | **Id set built from `user_accounts`, applied to `transactions`** | `t.account_id = ANY($1::int[])` where `$1` came from `SELECT ua.account_id FROM user_accounts ua` | **nothing.** The id is absent from the array |
 | 3 | **Stock read directly off `user_accounts`** | `SUM(${DERIVED_BALANCE}) ... FROM user_accounts ua` (`dashboardController.js:58`, `overviewPageRepository.js:81`) | **nothing.** No row, no term |
 | 4 | **Cascade** | `ON DELETE CASCADE` on the four extension keys and on `account_name_case_backup_013` | **nothing.** The rows are destroyed, not orphaned |
 
-**Repointing the six keys makes the `DELETE` succeed. It does not make one
-figure correct.** The two are separate pieces of work and this plan has only
-specified the first.
+**Repointing the seven keys makes the `DELETE` succeed and keeps the budget rows
+alive. It does not make one figure correct.** The reads are a separate piece of
+work, specified in 7.3.
 
 #### 3.8.4 The eleven references, and what each does when the row goes
 
@@ -597,7 +598,7 @@ worth stating.** The value is not lost: `derivedBalance.js:15-16` records that
 again as an account-opening transaction*, and `accountCreationController.js:344-350`
 writes that transaction with `amount: convertedAmount` and
 `opening_for_account_id: account_basic_data.account_id`. That row survives the
-close, because `opening_for_account_id` is one of the six repointed keys.
+close, because `opening_for_account_id` is one of the seven repointed keys.
 
 **What breaks is the reader.** `ledgerBody` reads the opening off the column
 (`derivedBalance.js:244`) and deliberately excludes the transaction that carries
@@ -671,10 +672,10 @@ wrong number, not a missing one, and no frontend state can represent it.
 
 | Work | Owner | Status |
 |---|---|---|
-| Repoint the six keys at the registry | this plan (4.3) | designed |
-| Stamp name, type, currency and starting amount before the delete | this plan (4.3) | designed |
+| Repoint the seven keys at the registry | this plan (4.6, 7.2.4) | specified |
+| Stamp the twelve closure columns before the delete | this plan (4.6, 7.4) | specified |
 | Release the pocket commitment | this plan (6) | designed |
-| Terminating zero on the budget series | this plan (3.7 fix 1) | **open — the owner has not chosen among the four** |
+| Terminating zero on the budget series | this plan (3.7 fix 1, 7.4 step 5) | **ruled by the owner on 2026-09-08: fix 1** |
 | Repoint `budget_monthly_allocations.account_id` | this plan (3.7 fix 1) | **open, same decision** |
 | Classify the twelve Overview reads and decide each one | overview module | **not designed anywhere** — enumerated in 3.8.11; nine are visible on this branch and three arrive with the merge from `main` |
 | Invert the opening-row exclusion in `ledgerBody` for a closed account | `derivedBalance.js`, peer-owned | **not designed anywhere** |
@@ -914,7 +915,9 @@ be observed.
   closed. Nothing ever deletes from it.
 - **Six keys are repointed at the registry** instead of at the accounts table:
   the three on transactions, the opening marker, the pocket allocation's source,
-  and the debtor's selected account. Since no row is ever deleted there, restrict
+  and the debtor's selected account. **A seventh was added on 2026-09-08 when the
+  owner ruled fix 1** — `budget_monthly_allocations.account_id`, repointed from
+  `category_budget_accounts` rather than from `user_accounts` (4.6, 7.2.4). Since no row is ever deleted there, restrict
   never fires and costs nothing, the referencing columns keep a real constraint,
   and the accounts table becomes freely deletable because the only references
   left to it are the four extension keys, which cascade.
@@ -1081,9 +1084,9 @@ reader is a defect the merge removes.
 #### The contract
 
 The row exists for every account from the moment the account is created.
-**Eleven columns in nine rows** — an earlier draft of this section said nine
-columns, counting the table's rows instead of the columns in them. The closure
-record is three columns on one row. With the three added below it is fourteen.
+**Fourteen columns in twelve rows.** An earlier draft said nine, counting the
+table's rows instead of the columns in them, and a second said eleven, before the
+budget measurement added three. The closure record is three columns on one row.
 
 | Column | Written at creation | Stamped at closure | Nullable | Why there and not elsewhere |
 |---|---|---|---|---|
@@ -1095,7 +1098,10 @@ record is three columns on one row. With the three added below it is fourteen.
 | `account_starting_amount` | — | yes | yes | same |
 | `account_start_date` | — | yes | yes | same |
 | `created_at` | — | yes | yes | same |
-| `closed_at`, `closed_by`, `close_reason` | — | yes | yes | the closure record, on the same row, by the rule in 4.3: an event that happens at most once per account belongs on the account's row |
+| `category_name` | — | yes | yes | **`category_budget` only.** The key `budgetCalculationService` folds the payload on; read off the extension row in the closing transaction, before the cascade |
+| `subcategory` | — | yes | yes | same source, published as its own field by `ACCOUNTS_QUERY` |
+| `category_nature_type_id` | — | yes | yes | same source, and the catalog key rather than the name text: `category_nature_types` rows are never deleted, so the existing LEFT JOIN stays answerable |
+| `closed_at`, `closed_by`, `close_reason` | — | yes | yes | the closure record, on the same row, by the rule in 4.3: an event that happens at most once per account belongs on the account's row. **`close_reason` is NOT NULL by the owner's ruling of 2026-09-08**, free text |
 
 **Two columns at creation and the rest at closure is not a compromise, it is the
 only shape with no ambiguous state.** While the account is live its descriptive
@@ -1341,14 +1347,28 @@ the extension ruling accepts it everywhere else.
   cascades.
 - **`note`**, as above.
 
-#### Still open inside this contract
+#### RULED: the contract is closed, by the owner, 2026-09-08
 
-| Question | Recommendation |
+He approved the four recommendations as they stood — *cierra con tus
+recomendaciones aprobadas*. **Nothing in this contract is open. Section 7 is
+written against it.**
+
+| Question | Ruling |
 |---|---|
-| Whether `close_reason` is mandatory | **yes, free text.** No statement reads it, so it constrains nothing technically; it is the only record of why an irreversible action was taken |
-| Who writes the registry row at creation | **a trigger before insert on `user_accounts`**, for the reason below — but the precedent is weaker than an earlier draft of this row claimed |
-| Whether the registry stamps `category_name`, `subcategory` and `category_nature_type_id` | **yes.** It reopens a decision 10.3 closed, because fix 1 falsified that decision's premise for this one type; detail above |
-| Whether the backfill stamps existing live accounts or leaves them null | **leaves them null.** Those accounts are live, so their values are read from `user_accounts`; stamping them would create the two-writer problem this shape avoids |
+| Whether the registry stamps `category_name`, `subcategory` and `category_nature_type_id` | **YES.** It reopens what 10.3 closed, because fix 1 falsified that decision's premise for `category_budget` and for no other type |
+| Whether `close_reason` is mandatory | **YES, NOT NULL, free text.** No statement reads it, so it constrains nothing technically; it is the only record of why an irreversible action was taken |
+| Who writes the registry row at creation | **a BEFORE INSERT trigger on `user_accounts`**, and it is the schema's first side-effecting trigger — see below |
+| Whether the backfill stamps existing live accounts | **NO, they stay null.** Those accounts are live, so their values are read from `user_accounts`; stamping them would create the two-writer problem this shape avoids |
+
+**One consequence of the trigger ruling that has to be stated before the DDL is
+written: the registry's `account_id` cannot carry a foreign key to
+`user_accounts`.** A BEFORE INSERT trigger writes the registry row while the
+account row does not yet exist, so such a key would refuse the very insert it is
+meant to accompany. That is the right shape anyway — the registry outlives
+`user_accounts` by construction — but it is a constraint the DDL has to omit
+deliberately rather than by oversight. Column defaults are applied before BEFORE
+ROW triggers fire, so `NEW.account_id` already carries the value the sequence
+issued.
 
 **The trigger, and a correction to how this plan justified it.** An earlier draft
 of the row above said the schema already carries a trigger *so it is not a foreign
@@ -1831,59 +1851,218 @@ references it.
 
 ---
 
-## 7. Phases
+## 7. The implementation spec
 
-Phases one to three change nothing the user sees, so they can land separately and
-be tested separately. The new close sits behind a flag until phase four is
-complete.
+**This section is written against a closed contract.** The owner ruled decisions
+A and B on 2026-09-08 (3.7), and closed the four remaining contract questions the
+same day (4.6). Nothing below waits on a decision. **Nothing below is written
+either**: production migrations are frozen by his instruction of 2026-09-07, and
+this is the specification the work follows when that lifts.
 
-| Phase | What it delivers | Depends on |
+### 7.1 The blocks, and why they are not five independent deployments
+
+| Block | What it delivers | Cannot ship before |
 |---|---|---|
 | 0 | Production measurement of how much history the previous mechanism already destroyed | the owner: no session queries production |
-| 1 | The registry table, its backfill from live accounts, and the trigger that keeps issuance honest | the migration suspension lifting |
-| 2 | The six keys repointed at the registry, plus their hand-written boot-path counterparts | phase 1 |
-| 3 | The readers resolving through the registry | phase 2 |
-| 4 | The close operation and its screen | phase 3 |
-| 5 | The other three methods commented out and the surplus screens retired | phase 4 |
+| 1 | The registry table, its trigger, its backfill, and the seven repointed keys — **one chain file** | the migration suspension lifting |
+| 2 | The readers resolving through the registry | block 1 |
+| 3 | The close operation and its screen | block 2 |
+| 4 | The other three methods commented out and the surplus screens retired | block 3 |
 
-Phase two carries a hazard worth stating: schema parity builds both paths from
-scratch and is **structurally blind** to a gap in the boot path, so it reports
-clean while the runtime table builder lacks the new table and the repointed keys.
-Those six keys and the table need hand-written counterparts in
-`createTables.js`, and no automated check will notice their absence. The four
-extension keys are untouched, so they need no counterpart.
+**Blocks 1 and 2 are reviewed apart and released together, ruled by the migration
+session as chain owner.** None of the schema pieces is demonstrable on its own:
+neither the `CREATE TABLE`, nor the backfill, nor the `ALTER` that repoints
+`budget_monthly_allocations_account_id_fkey` changes one figure any query
+returns, because the other removals in 4.6 still stand behind each of them. A
+migration whose effect cannot be shown becomes a ledger row a later session reads
+as proof the problem is solved. **So the schema is one file, its header names the
+four removals and says which the file closes and which the reader closes, and it
+lands in the same release as block 2.**
 
-### Inside phase four
+**That is a deliberate exception to the usual preference for the smallest
+possible migration**, and the four-removal count is exactly what justifies it.
 
-1. Validate the account and refuse the system ones — **the guard is already
-   written**: it refuses by non-creatable type and by reserved name, and both
-   arms are evaluated before any branch (`deleteAccountService.js`).
-2. Refuse unless the derived balance is zero — on `bank`, `cash`, `investment`
-   and `debtor` only. `income_source` skips this step by the owner's ruling.
-3. Release the pocket allocations with the existing mechanism.
-4. Stamp the registry row — name, type, currency, starting amount — and write the
-   closure fields, reason included.
-5. Delete the account row.
+**Block 1 carries a hazard no automated check will catch.** `db:parity` builds
+both paths from scratch and compares tables and columns, so it is **structurally
+blind** to a missing trigger and reports clean while `createTables.js` lacks one.
+Every piece of block 1 needs a hand-written counterpart in the boot path, and the
+registry trigger is the piece parity cannot see at all.
 
-**The order is load-bearing:** the stamp happens before the delete and inside the
-same database transaction, or the name, type and currency go with the row and the
-surviving transactions become uninterpretable. The type-specific attributes on
-the extension row are deliberately **not** stamped — the owner ruled that row is
-deleted — so the four columns the registry carries are the whole of what a closed
-account leaves behind, and step 4 has to write all four.
+### 7.2 Block 1, the schema
 
-### The frontend, per phase
+**Three build paths, every time.** The chain file, `createTables.js`, and
+`supabase/001_production_alignment.sql` for anything the alignment file is still
+allowed to carry. The two applied declarations of key 7 are sealed, so key 7
+arrives as an `ALTER` and not as an edit (4.6).
 
-- **Phases 0 to 3:** no screen changes.
-- **Phase 4:** the screen lands with the backend, not after it. The gate is
-  useless if the owner cannot see why the button is disabled or where to go and
-  settle the balance, and the mandatory reason is a form field.
-- **Phase 5:** of the thirty-four files in the deletion page, those of the impact
-  report, the reversal modal, the hard-delete confirmation and the deactivation
-  view are left with no method behind them.
+**7.2.1 The table.** Fourteen columns, exactly the contract of 4.6, and three
+constraints stated rather than assumed:
 
-The phase-four screen is designed by the frontend design session before the
+- **No foreign key on `account_id` into `user_accounts`.** The trigger writes the
+  registry row before the account row exists, and the registry outlives it. This
+  omission is the design, not a gap.
+- **`user_id` NOT NULL**, and it is the only stamp written at creation beside the
+  id itself.
+- **`close_reason` NOT NULL when `closed_at` is not null**, by the owner's
+  ruling. A row that has not been closed carries neither, so the rule is a CHECK
+  over the pair, not a column-level NOT NULL — a column-level one would refuse
+  every row the trigger writes at creation.
+
+**7.2.2 The trigger, and what makes it new here.** A BEFORE INSERT row trigger on
+`user_accounts` that inserts `(account_id, user_id)` into the registry. Two
+creation controllers plus the boot path cannot be kept honest by convention,
+which is the reason for it. **It is the schema's first side-effecting trigger**:
+`trg_users_timezone_is_iana` is the only trigger that exists and its function
+raises or returns `NEW` and writes nothing (4.6). That is a deliberate step up
+and the file header says so.
+
+**7.2.3 The backfill, and what it cannot reach.** One row per **live** account,
+carrying `account_id` and `user_id` and nulls everywhere else — the owner ruled
+live accounts are not stamped, because their values are read from
+`user_accounts` and a stamp would create a second writer. **Accounts the old
+mechanism already erased are a different problem and block 0 owns it**: their
+ids are recoverable only where a surviving reference still names them, and 4.4
+records that such a row can carry nothing but nulls anyway.
+
+**7.2.4 The seven keys.** Six repointed from `user_accounts` to the registry —
+the three on `transactions`, `opening_for_account_id`,
+`pocket_allocations.source_account_id`, `debtor_accounts.selected_account_id` —
+and the seventh, `budget_monthly_allocations.account_id`, repointed from
+`category_budget_accounts`. **The four extension primary keys are not touched**
+and keep `ON DELETE CASCADE` by the owner's ruling of 2026-09-07.
+
+**The seventh is dropped by the name Postgres generated**, because the
+declaration is inline and unnamed:
+`budget_monthly_allocations_account_id_fkey`, identical on both local databases.
+
+**7.2.5 The DOWN, and the date it stops being real.** Pointing
+`budget_monthly_allocations.account_id` back at `category_budget_accounts`
+requires every surviving allocation row's account to still exist in that table —
+which is exactly what key 7 exists to make false. **From the first close of a
+`category_budget` account, the DOWN cannot run without deleting the rows the
+change was made to preserve.** Same shape as 013's DOWN (3.8.12), and the header
+states it before the file is written rather than leaving it to be discovered.
+
+### 7.3 Block 2, the readers
+
+**The resolution rule, in the owner's own shape:**
+
+```
+account present in user_accounts  → read identity and stock live
+account absent                    → read historical identity from the registry
+                                  → read the movements, which were never touched
+```
+
+**No transaction row is rewritten. This is not a history reconstruction**, and
+the owner ruled out that framing — *no hay que reconstruir la historia modificando
+transactions*.
+
+**Four mechanisms, and each takes a different edit.** 3.8.3 enumerates them; the
+join is only the first:
+
+| Mechanism | What changes |
+|---|---|
+| An inner join to `user_accounts` taken only to read a name | becomes a resolution against the registry, or a LEFT JOIN plus a coalesce over the two sources |
+| A driving table that is `user_accounts` | the row set has to come from the registry for elapsed periods, not from the live table |
+| An id array built from `user_accounts` and then used as `= ANY($1)` | the array has to include closed ids when the question is about an elapsed period |
+| An aggregate over live accounts — `MIN(ua.created_at)` at `overviewAccountRepository.js:213` | the window's own start date moves when the oldest account closes; it reads the registry or it reports a different period |
+
+**The single widest edit is one shared string.** `TRANSACTION_ROW_SOURCE` opens
+with `JOIN user_accounts ua ON ua.account_id = tr.account_id` and feeds eight
+statements on `main` and six on this branch (4.6), so all of them move together
+and cannot drift apart.
+
+**Two pairs behave oppositely and the difference is the review criterion.** The
+domain teaser's page query and its `COUNT(*)` both carry the shared source, so
+they drop the same rows and cannot disagree. The pocket pair does not:
+`ALLOCATIONS_PAGE_QUERY` joins `user_accounts` and `ALLOCATIONS_COUNT_QUERY` does
+not (6.5), so they disagree by exactly the rows a closed account owns — a count
+the listing cannot fill and an empty trailing page. **Any statement changed in
+this block is checked against its partner, not on its own.**
+
+**The budget read is the one with four removals and it is the acceptance test of
+this block.** A `category_budget` account closed in September must leave March's
+budget figure unchanged, and its own series must end at zero from the closing
+month on. If closing an account moves an elapsed month, the block is not done —
+that is the owner's rule, *una accion sobre la cuenta en septiembre no puede
+modificar retrospectivamente marzo*.
+
+**One failure mode to guard explicitly**: a registry-sourced row that reaches
+`makeCategoryGroups` with a null `categoryName` throws on
+`.sort(([a], [b]) => a.localeCompare(b))` before any group is built, and
+`makeBudgetCategoryStatus.js:40-41` refuses it after that. Rows backfilled with
+nulls (4.4) hit this, so the reader branches on the null rather than passing it
+through.
+
+### 7.4 Block 3, the close operation
+
+**The sequence, and the order is load-bearing:**
+
+1. **Validate and refuse the system accounts.** The guard is already written and
+   already has both arms — it refuses by non-creatable type and by reserved name,
+   both evaluated before any branch (`deleteAccountService.js`). The compensation
+   account never closes, by the owner's ruling.
+2. **Refuse unless the derived balance is zero** — on `bank`, `cash`,
+   `investment` and `debtor` only. `income_source` skips this by his ruling, and
+   the reason is measured off the writers: the income source is always the source
+   leg and that leg carries a negative amount, so its balance runs below zero
+   with every income.
+3. **Release what the account committed to pockets.** `bank` and `cash` only —
+   `ELIGIBLE_SOURCE_TYPES` at `pocketAllocationService.js:56` is exactly those
+   two. CLOSE writes one negative `pocket_allocations` row per pocket inside its
+   own transaction; it cannot call `pocketAllocationService.release`, which owns
+   its own connection. **The release does not permit the delete** (6.5).
+4. **Stamp the registry row** — the twelve closure columns of 4.6, including
+   `close_reason`, the resolved `currency_id`, and for a `category_budget`
+   account the three extension columns **read before the cascade fires**.
+5. **Write the terminating zero** — one `budget_monthly_allocations` row for the
+   current month at amount zero, for a `category_budget` account. This is fix 1's
+   second half: elapsed months keep their rows, and the series ends at zero from
+   the closing month on.
+6. **Delete the `user_accounts` row.** The four extension cascades fire here.
+
+**Steps 4, 5 and 6 are one database transaction, and step 4 precedes step 6, or
+the identity goes with the row and the surviving transactions become
+uninterpretable.** Step 4 also precedes the cascade in step 6 for a stronger
+reason: after the cascade the extension row it reads no longer exists.
+
+**What must never run: `eraseAccountTail.js:97`**, which deletes
+`pocket_allocations` rows directly and destroys the history the restricting key
+exists to protect (6.5). CLOSE does not call it.
+
+### 7.5 Block 4, the retirement
+
+The three other methods are commented out with the date and a reason, never
+deleted, per the standing rule. The sites are enumerated in section 9. Of the
+thirty-four files in the deletion page, those of the impact report, the reversal
+modal, the hard-delete confirmation and the deactivation view are left with no
+method behind them.
+
+### 7.6 The frontend, per block
+
+- **Blocks 0 to 2:** no screen changes.
+- **Block 3:** the screen lands **with** the backend, not after it. The refusal
+  gate is useless if the owner cannot see why the button is disabled or where to
+  go and settle the balance, and `close_reason` is a mandatory form field. The
+  screen also warns that the budget goes with the account, which his ruling
+  settles the mechanics of but not the disclosure, and the action is
+  irreversible.
+- **Block 4:** the surplus screens are retired.
+
+The block-three screen is designed by the frontend design session before the
 component is written.
+
+### 7.7 What this spec deliberately does not cover
+
+- **Production state.** Whether the chain has run there and which filenames its
+  `migrations` table names are the owner's reads alone (section 11), and the
+  closure-timestamp column is a deployment blocker independent of this design
+  (section 8).
+- **Any figure measured on a database.** Nothing here was run; the schema is
+  frozen.
+- **The budget writer's blind update by account id alone**
+  (`budgetAllocationService.js`), which belongs to whoever owns that service and
+  is not a risk this plan creates (10.3).
 
 ---
 
@@ -2030,14 +2209,17 @@ ella* — so it is in 10.1 and not here. The analysis that produced the same ans
 is kept below, because it is the reason no seventh key is repointed and because
 it names the one loss his ruling does **not** cover.
 
-- **Preserving the rows preserves nothing observable.** Repointing
-  `010_create_budget_tables.sql:43` at the registry would keep the allocation
-  rows, and all three readers would still miss them: the account id list roots in
-  `user_accounts` (`overviewAccountRepository.js:32-39`), the budget totals
-  inner-join the extension table (`budgetTransactionRepository.js:132-133`), and
-  both of those are settled by the first cascade and by the account delete, not
-  by this one. A seventh repointed key in three build paths would buy rows
-  nothing reads.
+- **Preserving the rows preserves nothing observable — SUPERSEDED as a
+  conclusion, correct as a measurement.** Repointing
+  `010_create_budget_tables.sql:42-43` at the registry keeps the allocation rows,
+  and all the readers still miss them: the account id list roots in
+  `user_accounts` (`overviewAccountRepository.js:32-39`) and the budget totals
+  inner-join both `user_accounts` and the extension table
+  (`budgetTransactionRepository.js:132-133`). **That is still true and it is why
+  the key alone is not enough**, but the owner ruled on 2026-09-08 that the
+  history must stay correct, so the answer is to change the readers rather than
+  to let the rows go. 4.6 counts the removals: four, of which this key closes
+  one.
 - **Letting them go costs nothing extra**, because it is what the schema already
   does and because the loss the user actually experiences arrives by another
   route entirely.
@@ -2072,10 +2254,15 @@ whoever owns the budget service.
 Two decisions that stood in the first version of this document are **closed, not
 deferred**, and the owner closed them in opposite directions on the same day:
 
-- **Whether the registry stamps the type-specific attributes: it does not.** The
-  extension row is deleted with the account, so there is nothing to stamp and
-  nothing to reconcile. The registry carries name, type, currency and starting
-  amount, and that is the entire historical record of a closed account.
+- **Whether the registry stamps the type-specific attributes: it does not —
+  REOPENED AND AMENDED on 2026-09-08, for one type only.** The reason given here
+  was that the extension row is deleted with the account, so there is nothing to
+  stamp. Fix 1 falsified that reason for `category_budget`: after the seventh key
+  its allocation rows outlive the account and need three columns that died with
+  the extension row, so the registry stamps `category_name`, `subcategory` and
+  `category_nature_type_id`. **The other five closable types are unchanged** and
+  their roughly thirty type-specific columns still die at close. The registry
+  carries fourteen columns, not four; 4.6 is the contract.
 - **What happens to the debtor's copied account-name column: nothing, and its
   reference stops blanking.** `debtor_accounts.selected_account_id` is repointed
   at the registry, which is a different account from the one the debtor row
