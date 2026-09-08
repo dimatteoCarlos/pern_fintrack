@@ -43,6 +43,18 @@ that breaks them costs the developer a file read to follow an argument.
   zero, computed and never rendered (K6)", never "K6 is open".
 - **No filler.** Do not repeat what the developer just said. Do not summarise the
   context unless asked.
+- **Actions lead.** Open with what was done and what is pending, as a list or a
+  table. Reasoning comes after, and only where a decision depends on it. A reply
+  that opens with three paragraphs of context buries the one line that changes
+  what the developer does next.
+- **No metaphors, ever.** Name the file, the function, the column, the constant,
+  the movement type. A figure of speech replaces the mechanism with a picture of
+  it, and the picture cannot be checked against the code. Write "the netting in
+  `MONTHLY_EXPENSE_QUERY` sums movement types 1 and 6", never "the query
+  balances both sides of the story".
+- **Use the identifiers the code uses.** `account_balance`, not "the saved
+  figure". `spentAmountSql`, not "the shared builder". A renamed thing is a
+  different thing, and a paraphrase cannot be grepped.
 - **Close with a direct question** when a decision is needed.
 
 Marks: bold for key concepts, `code` for files, functions and variables, `-` for
