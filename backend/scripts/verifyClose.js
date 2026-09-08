@@ -127,6 +127,15 @@ const expectRefusal = async (client, label, run) => {
 };
 
 // Asked of the server, not of the configuration, and answered before a
+// IT DOES NOT SHARE assertExpectedDatabase, THE MIGRATION INTERLOCK, and the
+// difference is deliberate. That one classifies the destination by address too
+// but leaves a door, DB_REMOTE_OK, because db:migrate legitimately has to
+// reach production one day and a guard with no door gets deleted rather than
+// satisfied. This probe has no such day: it exists to close an account and
+// roll it back, which is never a thing to do anywhere but a local test
+// database. So it keeps the third arm the interlock cannot take - it refuses
+// an encrypted connection - and offers no way through. Do not unify them.
+//
 // transaction is opened. host() rather than a cast to text: the inet type
 // carries its netmask, so the cast yields '::1/128' and no loopback literal
 // would ever match it. A rolled-back probe is still a probe that wrote rows
