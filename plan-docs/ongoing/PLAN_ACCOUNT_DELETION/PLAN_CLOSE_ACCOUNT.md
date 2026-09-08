@@ -27,10 +27,151 @@ design can advance; they can still move.
 | Method conceptualization | received, evaluated, accepted with three measured collisions |
 | Matrix by account type | settled: six types close, one never does, one no longer exists |
 | Historical identity design | the registry, ruled by the migration session; its extension half reversed by the owner on 2026-09-07 |
-| Schema | specified, not written; the migration suspension still holds |
+| Schema | **written and merged** on 2026-09-08 (`035_create_account_registry.sql`); applied to no database, and the migration suspension still holds |
 | Historical identity contract | **closed by the owner on 2026-09-08** — fourteen columns, 4.6 |
 | Implementation spec | written against the closed contract, section 7 |
-| Frontend | not started; the screen goes to the design session |
+| Close operation | **written and merged** on 2026-09-08, all three blocks |
+| Frontend | **written and merged** on 2026-09-08 by this session, not by the design session |
+| Exercised against a database | **no**, and section 0.1 says what that costs |
+
+---
+
+## 0.1 Amendment of 2026-09-08 — what moved after this plan was written
+
+Everything below is measured on `main` after the merges of 2026-09-08. Where
+this section and the body of the plan disagree, this section is the later
+measurement and the body is the earlier design.
+
+### The historical identity table is called `account_registry`
+
+Not the name used in the body of section 4. Its creation, its trigger, its
+backfill and the seven keys it repoints all live in one file
+(`035_create_account_registry.sql`).
+
+**The column holding when the account was created is `account_created_at`, not
+`created_at`.** The rename exists so the registry's own row-creation instant
+and the account's are not two columns a reader has to tell apart by position.
+
+### CLOSE deletes the row, and the marking `UPDATE` is retired
+
+The statement that set `closed_at` and `deleted_at` on `user_accounts` is
+commented out rather than removed, per the owner's standing rule. It existed
+because deleting the row was refused by foreign keys, never because marking was
+the intent. What the account leaves behind is the registry row.
+
+### Both settlement policies are retired, and so is the release gate
+
+`DISCARD` and `TRANSFER` are gone from the service, from the controller and
+from the two read endpoints. **CLOSE does not settle, transfer, discard or
+reverse anything: it refuses any balance that is not zero.** The three request
+fields that drove the settlement — the policy, the destination account and the
+residual the owner had been shown — are read by nobody. A request that still
+sends them is ignored rather than refused, because the frontend deploys
+separately from the backend.
+
+The transfer-destination list is still queried by nothing: the preview returns
+`destinations: []` and `destinationCount: 0`, keys kept so a consumer reads an
+empty list instead of `undefined`.
+
+### `close_reason` is mandatory, and the schema is what makes it so
+
+`chk_close_reason_accompanies_closure` refuses a closure stamp with no reason
+and refuses one made only of whitespace. The service therefore raises a 400
+naming the field, before it takes its lock, rather than surfacing a constraint
+name. The frontend collects it in a required field for the same reason.
+
+### The registry's trigger writes two columns, not fourteen
+
+Measured, and it corrects an assumption anything reading the registry could
+otherwise make. The trigger (`fn_register_account_identity`) and the backfill
+both insert `(account_id, user_id)` and nothing else. **Every other column on
+an open account's registry row is NULL**, and is written only at closure, by
+the upsert inside the close.
+
+Consequence for any reader: an account's name, type, currency, starting amount
+and start date must be resolved as `COALESCE(user_accounts.x, registry.x)`,
+never off the registry alone. Reading the registry directly would blank the
+identity of every open account in the application.
+
+### The account identity builder exists, and the seventeen sites do not use it yet
+
+`accountIdentityCte` in
+`backend/src/utils/fintrackUtils/accountDataRetrieval/accountIdentity.js`
+returns a common table expression named `account_identity`, driven from the
+registry with `user_accounts` left-joined onto it, every identity column a
+`COALESCE` as above, plus `is_closed` derived as `user_accounts.account_id IS
+NULL`.
+
+It is a CTE rather than a scalar expression for one reason: the query that
+builds a transaction row reaches its account with an INNER join, so a closed
+account's row is dropped by the `FROM` before any expression in the `SELECT`
+could run. The substitution has to happen at the source.
+
+`account_id` and `account_starting_amount` keep their names exactly, so the
+shared balance builder (`derivedAccountBalanceSql`) works against the CTE with
+no change to it and no change to any caller's arithmetic.
+
+**Seventeen references to `user_accounts` under `overview_services/` still have
+to be decided query by query** — measured as seventeen in SQL out of
+twenty-four textual occurrences, the other seven being comments. Six of them
+lose the row entirely; eleven use the account as a driving table, where a
+closed account is the subject of the answer rather than an attribute of a
+transaction. Two of those carry an explicit exclusion of the compensation
+account type and one monthly leg deliberately keeps a side with no name, so a
+mechanical repoint would move figures without raising anything.
+
+**A query that used to get its exclusion free from the join now has to state
+it.** Where a reader relied on a closed account simply vanishing from a `JOIN
+user_accounts`, the CTE returns it and the reader needs `AND NOT
+ai.is_closed`.
+
+### The frontend exists
+
+A close dialog, its hook and its types are merged. It reads the close preview
+before it offers the button, because the balance decides whether the close is
+accepted and the owner cannot see that balance from the menu they arrived
+through; a nonzero balance disables the confirm and names the routes that do
+accept one. It collects the closing reason as a required field.
+
+`CLOSE` is deliberately not part of the frontend's standard-deletion union:
+widening it would let the hook for the reversible deactivation and the erasure
+be instantiated with `CLOSE` and send a request carrying no reason.
+
+### None of it has been exercised
+
+No database has `035_create_account_registry.sql` applied. `fintrack_dev` was
+measured on 2026-09-08 by the migration session as carrying migrations 031
+through 034 and not 035 — a read this session did not take and does not repeat
+as its own. Until that file is applied, the four transaction keys, the pocket
+allocation key and the budget month key still restrict into `user_accounts` and
+the delete is refused. **The close screen surfaces that refusal rather than
+hiding it**, which is the intended behaviour and not a defect to patch.
+
+### Ownership moved on 2026-09-08
+
+- **Everything to do with migrations and the database belongs to the backdating
+  session**, by the owner's instruction. A migration this module turns out to
+  need is taken there rather than written here.
+- **The order of the remaining work is this session's to choose**, by the
+  owner's instruction of the same day. Ordering is no longer put to him.
+
+### Still open, and the owner rules
+
+- **Whether the closing reason has a maximum length.** It is stored as
+  unbounded text, it is supplied by the client, and nothing between the
+  request and the column caps it. The frontend field does not cap it either,
+  deliberately: a limit invented here would be a limit the schema does not
+  enforce, so a second writer would not honour it. Raised on 2026-09-08 and
+  not answered.
+
+### Left as measured, not repaired
+
+- **Two verification scripts call the close with the pre-retirement argument
+  list** (`verifyCloseAccount.js`, `verifyCloseTransfer.js`). They pass a
+  settlement policy where the account row now goes, so they were already
+  unrunnable before the settlement was retired. Recorded rather than fixed:
+  repairing them means deciding what they should assert about a close that no
+  longer settles, which is a rewrite rather than a signature change.
 
 ---
 
