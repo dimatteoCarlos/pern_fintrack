@@ -1,17 +1,32 @@
--- BLOCK_1_SCHEMA_DRAFT.sql
+-- 035_create_account_registry.sql
 --
 -- ============================================================================
--- DRAFT, NOT A CHAIN FILE. This is block 1 of PLAN_CLOSE_ACCOUNT.md written in
---   full, held in the deletion plan's own folder because ownership of
---   backend/src/db/migrations/sql_migrations/ has not been settled. The standing
---   record says the migration session adds every file there. This session was
---   told the migration suspension is lifted for writing block 1, which is not
---   the same statement, and the migration session put the difference to the
---   owner rather than resolving it between sessions. Until he rules, the content
---   lives here. If it becomes this session's to add, it moves unchanged to
---   035_create_account_registry.sql with git mv; 035 was measured free by the
---   migration session on 2026-09-08 across all five worktrees. If it becomes
---   theirs, they receive a finished file instead of a specification to re-derive.
+-- Migration 035: creates account_registry, the durable historical identity of
+--   an account, and repoints seven foreign keys onto it so that references
+--   survive the deletion of the user_accounts row. Block 1 of
+--   PLAN_CLOSE_ACCOUNT.md.
+--
+-- THE RULING THAT PUT THIS FILE HERE. It was written on 2026-09-08 as a draft
+--   in the deletion plan's folder, because the standing record said the
+--   migration session adds every file in this directory, and this session had
+--   been told only that the migration suspension was lifted for writing block
+--   1 - not the same statement. The owner settled it the same day, in his own
+--   words: "La carpeta correcta es la cadena de migraciones SQL, no
+--   plan-docs/. El registro no es documentacion: es una dependencia
+--   estructural del esquema." The file moved here unchanged by git mv; only
+--   this header block was rewritten.
+--
+-- WHAT THE REGISTRY IS, in the owner's framing of the same ruling: not a table
+--   of closed accounts, but "la identidad historica durable que permite que
+--   sobrevivan las referencias cuando user_accounts desaparece". Every account
+--   has a row here from the moment it is created, written by the trigger
+--   below, and that row carries a null closed_at for as long as the account is
+--   open. Closure fills the closure columns; it does not create the row.
+--
+-- 035 IS FREE. Measured by the migration session on 2026-09-08 across all five
+--   worktrees, and re-checked here against origin/main and
+--   origin/feat/backdating immediately before the move: 034 is the highest
+--   number on every branch.
 --
 -- WHAT IT DELIVERS, and why the four pieces are one file. The registry table,
 --   the trigger that populates it, the backfill of existing accounts, and seven
