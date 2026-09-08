@@ -217,6 +217,72 @@ upstream defect above and is not his ruling.
 
 ---
 
+### 3.6 The category name is not lost, and the reason is in the account name
+
+**The owner asked the right question on 2026-09-07** — *el nombre de la
+categoria, `category_budget_accounts.category_name`: no, entonces como podemos
+resolver esto? no borrando la cuenta de user_accounts? es decir no sobreviven al
+borrado, ni el budget, ni los datos de la cuenta borrada, y el budget no esta
+dentro de las transacciones.* The premise is exact: that column dies with the
+cascade, and no transaction row carries it. **The answer is that the name is
+stored twice, and the copy that survives is the one on `user_accounts`.**
+
+**The account name IS the category, composed at creation.**
+`accountCategoryCreationcontroller.js:80-83`:
+
+```js
+const account_name =
+  account_type_name === 'category_budget'
+    ? `${category_name}/${subcategory}/${nature_type_name_req}`
+    : req.body.name;
+```
+
+The three parts come from `:74-76`, each `.trim().toLowerCase()`, and `:326`
+inserts the very same `category_name` variable into `category_budget_accounts`.
+**So `cba.category_name` is a copy of the first segment of `ua.account_name`, not
+an independent fact.** The close stamps `account_name` on the registry row before
+deleting, so `food/restaurants/must` survives the account, and the category, the
+subcategory and the nature survive inside it.
+
+**The frontend already reads the category out of the composite rather than out of
+the extension table.** `newCategoryHelper.ts:26-33` declares
+`parseCategoryAccountName(fullName)`, which splits on `/` and returns
+`{ category, subcategory, nature }`, with a branch for a legacy two-part name.
+That function is what turns a stored account name back into the three fields the
+user typed, and it needs nothing from `category_budget_accounts`.
+
+**The one transaction-level reader that names a category already falls back to
+it.** `dashboardMonthlyTotalAmountByType.js:121` selects
+`COALESCE(cba.category_name, ua.account_name) AS name` over a `LEFT JOIN
+category_budget_accounts cba ON tr.account_id = cba.account_id` at `:132`. When
+the extension row is gone the left join yields null and the composite name is
+used — the query degrades to the surviving copy on its own, with no change.
+
+**What genuinely does not survive is budget data, which is what the owner ruled
+should not survive:** `budget`, `original_budget` and the six FX columns on
+`category_budget_accounts`, plus every row of `budget_monthly_allocations`
+through the second cascade. Nothing there is a name.
+
+| Field on the closed budget account | Survives the close? | Where |
+|---|---|---|
+| category name | yes | first segment of the stamped `account_name` |
+| subcategory | yes | second segment of the same |
+| nature type, as text | yes | third segment of the same |
+| `category_nature_type_id`, as an id | no | the catalog key is not stamped; the name is |
+| `budget`, `original_budget`, the FX pair | no | ruled by the owner |
+| monthly budget history | no | ruled by the owner, second cascade (3.5) |
+
+**One pre-existing weakness, not created by the close and not fixed by it.** The
+composite is split on `/` and the creation path normalizes the typed name with
+nothing more than `.trim().toLowerCase()` at `:74`; no rejection of a `/` inside
+it was found in that path. A category typed as `food/drink` therefore produces a
+four-part name that `parseCategoryAccountName` reads as category `food`,
+subcategory `drink`. That is already true of every open budget account today, is
+owned by the account creation path, and is recorded here only because the close
+makes the composite the last remaining copy.
+
+---
+
 ## 4. The historical identity
 
 ### 4.1 The problem, measured
