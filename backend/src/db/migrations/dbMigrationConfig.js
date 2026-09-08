@@ -94,6 +94,10 @@ export function isProduction() {
 // ============================================
 // 5. Refuse a destination the operator did not name
 // ============================================
+// Loopback, spelled every way a server can report it. inet_server_addr() gives
+// back NULL for a Unix socket, handled at the call site rather than here.
+const LOOPBACK = new Set(['127.0.0.1', '::1', 'localhost']);
+
 /**
  * Guard the destination, not the mode.
  *
@@ -141,6 +145,46 @@ export async function assertExpectedDatabase(client, script) {
     pc.gray(`   DB_EXPECTED names "${expected}" and this connection reached ${where}.\n`),
   );
   process.exit(1);
+ }
+
+ // A NAME THE OPERATOR TYPES IS NOT PROOF OF WHERE THE DATABASE IS. The check
+ // above pairs DB_EXPECTED against current_database(), and both sides are
+ // satisfied by a remote database that happens to carry the expected name. The
+ // case the whole interlock exists for - NODE_ENV unset and DATABASE_URI
+ // pointing at production - survives it whenever the operator types the
+ // production database's own name.
+ //
+ // So the destination is also classified by address, and a run that leaves this
+ // machine has to say so. The freeze on production runs stands until the
+ // deployment process is defined, which makes an off-machine destination the
+ // exact thing that should not happen by accident.
+ //
+ // AN ALLOWLIST OF ADDRESSES, NOT A DENYLIST OF NAMES. schemaParity.js tests
+ // the connection string against /prod|supabase/i, which matches a spelling
+ // rather than a database; a managed database can be called anything. NULL is
+ // included because inet_server_addr() returns it for a Unix-socket connection,
+ // which cannot leave the machine.
+ //
+ // It refuses rather than warns, and DB_REMOTE_OK is the way through, because
+ // one day a migration does have to reach production and a guard with no door
+ // gets deleted rather than satisfied.
+ const local = server.host === null || LOOPBACK.has(server.host);
+
+ if (!local && !process.env.DB_REMOTE_OK) {
+  console.error(
+   pc.red(`\n❌ ${script} refuses to run: the destination is not this machine.\n`) +
+    pc.gray(`   This connection reached ${where}.\n`) +
+    pc.gray('   DB_EXPECTED confirms a name, and a remote database can carry any name.\n') +
+    pc.gray('   Production runs are frozen until the deployment process is defined.\n') +
+    pc.gray('   Set DB_REMOTE_OK=1 to state that an off-machine destination is meant.\n'),
+  );
+  process.exit(1);
+ }
+
+ if (!local) {
+  console.log(
+   pc.yellow(`⚠ Off-machine destination, allowed by DB_REMOTE_OK: ${where}`),
+  );
  }
 
  console.log(pc.green(`✅ Destination confirmed: ${where}`));
