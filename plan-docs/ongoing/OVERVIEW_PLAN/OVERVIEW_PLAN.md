@@ -145,7 +145,15 @@ does not carry component behaviour.
 | 4 | the spend distribution, from the page payload, no `analysis` parameter, no client-side reordering | `propuesta-pareto-gasto.html` |
 | 5 | monthly snapshot, financial goals, activity teaser — all three from the same payload | `propuesta-snapshot-mensual.html` and the sketch |
 | 6 | the six domain screens, `derived` where it suffices and `full` only where a ranked breakdown is needed | **no mockup exists** |
-| 7 | the level-3 links out of the level-2 rows — five domains, no new endpoint and no new figure | `OVERVIEW_LEVEL3.md` |
+| 7 | the level-3 links out of the level-2 rows — five domains, no new calculation and no entity endpoint | `OVERVIEW_LEVEL3.md` |
+
+**Two pieces of P5 do not wait on the remaining decisions and can start now.**
+The month picker reading the served window off the response, and the level-3
+navigation wiring. Both are settled inputs: the served window publishes the
+month, its bounds and whether it is still running, and the five routable domains
+each publish the identity their destination screen reads. What must not be
+advanced with them is the semantics — the final figures, the hero, and the change
+published as an amount or as a rate, which are still open.
 
 **The exit condition is the one that matters to the user:** the live screen must
 end with no dependency on the balance-by-account-type endpoint for any Overview
