@@ -264,13 +264,29 @@ Measured in the files on 2026-09-08.
   `fintrack_prod_rehearsal` and `fintrack_prod_rehearsal_full` — their
   measurement, recorded as theirs. Production was not read.
 
-**The open decision is not whether to remove the catalog row.** Rows carrying
-that type could exist on production, written before the settlement was retired,
-and if they do those two predicates are the only things that account for them.
-So the question is what the investment card should show for a closure type
-nothing writes, which belongs to Overview before it belongs to a migration. The
-migration session will write nothing touching the catalog until the owner
-decides.
+**Overview settled its half on 2026-09-08 and both predicates stay.** Their
+measurement, and it corrects the reasoning this section first carried: sixteen
+rows on `fintrack_dev` carry the RTA annulment prefix and **every one of them
+is movement type 9, not 10**, so the closure adjustment the investment card
+publishes is produced entirely by its second arm today. The retired type is not
+what keeps the column alive. What it still does is account for rows written
+before the settlement was retired — and a zero on one database says nothing
+about another's.
+
+The two arms are not interchangeable, which is why keeping both is correct
+rather than merely careful: a prefixed row is an annulment carrying the
+profit-and-loss type, and a type-10 row was a settlement carrying no prefix.
+Neither predicate finds the other's rows.
+
+**A correction to how this section first put it.** The predicate compares an
+integer and never joins `movement_types`, so removing the catalog row would not
+break the query. What would refuse the removal is the foreign key, if any
+type-10 transaction exists; where none does, the removal changes nothing in the
+card. So the row's protection is referential, not a matter of a live predicate
+losing its catalog entry.
+
+**What is left for the owner is the catalog row itself**, and it belongs to the
+migration session, which will write nothing touching it until he decides.
 
 ### Still open, and the owner rules
 
