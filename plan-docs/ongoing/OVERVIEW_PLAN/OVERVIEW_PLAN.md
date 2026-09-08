@@ -21,7 +21,15 @@ destination. It answers three questions at three depths and refuses a fourth.
 |---|---|---|
 | level 1 | what is my situation | the Overview page, one request |
 | level 2 | what explains this domain | the per-domain detail screen |
-| level 3 | what explains this entity | **not Overview** — the owning module (Pocket, Debt, Investment) |
+| level 3 | what explains this entity | the owning module computes it, **Overview routes to it** — `OVERVIEW_LEVEL3.md` |
+
+**The level-3 row said "not Overview" until 2026-09-08 and that was wrong by
+half.** Computing an entity's figures belongs to the owning module; routing from
+a level-2 row to that entity belongs to Overview, because the row the user
+clicks is Overview's payload. Measured, five of the six domains already publish
+the id the destination screen reads, so level 3 needs no new endpoint and no new
+figure — only links. `OVERVIEW_LEVEL3.md` carries the field and the destination
+per domain.
 
 The problem it exists to solve, still true today: the live screen renders **three
 figures** — net worth, income, expense — built from **five calls** to the
@@ -32,7 +40,7 @@ Everything Overview computes is computed and discarded.
 
 ## 2. The reference set — which file answers what
 
-Two tracks. Nothing outside these eight files is a source.
+Two tracks. Nothing outside these nine files is a source.
 
 ### What to build
 
@@ -41,6 +49,7 @@ Two tracks. Nothing outside these eight files is a source.
 | `OVERVIEW_PLAN.md` (this file) | what is done, what remains, in what order |
 | `OVERVIEW.md` | what each figure measures, its formula, its null semantics |
 | `OVERVIEW_LAYOUT.md` | which published field feeds each block, on which endpoint, at which depth |
+| `OVERVIEW_LEVEL3.md` | which entity each domain opens, the field carrying its id, and the screen it lands on |
 | `PLAN_OVERVIEW_CONTRACT.md` | the exact wire shape of the payload — consulted, not read front to back |
 | `OVERVIEW_DECISIONS.md` | why a thing was decided the way it was — consulted |
 
@@ -136,6 +145,7 @@ does not carry component behaviour.
 | 4 | the spend distribution, from the page payload, no `analysis` parameter, no client-side reordering | `propuesta-pareto-gasto.html` |
 | 5 | monthly snapshot, financial goals, activity teaser — all three from the same payload | `propuesta-snapshot-mensual.html` and the sketch |
 | 6 | the six domain screens, `derived` where it suffices and `full` only where a ranked breakdown is needed | **no mockup exists** |
+| 7 | the level-3 links out of the level-2 rows — five domains, no new endpoint and no new figure | `OVERVIEW_LEVEL3.md` |
 
 **The exit condition is the one that matters to the user:** the live screen must
 end with no dependency on the balance-by-account-type endpoint for any Overview
@@ -152,7 +162,17 @@ month-to-date.
 | gap | what it is |
 |---|---|
 | **no mockup for the six domain screens** | the level-2 backend is served and committed; nothing draws it. This blocks commit 6 of P5 and nothing before it |
-| **budget variance by category** | the level-2 specification asks which categories are over budget and by how much, as a decomposition. The code has only the single level-1 figure `budgetVariance` in `makeExpenseCard.js`; no per-category variance exists anywhere |
+| **the page's transaction count omits investment** | `makeAllCard` sums the five counts `overviewPageService.js` hands it — income, expense, debt, pocket, profit and loss — and investment is not among them. No other domain counts investment movements, so `transactionCountAll` is short by all of them. The figure exists: `overviewInvestmentService.js` publishes `totalRows` on the level-2 response and never lifts it to the card, because `makeInvestmentCard` does not carry `transactionCount` at all |
+
+### The gap that was recorded and does not exist
+
+**Budget variance by category was listed here as missing. It is built.**
+`makeBudgetCategoryStatus.js` publishes `budgetAmount`, `actualSpent`,
+`remainingBudget`, `executionPercentage` and `isOverBudget` per category, and
+`overviewExpenseService.js` puts the whole array into the level-1 page payload
+under `charts.expenseCategories` — so it is available a level earlier than the
+specification asked for it. The row was written against an older state of the
+code and is removed rather than corrected.
 
 ---
 
@@ -226,7 +246,7 @@ Each carries something no other file does.
 | file | what only it has |
 |---|---|
 | `PLAN_OVERVIEW.md` | section 4, the guard rules, and section 5, the contract obligations; its own header says the rest is superseded |
-| `PLAN_OVERVIEW_LEVEL2.md` | the null semantics per analysis, and the per-category budget variance that was never built |
+| `PLAN_OVERVIEW_LEVEL2.md` | the null semantics per analysis. Its second claim to uniqueness — the per-category budget variance — is void: the variance is built and published at level 1 |
 | `OVERVIEW_INDICATOR_MATRIX.md` | each indicator's temporal nature, owning module and level |
 | `PLAN_OVERVIEW_KPI_CATALOG.md` | the entry format of an indicator; `POCKET_MODULE_SPEC.md` cites it three times |
 | `INVENTARIO_ENDPOINTS_E_INDICADORES.md` | a historical endpoint measurement, declared unmaintained |
