@@ -299,58 +299,73 @@ the accounts table and needs no change.
 
 ---
 
-## 5. Matrix by account type
+## 5. Which types CLOSE applies to
 
-Seven types are creatable by the user, plus the compensation type.
+**The owner ruled on 2026-09-07 that a spending category is not an account and
+therefore does not close** — in his words, *las categorias no se cierran, porque
+no son cuentas*. That narrows the method to the four types that hold money.
 
-| Type | What its balance means | Zero required? | How the balance is disposed of |
-|---|---|---|---|
-| Bank | available money | yes | transfer to another active account |
-| Cash | available money | yes | transfer — **impossible today, see 5.1** |
-| Investment | a position, not cash | yes | liquidation into a liquid account, with a realized result |
-| Debtor | what is owed either way | yes | collection or payment in the debt module |
-| Pocket saving | a saving target of the old model | undefined | see 5.2 |
-| Spending category | accumulated historical spend | **no** | not applicable: it is not money |
-| Income source | accumulated historical income | **no** | not applicable |
-| Compensation | the system's counterparty | not applicable | **never closes**: the guard is already written |
+| Type | Closes? | Why |
+|---|---|---|
+| Bank | yes | holds money the owner can move out |
+| Cash | yes | same, and the ordinary transfer path can empty it — see 5.1 |
+| Investment | yes | holds a position that can be liquidated into a liquid account |
+| Debtor | yes | holds an amount owed in one direction or the other |
+| Spending category | **no** | classifies movements; it is not an account |
+| Income source | **no** | same shape as the category — **not yet ruled**, see 5.3 |
+| Pocket saving | **no** | the type is to be removed entirely — see 5.2 |
+| Compensation | **no** | the system's counterparty; the refusal is already written |
 
-### 5.1 Cash is not an eligible destination
+**The schema disagrees with the concept, and that has to be said plainly rather
+than argued.** A spending category is stored as a row in `user_accounts` with an
+extension row in `category_budget_accounts`, and it carries a derived balance
+like any other. The ruling is about what the product offers, not about what the
+tables hold. **Not yet ruled and needed before the phase list is final:** what a
+user does with a category they no longer want, since CLOSE will not take it.
 
-The query offering destinations for a closing account's balance
-(`getCloseTransferDestinations.js`) admits **only accounts of the bank type**,
-and it is at once the selector the owner sees and the write path's validator, so
-there is no second filter to correct it. A cash account with a balance would have
-nowhere to empty into. **Open decision.**
+### 5.1 The zero check is one condition, not a family rule
 
-### 5.2 Pocket saving: two live models
+With the classifying types out of scope the rule collapses to
+**derived balance equal to zero**, computed by `derivedAccountBalanceSql` in
+`derivedBalance.js` — the starting amount plus every movement except the
+account's own opening row. There is no per-type formula to design. A debtor's
+balance is signed by direction, but zero is zero in both directions, so nothing
+special is owed there either.
 
-- **The account type**, with its extension table and a target. The frontend
-  contains **no reference at all** to that type, so the application no longer
-  creates them, but it is still in the creatable-type whitelist
-  (`accountUtils.js`) and the controllers still serve it, so the API accepts it.
-- **The newer pocket module**, with its own table and allocations over real
-  accounts. **It has its own deletion** and never touches the old table.
+The earlier draft of this document proposed a rule per family of account type.
+That was only necessary because the classifying types were in scope; they are
+not, and the rule is gone rather than simplified.
 
-**Consequence:** deleting a pocket of the new module is not closing an account,
-and is out of this plan's scope. What is in scope is what to do with existing
-accounts of the pocket saving type. **Open decision.**
+### 5.2 The pocket saving type is removed, and its rows deleted
 
-### 5.3 The zero-balance gate cannot be global
+**The owner ruled the type does not exist and that any surviving rows are to be
+deleted physically.** That is separate work from CLOSE, and it has one hard
+dependency worth stating before it is scheduled: **those rows cannot be deleted
+today**, because they are accounts and every account is blocked by its own
+opening row and the references section 3 enumerates. The physical deletion is
+therefore only possible after the registry lands and the keys are repointed —
+the same phase order CLOSE needs.
 
-The derived balance is the starting amount plus every movement **except the
-account's own opening row** (`derivedBalance.js`). Every expense writes a
-positive row onto the spending category account, so **a used category is never
-zero** and under a global rule would never be closable — the opposite of what the
-conceptualization asks for.
+Two other facts about the type, measured:
 
-On a debtor the sign flips depending on who owes whom, so "zero" has to be
-defined over the formula and not over the sign.
+- The frontend contains **no reference to it at all**, so nothing creates one
+  through the application, but it is still in the creatable-type whitelist
+  (`accountUtils.js`) and the controllers still serve it, so the API accepts one.
+- **The newer pocket module is a different thing entirely** — its own table and
+  allocations over real accounts, with its own deletion, and it never touches
+  `pocket_saving_accounts`. Deleting a pocket there is not closing an account and
+  is outside this plan.
 
-**The gate applies to accounts holding a monetary position** — bank, cash,
-investment, debtor — **and does not apply to the classifying accounts** —
-spending category, income source — whose derived balance is the historical result
-of movements and not money awaiting disposal. **Open decision:** the exact
-formula per family.
+**Needed before the deletion runs, and it is the owner's alone:** whether any
+account of this type exists in production, and whose.
+
+### 5.3 The income source has the same shape and was not ruled
+
+An income source classifies movements exactly as a spending category does, holds
+no money the owner can move, and its derived balance is accumulated historical
+income. The ruling naming categories did not name it. It is listed as not
+closable above on the strength of that symmetry, and it is flagged rather than
+assumed.
 
 ---
 
@@ -456,6 +471,13 @@ is untouched.
   runtime initializer — so the chain is the only way that column arrives. **This
   is independent of CLOSE:** whether the column is useful afterwards is a much
   smaller question than whether main boots without it.
+  **The ledger read settled the rest.** The owner authorized it and it was run
+  against the development database: the closure-movement-type file, the
+  type-required file and the closure-timestamp file are all applied there. So the
+  file is not optional, cannot be held out, and lands as written; if its column is
+  ever removed under this design that is a forward migration decided later. **The
+  half that remains is production**, which the development database says nothing
+  about — the whole hazard is that development is ahead.
   Note the asymmetry with the same absence elsewhere: the deletion service's four
   branch tests read it as a JavaScript property off a star select, which fails
   silently and grants nothing, while the eight SQL sites fail loudly. Same
@@ -497,32 +519,32 @@ design.
 
 ---
 
-## 10. Open decisions
+## 10. Decisions
 
-Blocking — the design cannot be finished without them:
+### 10.1 Settled by the owner on 2026-09-07
+
+| Decision | Ruling |
+|---|---|
+| Which types close | only the four that hold money; a spending category is not an account |
+| The pocket saving type | it does not exist; any surviving rows are deleted physically, after the registry lands |
+| The zero condition | derived balance equal to zero, one rule for all four types |
+| The close reason | a new field on the close, stored on the registry row |
+| The other three methods | their route registrations and their service bodies are commented out, not removed |
+| The migration ledger read | authorized and performed |
+
+### 10.2 Still to settle
+
+| Decision | Options | Recommendation |
+|---|---|---|
+| Whether a closed account's name is renamed with a suffix to free it | rename on close / do nothing | **Do nothing.** Deleting the row already frees the name, because the rename collision check joins the accounts table (`accountEditController.js`) and finds nothing. A suffix would be stored as the registry's historical name and would then appear on transactions that happened before the close, so it buys nothing and corrupts the record. If the goal is telling two same-named accounts apart in a report, the registry already carries the closure date and the screen can say so without changing the data. |
+| Whether an income source closes | closable / not closable | **Not closable**, by the same reasoning that took categories out: it classifies movements and holds no money the owner can move. Flagged rather than assumed, because the ruling named categories only. |
+| What a user does with a category they no longer want, now that CLOSE will not take it | a separate operation / nothing | **A separate operation, out of this plan.** Recording it here so the gap is visible: the category is a row in the accounts table with a derived balance, and no method now removes it. |
+
+### 10.3 Deferred, because nothing is at risk either way
 
 | Decision | Who rules |
 |---|---|
-| Whether a closed category's name stays taken — the rule exists in one predicate today and the first close inverts it, so it cannot ship undecided | owner |
-| The exact "zero balance" formula per account family | owner |
-| Whether cash becomes an eligible destination, or a cash account with a balance can never be closed | owner |
-| What closing a pocket-saving-type account means, given the frontend no longer creates them | owner |
-| Whether the reason is a new field on the close or the account's existing note | owner |
-| Whether the other three methods are commented out in the service or removed from the router | owner |
-
-Deferred — answerable after the module ships, because no data is at risk either
-way:
-
-| Decision | Who rules |
-|---|---|
-| Whether a closed category still appears in a category picker or a historical budget list — a filter on a read, not a schema change | owner |
-
-**A deferred decision that silently changes behaviour on the day the code ships
-is not deferred.** That is why the category name question moved up: the policy
-still belongs to the account-name uniqueness plan
-(`PLAN_ACCOUNT_NAME_UNIQUENESS.md`), but the fact that the rule's only
-implementation is a predicate on a row about to stop existing makes it a gate on
-the first close.
+| Whether a closed account still appears in a picker or a historical list — a filter on a read, not a schema change | owner |
 
 Outside this plan's scope but found by it, and with no owning session running:
 **the budget writer updates a category's budget by account id alone**
