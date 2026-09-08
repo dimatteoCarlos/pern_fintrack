@@ -162,7 +162,23 @@ month-to-date.
 | gap | what it is |
 |---|---|
 | **no mockup for the six domain screens** | the level-2 backend is served and committed; nothing draws it. This blocks commit 6 of P5 and nothing before it |
-| **the page's transaction count omits investment** | `makeAllCard` sums the five counts `overviewPageService.js` hands it — income, expense, debt, pocket, profit and loss — and investment is not among them. No other domain counts investment movements, so `transactionCountAll` is short by all of them. The figure exists: `overviewInvestmentService.js` publishes `totalRows` on the level-2 response and never lifts it to the card, because `makeInvestmentCard` does not carry `transactionCount` at all |
+
+### The gap that was found and closed the same day
+
+**The page's transaction count omitted investment, and now does not.**
+`makeAllCard` summed the five counts `overviewPageService.js` handed it — income,
+expense, debt, pocket, profit and loss — and no other domain counts an
+investment movement, so `transactionCountAll` was short by every one of them.
+`makeInvestmentCard` now carries `transactionCount`, taken from the paging
+result the level-2 rows already came from, and the page sums six counts. The
+count survives the level-1 request that suppresses rows, because
+`readTransactionsPage` computes it whether or not rows were asked for.
+
+**The other three fields of the shared card shape stay absent from this card,
+and that is the standing decision.** It has no `totalAmount` because its
+headline figure is `ledgerBalance` under its own name, no `delta` and no
+`window`. Only the count was a wrong figure; the rest is why the card has its
+own component.
 
 ### The gap that was recorded and does not exist
 

@@ -95,6 +95,10 @@ export const overviewInvestmentService = {
    closureAdjustment: figures.closureAdjustment,
    largestBalance: figures.largestBalance,
    daysSinceLastContribution: figures.daysSinceLastContribution,
+   // The count the page needs, read off the same paging result the rows come
+   // from. readTransactionsPage computes it whether or not rows were asked for,
+   // so the level-1 request that suppresses rows still gets the count.
+   transactionCount: transactions.totalRows,
    currency: ACCOUNTING_CURRENCY_CODE,
   });
 

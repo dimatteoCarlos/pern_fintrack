@@ -87,3 +87,21 @@ test('the closure adjustment is a real term of the comparison', () => {
 test('the card is frozen', () => {
  assert.equal(Object.isFrozen(makeInvestmentCard({ ...base, accountCount: 2 })), true);
 });
+
+test('the card carries the transaction count the page has to sum', () => {
+ // The page's transactionCountAll adds one count per domain, and no other
+ // domain counts an investment movement: expense counts movement types 1 and 6
+ // on category_budget accounts, income counts income, debt counts debt, pocket
+ // counts allocations, pnl counts pnl. Without this field on the card the page
+ // reported a total short by every investment movement, so the assertion is
+ // that the field exists and is the number handed in, not that it is non-zero.
+ const card = makeInvestmentCard({ ...base, accountCount: 2, transactionCount: 7 });
+
+ assert.equal(card.transactionCount, 7);
+
+ // Zero is a real answer and not an absent one: an owner with investment
+ // accounts and no movement this month contributes 0 to the page total.
+ const quiet = makeInvestmentCard({ ...base, accountCount: 2, transactionCount: 0 });
+
+ assert.equal(quiet.transactionCount, 0);
+});
