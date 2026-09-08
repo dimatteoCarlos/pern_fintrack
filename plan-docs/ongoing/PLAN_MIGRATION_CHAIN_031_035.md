@@ -40,10 +40,11 @@ on.** Four measurements, each on its own file:
   change exclusively through the migration chain."*
 
 **The backend deploys from `feat/vercel-serverless`, not from `main`.** That
-branch is at `20de666d`, dated 2026-09-06, and `main` is **202 commits ahead of
-it with none behind**. Its highest migration file is
-`030_add_jpy_currency.sql`: none of the five files in section 1 exist on the
-branch Vercel builds. Merging any of this work into `main` therefore changes
+branch is at `20de666d`, dated 2026-09-06, and carries **zero commits that `main`
+does not have**; the count in the other direction was 202 when this document was
+written and 204 hours later, so read the direction and not the number. Its
+highest migration file is `030_add_jpy_currency.sql`: none of the five files in
+section 1 exist on the branch Vercel builds. Merging any of this work into `main` therefore changes
 nothing a user can reach, and does so until Carlos merges `main` into the deploy
 branch.
 
@@ -89,8 +90,11 @@ proof the repoint happened.
   `budget_monthly_allocations_account_id_fkey`, which are `ON DELETE RESTRICT`
   into `user_accounts` until 035 repoints them onto `account_registry`, which
   never deletes a row. Measured on `feat/deletion` at the two `ALTER TABLE`
-  statements that name those constraints. The first half of block 3 is committed
-  at `9b859c0e` and writes nothing that needs the registry.
+  statements that name those constraints. **Block 3 is written whole** — the
+  first half at `9b859c0e`, the second at `23cda78c`, which stamps the registry
+  row and then deletes the extension row and the account. Writing it was never
+  blocked; what 035 gates is proving it works, and the deletion session states it
+  is not asking for 035 to be applied in order to keep going.
 - **035 carries one conditional precondition.** Its seventh key alters
   `budget_monthly_allocations`, which does not exist on a database that ran
   `010_create_budget_tables.sql` before commit `3b72371f` rewrote it. The
@@ -98,6 +102,23 @@ proof the repoint happened.
   first.
 - **Nothing blocks 031 through 034.** They have runtime counterparts, they are
   independent of the registry, and no code waits on them.
+- **Code that runs without 031 fails in two different ways, and only one is
+  audible.** `transactionController.js` raises *"Account type 'boundary' not
+  found: the migration chain has not reached 031"*. The Overview reads instead
+  carry `AND act.account_type_name <> 'boundary'` in both
+  `overviewAccountRepository.js` and `overviewPageRepository.js`: a negative
+  comparison excludes nothing when no row holds that type, so a compensation
+  account still typed `bank` enters net worth and the account inventory with no
+  error anywhere. Whoever applies 031 should expect a wrong figure, not a crash,
+  as the sign that it has not run.
+- **No session has read any database's `migrations` table.** Both peer sessions
+  were asked on 2026-09-08 and both answered that they have not queried one, on
+  `fintrack_dev` or anywhere else. The applied state of every database is
+  therefore unknown to the repository, and the only evidence that the `boundary`
+  type resolves on the development database is a code comment in
+  `overviewAccountRepository.js` dated 2026-09-07 — which proves the type exists,
+  not that 031 ran, because `populateDB.js` seeds the same catalog row on the
+  boot path.
 
 ---
 
