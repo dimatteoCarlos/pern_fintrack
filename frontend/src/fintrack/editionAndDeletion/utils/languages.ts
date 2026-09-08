@@ -140,6 +140,19 @@ reportTitleWithImpact:string;
  softDeactivateConfirmButton: string;
  softDeactivateSuccessMessage: string;
 
+// CloseAccountUI
+ closeAccountTriggerButton: string;
+ closeAccountTitle: string;
+ closeAccountDescription: string;
+ closeAccountConfirmButton: string;
+ closeAccountSuccessMessage: string;
+ closeAccountBalanceLabel: string;
+ closeAccountBlockedByBalance: string;
+ closeAccountPreviewError: string;
+ closeAccountReasonLabel: string;
+ closeAccountReasonPlaceholder: string;
+ closeAccountReasonHint: string;
+
 // HardDeleteConfirmationUI
  hardDeleteTriggerButton: string;
  hardDeleteTitle: string;
@@ -317,6 +330,19 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   softDeactivateConfirmButton: "Deactivate Account",
   softDeactivateSuccessMessage: "{targetAccountName} has been deactivated.",
 
+// CloseAccountUI
+  closeAccountTriggerButton: "Close Account",
+  closeAccountTitle: "Close this account?",
+  closeAccountDescription: "Closing removes the account and keeps its history. Its transactions, pocket allocations and budget months stay readable under the same account, and any pockets this account was backing get their commitment back. The account name becomes available again.",
+  closeAccountConfirmButton: "Close Account",
+  closeAccountSuccessMessage: "{targetAccountName} has been closed. Its history stays in the registry under the same account.",
+  closeAccountBalanceLabel: "Balance to close with:",
+  closeAccountBlockedByBalance: "This account still holds {residual}. Closing does not move money: it only runs on an account at zero. Move the balance out with a transfer first, or use RTA to reverse this account's effects on other accounts.",
+  closeAccountPreviewError: "The balance could not be read, so the close cannot be offered yet.",
+  closeAccountReasonLabel: "Reason for closing",
+  closeAccountReasonPlaceholder: "e.g. Bank account closed at the branch",
+  closeAccountReasonHint: "Required. It is stored with the closure and is what a later reader sees instead of the account.",
+
   hardDeleteTriggerButton: "Erase Without Reversal",
   hardDeleteTitle: "Erase this account without reversing its impact?",
   hardDeleteDescription: "This permanently erases the account and its own transactions. It cannot be undone.",
@@ -449,6 +475,19 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   softDeactivateDescription: "Esto desactiva la cuenta en lugar de eliminarla. Su saldo, transacciones e historial permanecen exactamente iguales, y puede reactivarse más adelante. Esta acción no requiere un reporte de impacto financiero.",
   softDeactivateConfirmButton: "Desactivar Cuenta",
   softDeactivateSuccessMessage: "{targetAccountName} ha sido desactivada.",
+
+// CloseAccountUI
+  closeAccountTriggerButton: "Cerrar Cuenta",
+  closeAccountTitle: "\u00bfCerrar esta cuenta?",
+  closeAccountDescription: "Cerrar elimina la cuenta y conserva su historial. Sus transacciones, asignaciones de bolsillos y meses de presupuesto siguen siendo legibles bajo la misma cuenta, y los bolsillos que esta cuenta respaldaba recuperan su compromiso. El nombre de la cuenta vuelve a quedar disponible.",
+  closeAccountConfirmButton: "Cerrar Cuenta",
+  closeAccountSuccessMessage: "{targetAccountName} ha sido cerrada. Su historial permanece en el registro bajo la misma cuenta.",
+  closeAccountBalanceLabel: "Saldo con el que cerrar\u00eda:",
+  closeAccountBlockedByBalance: "Esta cuenta todav\u00eda tiene {residual}. Cerrar no mueve dinero: solo se ejecuta sobre una cuenta en cero. Saque el saldo con una transferencia primero, o use RTA para revertir los efectos de esta cuenta sobre las dem\u00e1s.",
+  closeAccountPreviewError: "No se pudo leer el saldo, as\u00ed que el cierre a\u00fan no puede ofrecerse.",
+  closeAccountReasonLabel: "Motivo del cierre",
+  closeAccountReasonPlaceholder: "p. ej. Cuenta bancaria cerrada en la sucursal",
+  closeAccountReasonHint: "Obligatorio. Se guarda junto al cierre y es lo que ver\u00e1 despu\u00e9s quien consulte, en lugar de la cuenta.",
 
   hardDeleteTriggerButton: "Eliminar Sin Reversión",
   hardDeleteTitle: "¿Eliminar esta cuenta sin revertir su impacto?",

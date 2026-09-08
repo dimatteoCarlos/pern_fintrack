@@ -1,6 +1,6 @@
 // frontend/src/fintrack/editionAndDeletion/pages/deletionAccount/UIComponents/standardDeletionUI/StandardDeletionDialog.tsx
 
-import { useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 
 import { useModalDialog } from '../../../../../../hooks/useModalDialog.ts';
 import { ModalStatusType } from '../../../../types/deletionTypes.ts';
@@ -9,7 +9,7 @@ import { DictionaryDataType } from '../../../../utils/languages.ts';
 import './standardDeletionDialog.css';
 
 // ==========================
-// 🎯 SHARED DIALOG FOR SOFT AND HARD DELETION
+// 🎯 SHARED DIALOG FOR SOFT, HARD AND CLOSE DELETION
 // One state machine (idle -> executing -> success/error), reused by
 // SoftDeactivateAccountUI and HardDeleteConfirmationUI: both read their
 // method straight from the DELETE request's query string and need no impact
@@ -29,6 +29,15 @@ export type StandardDeletionDialogPropType = {
  // plain description above it.
  warning?: string;
  confirmLabel: string;
+ // Refuses the confirm without hiding it, so the reason stays visible beside
+ // a button the owner can see is unavailable. CLOSE is the only caller that
+ // passes it: its confirm waits on the preview, on a zero balance and on a
+ // reason having been written. Optional, so SOFT and HARD are unchanged.
+ confirmDisabled?: boolean;
+ // Rendered inside the idle body, under the description and the warning.
+ // CLOSE puts the balance and the mandatory reason field here; SOFT and HARD
+ // pass nothing and render exactly as before.
+ children?: ReactNode;
  // The specific sentence for the success screen, e.g. "{name} has been
  // deactivated." - already resolved by the caller, {targetAccountName}
  // substituted.
@@ -58,6 +67,8 @@ const StandardDeletionDialogContent = ({
  description,
  warning,
  confirmLabel,
+ confirmDisabled = false,
+ children,
  successMessage,
  errorMessage,
  status,
@@ -166,6 +177,8 @@ const StandardDeletionDialogContent = ({
        </div>
       )}
 
+      {children}
+
       <div className="standard-deletion-dialog__actions">
        <button
         type="button"
@@ -180,6 +193,8 @@ const StandardDeletionDialogContent = ({
         type="button"
         className={`standard-deletion-dialog__button standard-deletion-dialog__button--${variant}`}
         onClick={onConfirm}
+        disabled={confirmDisabled}
+        aria-disabled={confirmDisabled}
         aria-label={confirmLabel}
        >
         {confirmLabel}

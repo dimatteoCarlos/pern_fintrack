@@ -35,6 +35,7 @@ import ProceedButtonUI from './UIComponents/proceedButtonUI/ProceedButtonUI.tsx'
 import PostOperationView from './UIComponents/postOperationView/PostOperationView.tsx';
 import { SoftDeactivateAccountUI } from './UIComponents/softDeletionUI/SoftDeactivateAccountUI.tsx';
 import { HardDeleteConfirmationUI } from './UIComponents/hardDeletionUI/HardDeleteConfirmationUI.tsx';
+import { CloseAccountUI } from './UIComponents/closeAccountUI/CloseAccountUI.tsx';
 // Where a reader with no navigation state belongs. Named once so the guard
 // below and the back navigation cannot disagree about it.
 const ACCOUNTING_DASHBOARD_ROUTE = '/fintrack/tracker/accounting';
@@ -100,6 +101,7 @@ const AccountDeletionView = ({
   // reads the RTA impact report and neither shares its open/close state.
   const [isSoftModalOpen, setIsSoftModalOpen] = useState(false);
   const [isHardModalOpen, setIsHardModalOpen] = useState(false);
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   // const prevAccountIdRef = useRef(targetAccountId);
   //-------------------------------------------
   //-------------------------------
@@ -384,6 +386,14 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               </button>
               <button
                 type='button'
+                className='deletion-method-button deletion-method-button--close'
+                onClick={() => setIsCloseModalOpen(true)}
+                aria-label={translateText('closeAccountTriggerButton')}
+              >
+                {translateText('closeAccountTriggerButton')}
+              </button>
+              <button
+                type='button'
                 className='deletion-method-button deletion-method-button--hard'
                 onClick={() => setIsHardModalOpen(true)}
                 aria-label={translateText('hardDeleteTriggerButton')}
@@ -415,6 +425,19 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
         targetAccountName={targetAccountName}
         onClose={() => setIsSoftModalOpen(false)}
         onDeactivated={handleBackToAccountingDashboard}
+      />
+
+      {/* 🎯 CLOSE - the account row goes, its identity stays in the registry.
+          Placed between SOFT and HARD because that is where it sits in cost:
+          reversible deactivation, then closure that keeps the history, then
+          erasure that keeps none of it. */}
+      <CloseAccountUI
+        t={translateText}
+        isOpen={isCloseModalOpen}
+        targetAccountId={targetAccountId}
+        targetAccountName={targetAccountName}
+        onClose={() => setIsCloseModalOpen(false)}
+        onClosed={handleBackToAccountingDashboard}
       />
 
       {/* 🎯 HARD DELETE - permanent, no reversal of the impact on counterparties */}

@@ -1,0 +1,129 @@
+/* frontend/src/fintrack/editionAndDeletion/pages/deletionAccount/UIComponents/closeAccountUI/closeAccountUI.css
+
+   The fields CLOSE adds inside the shared deletion dialog. Everything that
+   frames them - the overlay, the panel, the title, the actions row - belongs
+   to standardDeletionDialog.css and is not restated here.
+
+   The panel is a dark surface, so every colour below is an on-dark token. */
+
+.close-account__fields {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ margin-block-start: var(--space-4);
+}
+
+/* ---------------------------------------------------------------- balance */
+
+.close-account__balance-row {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+ margin: 0;
+ padding: var(--space-3);
+ background-color: var(--color-surface-sunken);
+ border-radius: var(--radius-sm);
+}
+
+.close-account__balance-label {
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+}
+
+.close-account__balance-value {
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+}
+
+/* The balance that refuses the close, coloured as the blocking figure it is
+   rather than as a plain amount. */
+.close-account__balance-value--blocking {
+ color: var(--color-financial-negative-content);
+}
+
+/* Loading is its own state, distinct from error and from empty: a figure that
+   has not arrived is never rendered as 0. */
+.close-account__balance-skeleton {
+ display: inline-block;
+ inline-size: var(--layout-content-width);
+ max-inline-size: 40%;
+ block-size: var(--size-glyph-inline);
+ border-radius: var(--radius-sm);
+ background-color: var(--color-surface-deep);
+ animation: close-account-skeleton var(--motion-normal) ease-in-out infinite
+  alternate;
+}
+
+@keyframes close-account-skeleton {
+ from {
+  opacity: 0.4;
+ }
+ to {
+  opacity: 0.8;
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .close-account__balance-skeleton {
+  animation: none;
+ }
+}
+
+.close-account__preview-error {
+ margin: 0;
+ color: var(--color-status-error);
+ font-size: var(--font-size-sm);
+}
+
+/* ----------------------------------------------------------------- reason */
+
+.close-account__label {
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+}
+
+.close-account__reason {
+ inline-size: 100%;
+ min-block-size: var(--size-touch-target);
+ padding: var(--space-3);
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-base);
+ font-family: inherit;
+ background-color: var(--color-surface-sunken);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ resize: vertical;
+ transition: border-color var(--motion-fast) ease;
+}
+
+.close-account__reason::placeholder {
+ color: var(--color-content-on-dark-subtle);
+}
+
+.close-account__reason:hover {
+ border-color: var(--color-border-inverse);
+}
+
+.close-account__reason:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+ border-color: var(--color-accent);
+}
+
+.close-account__reason:active {
+ border-color: var(--color-accent);
+}
+
+.close-account__reason:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.close-account__hint {
+ margin: 0;
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+}
