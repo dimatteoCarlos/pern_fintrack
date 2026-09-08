@@ -928,6 +928,16 @@ a.icon {
    the document stops being the scroller. */
 .home__layout:has(.overviewLayout) {
  overflow-x: clip;
+ /* The cap has to go with it, or the pin holds for 880px and then lets go.
+    generalStyles.css:620-624 clamps the shell to 55rem behind
+    @media (min-height: 50rem), and a sticky child is held inside its
+    containing block: past the cap the navbar has no block left to be held in.
+    The clamp was invisible until now because overflow-y: auto made the shell
+    scroll its own overflow; with overflow-y visible the content spills out of
+    a box that ends at 880px. budget-styles.css:287 had to clear the same cap
+    for the same reason, and states there that max-height wins over height
+    whatever the specificity. */
+ max-height: none;
 }
 
 /* The jump control clears the navbar it would otherwise sit on top of. It is
