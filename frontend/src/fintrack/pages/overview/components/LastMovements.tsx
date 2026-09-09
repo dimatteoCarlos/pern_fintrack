@@ -1,5 +1,6 @@
 // import ChevronRightSvg from '../../../assets/ChevronRightSvg.svg';
 // import { Link } from 'react-router-dom';
+import { ReactNode } from 'react';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import ListContent from './ListContent.tsx';
 import { CurrencyType } from '../../../types/types.ts';
@@ -25,12 +26,23 @@ type LastMovementsProps = {
   // component was written for and false of the activity teaser, whose rows are
   // the five most recent whenever they happened.
   subtitle?: string;
+  // Rendered between the subtitle and the rows. It exists for the pager: a
+  // caller cannot place one above the list from outside, because the title and
+  // the subtitle are drawn in here and a pager stacked before this component
+  // would sit above the heading it belongs under.
+  //
+  // At the head and not at the foot, which is Carlos's call and the practical
+  // one: the count frames the list before it is read, and the page-size control
+  // is a control - it belongs with the search and the filter above, not fifty
+  // rows below them.
+  listHeader?: ReactNode;
 };
 
 function LastMovements({
   data,
   title,
   subtitle = 'Last 30 days',
+  listHeader,
 }: LastMovementsProps) {
   //Last Movements
 
@@ -49,6 +61,8 @@ function LastMovements({
         </div>
 
         <div className='main__subtitle'>{subtitle}</div>
+
+        {listHeader}
 
         <ListContent listOfItems={lastMovements} />
       </article>

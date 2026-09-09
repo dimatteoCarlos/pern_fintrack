@@ -11,7 +11,10 @@
  align-items: center;
  justify-content: space-between;
  gap: var(--space-3);
- padding-top: var(--space-3);
+ /* Symmetric, because the bar sits ABOVE its list in the activity block and a
+    caller is free to put it below one. A padding on one side only leans the
+    bar against whichever neighbour the caller did not expect. */
+ padding: var(--space-2) 0;
 }
 
 /* The count is the only line that says the list moved, so it reads before the

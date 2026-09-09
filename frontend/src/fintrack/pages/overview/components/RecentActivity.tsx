@@ -224,21 +224,28 @@ function RecentActivity() {
      onRetry={refetch}
     />
    ) : (
-    <>
-     <LastMovements data={rows} title='Recent activity' subtitle={subtitle} />
-
-     {data && (
-      <Pagination
-       page={data.transactions.page}
-       pageSize={data.transactions.pageSize}
-       totalRows={data.transactions.totalRows}
-       onPageChange={goToPage}
-       onPageSizeChange={(pageSize) => narrow({ pageSize })}
-       itemLabel='movements'
-       isBusy={isLoading}
-      />
-     )}
-    </>
+    <LastMovements
+     data={rows}
+     title='Recent activity'
+     subtitle={subtitle}
+     /* Above the rows and not below them. The count frames the list before it
+        is read, and the page-size control belongs with the search and the
+        filter rather than fifty rows under them. It goes through the list
+        component because the heading is drawn in there. */
+     listHeader={
+      data && (
+       <Pagination
+        page={data.transactions.page}
+        pageSize={data.transactions.pageSize}
+        totalRows={data.transactions.totalRows}
+        onPageChange={goToPage}
+        onPageSizeChange={(pageSize) => narrow({ pageSize })}
+        itemLabel='movements'
+        isBusy={isLoading}
+       />
+      )
+     }
+    />
    )}
   </article>
  );
