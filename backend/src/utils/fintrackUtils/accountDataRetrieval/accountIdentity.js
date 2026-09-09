@@ -48,6 +48,18 @@
  * figure rather than inventing one. `is_closed` is what lets a caller tell that
  * case from an open account whose name is simply present.
  *
+ * **`account_type_id` IS COALESCED, AND FOUR INNER JOINS DEPEND ON IT BEING SO.**
+ * `overviewAccountRepository.js:47`, `:91`, `:194` and `:224` each carry
+ * `JOIN account_types act ON act.account_type_id = ai.account_type_id` against
+ * this source, and an INNER join drops any row whose key is null. The COALESCE
+ * on the line below is what keeps that from happening to an open account, whose
+ * registry row carries NULL in this column until closure stamps it. The one row
+ * it cannot save is an account erased before `account_registry` existed: no
+ * `ua` row to fall back to and no stamp, so the column is null and those four
+ * joins drop it - which is the same trade `overviewAccountRepository.js:40`
+ * states from the consumer's side. Anything changing this line to a bare
+ * `ar.account_type_id` silently empties four Overview reads.
+ *
  * PRECONDITION, AND ITS FAILURE IS THE LOUD KIND. `account_registry` does not
  * exist until migration 035 is applied. A query built on this CTE against a
  * database without it fails with `relation "account_registry" does not exist` -
