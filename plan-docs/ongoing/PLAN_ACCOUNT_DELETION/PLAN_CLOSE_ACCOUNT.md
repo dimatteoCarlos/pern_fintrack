@@ -3795,3 +3795,33 @@ re-chased.
   untouched production dump and on the rehearsal. Read from the catalog rather
   than from `002_accounts.sql`, because migration 010 was edited in place and a
   file is not what a database ran.
+
+### 14.9 What a chain run on production's own data answered, 2026-09-09
+
+The migration session ran the whole chain against a clone of the 2026-08-21
+production dump and reported the result; every figure below was read back from
+its commit (`087226c8` on `main`) rather than taken from the message. **The
+subject is the dump, not production.** It is evidence about that date, and the
+owner can rename an account on any day after it.
+
+- **The two migrations this module owns applied clean from production's data.**
+  A clone aligned to 17 ledger rows, then one migration run through
+  `037_add_balance_reversal.sql`, ending at 38 rows with no refusal, all four
+  catalog bindings correct afterwards - movement types 10 and 11 holding
+  `account-closure` and `balance-reversal`, transaction types 6 and 7 the same -
+  and eight foreign keys resolving to `account_registry`. The clone was dropped.
+- **The precondition this module raised on the retyping migration is satisfied
+  on that data, and it stays a precondition anyway.** The run ended with exactly
+  one account typed `boundary`: account 45, `account_name` the exact literal
+  `slack`, and the only row matching `lower(account_name) = 'slack'`, so no case
+  variant exists for that migration's NOTICE to report. The subject it keys on
+  exists and carries the name it keys on. What the finding says is that success
+  proves nothing by itself, and that is unchanged: the check has to be made at
+  the moment of the run.
+- **The new seed assertions have nothing to catch on the run that matters, and
+  that is not an argument against them.** Production's catalogs are shorter than
+  the ids being seeded - the highest movement type is 9 and the highest
+  transaction type 5 - so both inserts insert and no binding is contested. The
+  assertions earn their place on every database that already carries those ids,
+  which is every local one, and on any future database that acquires them by
+  another path.
