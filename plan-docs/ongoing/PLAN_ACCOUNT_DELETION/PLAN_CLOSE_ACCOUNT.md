@@ -3473,3 +3473,26 @@ figure.** Recorded rather than acted on.
   holds one. Zero on `fintrack_dev` says nothing about another database.
 - **It is Overview's file and the fix is Overview's to make**, if the owner
   confirms the ruling against this reading.
+
+**What it costs is worse than an undercount**, measured through the consumer by
+the Overview session on 2026-09-08 and checked here in their files.
+
+- **`closure_adjustment` is the third term of an identity, not a display
+  figure.** `makeInvestmentCard.js:136-139` requires
+  `capitalContributed + realizedPnl + closureAdjustment` to equal
+  `ledgerBalance`, and `:140-142` pushes `UNRECONCILED_BALANCE_NOTICE` onto the
+  card when it does not.
+- **So on a database holding one pre-retirement row of that type, retiring the
+  term breaks an identity that currently holds.** The investment card would tell
+  the owner their books do not add up, on every load, about a row the system
+  itself wrote correctly. A false alarm on the integrity of their own ledger is
+  a worse failure than a quiet miscount, and the reader cannot recover from it.
+- **There is no partial version of this change.** The type appears twice: in the
+  `FILTER` that sums it into `closure_adjustment` and in the `IN` list at
+  `overviewInvestmentRepository.js:170` that admits the rows to the CTE.
+  Dropping it from the `FILTER` alone leaves the rows read and landing nowhere,
+  which is the same outcome.
+- **And it moves exactly one of the two arms.** `realized_pnl` filters on the
+  profit-and-loss type with a `NOT LIKE` on the annulment prefix, so a row of
+  the closure type never enters it. The term the retirement moves is the one the
+  reconciliation depends on.
