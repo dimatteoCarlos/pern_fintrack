@@ -404,11 +404,18 @@ a.icon {
  }
 }
 
+/* No third column. The breakpoint that used to sit here measured the VIEWPORT,
+   but .home__layout is capped at 40rem (generalStyles.css:198), so the row of
+   cards never exceeds about 563px however wide the window is. Three columns of
+   that row are 180px each, which wrapped "Pocket - Committed" and the debt legs
+   onto two lines. Removed on Carlos's instruction on 2026-09-08.
+
 @media (min-width: 768px) {
  .overviewLayout .domainCards {
   grid-template-columns: repeat(3, 1fr);
  }
 }
+*/
 
 .overviewLayout .domainCard {
  display: flex;

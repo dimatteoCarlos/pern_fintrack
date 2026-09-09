@@ -66,7 +66,10 @@ const FAVOURABLE_WHEN_ABOVE: Record<MonthlySnapshotDomain, boolean> = {
 const DOMAIN_LABEL: Record<MonthlySnapshotDomain, string> = {
  income: 'Income',
  expense: 'Expense',
- pocket: 'Saving',
+ // Pockets, the module's own name for it. "Saving" was a description of what
+ // the domain does, and the app has a screen called Pocket that this card is
+ // the summary of.
+ pocket: 'Pockets',
 };
 
 const money = (currency: string, value: number) =>
@@ -127,20 +130,18 @@ const tierOf = (row: MonthlySnapshotRow): Tier => {
  return 'alert';
 };
 
-// Names the MONTH, because the figure in large type above is now the average
-// and the variance is the month's distance from it. "above the typical active
-// month" was a complete sentence while the actual was the headline; under an
-// average headline it no longer says which of the two moved.
-const againstLine = (variance: number | null, month: string | null) => {
+// "this month" and not the month's name: the card's head already prints it
+// (snapshot__period), so naming it again put the same three characters twice in
+// four lines. The sentence still says which of the two figures moved, which is
+// what it was rewritten for when the average became the headline.
+const againstLine = (variance: number | null) => {
  if (variance === null) return 'no comparable month yet';
 
- const period = monthLabel(month);
-
- if (variance === 0) return `${period} is exactly at this average`;
+ if (variance === 0) return 'this month is exactly at this average';
 
  return variance > 0
-  ? `${period} is above this average`
-  : `${period} is below this average`;
+  ? 'this month is above this average'
+  : 'this month is below this average';
 };
 
 const Baseline = ({
@@ -216,7 +217,7 @@ const SnapshotCard = ({
         )}`}
     </span>
     <span className='snapshot__against'>
-     {againstLine(row.varianceVsAverage, month)}
+     {againstLine(row.varianceVsAverage)}
     </span>
    </div>
 
