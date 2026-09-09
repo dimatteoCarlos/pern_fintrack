@@ -3352,7 +3352,8 @@ CLOSE
   +-- balance != 0 --> refuse; the balance is resolved outside CLOSE
 ```
 
-**This supersedes the recommendation at the end of `mockup-close-account.html`.**
+**This supersedes the recommendation at the end of
+`plan-docs/mockups/account-deletion/close-account.html`.**
 That file states as its first unsettled item that frames 02 and 06 cannot both
 be right, and this plan then recommended that 02 govern — that CLOSE settle a
 non-zero balance rather than refuse it. The owner ruled the other way and the
