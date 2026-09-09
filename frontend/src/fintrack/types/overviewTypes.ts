@@ -686,3 +686,74 @@ export type GetOverviewResponse = {
  message: string;
  data: GetOverviewData;
 };
+
+// ---------------------------------------------------------------------------
+// THE ACTIVITY ENDPOINT — GET /overview/activity
+//
+// The one section of this module whose period the READER chooses. Everything
+// else on the page is bound to the reference month; this answers "what do I
+// want to read", which a month cannot express.
+
+// The movement_types catalog, whole. It is the frontend's copy of
+// MOVEMENT_TYPE_NAMES and the schema is what actually enforces it: a value
+// outside this list answers 400 naming the key, so a drift between the two
+// fails loudly at the door rather than silently returning everything.
+export const OVERVIEW_ACTIVITY_MOVEMENT_TYPES = [
+ 'expense',
+ 'income',
+ 'investment',
+ 'debt',
+ 'pocket',
+ 'transfer',
+ 'receive',
+ 'account-opening',
+ 'pnl',
+ 'account-closure',
+ 'balance-reversal',
+] as const;
+
+export type OverviewActivityMovementType =
+ (typeof OVERVIEW_ACTIVITY_MOVEMENT_TYPES)[number];
+
+// What a caller may ask for. Every key optional, and an omitted one is not the
+// same as a null: omitted means "no narrowing", which is the endpoint's default.
+export type OverviewActivityQuery = {
+ // 'YYYY-MM', both inclusive, and `to` covers the WHOLE month it names.
+ from?: string;
+ to?: string;
+ // 1..80 characters after trimming. '' is not a value the endpoint takes: the
+ // way to express "no search" is to omit the key.
+ search?: string;
+ movementType?: OverviewActivityMovementType;
+ page?: number;
+ pageSize?: number;
+};
+
+export type GetOverviewActivityData = {
+ transactions: {
+  rows: OverviewActivityRow[];
+  page: number;
+  pageSize: number;
+  // The size of the WHOLE set the page was cut out of, counted by its own
+  // statement over the same filter. Not the length of rows.
+  totalRows: number;
+ };
+ // Echoed, and null on an end the reader did not bound.
+ range: {
+  from: string | null;
+  to: string | null;
+ };
+ // Echoed for the same reason: five rows out of two thousand is not a short
+ // list, it is a filtered one, and only the server can say which of the two the
+ // reader is looking at.
+ filters: {
+  search: string | null;
+  movementType: string | null;
+ };
+};
+
+export type GetOverviewActivityResponse = {
+ status: number;
+ message: string;
+ data: GetOverviewActivityData;
+};

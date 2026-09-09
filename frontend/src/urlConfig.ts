@@ -141,6 +141,13 @@ export const url_movement_transaction_record: string =
 //endpoints — overviewApi.ts unwraps it.
 export const url_get_overview: string = BASE_URL_APP + 'overview';
 
+//The activity list, with its own period, search, filter and pagination. A
+//separate endpoint and not a parameter on the one above, because its period is
+//the reader's and every other figure of the page is bound to the reference
+//month. The page keeps publishing its five-row teaser either way.
+export const url_get_overview_activity: string =
+  BASE_URL_APP + 'overview/activity';
+
 //=======================================
 //endpoints for OVERVIEWLAYOUT page
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type

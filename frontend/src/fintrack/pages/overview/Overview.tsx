@@ -17,9 +17,11 @@ import FinancialGoals from './components/FinancialGoals.tsx';
 // import MonthlyAverage from './components/MonthlyAverage.tsx';
 import MonthlySnapshot from './components/MonthlySnapshot.tsx';
 import TrendCharts from './components/TrendCharts.tsx';
-import LastMovements, {
-  LastMovementType,
-} from './components/LastMovements.tsx';
+// Imported by RecentActivity.tsx now, which is what renders the list here.
+// import LastMovements, {
+//   LastMovementType,
+// } from './components/LastMovements.tsx';
+import RecentActivity from './components/RecentActivity.tsx';
 import InvestmentAccountBalance from './components/InvestmentAccBalance.tsx';
 import OpenAddEditBtn from '../../general_components/OpenAddEditBtn.tsx';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
@@ -51,7 +53,9 @@ import {
 // Retired with the five requests it ran. The module itself stays: the level-2
 // screens are the next caller of a multi-endpoint fetch.
 // import { overviewFetchAll } from './overviewFetchAll.ts';
-import { useOverviewStore } from '../../stores/useOverviewStore.ts';
+// The teaser mapping below was this file's only reader of the store: every
+// other block subscribes on its own. OverviewLayout.tsx is what fills it.
+// import { useOverviewStore } from '../../stores/useOverviewStore.ts';
 // The browser-side average the widget used to run. The same four figures now
 // arrive computed in makeMonthlySnapshot.js, so nothing here calls it.
 // import {
@@ -159,15 +163,17 @@ function Overview() {
   const location = useLocation();
   const originRoute = location.pathname;
 
-  // The activity teaser, from the page payload the layout already fetched. No
-  // request of its own: subscribing to the store is what keeps this list and
-  // the cards above it reading the same answer.
+  /* The activity teaser, read off the page payload. RecentActivity asks
+     GET /overview/activity for its own page, so this mapping has no reader:
+     five rows out of a set the reader can page through would be a second
+     answer to the same question, cut differently.
+
+     recentActivity stays in useOverviewStore and the payload keeps publishing
+     it. Whether the page should stop carrying five rows nobody renders is a
+     question about the /overview statement, not about this file.
+
   const recentActivity = useOverviewStore((state) => state.recentActivity);
 
-  // Mapped at the point of render and not in the store, because the shape it is
-  // mapped INTO belongs to this page's list component. The five columns are the
-  // same ones the per-domain lists were mapped from, so nothing about a row
-  // changes - only how many lists there are.
   const recentMovements: LastMovementType[] | null = recentActivity
     ? recentActivity.map((row) => ({
         accountName: row.account_name,
@@ -179,6 +185,7 @@ function Overview() {
         transactionId: row.transaction_id,
       }))
     : null;
+  */
   // console.log({ originRoute });
   //-- STATES----
   /* Retired with them. Nothing reads this state and nothing writes it: the
@@ -570,24 +577,21 @@ function Overview() {
           />
         }
 {/* ------------------ */}
-        {/* One teaser, not five lists. The five that stood here came from
-            /dashboard, one request per domain, and carried no row cap: on this
-            data they were more than half the height of the page, and level 2
-            is where every transaction of the period for one domain belongs.
+        {/* One list, not five. The five that stood here came from /dashboard,
+            one request per domain, and carried no row cap: on this data they
+            were more than half the height of the page, and level 2 is where
+            every transaction of the period for one domain belongs.
 
-            The rows come from the /overview payload, which already caps them at
-            five in the statement itself and orders them across every domain
-            together. The page was fetching that list on every load and throwing
-            it away - it had no reader until now.
+            RecentActivity composes the same LastMovements the teaser used and
+            adds the three controls around it - a search, a kind of movement and
+            a period - so it fetches GET /overview/activity itself instead of
+            reading the five rows the page payload carries. That is the reason
+            the mapping this file used to do is commented out above rather than
+            moved: the rows come from a different request now.
 
-            Not bounded by the reference month, which is why the subtitle does
-            not name one: the teaser answers what happened last, so a month with
-            no activity still shows the account moving. */}
-        <LastMovements
-          data={recentMovements}
-          title='Recent activity'
-          subtitle='The five most recent, across every domain'
-        />
+            Not bounded by the reference month, and it is the only block of this
+            page that is not: the period is the reader's here. */}
+        <RecentActivity />
       </div>
     </section>
   );

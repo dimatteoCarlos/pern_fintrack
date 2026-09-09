@@ -12,8 +12,14 @@
 // it to a generic string here would throw away the one thing the reader needs.
 
 import { authFetch } from '../../auth/auth_utils/authFetch.ts';
-import { url_get_overview } from '../../urlConfig.ts';
-import { GetOverviewData, GetOverviewResponse } from '../types/overviewTypes.ts';
+import { url_get_overview, url_get_overview_activity } from '../../urlConfig.ts';
+import {
+ GetOverviewActivityData,
+ GetOverviewActivityResponse,
+ GetOverviewData,
+ GetOverviewResponse,
+ OverviewActivityQuery,
+} from '../types/overviewTypes.ts';
 
 // month is optional and past-only. Omitting it is not the same as computing the
 // current month here: the server resolves it from the account owner's timezone,
@@ -29,6 +35,31 @@ export const getOverviewPage = async (
   method: 'GET',
   ...(month ? { params: { month } } : {}),
  });
+
+ return data.data;
+};
+
+// One page of the activity list, for the reader's own period and narrowings.
+//
+// Absent keys are dropped rather than sent empty, and that is the contract and
+// not a nicety: the schema is strict and takes no '' for search, so sending the
+// key with an empty value answers 400. Omitting it is how "no search" is said.
+export const getOverviewActivity = async (
+ query: OverviewActivityQuery = {},
+): Promise<GetOverviewActivityData> => {
+ const params: Record<string, string> = {};
+
+ if (query.from) params.from = query.from;
+ if (query.to) params.to = query.to;
+ if (query.search) params.search = query.search;
+ if (query.movementType) params.movementType = query.movementType;
+ if (query.page) params.page = String(query.page);
+ if (query.pageSize) params.pageSize = String(query.pageSize);
+
+ const { data } = await authFetch<GetOverviewActivityResponse>(
+  url_get_overview_activity,
+  { method: 'GET', params },
+ );
 
  return data.data;
 };
