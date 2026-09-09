@@ -570,7 +570,7 @@ const processStandardDelete = async (
     const targetBalances = await lockAndDeriveBalances(dbClient, userId, [
       targetAccountId,
     ]);
-    const targetBalance = parseFloat(targetBalances.get(targetAccountId));
+    const targetBalance = residualOf(targetBalances, targetAccountId);
 
     // CLOSE leads and RTA follows, because they answer different intentions
     // (Carlos, 2026-09-07). Moving the residual out is what an owner who is
@@ -747,6 +747,41 @@ const processStandardDelete = async (
 // service refuse what the database accepts, or hand the caller a constraint
 // name instead of a field name.
 export const CLOSE_REASON_MAX_LENGTH = 255;
+
+// THE MAP IS KEYED BY THE COLUMN'S TYPE, NOT BY THE REQUEST'S, and reading it
+// with the wrong one produced a wrong ANSWER rather than an error.
+// lockAndDeriveBalances keys on account_id as pg returns it, which is a number;
+// the delete route passed the path segment as the string it arrives as, so
+// every lookup here returned undefined and parseFloat made it NaN. NaN passes
+// every `!== 0` test in this file, so the close entered its reversal branch and
+// handed NaN to the writer, whose `!balance` guard reported it to the owner as
+// "the balance is already zero" - on an account holding 17.42. The hard delete
+// refused the same account for holding NaN.
+//
+// The coercion here is not the fix; the route is. This is the check that makes
+// the same mistake fail by name the next time, from a caller nobody has written
+// yet.
+const residualOf = (balances, accountId) => {
+  const balance = balances.get(Number(accountId));
+
+  if (balance === undefined) {
+    throw createError(
+      500,
+      `No derived balance came back for account ${accountId}. The balance map holds ${balances.size} entry(ies) and none of them is this account.`,
+    );
+  }
+
+  const residual = parseFloat(balance);
+
+  if (!Number.isFinite(residual)) {
+    throw createError(
+      500,
+      `The derived balance of account ${accountId} is not a number: ${balance}.`,
+    );
+  }
+
+  return residual;
+};
 
 export const processCloseAccount = async (
   dbClient,
@@ -958,7 +993,7 @@ export const processCloseAccount = async (
     : [targetAccountId];
 
   const balances = await lockAndDeriveBalances(dbClient, userId, lockSet);
-  let residual = parseFloat(balances.get(targetAccountId));
+  let residual = residualOf(balances, targetAccountId);
 
   // THE ZERO-BALANCE PRECONDITION, ruled by the owner on 2026-09-08 and the
   // reason the settlement above is retired. The refusal replaces the
@@ -1038,7 +1073,7 @@ export const processCloseAccount = async (
       userId,
       [targetAccountId],
     );
-    residual = parseFloat(postReversalBalances.get(targetAccountId));
+    residual = residualOf(postReversalBalances, targetAccountId);
 
     if (residual !== 0) {
       throw createError(

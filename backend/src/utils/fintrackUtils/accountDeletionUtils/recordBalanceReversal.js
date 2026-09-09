@@ -114,10 +114,23 @@ export const recordBalanceReversal = async (client, reversalData) => {
     transactionDate,
   } = reversalData;
 
+  // TWO REFUSALS, BECAUSE THEY ARE TWO DIFFERENT MISTAKES AND ONE MESSAGE
+  // DESCRIBED BOTH AS THE FIRST. `!balance` is true for 0 and equally true for
+  // NaN, undefined and null, so a balance that never arrived was reported to
+  // the owner as an account whose balance is already zero. That is what a
+  // string account id did to the map lookup upstream: the account held 17.42
+  // and the screen said it held nothing.
+  if (!Number.isFinite(balance)) {
+    throw createError(
+      500,
+      `Balance reversal refused for account ${targetAccountId}: the balance arrived as ${balance}, which is not a number. Nothing was written.`,
+    );
+  }
+
   // Refused rather than treated as a no-op. A caller reaching here with zero
   // has misread the account's state, and returning an empty pair would let the
   // close proceed on that misreading without anything saying so.
-  if (!balance) {
+  if (balance === 0) {
     throw createError(
       400,
       `Balance reversal refused for account ${targetAccountId}: the balance is already zero.`,

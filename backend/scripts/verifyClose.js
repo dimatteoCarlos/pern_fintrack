@@ -389,6 +389,38 @@ try {
     `derived ${fundedBalance}`,
    );
 
+   // THE ID AS A ROUTE HANDS IT OVER, which is a string. Every call in this
+   // file passed a number, so nothing here could see that the derived-balance
+   // map is keyed by the column's type: a string missed every entry, became
+   // NaN through parseFloat, passed every `!== 0` test in the service and was
+   // reported to the owner as "the balance is already zero" on an account
+   // holding a balance. Closed inside a savepoint and rolled back, so the
+   // account is still there for the probes below.
+   await client.query('SAVEPOINT string_id');
+   try {
+    await processCloseAccount(
+     client,
+     userId,
+     String(fundedId),
+     fundedSubject,
+     new Date(),
+     REASON,
+     true,
+    );
+
+    const { rows: stringLegs } = await client.query(
+     `SELECT 1 FROM transactions WHERE reversal_of_account_id = $1`,
+     [fundedId],
+    );
+    check(
+     'the close accepts the id as the string a route hands over',
+     stringLegs.length === 2,
+     `${stringLegs.length} reversal leg(s)`,
+    );
+   } finally {
+    await client.query('ROLLBACK TO SAVEPOINT string_id');
+   }
+
    // The same account refuses without the flag. Proved on THIS account rather
    // than on whatever the database held, so the refusal and the reversal are
    // the same subject and the only difference between them is the flag.

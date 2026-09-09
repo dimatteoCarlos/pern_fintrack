@@ -281,12 +281,18 @@ export const executeAccountDeletion = async (req, res, next) => {
   const user = req.user;
   const { userId } = user;
   const userRole = req.user.role;
-  const targetAccountId = req.params.targetAccountId;
+  // PARSED, like the three read routes above it. This one took the segment as
+  // the string a route always hands over, and every account id in this module
+  // is a number: the derived-balance map is keyed by account_id as pg returns
+  // it, so a string missed every entry and became NaN through parseFloat. It
+  // reached the owner as "the balance is already zero" on an account holding
+  // 17.42, and as "holds NaN" on the hard-delete path.
+  const targetAccountId = parseInt(req.params.targetAccountId, 10);
 
   // Get deletionType from query (for simple deletes) or body (for RTA confirmation)
   const deletionType = req.query.type || req.body.deletionType;
 
-  if (!targetAccountId || !deletionType) {
+  if (!targetAccountId || Number.isNaN(targetAccountId) || !deletionType) {
     return next(
       createError(400, 'Target Account ID and Deletion Type are required.'),
     );
