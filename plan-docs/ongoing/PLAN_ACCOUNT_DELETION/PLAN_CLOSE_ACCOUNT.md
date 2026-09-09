@@ -14,6 +14,12 @@ Per the owner's standing rule, no bare identifier stands alone in this document:
 every migration, table and function is named by what it does, with its filename
 in parentheses when the file has to be found.
 
+The twenty-four findings this work produced are beside this file, in
+`DELETION_FINDINGS.md`. They were kept in session memory until 2026-09-09 and
+the owner moved them here so they outlive a session. This document is the
+specification and wins wherever the two disagree; a finding is the measurement
+that produced a rule, not the rule itself.
+
 ---
 
 ## 0. Status
