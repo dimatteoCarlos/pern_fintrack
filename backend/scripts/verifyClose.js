@@ -29,6 +29,10 @@
 // WHAT CLOSE ACTUALLY PROMISES NOW, which is what this asserts:
 //  - it REFUSES a nonzero balance on the four types that hold one, rather than
 //    settling it. That refusal is the operation's main behaviour, not an edge.
+//  - it REVERSES that balance instead, when the caller asks for it: two ledger
+//    legs against the compensation account, movement type 11, both carrying
+//    reversal_of_account_id, written inside the close's own transaction so
+//    "reversed but not closed" is not a reachable state.
 //  - it REFUSES a missing or whitespace-only reason, before taking its lock.
 //  - it releases every pocket allocation the account was backing.
 //  - it stamps account_registry with closed_at, closed_by and close_reason.
@@ -319,6 +323,171 @@ try {
      REASON,
     ),
    );
+  }
+
+  // ------------------------------------------------- reverse the balance
+  //
+  // ON ITS OWN FABRICATED, FUNDED ACCOUNT, ALWAYS, rather than on whatever the
+  // database happens to hold. The refusal above skips when no nonzero account
+  // of a closing type exists, and a skip on the operation's main new behaviour
+  // would read as a pass. This one makes its subject, so it cannot skip.
+  //
+  // Inside its own savepoint: it closes an account for real, and the outer
+  // transaction still has the main close to run.
+  await client.query('SAVEPOINT reversal');
+  try {
+   const funded = await client.query(
+    `INSERT INTO user_accounts(
+       user_id, account_name, account_type_id, currency_id,
+       account_starting_amount, account_balance, account_start_date, updated_at
+     )
+     SELECT $1, 'verifyClose.js reversal probe',
+            (SELECT account_type_id FROM account_types
+              WHERE account_type_name = 'bank'),
+            $2, 0, 0, CURRENT_DATE, NOW()
+     RETURNING account_id`,
+    [userId, target.currency_id],
+   );
+   const fundedId = funded.rows[0].account_id;
+
+   // One ordinary movement, so the account derives to a real balance rather
+   // than to its starting amount. 137.50 and not a round number: a figure that
+   // survives two decimal places is what catches an amount rounded in transit.
+   await client.query(
+    `INSERT INTO transactions(
+       user_id, description, amount, movement_type_id, transaction_type_id,
+       currency_id, account_id, status
+     )
+     SELECT $1, 'verifyClose.js reversal probe funding', 137.50,
+            (SELECT movement_type_id FROM movement_types
+              WHERE movement_type_name = 'income'),
+            (SELECT MIN(transaction_type_id) FROM transaction_types),
+            $2, $3, 'complete'`,
+    [userId, target.currency_id, fundedId],
+   );
+
+   const fundedSubject = await readAccount(client, fundedId);
+   const { rows: derivedRows } = await client.query(
+    `SELECT ${DERIVED} AS balance
+       FROM user_accounts ua WHERE ua.account_id = $1`,
+    [fundedId],
+   );
+   const fundedBalance = Number(derivedRows[0].balance);
+
+   check(
+    'the probe account really holds a balance',
+    fundedBalance === 137.5,
+    `derived ${fundedBalance}`,
+   );
+
+   // The same account refuses without the flag. Proved on THIS account rather
+   // than on whatever the database held, so the refusal and the reversal are
+   // the same subject and the only difference between them is the flag.
+   await expectRefusal(
+    client,
+    'the same account is refused without the reversal',
+    () =>
+     processCloseAccount(
+      client,
+      userId,
+      fundedId,
+      fundedSubject,
+      new Date(),
+      REASON,
+     ),
+   );
+
+   await processCloseAccount(
+    client,
+    userId,
+    fundedId,
+    fundedSubject,
+    new Date(),
+    REASON,
+    true,
+   );
+
+   const { rows: legs } = await client.query(
+    `SELECT account_id, amount::float AS amount, movement_type_id
+       FROM transactions
+      WHERE reversal_of_account_id = $1
+      ORDER BY account_id = $1 DESC`,
+    [fundedId],
+   );
+
+   check(
+    'the reversal writes exactly two legs',
+    legs.length === 2,
+    `${legs.length} row(s)`,
+   );
+
+   check(
+    'both legs carry the reversal movement type',
+    legs.length === 2 && legs.every((leg) => leg.movement_type_id === 11),
+    legs.map((leg) => leg.movement_type_id).join(', '),
+   );
+
+   check(
+    "the target's leg negates its balance",
+    legs.length === 2 && legs[0].account_id === fundedId &&
+     legs[0].amount === -fundedBalance,
+    legs.length === 2 ? `${legs[0].amount} against ${fundedBalance}` : '',
+   );
+
+   check(
+    'the two legs sum to zero',
+    legs.length === 2 && legs[0].amount + legs[1].amount === 0,
+    legs.map((leg) => leg.amount).join(' + '),
+   );
+
+   // The counterpart is the compensation account, identified by its type rather
+   // than by its name: a user account named 'slack' would match a name test.
+   if (legs.length === 2) {
+    const { rows: counterpart } = await client.query(
+     `SELECT act.account_type_name
+        FROM user_accounts ua
+        JOIN account_types act ON act.account_type_id = ua.account_type_id
+       WHERE ua.account_id = $1`,
+     [legs[1].account_id],
+    );
+    check(
+     'the counterpart leg sits on a boundary account',
+     counterpart.length === 1 &&
+      String(counterpart[0].account_type_name).toLowerCase() === 'boundary',
+     counterpart.length === 1 ? counterpart[0].account_type_name : 'no row',
+    );
+   }
+
+   const gone = await client.query(
+    'SELECT 1 FROM user_accounts WHERE account_id = $1',
+    [fundedId],
+   );
+   check(
+    'the reversed account is closed in the same transaction',
+    gone.rows.length === 0,
+    `${gone.rows.length} row(s) left`,
+   );
+
+   // THE DATABASE'S OWN HALF, and it is the reason the pairing is a CHECK
+   // rather than a convention. A row of the reversal type without the column
+   // must be rejected by the database, not by whoever wrote the insert.
+   await expectRefusal(
+    client,
+    'a reversal row without its account is refused by the database',
+    () =>
+     client.query(
+      `INSERT INTO transactions(
+         user_id, description, amount, movement_type_id, transaction_type_id,
+         currency_id, account_id, status
+       )
+       SELECT $1, 'verifyClose.js constraint probe', 1.00, 11,
+              (SELECT MIN(transaction_type_id) FROM transaction_types),
+              $2, $3, 'complete'`,
+      [userId, target.currency_id, accountId],
+     ),
+   );
+  } finally {
+   await client.query('ROLLBACK TO SAVEPOINT reversal');
   }
 
   // ------------------------------------------------------------- before

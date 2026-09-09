@@ -3696,3 +3696,28 @@ first time one is needed.
   order the existing rows merged, and merging them moves stored data, which is
   not a decision to take by inference.
 
+**AN ACCOUNT WITH NO OWNER CANNOT EXIST IN THIS SCHEMA.** Measured by the
+migration session and checked here in all three places: `user_id UUID NOT NULL
+REFERENCES users(user_id)` on `002_accounts.sql:86`, on `createTables.js:67`
+with `ON DELETE CASCADE`, and carried to the registry by
+`035_create_account_registry.sql:172`. Every account belongs to exactly one
+user, and so does every registry row.
+
+So "one global account" is not one option but two, and they are nowhere near
+each other in cost:
+
+| Reading | What it changes | Cost |
+|---|---|---|
+| `user_id` becomes nullable on `user_accounts` and `account_registry` | Every read that joins on `user_id` changes meaning, and the CASCADE on user deletion becomes undefined for the ownerless row | High, and it touches every module |
+| One system user owns it | Nothing in the schema. The account still has an owner; the work is teaching the 26 or more per-user filters to admit that one user | The sweep already scoped, and nothing else |
+
+- **The recommendation, if the answer is "merge them", is the system user.** It
+  reaches the same end state - one compensation account for the whole
+  application - without making ownership optional for every account in the
+  database to obtain it for one.
+- **The merge of the existing rows is a repoint, never a delete.** Migration 035
+  made `transactions.account_id` RESTRICT into `account_registry`, so the old
+  per-user rows cannot be dropped while anything references them; their
+  transactions move first and the empty rows then leave through the close engine
+  like any other account.
+
