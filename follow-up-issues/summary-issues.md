@@ -22,7 +22,7 @@
 > El cerco de código que envolvía este archivo entero se retiró: era un bloque
 > abierto que rompía el resaltado de todo el documento y anulaba las casillas.
 
-**Total: 125 elementos — 83 LISTO, 42 PENDIENTE.**
+**Total: 125 elementos — 85 LISTO, 40 PENDIENTE.**
 
 > **Cómo se corrigió cada defecto, con el código.** Las entradas de este archivo
 > dicen qué quedó resuelto y con qué prueba. El código antes y después, el
@@ -148,14 +148,15 @@ Ninguno.
 > remidieron el 2026-09-06 con las líneas de hoy. Sus etiquetas internas (E-1 …
 > E-11) se conservan sólo como referencia hacia atrás a ese documento.
 
-### ✅ LISTO (4/11)
+### ✅ LISTO (5/11)
 
 - [x] **Un bolsillo con fecha objetivo vencida ya no queda bloqueado (E-2)** — 🔴 Alta. El bolsillo salió de este editor: el mapa de tipos no tiene su clave (`validations_zod/editSchemas.ts:64-70`) y el cargador lo deja escrito (`pages/editionAccount/EditAccount.tsx:252-254`). Su pantalla propia envía sólo lo que cambió, para no revalidar un plazo intacto (`pages/forms/editPocket/EditPocket.tsx:249-253`). **Resto abierto:** el campo de plazo sigue acotado a hoy (`EditPocket.tsx:521`)
 - [x] **La vista previa del nombre de un deudor ya coincide con lo que guarda el servidor (E-3)** — el cliente une apellido y nombre con coma y espacio (`validations_zod/accountEditSchema.ts:175-187`), igual que el servidor (`accountEditController.js:219`)
 - [x] **🔴 Alta — Una columna nula dejaba la cuenta entera sin poder editarse (E-1). RESUELTO 2026-09-09** (`36353a96`). El cargador copiaba todo lo que no fuera `undefined`, así que un `NULL` llegaba como `null`, los esquemas aceptan sólo `undefined` y un solo error aborta el envío completo (`EditAccount.tsx:325-334`). **Se normalizó en la carga**, que es lo que ya hacían las otras dos pantallas que hidratan desde el servidor (`EditPocket.tsx:143,147`, `profileTransformation.ts:52-59`): el cargador descarta el `null` junto con el `undefined` (`pages/editionAccount/EditAccount.tsx:251`). Aflojar los esquemas a `.nullish()` habría dejado pasar un `null` al PATCH, que no lleva middleware de validación (`accountRoutes.js:104`)
 - [x] **La rama de presupuesto del endpoint de edición ya no existe (E-9)** — el endpoint declara por escrito que ignora esa clave porque el monto es decisión de cuatro partes del endpoint de presupuesto (`accountEditController.js:104-107`)
+- [x] **🟡 Media — Tres tipos de cuenta no reciben moneda del endpoint de lectura (E-11).** **CERRADO 2026-09-09 por medición: no se reproduce y no se cambió nada.** La mitad sobre el endpoint de escritura sigue en pie: banco, inversión y fuente de ingreso tienen superficie editable vacía por diseño. La otra mitad no. El archivo que el item cita no menciona monedas en ninguna de sus 393 líneas, y el endpoint de lectura une `currencies` en vivo en cada rama: banco e inversión (`getAccountController.js:319`), categoría (`:338`), bolsillo (`:399`), deudor (`:427`). El único join de moneda comentado de `backend/src` está en una consulta del panel (`dashboardController.js:704`) y no pertenece a ninguna lectura de cuenta
 
-### 🔄 PENDIENTE (7/11)
+### 🔄 PENDIENTE (6/11)
 
 - [ ] **🟡 Media — El monto adeudado de un deudor no se edita en ningún sitio (E-4).** La columna existe (`002_accounts.sql:170`) y la rama de escritura fija sólo nombre, apellido y nota (`accountEditController.js:187-191`). Decisión pendiente: ¿pertenece a este editor o sólo a una transacción?
 - [ ] **🟡 Media — Editar la meta de un bolsillo deja obsoletos sus metadatos de cambio (E-5).** El endpoint escribe la meta y no toca ninguna de las seis columnas de cambio que la acompañan (`accountEditController.js:91-92`)
@@ -163,7 +164,6 @@ Ninguno.
 - [ ] **🟢 Baja — Un campo muerto viaja en cada guardado (E-7).** El tipo de cuenta se añade al payload con un comentario que dice que el controlador lo necesita (`EditAccount.tsx:341-344`); el controlador nunca lo lee
 - [ ] **🟢 Baja — La nota de un bolsillo vive en dos tablas y una tapa a la otra (E-8).** El endpoint la escribe en la fila compartida (`accountEditController.js:59`) y otra vez en la propia del bolsillo (`:97`)
 - [ ] **🟡 Media — Los topes de longitud del frontend son más estrechos que las columnas, y uno tiene un carácter de margen (E-10).** Nombre de cuenta acotado a 28 (`validations/utils/constants.ts:4-13`) contra una columna de 50; el peor caso derivado hoy es 27
-- [ ] **🟡 Media — Tres tipos de cuenta no reciben moneda del endpoint de lectura (E-11).** Banco, inversión y fuente de ingreso tienen superficie editable vacía por diseño (`accountEditController.js:309-313`), pero el join de moneda está comentado para ellos, así que cualquier vista que lea la moneda de una cuenta bancaria ahí obtiene `undefined`
 
 > **Hallazgo estructural al lado de los once:** el endpoint de escritura de cuenta
 > no lleva middleware de validación (`backend/src/fintrack_api/routes/accountRoutes.js:104`),
@@ -223,13 +223,12 @@ Ninguno.
 
 ## 🌍 Locale and money formatting
 
-### ✅ LISTO (0/4)
+### ✅ LISTO (1/4)
 
-Ninguno.
+- [x] **RESUELTO 2026-09-09** (`4a840346`) — la moneda por defecto del formateador de dinero no se encontraba en el catálogo, **y la corrección no estaba donde este item apuntaba.** El `'USD'` en mayúsculas de `helpers/functions.ts:39` sólo llega a consumidores que ignoran las mayúsculas: `currencyFormat` lo entrega a `Intl.NumberFormat`, que ignora la caja en un código ISO; `getCurrencySymbol` normaliza los dos lados antes de comparar (`:74`); `isValidCurrencyCode` normaliza su entrada (`:257`). **La forma alcanzable del mismo síntoma estaba un archivo más allá:** la moneda por defecto se leía del entorno y se forzaba al tipo `CurrencyType` sin normalizar (`helpers/currencyConstants.ts:73-74`), y ese `as` es lo que escondía un valor malo del compilador, porque `CurrencyType` es una unión sólo en minúsculas (`types/types.ts:214`). Con `VITE_ACCOUNTING_CURRENCY_CODE=USD` los 23 sitios que indexan `CURRENCY_OPTIONS[DEFAULT_CURRENCY]` devolvían indefinido y cada formateador caía en silencio al locale del equipo. Ahora el valor se pasa a minúsculas y se valida contra `SUPPORTED_CURRENCIES`, con `'usd'` de reserva, así que un código no soportado como `gbp` cae en el mismo guardia
 
-### 🔄 PENDIENTE (4/4)
+### 🔄 PENDIENTE (3/4)
 
-- [ ] **La moneda por defecto del formateador de dinero no se encuentra en el catálogo de monedas.** Está declarada en mayúsculas (`helpers/functions.ts:39`) y todas las claves del catálogo son minúsculas (`helpers/currencyConstants.ts:22-58`), así que leer el catálogo con ese valor devuelve indefinido y el formateador de números cae en silencio a la configuración regional del equipo. El silencio es el defecto: nada lanza y la cifra igual se imprime
 - [ ] **Quince apariciones vivas de una etiqueta de configuración regional española en once archivos del frontend, con la interfaz en inglés.** El detalle sitio por sitio está en `plan-docs/ongoing/PLAN_FX_DISPLAY.md`, sección 2
 - [ ] **Las dos constantes de formato de fecha no coinciden en qué idioma habla la interfaz** (`helpers/constants.ts:81-86`); la segunda lleva su razón escrita, la primera no
 - [ ] **Un comentario apunta a un rango de líneas que ya no contiene lo que dice**: la nota de la tarjeta superior del tracker cita el archivo de constantes en las líneas 57 a 59 (`pages/tracker/components/TopCard.tsx:213`) y la constante que describe vive hoy en las líneas 83 a 86
@@ -367,10 +366,10 @@ Ninguno.
 | Transfer | 7 | 6 | 1 |
 | Pocket Detail and Category Budget Detail | 2 | 2 | 0 |
 | Editing and Deleting | 10 | 9 | 1 |
-| Account editor register | 11 | 4 | 7 |
+| Account editor register | 11 | 5 | 6 |
 | Logic and Business Rules | 14 | 5 | 9 |
 | Frontend and UI/UX | 16 | 5 | 11 |
-| Locale and money formatting | 4 | 0 | 4 |
+| Locale and money formatting | 4 | 1 | 3 |
 | Data and Export | 1 | 0 | 1 |
 | Accounts and Overview | 11 | 11 | 0 |
 | PnL Tracker | 3 | 3 | 0 |
@@ -379,4 +378,4 @@ Ninguno.
 | Toasts and Notifications | 1 | 1 | 0 |
 | Database and Time | 2 | 2 | 0 |
 | Resolved by Design Decision | 10 | 10 | 0 |
-| **TOTAL** | **125** | **83** | **42** |
+| **TOTAL** | **125** | **85** | **40** |

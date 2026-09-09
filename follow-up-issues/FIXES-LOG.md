@@ -12,6 +12,103 @@ other fix · blast radius measured · how it was verified · lesson.
 
 ---
 
+## 2026-09-09 · `4a840346` · A cast that laundered an unchecked currency code
+
+**Frontend** · group: Locale and money formatting · severity 🟡
+
+### The backlog was wrong about where the defect was
+
+The entry said the money formatter's default currency is written upper case
+against an all-lower-case catalog, so the lookup returns `undefined` and the
+formatter falls back to the machine's locale. The symptom was right. The location
+was not, and the fix it implied would have changed three literals that break
+nothing.
+
+Measured, the three upper-case `'USD'` defaults in `helpers/functions.ts` reach
+only consumers that do not care about case:
+
+| default | consumer | why case cannot matter |
+| :--- | :--- | :--- |
+| `:39` `currencyFormat` | `Intl.NumberFormat({ currency })` | Intl resolves an ISO code case-insensitively |
+| `:71` `getCurrencySymbol` | its own comparison at `:74` | upper-cases both sides before comparing |
+| `:238` `validCurrencyCodes` | `isValidCurrencyCode` at `:257` | upper-cases the input against an upper-case set |
+
+And no call site indexes the locale map with either default: all 23 uses of
+`CURRENCY_OPTIONS[...]` pass `DEFAULT_CURRENCY`, or a `currency_code` the API can
+only emit lower case, because its validators derive from `SUPPORTED_CURRENCIES`
+in `backend/src/fintrack_api/services/fx_services/core/fxConfig.js:40`.
+
+### Where the same symptom was actually reachable
+
+One file away, in how the default is built:
+
+```ts
+// helpers/currencyConstants.ts:73-74 — before
+export const DEFAULT_CURRENCY = (import.meta.env
+ .VITE_ACCOUNTING_CURRENCY_CODE || 'usd') as CurrencyType;
+```
+
+`CurrencyType` is a lower-case-only union (`types/types.ts:214`), so the `as`
+asserts a shape the value was never checked against. An operator who sets
+`VITE_ACCOUNTING_CURRENCY_CODE=USD` — the natural way to write a currency code —
+type-checks clean and leaves `CURRENCY_OPTIONS[DEFAULT_CURRENCY]` `undefined` at
+every one of those 23 sites, sending each formatter to the machine's locale
+without throwing.
+
+### Code
+
+```ts
+// helpers/currencyConstants.ts — after
+const declaredCurrency = String(
+ import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE ?? '',
+).toLowerCase();
+
+// The cast cannot check the value, so the value is checked here. A key that is
+// not in CURRENCY_OPTIONS leaves every lookup undefined and the formatters fall
+// back to the machine's locale without throwing -- 'USD' does it by case, 'gbp'
+// by not being supported.
+export const DEFAULT_CURRENCY = (
+ SUPPORTED_CURRENCIES.includes(declaredCurrency as CurrencyType)
+  ? declaredCurrency
+  : 'usd'
+) as CurrencyType;
+```
+
+### Why the guard checks membership and not only case
+
+Lower-casing alone fixes `USD` and leaves `gbp` producing the identical
+`undefined`. Both are the same failure — a key the map does not hold — and the
+membership test costs the same expression, so splitting them into a fixed case
+and an open one would have been an arbitrary line.
+
+### Blast radius
+
+Zero today. `VITE_ACCOUNTING_CURRENCY_CODE` is set in no `.env` in the repository,
+so the fallback `'usd'` applied before and applies now. The defect was reachable
+only the first time the variable is set in Vercel — which is precisely when it
+would have been hardest to attribute, since nothing throws and every figure still
+prints.
+
+### Verified
+
+`tsc -p tsconfig.app.json --noEmit` exit 0. `npm run build` exit 0.
+
+### Lesson
+
+**A type assertion is not a check; it is a promise that something else checked.**
+`as CurrencyType` told the compiler the value belonged to a six-member union and
+nothing ever tested that it did. Wherever a value crosses into the program from
+outside — an environment variable, a response body, a query string — the cast at
+the boundary is the exact place a wrong value stops being visible.
+
+**A backlog entry names a symptom reliably and a location unreliably.** This one
+described the failure precisely and pointed one file away from it. Reading the
+consumers before editing the line the entry cites is what separates the two: three
+literals would have been changed, the commit would have looked like a fix, and the
+defect would have survived untouched.
+
+---
+
 ## 2026-09-09 · `e7804cdd` · Three declared lifetimes for one refresh token
 
 **Backend** · group: Backend and Security · severity 🔴

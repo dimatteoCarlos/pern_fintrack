@@ -29,7 +29,7 @@ TÓPICOS LISTOS, PENDIENTES Y CONSULTAS AL CLIENTE
 >
 > Los conteos por grupo están en `summary-issues.md` y la misma lista en inglés
 > en `issues-en.md`. Los tres archivos cuentan lo mismo a esta fecha:
-> **125 elementos — 83 LISTO, 42 PENDIENTE.**
+> **125 elementos — 85 LISTO, 40 PENDIENTE.**
 >
 > **Cómo se corrigió cada defecto, con el código.** Las entradas de abajo dicen
 > qué quedó resuelto y con qué prueba. El código antes y después, el razonamiento
@@ -538,14 +538,32 @@ ubicación exacta. Ninguno se corrigió: esta pasada es documentación, no códi
 ## Configuración regional y formato de dinero
 
 **La moneda por defecto del formateador de dinero no se encuentra en el catálogo
-de monedas.** PENDIENTE. Está declarada en mayúsculas
-(`frontend/src/fintrack/helpers/functions.ts:39`) y todas las claves del catálogo
-son minúsculas (`frontend/src/fintrack/helpers/currencyConstants.ts:22-58`), así
-que leer el catálogo con ese valor falla contra el propio defecto de la función,
-devuelve indefinido, y el formateador de números cae en silencio a la
-configuración regional del equipo donde se ejecuta. El silencio es el defecto
-entero: nada lanza excepción y la cifra igual se imprime, con separadores que no
-son los que el mapa declara.
+de monedas.** **LISTO 2026-09-09** (`4a840346`), **y la corrección no estaba
+donde este punto apuntaba.** El `'USD'` en mayúsculas de
+`frontend/src/fintrack/helpers/functions.ts:39` sólo llega a consumidores que
+ignoran la caja: `currencyFormat` lo entrega a `Intl.NumberFormat`, que ignora
+las mayúsculas en un código ISO; `getCurrencySymbol` normaliza los dos lados
+antes de comparar (`:74`); `isValidCurrencyCode` normaliza su entrada contra un
+conjunto en mayúsculas (`:257`). Ningún sitio indexa el catálogo con ese valor,
+así que ese literal no produce ningún indefinido.
+
+**La forma alcanzable del mismo síntoma estaba un archivo más allá.** La moneda
+por defecto se leía del entorno y se forzaba al tipo `CurrencyType` sin
+normalizar (`frontend/src/fintrack/helpers/currencyConstants.ts:73-74`), y ese
+`as` es exactamente lo que escondía un valor malo del compilador, porque
+`CurrencyType` es una unión sólo en minúsculas
+(`frontend/src/fintrack/types/types.ts:214`). Un operador que escribe
+`VITE_ACCOUNTING_CURRENCY_CODE=USD` —la forma natural de escribir un código de
+moneda— dejaba `CURRENCY_OPTIONS[DEFAULT_CURRENCY]` en indefinido en los 23
+sitios que lo indexan, y cada formateador caía en silencio a la configuración
+regional del equipo. El silencio era el defecto entero: nada lanzaba excepción y
+la cifra igual se imprimía, con separadores que no son los que el mapa declara.
+
+El valor ahora se pasa a minúsculas y se valida contra `SUPPORTED_CURRENCIES`,
+con `'usd'` de reserva, así que un código no soportado como `gbp` cae en el mismo
+guardia. La variable no está definida en ningún `.env`, de modo que el valor
+efectivo no cambió: el defecto sólo era alcanzable una vez que se la define en
+Vercel. El código y la lección están en `FIXES-LOG.md`.
 
 **Quince apariciones vivas de la etiqueta de configuración regional española en
 once archivos del frontend, con la interfaz en inglés.** PENDIENTE. El detalle
@@ -776,18 +794,27 @@ de 27 con los dos separadores. Ampliar cualquiera de los tres hace que el editor
 rechace un valor que él mismo no escribió.
 
 **🟡 Media — Tres tipos de cuenta no reciben moneda del endpoint de lectura
-(E-11).** PENDIENTE. Las cuentas de banco, inversión y fuente de ingreso tienen
-superficies editables idénticas y vacías — el endpoint de escritura no tiene caso
-para ellas y están ausentes de su mapa de tablas
-(`backend/src/fintrack_api/controllers/accountEditController.js:309-313`) —, lo
-cual es correcto. La asimetría es que la unión con la moneda está comentada para
-ellas en el endpoint de lectura, así que cualquier vista que lea de ahí la moneda
-de una cuenta bancaria obtiene `undefined`.
+(E-11).** **CERRADO 2026-09-09 por medición: no se reproduce y no se cambió
+nada.** La mitad del punto sobre el endpoint de escritura sigue en pie: las
+cuentas de banco, inversión y fuente de ingreso tienen superficies editables
+idénticas y vacías, porque ese endpoint no tiene caso para ellas y están
+ausentes de su mapa de tablas, lo cual es correcto.
+
+La otra mitad no se sostiene. El archivo que el punto cita no menciona monedas en
+ninguna de sus 393 líneas, y el endpoint de lectura de cuentas une `currencies`
+en vivo en cada rama: banco e inversión
+(`backend/src/fintrack_api/controllers/getAccountController.js:319`), presupuesto
+de categoría (`:338`), bolsillo (`:399`) y deudor (`:427`). No existe ninguna
+unión con la moneda comentada en una lectura de cuenta; la única de `backend/src`
+está en una consulta del panel (`dashboardController.js:704`) y no pertenece a
+este endpoint. O la unión se restauró sin actualizar el punto, o el punto estaba
+errado cuando se escribió; no se buscó en el historial cuál de las dos, porque el
+resultado es el mismo.
 
 ---
 
 # RECUENTO AL CIERRE DE LA PASADA DEL 2026-09-06
 
-**125 elementos — 83 LISTO, 42 PENDIENTE.** El desglose por grupo está en
+**125 elementos — 85 LISTO, 40 PENDIENTE.** El desglose por grupo está en
 `summary-issues.md`, que debe coincidir línea por línea con `issues-en.md` y con
 este archivo.

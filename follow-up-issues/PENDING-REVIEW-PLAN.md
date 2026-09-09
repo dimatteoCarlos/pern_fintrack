@@ -17,12 +17,14 @@
 | | as the files read on 2026-09-06 | today |
 | :--- | ---: | ---: |
 | total items | 123 | 125 |
-| LISTO | 77 | 83 |
-| **PENDIENTE** | **46** | **42** |
+| LISTO | 77 | 85 |
+| **PENDIENTE** | **46** | **40** |
 
 Three corrections got the count here. The closing totals in the three source
 files had been left at the figures from before `f34f597e`, which closed two
-overview defects without lowering them. Four items closed on 2026-09-09, struck through below. And one defect measured that day was in no list at all — the rotation threshold, row 3b.
+overview defects without lowering them. Six items closed on 2026-09-09, struck
+through below — five by a fix, one by measurement alone. And one defect measured
+that day was in no list at all: the rotation threshold, row 3b.
 
 The rows below are every item still marked PENDIENTE, the struck-through ones kept
 for the record, plus three open findings that sit inside items marked LISTO and
@@ -45,11 +47,14 @@ Five tiers, in the order the work should be taken:
 | **P4** | Missing features, tooling and refactors. |
 
 Severity marks come from the source files where they exist; where they did not,
-the mark states the effect on the user, not the size of the fix.
+the mark states the effect on the user, not the size of the fix. A row marked ⚪
+is retired: the code was measured and the defect the row describes is not there.
+Retired is not the same as fixed — nothing was changed for it, and the row is
+kept struck through so the same claim is not raised a third time.
 
 ---
 
-## P0 — Source-fixable correctness (10 open, 4 closed)
+## P0 — Source-fixable correctness (8 open, 5 closed, 2 retired)
 
 | # | item | where | sev |
 | :-- | :--- | :--- | :-- |
@@ -57,9 +62,10 @@ the mark states the effect on the user, not the size of the fix.
 | ~~2~~ | ~~A forbidden response does not end the session~~ — **RESOLVED 2026-09-09** (`2f641f3a`), and **not by the fix this row proposed**: the three broken-token statuses moved to 401 in the backend; widening the client to 403 would have signed out anyone mistyping their current password. Code and lesson in `FIXES-LOG.md` | `authMiddleware.js:21-25`, `:110-113` | 🔴 |
 | ~~3~~ | ~~Three sources declared three lifetimes for one refresh token, and the cookie declared none~~ — **RESOLVED 2026-09-09** (`e7804cdd`). `REFRESH_TOKEN_DAYS` is now the only place the number is written; the signature, the row and the cookie read it, and the cookie gained a `maxAge`. Code and lesson in `FIXES-LOG.md` | `authFn.js`; `cookieConfig.js:22` | 🔴 |
 | ~~3b~~ | ~~The rotation threshold carried a factor of one thousand too many, so the token rotated on every refresh~~ — **RESOLVED 2026-09-09** (`e7804cdd`), found while measuring row 3 and present in no backlog. Threshold now 16.8 h of a 7-day life | `authRefreshToken.js:86` | 🔴 |
-| 4 | The money formatter's default currency is written upper case against an all-lower-case catalog, so the lookup returns `undefined` and the number formatter falls back silently to the machine's locale | `helpers/functions.ts:39`; `helpers/currencyConstants.ts:22-58` | 🔴 |
+| 4 | ~~The money formatter's default currency is written upper case against an all-lower-case catalog~~ — **the chain this row describes does not exist**, measured 2026-09-09. The upper-case `'USD'` defaults reach only case-insensitive consumers: `currencyFormat` hands the code to `Intl.NumberFormat`, which ignores case in an ISO code; `getCurrencySymbol` upper-cases both sides before comparing (`functions.ts:74`); `isValidCurrencyCode` upper-cases its input against an upper-case set (`functions.ts:257`). No call site indexes the locale map with either default. **Replaced by row 4b, which is the reachable form of the same symptom** | `helpers/functions.ts:39`, `:71`, `:238` | ⚪ |
+| ~~4b~~ | ~~The default currency is read from the environment and cast to the lower-case union without being normalised~~ — **RESOLVED 2026-09-09** (`4a840346`), the reachable form of row 4 and the only one there was. An operator setting `VITE_ACCOUNTING_CURRENCY_CODE=USD` made `CURRENCY_OPTIONS[DEFAULT_CURRENCY]` return `undefined` at all 23 sites that index it; the `as CurrencyType` cast is what hid it from the compiler. The value is now lower-cased and checked against `SUPPORTED_CURRENCIES`, so `gbp` is caught by the same guard. Code and lesson in `FIXES-LOG.md` | `helpers/currencyConstants.ts:73-74` | 🟡 |
 | 5 | The role ladder, the admin guard and the authorization factory all exist and no route file imports any of them; every guarded route uses only token verification or ownership | `auth_api/middlewares/authMiddleware.js:228-294` | 🟡 |
-| 6 | The currency join is commented out for bank, investment and income-source accounts in the read endpoint, so any view reading a bank account's currency from it gets `undefined` (E-11) | `accountEditController.js:309-313` | 🟡 |
+| 6 | ~~The currency join is commented out for bank, investment and income-source accounts in the read endpoint (E-11)~~ — **not reproducible**, measured 2026-09-09. The file this row cites holds no currency reference in any of its 393 lines, and the account read endpoint joins `currencies` live in every branch: bank and investment (`getAccountController.js:319`), category budget (`:338`), pocket (`:399`), debtor (`:427`). The only commented-out currency join in `backend/src` is in a dashboard query (`dashboardController.js:704`) and belongs to no account read | anchor was `accountEditController.js:309-313`, now the update transaction | ⚪ |
 | 7 | Editing a pocket target writes the amount and touches none of the six exchange columns beside it, which migration 015 declares non-null on the grounds that the controller always sends all six (E-5) | `accountEditController.js:91-92` | 🟡 |
 | 8 | Frontend length caps are tighter than the columns: the account name is capped at 28 against a 50-character column, and the derived budget name's worst case is 27 — one character of margin (E-10) | `validations/utils/constants.ts:4-13` | 🟡 |
 | 9 | Fifteen live uses of a Spanish locale label in eleven frontend files with the interface in English, clustered in the conversion previews and the exchange audit card | site-by-site list in `plan-docs/ongoing/PLAN_FX_DISPLAY.md`, section 2 | 🟡 |
