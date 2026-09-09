@@ -181,6 +181,42 @@ INSERT INTO transaction_types (transaction_type_id, transaction_type_name)
 VALUES (7, 'balance-reversal')
 ON CONFLICT (transaction_type_id) DO NOTHING;
 
+-- ON CONFLICT ON THE ID CANNOT FAIL WHEN THAT ID ALREADY HOLDS ANOTHER NAME.
+-- Both inserts above are idempotent by id, which is what makes them safe to
+-- re-run and also what makes them silent: on a database where 11 or 7
+-- already mean something else, the row is left as it is and this migration
+-- reports success. recordBalanceReversal.js stamps those two ids on every row it
+-- writes, so the whole operation would then be recorded under another type,
+-- and nothing downstream would notice. The name check above catches only a
+-- name outside its own list, and transaction_types carries no check at all.
+--
+-- Asserted rather than repaired: overwriting a catalog row that something else
+-- already refers to would move those rows to a type they were never written
+-- under.
+DO $$
+DECLARE
+ movement_name text;
+ transaction_name text;
+BEGIN
+ SELECT movement_type_name INTO movement_name
+ FROM movement_types WHERE movement_type_id = 11;
+
+ SELECT transaction_type_name INTO transaction_name
+ FROM transaction_types WHERE transaction_type_id = 7;
+
+ IF movement_name IS DISTINCT FROM 'balance-reversal' THEN
+  RAISE EXCEPTION
+   'movement_type_id 11 holds "%", not "balance-reversal". The insert above was swallowed by ON CONFLICT and nothing repairs it afterwards.',
+   coalesce(movement_name, 'no row');
+ END IF;
+
+ IF transaction_name IS DISTINCT FROM 'balance-reversal' THEN
+  RAISE EXCEPTION
+   'transaction_type_id 7 holds "%", not "balance-reversal". The insert above was swallowed by ON CONFLICT and nothing repairs it afterwards.',
+   coalesce(transaction_name, 'no row');
+ END IF;
+END $$;
+
 -- Nullable, and NULL is the ordinary answer: it reads as "this row is not part
 -- of a reversal", which is true of every movement written so far.
 --

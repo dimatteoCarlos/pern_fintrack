@@ -689,6 +689,27 @@ export async function ensureAccountClosureCatalog(client = pool) {
  if (Number(movement_rows) > 0 || Number(transaction_rows) > 0) {
   console.log(pc.green('account-closure catalog entries added.'));
  }
+
+ // ON CONFLICT ON THE ID CANNOT FAIL WHEN THAT ID ALREADY HOLDS ANOTHER NAME.
+ // The insert above is idempotent by id, so on a database where 10 or 6
+ // already mean something else it changes nothing and this function reports
+ // success. recordClosureSettlement.js stamps both ids on every row it writes.
+ const { rows: binding } = await client.query(`
+  SELECT
+   (SELECT movement_type_name FROM movement_types
+     WHERE movement_type_id = 10) AS movement_name,
+   (SELECT transaction_type_name FROM transaction_types
+     WHERE transaction_type_id = 6) AS transaction_name
+ `);
+
+ const { movement_name, transaction_name } = binding[0];
+ if (movement_name !== 'account-closure' || transaction_name !== 'account-closure') {
+  throw new Error(
+   `catalog ids 10 and 6 hold "${movement_name ?? 'no row'}" and ` +
+    `"${transaction_name ?? 'no row'}", not "account-closure". The seed above was ` +
+    'swallowed by ON CONFLICT and nothing repairs it afterwards.',
+  );
+ }
 }
 
 /**
@@ -1328,6 +1349,27 @@ export async function ensureBalanceReversal(client = pool) {
  const { movement_rows, transaction_rows } = inserted.rows[0];
  if (Number(movement_rows) > 0 || Number(transaction_rows) > 0) {
   console.log(pc.green('balance-reversal catalog entries added.'));
+ }
+
+ // ON CONFLICT ON THE ID CANNOT FAIL WHEN THAT ID ALREADY HOLDS ANOTHER NAME.
+ // The insert above is idempotent by id, so on a database where 11 or 7
+ // already mean something else it changes nothing and this function reports
+ // success. recordBalanceReversal.js stamps both ids on every row it writes.
+ const { rows: binding } = await client.query(`
+  SELECT
+   (SELECT movement_type_name FROM movement_types
+     WHERE movement_type_id = 11) AS movement_name,
+   (SELECT transaction_type_name FROM transaction_types
+     WHERE transaction_type_id = 7) AS transaction_name
+ `);
+
+ const { movement_name, transaction_name } = binding[0];
+ if (movement_name !== 'balance-reversal' || transaction_name !== 'balance-reversal') {
+  throw new Error(
+   `catalog ids 11 and 7 hold "${movement_name ?? 'no row'}" and ` +
+    `"${transaction_name ?? 'no row'}", not "balance-reversal". The seed above was ` +
+    'swallowed by ON CONFLICT and nothing repairs it afterwards.',
+  );
  }
 
  // REFUSES RATHER THAN REPOINTS when the registry is absent. Adding the column
