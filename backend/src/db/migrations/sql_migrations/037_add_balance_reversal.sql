@@ -67,6 +67,14 @@
 -- column would be a reversal nothing can find; a non-reversal row carrying the
 -- column would be a row claiming to be part of an operation it is not in.
 --
+-- IT IS TWO-VALUED, AND THAT DEPENDS ON A FACT WORTH STATING RATHER THAN
+-- ASSUMING. movement_type_id is INTEGER NOT NULL on both build paths -
+-- 003_transactions.sql:24 and createTables.js:170 - so `movement_type_id = 11`
+-- is never NULL and the equality is a real biconditional. Were that column ever
+-- made nullable, this CHECK would evaluate to NULL on such a row and a CHECK
+-- passes on NULL: the constraint would go on being reported as present while
+-- enforcing nothing on exactly the rows nobody looked at.
+--
 -- WHAT THE NEW TYPE DOES TO THE READS THAT ALREADY EXIST, MEASURED
 --
 -- Nothing on the day this lands, because nothing writes it yet, and the same
