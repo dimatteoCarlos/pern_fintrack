@@ -3875,3 +3875,35 @@ before being changed.
   to the counterparty, here it is what the two accounts have already moved
   between them. Its sign is read from the target's own rows, so a positive
   figure is what the target received net.
+
+### 14.11 The close was unreachable from its own route, 2026-09-09
+
+The owner tried to close an account and was told its balance was already zero,
+of an account holding 17.42. Nothing was wrong with the account: both the stored
+column and the derivation read 17.42, measured on `fintrack_dev` for account
+109.
+
+- **The route handed over a string and the balance map is keyed by a number.**
+  `lockAndDeriveBalances` returns `new Map(rows.map((row) => [row.account_id,
+  row.balance]))`, and `account_id` arrives from the driver as a number. The
+  delete route read its path segment as the string a route always gives -
+  `req.params.targetAccountId`, unlike the three read routes beside it, which
+  all `parseInt` - so `balances.get('109')` was `undefined` and `parseFloat`
+  turned it into `NaN`.
+- **`NaN` passes every test this file makes.** `residual !== 0` is true of
+  `NaN`, so the close entered its reversal branch and handed `NaN` to the
+  writer, whose `if (!balance)` is equally true of `0`, `NaN`, `undefined` and
+  `null` - and its message names only the first. The hard-delete path refused
+  the same account for holding `NaN`.
+- **Three changes, and only the first is the fix.** The route parses its
+  segment like its neighbours; the service reads every balance through
+  `residualOf`, which coerces the key and raises a 500 naming the account when
+  the map has no entry or the value is not finite; and the writer separates the
+  two refusals, so a balance that never arrived is a 500 about a caller defect
+  and only a real zero is the 400 the owner sees.
+- **What let it ship is that every probe passed a number.** `verifyClose.js`
+  calls the engine directly, as the service does, so the one shape that failed
+  was the one nothing exercised. It now closes the same probe account with
+  `String(fundedId)` inside a savepoint and requires the two reversal legs: 26
+  assertions, none failing, everything rolled back.
+
