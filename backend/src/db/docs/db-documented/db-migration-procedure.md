@@ -11,10 +11,10 @@ Companion documents: `db-lifecycle.md` (what migrations, seeds and resets are),
 
 ### The chain — `src/db/migrations/sql_migrations/`
 
-Numbered files, `001` to `036` on `main` as of 2026-09-08, with no gap. They
-build a database **from zero**, in order: `002_accounts.sql` creates
-the tables that `014_category_budget_fx_columns.sql` later alters. A file assumes
-every lower-numbered file already ran.
+Numbered files with no gap, `001` upward. They build a database **from zero**,
+in order: `002_accounts.sql` creates the tables that
+`014_category_budget_fx_columns.sql` later alters. A file assumes every
+lower-numbered file already ran.
 
 **From zero, and only from zero.** Pointing the runner at an existing database
 with an empty ledger does not replay the chain over it: measured 2026-09-06
@@ -23,8 +23,9 @@ because its `CREATE TABLE IF NOT EXISTS users` skips the table that is already
 there and the IANA trigger it then declares has no `timezone` column to watch.
 That is what `supabase/001_production_alignment.sql` exists for.
 
-List the directory before writing one rather than trusting the number above.
-That number goes stale on every migration and has been behind four times.
+List the directory for the highest number. This paragraph used to carry the
+count and it was wrong five times, most recently within a day of being
+corrected, so it no longer carries one.
 
 **Listing `main` is not enough on its own, and asking is.** A number can be
 claimed on a branch hours before it reaches `main`, and a listing of `main`
