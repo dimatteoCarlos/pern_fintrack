@@ -137,6 +137,24 @@
   text-align: left;
 }
 
+/* THE CLOSE PANEL'S MONEY COLUMN. Right-aligned with tabular figures so the
+   decimal points line up down the column, and neutral until the sign gives it
+   a colour - a zero net is a fact, not a gain. */
+.impact-report-table td.net-moved {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.impact-report-table .net-moved.positive {
+  color: var(--green-600);
+  font-weight: 600;
+}
+
+.impact-report-table .net-moved.negative {
+  color: var(--red-600);
+  font-weight: 600;
+}
+
 .impact-report-table .net-adjustment.positive {
   color: var(--green-600);
   font-weight: 600;

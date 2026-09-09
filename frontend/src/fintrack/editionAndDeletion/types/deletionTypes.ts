@@ -46,6 +46,11 @@ export type RelatedAccountRowType = {
   accountName: string;
   accountTypeName: string;
   interactionCount: number;
+  // The target's own signed amounts netted against this counterparty, so a
+  // positive figure is what the target received net from it. It is history:
+  // what the two accounts have already moved between them, not what closing
+  // will move. Closing changes it by nothing.
+  netAmount: number;
   // TIMESTAMPTZ folded by MAX() on the server, so it reaches here as an ISO
   // instant and is formatted in the reader's own zone, not in UTC. The UTC
   // calendar day and the owner's disagree for any movement recorded late in

@@ -3825,3 +3825,53 @@ owner can rename an account on any day after it.
   assertions earn their place on every database that already carries those ids,
   which is every local one, and on any future database that acquires them by
   another path.
+
+### 14.10 Three things the close screen got wrong, reported 2026-09-09
+
+All three were found by the owner looking at the screen, and each was measured
+before being changed.
+
+- **"Your net worth does not change" was false, and the compensation account's
+  exclusion is the reason rather than the defence.** Net worth is the bank and
+  cash balance plus the investment balance plus the debt position
+  (`makeHeroSection.js:197`), and the query behind the first term excludes the
+  compensation account by type (`overviewAccountRepository.js:195`). So a bank
+  account closed holding 500 counted 500 towards net worth before the
+  operation, and after it the account is gone and the 500 sits where nothing
+  adds it up: the figure falls by exactly the balance that left. The sentence
+  had the mechanism right and the conclusion backwards. **What replaced it says
+  the balance stops counting towards whatever it was counting towards**, which
+  is also true of the two closable types whose balance was never in net worth -
+  a budget category and an income source - without the screen having to branch
+  by type.
+- **"It is not one of your accounts and is not listed below" was false whenever
+  the target had already dealt with the compensation account.** The
+  related-accounts panel lists whoever the target genuinely transacted with, and
+  a discard close or an annulment posted earlier puts the compensation account
+  in that history like any other counterparty. Measured on `fintrack_dev`: the
+  account named `slack`, typed `boundary`, three interactions, most recent
+  2026-08-27. The first half of the claim stands - it is not the owner's account
+  and sits outside every aggregate - and only the second half was removed, with
+  a line saying that if the row appears it is history and not the reversal about
+  to be made.
+- **The only way off the page that closes nothing was invisible.** The header
+  carried a link to the previous route drawing `LeftArrowDarkSvg`, and three
+  things kept it from reading as a control: the asset hardcodes `fill="#141414"`
+  on its root and the element set `color: 'black'` inline, on a header whose
+  title is `--color-content-on-dark`; the class attribute read
+  `header-back-button .iconArrowLeftDark`, and the second token carries a
+  leading dot so it matches no rule; and `.header-back-button` has no rule in
+  any stylesheet, so there was no hover, no focus ring and no hit area. The link
+  also held nothing but the glyph, so it announced as an unnamed link. **It now
+  carries a visible label beside the arrow, an `aria-label` saying that leaving
+  closes nothing, and the four states.** Styled on the page rather than by
+  taking the shared `backArrow.css` class, which is `position: absolute`
+  against a title row this header does not have.
+- **The related-accounts panel now states the net amount moved with each
+  account**, which the owner asked for on the same day. It is the same `SUM`
+  over the same rows the annulment report published as `net_adjustment_amount`,
+  through the CTE both queries already share, so it cost one line and no new
+  join. What changed is what it means: there it was what annulling WOULD apply
+  to the counterparty, here it is what the two accounts have already moved
+  between them. Its sign is read from the target's own rows, so a positive
+  figure is what the target received net.

@@ -345,6 +345,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
         unattributedAmount={unattributedAmount}
         unattributedTransactionCount={unattributedTransactionCount}
         isProjectionShown={isAnnulmentOffered}
+        targetAccountCurrency={targetAccountCurrency}
         t={translateText}
       />
     );
@@ -372,12 +373,22 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
     <div className='account-deletion-page'>
       {/* 🎯 PAGE HEADER */}
       <header className='page-header '>
+        {/* THE ONLY WAY OFF THIS PAGE THAT CLOSES NOTHING, and it was
+            invisible: a black glyph on the dark page ground, in a class
+            written with a leading dot so it matched no rule, with no hover,
+            no focus ring and no name for a screen reader. The label is
+            visible as well as announced - an owner who has just been told
+            the account cannot be reopened should not have to find an
+            unlabelled arrow to leave. */}
         <Link
           to={previousRoute}
-          className='header-back-button .iconArrowLeftDark'
-          style={{ color: 'black' }}
+          className='header-back-button'
+          aria-label={translateText('backWithoutClosingLabel')}
         >
-          <LeftArrowDarkSvg />
+          <LeftArrowDarkSvg aria-hidden='true' />
+          <span className='header-back-button__text'>
+            {translateText('backButtonText')}
+          </span>
         </Link>
 
         <h1 className='page-title'>
