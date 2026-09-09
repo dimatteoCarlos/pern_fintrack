@@ -8,6 +8,7 @@ import {
 
 import {
   ImpactReportRowType,
+  MovementBreakdownEntryType,
   RelatedAccountRowType,
 } from '../../../../types/deletionTypes.ts';
 
@@ -78,6 +79,45 @@ const formatInteractionDate = (isoInstant: string) => {
     day: 'numeric',
   });
 };
+
+// THE DICTIONARY KEY FOR A MOVEMENT TYPE NAME. The catalog names carry hyphens
+// ('account-opening') and the dictionary is a flat record of identifiers, so
+// the hyphens become underscores. The prefix is what keeps these entries apart
+// from the account-type entries beside them: 'investment' is both an account
+// type and a movement type, and one shared entry would make renaming either
+// label silently rename the other.
+const movementLabelKey = (movementTypeName: string) =>
+  `movement_${movementTypeName.replace(/-/g, '_')}` as keyof DictionaryDataType;
+
+// THE NAME THE OWNER READS, or the name the database holds. getLangText returns
+// the key itself when the dictionary has no entry (languages.ts:229), so a
+// movement type added to the catalog and not to this dictionary renders as
+// 'account-opening' rather than as 'movement_account_opening'. Wrong-looking is
+// better than meaningless, and neither is silent.
+const movementLabel = (
+  t: (key: keyof DictionaryDataType) => string,
+  movementTypeName: string,
+) => {
+  const key = movementLabelKey(movementTypeName);
+  const translated = t(key);
+
+  return translated === key ? movementTypeName : translated;
+};
+
+// A COUNT OF ONE STATES ONLY THE MOVEMENT. "1 Account opening" reads as a
+// quantity of openings; the row already says the count once, in the figure
+// above this line, and repeating it for the single-entry case is noise.
+const movementBreakdownText = (
+  t: (key: keyof DictionaryDataType) => string,
+  breakdown: MovementBreakdownEntryType[],
+) =>
+  breakdown
+    .map((entry) =>
+      entry.count === 1
+        ? movementLabel(t, entry.movementTypeName)
+        : `${entry.count} × ${movementLabel(t, entry.movementTypeName)}`,
+    )
+    .join(' · ');
 
 //=============================
 // UI COMPONENT: ImpactReportUI
@@ -207,8 +247,26 @@ const ImpactReportUI = ({
                       {t(`${row.accountTypeName as keyof DictionaryDataType}`)}
                     </td>
 
+                    {/* WHAT THE INTERACTIONS WERE, under how many there
+                        were. Written into the cell rather than into a title
+                        attribute alone: a tooltip is invisible to a touch
+                        screen and to a keyboard, and the reason the
+                        compensation account is in this list - a funded opening
+                        brings the money in from outside the application, and
+                        that arrival is recorded against it - is the whole
+                        answer to the question the row raises. An older row
+                        from a response without the field renders the count
+                        alone rather than an empty line. */}
                     <td className='interaction-count'>
-                      {row.interactionCount}
+                      <span className='interaction-count__total'>
+                        {row.interactionCount}
+                      </span>
+
+                      {row.movementBreakdown?.length ? (
+                        <span className='interaction-count__movements'>
+                          {movementBreakdownText(t, row.movementBreakdown)}
+                        </span>
+                      ) : null}
                     </td>
 
                     {/* Zero takes neither colour. It is a real answer here -

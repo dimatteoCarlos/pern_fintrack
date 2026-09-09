@@ -104,6 +104,25 @@ reportTitleWithImpact:string;
  unattributedAmount: string;
  unattributedNote: string;
 
+ //movement types for the interactions cell of ImpactReportUI
+ //
+ //PREFIXED, AND NOT BY TASTE. 'investment' is both an account type and a
+ //movement type, and this dictionary is one flat record: a single shared entry
+ //would make renaming the account-type label silently rename the movement one.
+ //The key is derived from the catalog name by movementLabelKey in
+ //ImpactReportUI.tsx, which is why the hyphens are underscores here.
+ movement_expense:string;
+ movement_income:string;
+ movement_investment:string;
+ movement_debt:string;
+ movement_pocket:string;
+ movement_transfer:string;
+ movement_receive:string;
+ movement_account_opening:string;
+ movement_pnl:string;
+ movement_account_closure:string;
+ movement_balance_reversal:string;
+
  //account types for ImpactReportUI
  income_source:string;
  category_budget:string;
@@ -328,6 +347,21 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   '{count} transactions an earlier deletion already reversed. Shown beside the total, not added to it.',
 
  //account type in ImpactReportUI
+ // What a shared movement was, for the interactions cell. The catalog names
+ // are lowercase identifiers ('account-opening'); these are what the owner
+ // reads.
+ movement_expense: "Expense",
+ movement_income: "Income",
+ movement_investment: "Investment",
+ movement_debt: "Debt",
+ movement_pocket: "Pocket",
+ movement_transfer: "Transfer sent",
+ movement_receive: "Transfer received",
+ movement_account_opening: "Account opening",
+ movement_pnl: "Profit and loss",
+ movement_account_closure: "Account closure",
+ movement_balance_reversal: "Balance reversal",
+
  income_source:'Income',
  category_budget:"Expense",
  debtor:"Debtor/Lender",
@@ -502,6 +536,19 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   '{count} transacciones que una eliminación anterior ya revirtió. Se muestra junto al total, no se suma.',
 
  //account type in ImpactReportUI
+ // Lo que fue un movimiento compartido, para la celda de interacciones.
+ movement_expense: "Gasto",
+ movement_income: "Ingreso",
+ movement_investment: "Inversión",
+ movement_debt: "Deuda",
+ movement_pocket: "Bolsillo",
+ movement_transfer: "Transferencia enviada",
+ movement_receive: "Transferencia recibida",
+ movement_account_opening: "Apertura de cuenta",
+ movement_pnl: "Pérdidas y ganancias",
+ movement_account_closure: "Cierre de cuenta",
+ movement_balance_reversal: "Reversión de saldo",
+
  income_source:'Ingreso',
  category_budget:"Gasto",
  debtor:"Préstamo",

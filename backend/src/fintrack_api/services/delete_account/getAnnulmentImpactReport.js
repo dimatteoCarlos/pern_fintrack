@@ -39,9 +39,15 @@ export const TARGET_ACCOUNT_TRANSACTIONS_CTE = `
      ELSE tr.destination_account_id
    END AS affected_account_id,
    tr.amount, --target account signed amount
-   -- Carried for getRelatedAccounts.js, which counts interactions and reads
-   -- the most recent one. The two consumers above name their columns
-   -- explicitly and group explicitly, so an extra column reaches neither.
+   -- Carried for getRelatedAccounts.js, which counts interactions, reads the
+   -- most recent one and names the movements behind the count. The two
+   -- consumers above name their columns explicitly and group explicitly, so an
+   -- extra column reaches neither.
+   --
+   -- movement_type_id is INTEGER NOT NULL with a foreign key into
+   -- movement_types (003_transactions.sql:24-25), so a join on it downstream
+   -- cannot drop a row and needs no outer arm.
+   tr.movement_type_id,
    tr.transaction_actual_date
 
   FROM transactions tr

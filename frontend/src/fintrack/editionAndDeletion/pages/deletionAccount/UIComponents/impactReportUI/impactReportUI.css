@@ -133,6 +133,28 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* THE COUNT AND WHAT IT WAS MADE OF, stacked. The cell stays right-aligned
+   with the other figures, so both lines end on the same edge. */
+.impact-report-table td.interaction-count .interaction-count__total {
+  display: block;
+  /* index.css sets font-size on the universal selector, so an inline element
+     does not inherit the size of the cell it sits in and has to restate it. */
+  font-size: var(--font-size-xs);
+}
+
+/* Secondary by size and colour, because it explains the figure above it rather
+   than competing with it. No hover state and no title attribute: the line is
+   already the whole detail, so there is nothing left for a tooltip to reveal
+   and nothing here to interact with. */
+.impact-report-table td.interaction-count .interaction-count__movements {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-2xs);
+  font-variant-numeric: normal;
+  color: var(--color-content-secondary);
+  white-space: normal;
+}
+
 .impact-report-table td.last-interaction {
   text-align: left;
 }
