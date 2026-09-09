@@ -78,6 +78,12 @@ export type OverviewDomainCardBase = {
  // only part of still produces a figure; priorPeriodCoverage below is what says
  // so. An AMOUNT and not a rate: the prior month's own figure is not published,
  // so a percentage cannot be derived by any consumer without inventing it.
+ // The prior month's OWN figure, and the reason it is on the wire: a change
+ // stated as a percentage needs a denominator, and without this the page would
+ // have to invent one. The server publishes the figure rather than the
+ // percentage because what to answer when this is 0 is a presentation decision.
+ // Null exactly when delta is.
+ priorTotalAmount: number | null;
  delta: number | null;
  // How much of the prior month the owner held an account for, and the only way
  // to tell a full comparison from a partial one: with 'partial' the delta is a

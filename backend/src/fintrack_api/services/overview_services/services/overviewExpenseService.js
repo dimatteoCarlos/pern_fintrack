@@ -97,7 +97,7 @@ export const overviewExpenseService = {
   // The reference month is the last point of the same series the chart draws, so
   // the card and the chart cannot disagree about it (§4.2). generate_series
   // guarantees the row exists even when nothing happened in it.
-  const { currentPoint, delta, priorPeriodCoverage } = makePeriodDelta({
+  const { currentPoint, priorTotalAmount, delta, priorPeriodCoverage } = makePeriodDelta({
    months,
    referenceMonth,
    priorMonth,
@@ -118,6 +118,7 @@ export const overviewExpenseService = {
   const card = makeExpenseCard({
    totalAmount: currentPoint.totalAmount,
    transactionCount: currentPoint.transactionCount,
+   priorTotalAmount,
    delta,
    priorPeriodCoverage,
    budgetAmount: isMixedCurrency || !hasBudgetInForce ? null : budgetStatus.totals.budgetAmount,

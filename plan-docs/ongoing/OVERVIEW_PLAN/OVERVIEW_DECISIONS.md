@@ -2385,6 +2385,30 @@ compararla leería como una subida desde nada.
 campo nuevo recibe una delta donde antes recibía `null`, que es exactamente lo
 que el fallo pide.
 
+## La variación se lee como porcentaje, y por eso viaja la cifra del mes anterior — 2026-09-09
+
+Carlos, sobre la tarjeta de Expense: *"flecha indicando % con respect a mes
+anterior"*. La tarjeta publicaba sólo la diferencia, así que el cliente no tenía
+denominador, y calcularlo habría sido inventarlo.
+
+**Se publica `priorTotalAmount`, no `deltaPercent`.** La cifra es un dato; el
+porcentaje es una lectura. Con la cifra, la tarjeta decide qué hacer cuando el
+mes anterior vale 0 — mostrar sólo el monto — y esa decisión no queda congelada
+en el servidor. Con `deltaPercent` el servidor tendría que devolver `null` en ese
+caso y el cliente se quedaría sin nada que mostrar teniendo con qué.
+
+**El denominador va en valor absoluto.** Los totales de PnL y de deuda tienen
+signo: pasar de -100 a -50 dividido por -100 da -50%, una caída impresa al lado
+de una flecha que apunta hacia arriba. `Math.abs` deja el signo del porcentaje
+igual al signo del cambio.
+
+**Y el subtítulo de Expense pasa a renglones.** Cuatro frases competían por una
+línea, separadas por ` · `. Ahora son filas, en el orden del bosquejo: la
+variación, el budget del mes con su cifra, lo que queda con su `(% spent)`, y el
+gasto sin categoría si lo hay. El cuadrito de estado sigue al lado del bloque
+entero y no dentro de él, que es lo que perdería si la fila misma pasara a
+columna.
+
 **Dónde queda.** El cálculo en
 `makeDomainCard.js` (`priorPeriodCoverageOf`, y `priorPeriodNotices` que elige la
 frase una sola vez para los cinco calculadores). El render en `DomainCards.tsx`:

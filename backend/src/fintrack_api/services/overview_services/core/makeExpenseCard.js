@@ -49,6 +49,7 @@ export const UNCATEGORIZED_EXPENSE_NOTICE =
  * @param {object} figures
  * @param {number} figures.totalAmount - E1, never null: 0 is real activity at zero
  * @param {number} figures.transactionCount - E2, the rows totalAmount is made of (D21)
+ * @param {number|null} figures.priorTotalAmount - the prior month's own figure
  * @param {number|null} figures.delta - E3, null only when no prior period exists at all
  * @param {'complete'|'partial'|'none'} figures.priorPeriodCoverage - qualifies delta
  * @param {number|null} figures.budgetAmount - E4
@@ -61,6 +62,7 @@ export const UNCATEGORIZED_EXPENSE_NOTICE =
 export const makeExpenseCard = ({
  totalAmount,
  transactionCount,
+ priorTotalAmount,
  delta,
  priorPeriodCoverage,
  budgetAmount,
@@ -95,6 +97,7 @@ export const makeExpenseCard = ({
   domain: 'expense',
   totalAmount,
   transactionCount,
+  priorTotalAmount,
   delta,
   priorPeriodCoverage,
   currency,

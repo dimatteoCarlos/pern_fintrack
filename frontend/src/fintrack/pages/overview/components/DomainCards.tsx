@@ -73,8 +73,46 @@ const partialCaveat = (
  </span>
 );
 
+// The four fields any card's change line reads. A Pick and not the whole card,
+// so the two functions below serve five domains without one of them being able
+// to reach for a field only one of those five has.
+type DeltaFields = Pick<
+ OverviewDomainCardBase,
+ 'delta' | 'priorTotalAmount' | 'priorPeriodCoverage' | 'currency'
+>;
+
 const money = (currency: string, value: number) =>
  currencyFormat(currency, value, formatNumberCountry);
+
+// The change as a SHARE of the month it is measured against, which is what
+// Carlos asked the card to lead with on 2026-09-09.
+//
+// The denominator is an absolute value and that is not cosmetic: pnl and debt
+// totals are signed, so a move from -100 to -50 divided by -100 reads as -50% -
+// a fall, printed beside an arrow pointing up. |denominator| keeps the sign of
+// the share equal to the sign of the change.
+//
+// null when the prior month was 0, and the line then shows the amount alone:
+// there is no share of nothing, and both 'Infinity%' and '100%' would be
+// inventions. null also when the card published no baseline at all.
+const deltaShare = (delta: number, priorTotalAmount: number | null) => {
+ if (priorTotalAmount === null || priorTotalAmount === 0) return null;
+
+ return (delta / Math.abs(priorTotalAmount)) * 100;
+};
+
+// The change, as the card states it: the share first because it is the reading,
+// the amount after it in parentheses because it is the evidence. One function
+// for the figures, so the plain and the coloured line below cannot format the
+// same comparison two ways.
+const deltaFigures = (delta: number, priorTotalAmount: number | null, currency: string) => {
+ const share = deltaShare(delta, priorTotalAmount);
+ const amount = money(currency, Math.abs(delta));
+
+ if (share === null) return amount;
+
+ return `${Math.abs(share).toFixed(SHARE_DECIMALS)}% (${amount})`;
+};
 
 // 'YYYY-MM-01' to 'September 2026'. Split and rebuilt rather than passed to the
 // Date constructor: 'YYYY-MM-01' parses as UTC midnight, which is the previous
@@ -94,20 +132,16 @@ const monthLabel = (month: string | null) => {
 // not published: deriving a percentage here would mean inventing the
 // denominator. The arrow carries the direction so the sign does not have to be
 // read off the digits.
-const deltaLine = (
- delta: number | null,
- currency: string,
- coverage: OverviewDomainCardBase['priorPeriodCoverage'],
-) => {
+const deltaLine = ({ delta, priorTotalAmount, priorPeriodCoverage, currency }: DeltaFields) => {
  if (delta === null) return NO_PRIOR_MONTH;
 
- const caveat = coverage === 'partial' ? <>{' '}{partialCaveat}</> : null;
+ const caveat = priorPeriodCoverage === 'partial' ? <>{' '}{partialCaveat}</> : null;
 
  if (delta === 0) return <>no change vs prior month{caveat}</>;
 
  return (
   <>
-   {delta > 0 ? '▲' : '▼'} {money(currency, Math.abs(delta))} vs prior month
+   {delta > 0 ? '▲' : '▼'} {deltaFigures(delta, priorTotalAmount, currency)} vs prior month
    {caveat}
   </>
  );
@@ -123,13 +157,11 @@ const deltaLine = (
 // the square's palette are the same teal and the same rose, so a card wearing
 // both would be asking the reader to tell two colour systems apart at 12px.
 const coloredDeltaLine = (
- delta: number | null,
- currency: string,
- coverage: OverviewDomainCardBase['priorPeriodCoverage'],
+ { delta, priorTotalAmount, priorPeriodCoverage, currency }: DeltaFields,
 ) => {
  if (delta === null) return NO_PRIOR_MONTH;
 
- const caveat = coverage === 'partial' ? <>{' '}{partialCaveat}</> : null;
+ const caveat = priorPeriodCoverage === 'partial' ? <>{' '}{partialCaveat}</> : null;
 
  if (delta === 0) return <>no change vs prior month{caveat}</>;
 
@@ -138,7 +170,7 @@ const coloredDeltaLine = (
  return (
   <>
    <span className={`domainCard__delta--${direction}`}>
-    {delta > 0 ? '▲' : '▼'} {money(currency, Math.abs(delta))}
+    {delta > 0 ? '▲' : '▼'} {deltaFigures(delta, priorTotalAmount, currency)}
    </span>{' '}
    vs prior month
    {caveat}
@@ -216,7 +248,9 @@ const expenseSquare = (card: OverviewExpenseCard): SquareClass => {
 // the budget as a bare figure beside the spend and left the comparison to the
 // reader. budgetVariance is the comparison, already computed by the server.
 // One decimal, which is the budget module's own precision for a share
-// (ListCategory.tsx and BudgetBigBoxResult.tsx both print toFixed(1)).
+// (ListCategory.tsx and BudgetBigBoxResult.tsx both print toFixed(1)). The
+// change against the prior month prints at the same precision, so the two
+// percentages on an Expense card are read on one scale.
 const SHARE_DECIMALS = 1;
 
 // The word is budgetRemainWord's, the same one the four budget screens print, so
@@ -233,6 +267,28 @@ const SHARE_DECIMALS = 1;
 // of the line makes, so the number and the square cannot light differently for
 // one card. That is the rule ListCategory.tsx:320-329 already follows for its
 // own row.
+// The month's budget, named and given its own figure. Carlos, 2026-09-09:
+// "Budget con el mismo style de Expense pero al lado el valor del budget del
+// mes". Until now the card printed the REMAINDER and never the ceiling it was
+// measured against, so a reader could see "$500 left" without knowing whether
+// the month's budget was $600 or $6,000.
+//
+// null in the same case the remainder is withheld: no budget in force, or a
+// category set spanning currencies. The line disappears rather than printing a
+// zero budget, which would be a decision the owner never made.
+const budgetAmountLine = (card: OverviewExpenseCard) => {
+ if (card.budgetAmount === null) return null;
+
+ return (
+  <span className='domainCard__budget'>
+   <span className='domainCard__budgetLabel'>Budget</span>
+   <span className='domainCard__budgetAmount'>
+    {money(card.currency, card.budgetAmount)}
+   </span>
+  </span>
+ );
+};
+
 const budgetClause = (card: OverviewExpenseCard) => {
  // The middle argument is what the variance was measured against, so it is
  // totalAmount: budgetRemainWord reads the pair to tell an unbudgeted card from
@@ -248,7 +304,10 @@ const budgetClause = (card: OverviewExpenseCard) => {
 
  const execution = executionPercentage(card);
 
- const remainder = `budget: ${money(
+ // No "budget:" prefix any more - budgetAmountLine above names the figure on
+ // the line before this one, so repeating the word here would label the
+ // remainder as if it were the budget.
+ const remainder = `${money(
   card.currency,
   Math.abs(card.budgetVariance ?? 0),
  )} ${word}`;
@@ -401,6 +460,7 @@ function DomainCards() {
  const { income, expense, pnl, debt, pocket, investment } = domainCards;
 
  const budget = budgetClause(expense);
+ const budgetAmount = budgetAmountLine(expense);
  const uncategorized = uncategorizedClause(expense);
 
  return (
@@ -418,7 +478,7 @@ function DomainCards() {
    <DomainCard
     label='Income'
     nature='flow'
-    sub={coloredDeltaLine(income.delta, income.currency, income.priorPeriodCoverage)}
+    sub={coloredDeltaLine(income)}
    >
     <div className='domainCard__figure'>
      {money(income.currency, income.totalAmount)}
@@ -430,21 +490,27 @@ function DomainCards() {
     nature='flow'
     square={expenseSquare(expense)}
     sub={
-     <>
-      {/* The budget verdict leads, because it is the clause the square
-          grades. Absent when no budget is in force or the categories span
-          currencies, and the clause disappears with it rather than printing a
-          zero budget. */}
-      {budget}
-      {budget && ' · '}
+     /* ROWS and not one wrapping sentence, which is the shape Carlos drew on
+        2026-09-09: the change, then the budget, then what is left of it. The
+        four clauses were competing for one line and the separators between
+        them ( · ) were doing the work a line break does better.
+
+        Expense is the only card with more than one clause, so the column lives
+        here and .domainCard__sub stays the row that holds the square. */
+     <div className='domainCard__lines'>
+      {/* Closest to the figure above it, because it is a reading OF that
+          figure rather than of the budget. */}
+      <span>{deltaLine(expense)}</span>
+      {budgetAmount}
+      {/* The verdict the square grades: how much of that budget is left, and
+          what share of it the month has spent. */}
+      {budget && <span>{budget}</span>}
       {/* The reason the verdict above can be incomplete, and the clause the
-          amber square is pointing at. Spending that lost its category is not
+          red square is pointing at. Spending that lost its category is not
           counted against the budget, so the card can be inside its budget and
           still not know where the month went. */}
-      {uncategorized}
-      {uncategorized && ' · '}
-      {deltaLine(expense.delta, expense.currency, expense.priorPeriodCoverage)}
-     </>
+      {uncategorized && <span>{uncategorized}</span>}
+     </div>
     }
    >
     <div className='domainCard__figure'>
@@ -455,7 +521,7 @@ function DomainCards() {
    <DomainCard
     label='Debt'
     nature='position'
-    sub={deltaLine(debt.delta, debt.currency, debt.priorPeriodCoverage)}
+    sub={deltaLine(debt)}
    >
     {/* The net across every counterparty, in the headline the other five
         cards give totalAmount. It keeps its sign and takes no colour, the
@@ -537,7 +603,7 @@ function DomainCards() {
     square={pnlSquare(pnl)}
     sub={
      <>
-      {deltaLine(pnl.delta, pnl.currency, pnl.priorPeriodCoverage)}
+      {deltaLine(pnl)}
       {/* Where the result came from. The card is cut by MOVEMENT TYPE and not
           by account type - the account set is every account the owner holds
           except the system counterparty - so a realised result can land on any

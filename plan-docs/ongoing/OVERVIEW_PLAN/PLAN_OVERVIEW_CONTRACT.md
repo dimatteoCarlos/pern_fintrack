@@ -304,6 +304,12 @@ type DomainCardBase = {
  // se abrió durante el mes de referencia o después. Nunca comparar contra un
  // periodo que no existió (I3/E3/D3/PL3 del catálogo) — pero un mes anterior
  // incompleto SÍ existió, y desde el 2026-09-09 se compara igual.
+ // Enmienda del 2026-09-09. La cifra PROPIA del mes anterior, y está en el
+ // contrato por una razón concreta: la tarjeta muestra la variación como
+ // porcentaje, y un porcentaje necesita denominador. Se publica la cifra y no
+ // el porcentaje porque qué contestar cuando esto vale 0 es una decisión de
+ // presentación, no del servidor. Null exactamente cuando delta es null.
+ priorTotalAmount: number | null;
  delta: number | null;
  // Enmienda del 2026-09-09 (ver el registro de decisiones). Califica delta:
  // 'complete' el mes anterior entero, 'partial' la cuenta más antigua se abrió

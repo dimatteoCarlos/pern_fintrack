@@ -98,7 +98,7 @@ export const overviewIncomeService = {
     : undefined,
   ]);
 
-  const { currentPoint, delta, priorPeriodCoverage } = makePeriodDelta({
+  const { currentPoint, priorTotalAmount, delta, priorPeriodCoverage } = makePeriodDelta({
    months,
    referenceMonth,
    priorMonth,
@@ -109,6 +109,7 @@ export const overviewIncomeService = {
    domain: 'income',
    totalAmount: currentPoint.totalAmount,
    transactionCount: currentPoint.transactionCount,
+   priorTotalAmount,
    delta,
    priorPeriodCoverage,
    // The installation's accounting currency, not a currency read off the

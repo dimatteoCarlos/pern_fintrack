@@ -802,6 +802,50 @@ a.icon {
    the other card with no square, and up and down are a direction rather than a
    verdict. Only the arrow and the figure are painted - the words "vs prior
    month" stay in the running colour, so the clause still reads as a sentence. */
+/* Expense states four things about its month and the others state one, so it
+   stacks them. A column INSIDE .domainCard__sub and not a change to that rule:
+   the square is a sibling of this block and stays beside the whole statement it
+   grades, which is what it would lose if the row itself became a column.
+
+   --space-1 and not --space-2: these are lines of one statement, and the gap
+   between them has to read as smaller than the gap the row above uses to
+   separate the square from the text. */
+.overviewLayout .domainCard__lines {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-width: 0;
+}
+
+/* The month's budget: the same pair the card's head and headline are, one step
+   down. Carlos asked for "Budget con el mismo style de Expense", so the label
+   takes .domainCard__label's size, weight and capitalisation and the amount
+   takes .domainCard__figure's weight and ink at the label's size - a figure that
+   qualifies the headline rather than a second headline.
+
+   No letter-spacing, though .domainCard__label carries 0.2px: that is a
+   hardcoded pixel the style rules forbid, it has no token, and at 0.2px it is
+   below the threshold at which the two lines could look unlike each other. */
+.overviewLayout .domainCard__budget {
+ display: flex;
+ align-items: baseline;
+ gap: var(--space-2);
+ font-size: var(--font-size-sm);
+}
+
+.overviewLayout .domainCard__budgetLabel {
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ text-transform: capitalize;
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .domainCard__budgetAmount {
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+}
+
 /* The caveat on a delta measured against a partial prior month. Quieter than
    the clause it qualifies, because it grades that clause rather than adding a
    second reading of its own.

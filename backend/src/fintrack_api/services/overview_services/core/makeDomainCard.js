@@ -98,7 +98,7 @@ const priorPeriodCoverageOf = (oldestAccountDate, priorMonth, referenceMonth) =>
  * @param {string} input.referenceMonth - 'YYYY-MM-01', always present in months
  * @param {string} input.priorMonth - 'YYYY-MM-01'
  * @param {string|null} input.oldestAccountDate - 'YYYY-MM-DD', or null
- * @returns {{currentPoint: object, delta: number|null, priorPeriodCoverage: string}}
+ * @returns {{currentPoint: object, priorTotalAmount: number|null, delta: number|null, priorPeriodCoverage: string}}
  */
 export const makePeriodDelta = ({ months, referenceMonth, priorMonth, oldestAccountDate }) => {
  const currentPoint = months.find((entry) => entry.month === referenceMonth);
@@ -116,11 +116,26 @@ export const makePeriodDelta = ({ months, referenceMonth, priorMonth, oldestAcco
  // it, not by withholding the figure — which is the whole of the 2026-09-09
  // correction. Only 'none' still resolves to null, and there the prior row is
  // generate_series' zero for a month the owner did not exist in.
- const delta = priorPeriodCoverage !== 'none' && priorPoint
+ const isComparable = priorPeriodCoverage !== 'none' && Boolean(priorPoint);
+
+ // The prior month's own figure, published rather than kept here. Carlos,
+ // 2026-09-09, asked the card to show the change as a PERCENTAGE, and a
+ // percentage needs a denominator: with only the difference on the wire the
+ // client would have to invent one. It is the figure and not the percentage
+ // that travels, because the percentage is a reading and the figure is a fact -
+ // the server would have to decide what to answer when this is 0, which is a
+ // presentation decision the card is better placed to make.
+ //
+ // Same nullity as delta, deliberately: the two describe one comparison, and a
+ // card holding a baseline with no change measured against it would be a state
+ // no consumer knows how to read.
+ const priorTotalAmount = isComparable ? priorPoint.totalAmount : null;
+
+ const delta = isComparable
   ? toAmount(money(currentPoint.totalAmount).minus(priorPoint.totalAmount))
   : null;
 
- return { currentPoint, delta, priorPeriodCoverage };
+ return { currentPoint, priorTotalAmount, delta, priorPeriodCoverage };
 };
 
 /**
@@ -135,6 +150,8 @@ export const makePeriodDelta = ({ months, referenceMonth, priorMonth, oldestAcco
  * @param {string} input.domain - one of the six of §3
  * @param {number} input.totalAmount - never null: 0 is real activity at zero
  * @param {number} input.transactionCount - the rows totalAmount is made of (D21)
+ * @param {number|null} input.priorTotalAmount - the prior month's own figure, the
+ *   denominator a percentage reading needs. Null exactly when delta is.
  * @param {number|null} input.delta - null only when no prior period exists at all
  * @param {'complete'|'partial'|'none'} [input.priorPeriodCoverage] - how much of
  *   the prior month the owner existed for. Defaults to 'complete', which is what
@@ -150,6 +167,7 @@ export const makeDomainCard = ({
  domain,
  totalAmount,
  transactionCount,
+ priorTotalAmount = null,
  delta,
  priorPeriodCoverage = 'complete',
  currency,
@@ -160,6 +178,10 @@ export const makeDomainCard = ({
  domain,
  totalAmount,
  transactionCount,
+ // Before delta, because it is what delta was measured from. A reader going
+ // down the object meets the baseline, then the change, then how much of the
+ // baseline month the owner was there for.
+ priorTotalAmount,
  delta,
  // Published beside the figure it qualifies, because the client cannot derive
  // it: with 'partial' the delta is a number like any other, and reading the

@@ -130,7 +130,7 @@ export async function readStockDomain(
  // The last point of the series is the balance right now, by construction: the
  // reference month's end subtracts nothing from today's balance. So the card's
  // total and the chart's last bar are the same read, not two that agree (§4.2).
- const { currentPoint, delta, priorPeriodCoverage } = makePeriodDelta({
+ const { currentPoint, priorTotalAmount, delta, priorPeriodCoverage } = makePeriodDelta({
   months,
   referenceMonth,
   priorMonth,
@@ -144,6 +144,7 @@ export async function readStockDomain(
   // (movementInputHandler.js:32-53), so this is summed, never subtracted.
   totalAmount: currentPoint.totalAmount,
   transactionCount: transactions.totalRows,
+  priorTotalAmount,
   delta,
   priorPeriodCoverage,
   domainFields,

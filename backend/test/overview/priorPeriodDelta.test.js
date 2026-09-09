@@ -41,6 +41,29 @@ test('an account older than the prior month gives a complete comparison', () => 
  assert.deepEqual(priorPeriodNotices(priorPeriodCoverage), []);
 });
 
+test('the prior month publishes its own figure, so a share has a denominator', () => {
+ // Without this the page can state the change as an amount and never as a
+ // percentage: the denominator is not on the wire, and deriving it would mean
+ // inventing it.
+ const { priorTotalAmount, delta } = deltaFor('2026-07-15');
+
+ assert.equal(priorTotalAmount, 100);
+ assert.equal(delta, 80);
+ // The reading the card builds out of the two, at the card's own precision.
+ assert.equal(((delta / Math.abs(priorTotalAmount)) * 100).toFixed(1), '80.0');
+});
+
+test('the baseline and the change are absent together', () => {
+ // One without the other is a state no consumer knows how to read: a baseline
+ // with no change measured against it, or a change with nothing to divide by.
+ for (const oldest of ['2026-09-02', null]) {
+  const { priorTotalAmount, delta } = deltaFor(oldest);
+
+  assert.equal(priorTotalAmount, null);
+  assert.equal(delta, null);
+ }
+});
+
 test('an account opened during the prior month still reports the change', () => {
  const { delta, priorPeriodCoverage } = deltaFor('2026-08-14');
 

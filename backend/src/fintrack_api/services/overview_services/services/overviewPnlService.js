@@ -93,7 +93,7 @@ export const overviewPnlService = {
    }),
   ]);
 
-  const { currentPoint, delta, priorPeriodCoverage } = makePeriodDelta({
+  const { currentPoint, priorTotalAmount, delta, priorPeriodCoverage } = makePeriodDelta({
    months,
    referenceMonth,
    priorMonth,
@@ -106,6 +106,7 @@ export const overviewPnlService = {
    // expense card: a losing month is a loss, not an absent figure.
    totalAmount: currentPoint.totalAmount,
    transactionCount: currentPoint.transactionCount,
+   priorTotalAmount,
    delta,
    priorPeriodCoverage,
    currency: ACCOUNTING_CURRENCY_CODE,
