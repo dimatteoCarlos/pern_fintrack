@@ -387,6 +387,11 @@ export async function tblMovementTypes(client = pool) {
     { movement_type_id: 8, movement_type_name: 'account-opening' },
     { movement_type_id: 9, movement_type_name: 'pnl' },
     { movement_type_id: 10, movement_type_name: 'account-closure' }, //mirrors account-opening
+    // Migration 037. The operation that neutralises an account's balance so it
+    // can be closed at zero, posted as two legs against the compensation
+    // account. Named for what is reversed - the balance - because the account
+    // itself is not: it closes normally once the balance is zero.
+    { movement_type_id: 11, movement_type_name: 'balance-reversal' },
   ];
   const tblName = 'movement_types';
   const minCount = movementTypeValues.length;
@@ -402,7 +407,7 @@ export async function tblMovementTypes(client = pool) {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
       const createQuery = `CREATE TABLE movement_types (
         movement_type_id INT PRIMARY KEY NOT NULL,
-        movement_type_name VARCHAR(50) NOT NULL UNIQUE CHECK(movement_type_name IN ('expense','income','investment','debt','pocket','transfer','receive','account-opening','pnl','account-closure'))
+        movement_type_name VARCHAR(50) NOT NULL UNIQUE CHECK(movement_type_name IN ('expense','income','investment','debt','pocket','transfer','receive','account-opening','pnl','account-closure','balance-reversal'))
 )`;
       await client.query(createQuery);
     }
@@ -445,6 +450,13 @@ export async function tbltransactionTypes(client = pool) {
     { transaction_type_id: 4, transaction_type_name: 'borrow' },
     { transaction_type_id: 5, transaction_type_name: 'account-opening' },
     { transaction_type_id: 6, transaction_type_name: 'account-closure' },
+    // Migration 037, paired with movement type 11 the way account-closure is
+    // paired with 10. It earns its place through what the owner sees rather
+    // than through an id predicate: the transaction lists select
+    // transaction_type_name and render it, and the free-text search matches
+    // it, so a reversal reusing 'withdraw' would be displayed and found as a
+    // withdrawal.
+    { transaction_type_id: 7, transaction_type_name: 'balance-reversal' },
   ];
 
   const tblName = 'transaction_types';

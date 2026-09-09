@@ -35,6 +35,7 @@ import {
   ensureAccountClosedAt,
   ensureTransactionOpeningFor,
   ensureAccountRegistry,
+  ensureBalanceReversal,
   ensureCategoryBudgetCurrency,
   ensureCategoryBudgetFxColumns,
   recreateExchangeRatesTable,
@@ -272,6 +273,14 @@ export async function initializeDatabase() {
     // above. Called before either of them it would find no table to alter and
     // leave the registry half wired.
     await ensureAccountRegistry(client);
+
+    // Runtime counterpart of migration 037. After the call above and not
+    // before: transactions.reversal_of_account_id references
+    // account_registry(account_id), and that table is created by that call on
+    // this path. Called first it would find no parent and skip the column,
+    // leaving a database whose catalogs accept movement type 11 and whose
+    // transactions table cannot name what a type 11 row reversed.
+    await ensureBalanceReversal(client);
 
     // Runtime counterpart of migration 011, for the databases this file does
     // reach: a local or self-hosted one that has never had the runner pointed
