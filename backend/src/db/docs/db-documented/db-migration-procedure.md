@@ -11,8 +11,8 @@ Companion documents: `db-lifecycle.md` (what migrations, seeds and resets are),
 
 ### The chain — `src/db/migrations/sql_migrations/`
 
-Numbered files, `001` to `030` today, with no gap; the next free number is
-`031`. They build a database **from zero**, in order: `002_accounts.sql` creates
+Numbered files, `001` to `036` on `main` as of 2026-09-08, with no gap. They
+build a database **from zero**, in order: `002_accounts.sql` creates
 the tables that `014_category_budget_fx_columns.sql` later alters. A file assumes
 every lower-numbered file already ran.
 
@@ -23,9 +23,12 @@ because its `CREATE TABLE IF NOT EXISTS users` skips the table that is already
 there and the IANA trigger it then declares has no `timezone` column to watch.
 That is what `supabase/001_production_alignment.sql` exists for.
 
-List the directory before writing one rather than trusting the count above. That
-count goes stale on every migration, and it was three files behind until
-2026-09-03 and two more behind until 2026-09-06.
+List the directory before writing one rather than trusting the number above.
+That number goes stale on every migration and has been behind four times.
+Listing `main` is also not enough on its own: `037_add_balance_reversal.sql`
+was written 2026-09-08 on `feat/deletion` and is not on `main`, so the next
+free number is `038` and a listing of `main` alone would hand out `037`
+twice. Ask on the shared channel before claiming a number.
 
 This is the only kind that is written from now on.
 
@@ -252,7 +255,7 @@ the before-reading of 5.6 — but not knowing it costs nothing.
 
 **A person at a terminal, running the repository's own scripts.** Decided by
 Carlos on 2026-09-08 after the three candidates were weighed. It is not the
-permanent answer; it is the right answer for the six files of 5.4, which
+permanent answer; it is the right answer for the pending set of 5.4, which
 introduce a table every reader of `account_registry` depends on and have never
 executed against production.
 
@@ -306,7 +309,7 @@ decides whether the moment has arrived at all.
  *"no quiero migrar a produccion si todavia hay codigo que completar y
  decisiones abiertas"*. This one holds the run even when he would approve the
  files, so it is checked before condition 4 is worth asking about. It is a
- condition on the moment and not on the method: nothing about the six files
+ condition on the moment and not on the method: nothing about the pending set
  changes while it holds, and none of the other four is satisfied any less. What
  it forbids is treating a green rehearsal as a reason to go.
 
@@ -493,17 +496,21 @@ DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run db:migrate
  defect, because an operator who sees a refusal on the first line of a
  production procedure has to decide whether the document or the runner is wrong
  while connected to production.
-- **What is pending is `031` through `036` — six files.** The record puts
- production at `030` with the alignment applied and the ledger at 31 rows, read
- 2026-09-06. The rehearsal's twenty is a different number for a different
- database and both are right: a rehearsal copy starts from the 2026-08-21 dump,
- so it needs the alignment plus `013` and `018`-`036`. Production has moved
- since that dump was taken — the runs of 2026-08-27 and 2026-09-06 carried it to
- `030` — so it needs neither the alignment nor anything below `031`.
-- **The count above is a record, and 5.0 is what turns it into a measurement.**
- Read the ledger before writing. If it does not show 31 rows ending at
- `030_add_jpy_currency.sql`, stop: the pending set is not the one this section
- names and neither is the authorization Carlos gave for it.
+- **The pending set is every numbered file above production's last ledger row,
+ and it is read rather than quoted.** The record puts production at `030` with
+ the alignment applied and the ledger at 31 rows, read 2026-09-06, which makes
+ the set `031` upward — six files as of 2026-09-08, `031` through `036`. Derive
+ it, do not copy the six: `sql_migrations/` grows, and this figure has already
+ aged twice. A seventh file, `037_add_balance_reversal.sql`, was written on
+ 2026-09-08 on `feat/deletion` and is not on `main`, so it is outside the set
+ until it merges and then inside it without anyone editing this line.
+- **The record is not the reading, and 5.0 is what turns it into one.** Read the
+ ledger before writing. If it does not end at `030_add_jpy_currency.sql`, stop:
+ the pending set is not the one this section describes.
+- **Carlos authorizes files by name, so the set is named to him at the moment of
+ the run.** Condition 4 is satisfied by the files the reading actually returns,
+ never by a count carried over from an earlier conversation. A file that merged
+ in between is a file he has not approved yet.
 - **`DB_REMOTE_OK` is required and is the point.** Without it the run refuses,
  because `DB_EXPECTED` confirms a name and a remote database can carry any name.
  Setting it is the operator stating that an off-machine destination is meant.
