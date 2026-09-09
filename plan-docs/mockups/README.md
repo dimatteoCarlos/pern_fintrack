@@ -30,7 +30,10 @@ and lets the filename describe the screen rather than the owner.
   `account-deletion`, `overview`. Not for the plan file, and not for the
   session that happens to be holding it.
 - **The filename describes the screen**, not the module - the folder already
-  says that. `close-account.html`, not `mockup-close-account.html`.
+  says that. `close-account.html`, not `mockup-close-account.html`. It binds a
+  new file, not an old one: the overview mockups keep the names they had,
+  because ten citations across three plan documents name them by bare filename
+  and a rename stales all ten for conformance and nothing else.
 - **A mockup is standalone HTML.** It opens with a double click, carries its own
   styles, and fetches nothing. That is what makes it reviewable by opening it.
 - **A superseded mockup stays and says so.** A banner at the top of the frame it

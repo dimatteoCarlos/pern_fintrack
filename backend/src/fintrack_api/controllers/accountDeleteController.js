@@ -340,6 +340,22 @@ export const executeAccountDeletion = async (req, res, next) => {
   const closeReason =
     deletionType === DELETION_TYPE_CLOSE ? req.body.closeReason : undefined;
 
+  // CLOSE's second body field, added 2026-09-08. Whether the owner asked to
+  // neutralise the balance against the compensation account before the close,
+  // which is the one action the screen offers for a balance that blocks it.
+  //
+  // COMPARED TO true RATHER THAN COERCED. A JSON body can carry the string
+  // "false", and `Boolean("false")` is true - a request explicitly declining
+  // the reversal would then perform it. Only the boolean true and the string
+  // "true" ask for it; anything else, absent included, does not.
+  //
+  // Gated on the deletion type like the reason above: no other deletion method
+  // reads it, and an undefined argument says that more plainly than false does.
+  const reverseBalance =
+    deletionType === DELETION_TYPE_CLOSE
+      ? req.body.reverseBalance === true || req.body.reverseBalance === 'true'
+      : undefined;
+
   try {
     console.log(
       pc.magenta(
@@ -365,6 +381,7 @@ export const executeAccountDeletion = async (req, res, next) => {
       deletionType,
       targetAccountName,
       closeReason,
+      reverseBalance,
       // policy,
       // destinationAccountId,
       // expectedResidual,

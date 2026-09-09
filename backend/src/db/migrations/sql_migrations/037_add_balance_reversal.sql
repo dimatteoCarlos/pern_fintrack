@@ -94,9 +94,22 @@
 -- `movement_type_id = 10 OR description LIKE 'RTA Annulment Target(%'`.
 --
 -- investment IS IN CLOSE_ZERO_BALANCE_TYPES, so a reversal will land on an
--- investment account. A type 11 row is then inside the balance and inside no
--- explaining term, and the card tells the owner their figures do not add up
--- while their money is fine.
+-- investment account. What breaks is larger than the reversal amount, and the
+-- overview session measured the path this file first stated too weakly.
+--
+-- INVESTMENT_FIGURES_QUERY's `accounts` CTE reads FROM user_accounts
+-- (:122-123), so a CLOSED account contributes nothing to ledger_balance. Its
+-- two explaining terms do not disappear with it: they read FROM transactions
+-- bounded by an id array, and that array comes from ACCOUNT_IDS_BY_TYPE_QUERY
+-- (overviewAccountRepository.js:220-227), which resolves through
+-- account_identity and therefore still contains the closed account.
+--
+-- So after the close the identity holds only if that account's terms sum to
+-- zero over it. The reversal leg is exactly what makes them, because it is by
+-- construction the negation of everything the account accumulated. Counted, the
+-- identity closes. Uncounted, the card reports the WHOLE of that account's
+-- history as unexplained - not merely the reversal amount - and tells the owner
+-- their figures do not add up while their money is fine.
 --
 -- THE RULE IS AN ORDERING CONSTRAINT ON THE FIRST WRITE, NOT ON THIS FILE. No
 -- row carrying movement_type_id 11 may exist before closure_adjustment counts
