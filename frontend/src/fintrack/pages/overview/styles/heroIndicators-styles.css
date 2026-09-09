@@ -18,8 +18,13 @@
  overflow: hidden;
 }
 
-/* The whole head is the control, so the target is the row and not the chevron:
-   a reader aiming at a 16px glyph on a phone is a reader who misses it. */
+/* THE HEAD IS AN ACCORDION HEAD and not a card title with a chevron parked in
+   it: the whole row is the control, it carries aria-expanded, and the rule under
+   it appears only while the panel is open - a separator over nothing is a line
+   the reader has to account for.
+
+   The target is the row rather than the glyph, because a reader aiming at a
+   16px chevron on a phone is a reader who misses it. */
 .heroIndicators__toggle {
  display: flex;
  align-items: center;
@@ -74,11 +79,26 @@
  outline-offset: calc(-1 * var(--border-width-thick));
 }
 
+/* Open, the head grows the rule that tells it from the panel. Closed, the head
+   is the whole card and there is nothing to separate it from. */
+.heroIndicators__toggle[aria-expanded='true'] {
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle-on-inverse);
+}
+
 .heroIndicators__panel {
+ padding: var(--space-4) var(--space-5);
+}
+
+/* The hero draws the same box around its own rows (.bigBox__frame): a hairline
+   in the panel's own ink, a small radius and a tight inset. Restated here on
+   tokens rather than on the literals that sheet uses. */
+.heroIndicators__frame {
  display: flex;
  flex-direction: column;
  gap: var(--space-2);
- padding: 0 var(--space-5) var(--space-4);
+ padding: var(--space-2);
+ border: var(--border-width-thin) solid var(--color-border-strong);
+ border-radius: var(--radius-sm);
 }
 
 .heroIndicators__row {

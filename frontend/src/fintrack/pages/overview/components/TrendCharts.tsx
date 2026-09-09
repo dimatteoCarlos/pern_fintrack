@@ -32,10 +32,25 @@ const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 const PLOT_PADDING = 10;
 const PLOT_BAND = 100 - PLOT_PADDING * 2;
 
-const SERIES: { key: 'income' | 'expense' | 'pocket'; label: string }[] = [
- { key: 'income', label: 'Income' },
- { key: 'expense', label: 'Expense' },
- { key: 'pocket', label: 'Saving' },
+// THE THREE ARE NOT THE SAME KIND OF QUANTITY, and the nature says so on each
+// chart the way it does on each domain card above. Income and expense are sums
+// over the month; the pocket series is the committed total AT THE CLOSE of each
+// month, cumulative by construction (MONTHLY_ALLOCATED_QUERY), so its line rises
+// with the ledger rather than tracking a month's decisions. A reader comparing
+// three curves has to be told which one is a running total.
+//
+// The pocket label was 'Saving' and named neither the figure nor its nature.
+// Money in a pocket is not saved anywhere: a pocket is a plan, the balance never
+// leaves the bank account it was promised from, and the goals card states the
+// same figure under the same words.
+const SERIES: {
+ key: 'income' | 'expense' | 'pocket';
+ label: string;
+ nature: 'flow' | 'position';
+}[] = [
+ { key: 'income', label: 'Income', nature: 'flow' },
+ { key: 'expense', label: 'Expense', nature: 'flow' },
+ { key: 'pocket', label: 'Committed to pockets', nature: 'position' },
 ];
 
 // 'YYYY-MM' to 'Apr'. The trend months are month-precision, unlike the card
@@ -71,10 +86,12 @@ const positionX = (index: number, count: number) =>
 
 const TrendChart = ({
  label,
+ nature,
  points,
  currency,
 }: {
  label: string;
+ nature: 'flow' | 'position';
  points: OverviewTrendPoint[];
  currency: string;
 }) => {
@@ -100,7 +117,14 @@ const TrendChart = ({
 
  return (
   <article className='trendChart'>
-   <div className='domainCard__label'>{label} · 6 months</div>
+   {/* The same head the domain cards carry: the name on the left and the
+       nature on the right. Its own label class and not .domainCard__label,
+       which capitalises every word - correct for a one-word domain name and
+       wrong for a phrase. */}
+   <div className='domainCard__head'>
+    <span className='trendChart__label'>{label}</span>
+    <span className='domainCard__scope'>{nature}</span>
+   </div>
 
    {/* The markers carry the figure as a title, which only a pointer can reach:
        they are not focusable and a title is not announced on its own. So the
@@ -109,7 +133,9 @@ const TrendChart = ({
    <div
     className='trendChart__plot'
     role='img'
-    aria-label={`${label}, last 6 months. ${plotted
+    aria-label={`${label}, ${
+     nature === 'flow' ? 'per month' : 'at each month end'
+    }, last 6 months. ${plotted
      .map((point) => point.title)
      .join('. ')}`}
    >
@@ -176,10 +202,11 @@ function TrendCharts() {
    </div>
 
    <section className='domainCards'>
-    {drawn.map(({ key, label }) => (
+    {drawn.map(({ key, label, nature }) => (
      <TrendChart
       key={key}
       label={label}
+      nature={nature}
       points={charts.trend[key] as OverviewTrendPoint[]}
       currency={currency}
      />

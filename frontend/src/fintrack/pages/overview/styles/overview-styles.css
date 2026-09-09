@@ -530,6 +530,16 @@ a.icon {
  border-radius: var(--radius-xl);
 }
 
+/* The chart's own name, in the head the domain cards use. It is not
+   .domainCard__label: that rule capitalises every word, which is right for a
+   one-word domain name and turns "Committed to pockets" into a title. It also
+   drops that rule's hardcoded letter-spacing rather than copying it. */
+.overviewLayout .trendChart__label {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark-muted);
+}
+
 .overviewLayout .trendChart__plot {
  position: relative;
  /* A fixed plot height so the three charts share a baseline across the row.

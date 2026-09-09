@@ -120,21 +120,26 @@ function HeroIndicators() {
        reader stepping through the page with a screen reader is told the panel
        exists before it is opened. */}
    <div className='heroIndicators__panel' id={panelId} hidden={!isOpen}>
-    {rows.map(({ label, amount, definition }) => (
-     <div className='heroIndicators__row' key={label}>
-      <span className='heroIndicators__label'>
-       {label}
-       {/* The card is cream, like the hero box above it. */}
-       <KpiTooltip label={label} definition={definition} surface='cream' />
-      </span>
+    {/* The same framed box the hero draws around its own rows
+        (.bigBox__frame), so the two cards read as one component at two levels
+        of detail rather than as a framed block above an unframed one. */}
+    <div className='heroIndicators__frame'>
+     {rows.map(({ label, amount, definition }) => (
+      <div className='heroIndicators__row' key={label}>
+       <span className='heroIndicators__label'>
+        {label}
+        {/* The card is cream, like the hero box above it. */}
+        <KpiTooltip label={label} definition={definition} surface='cream' />
+       </span>
 
-      <span className='heroIndicators__amount'>
-       {amount === null
-        ? NO_FIGURE
-        : currencyFormat(hero.currency, amount, formatNumberCountry)}
-      </span>
-     </div>
-    ))}
+       <span className='heroIndicators__amount'>
+        {amount === null
+         ? NO_FIGURE
+         : currencyFormat(hero.currency, amount, formatNumberCountry)}
+       </span>
+      </div>
+     ))}
+    </div>
    </div>
   </section>
  );
