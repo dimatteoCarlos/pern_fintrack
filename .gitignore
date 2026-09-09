@@ -137,6 +137,11 @@ plan-docs/*
 !plan-docs/ongoing/
 !plan-docs/business-rules/
 !plan-docs/completed/
+# The central mockups folder, added 2026-09-08. Without this line git never
+# descends into it and every mockup a session adds there is invisible - the one
+# already moved in is tracked only because `git mv` staged it explicitly, which
+# is exactly the state that hides the next file.
+!plan-docs/mockups/
 # Crash dumps left behind when the Git Bash shell faults. Junk, and a hazard
 # in a tree several sessions commit from: one careless "git add ." sweeps it in.
 *.stackdump
