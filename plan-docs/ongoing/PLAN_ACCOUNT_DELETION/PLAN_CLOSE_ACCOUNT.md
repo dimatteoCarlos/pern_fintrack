@@ -3693,6 +3693,17 @@ The owner made the distinction explicitly so that a later reader does not turn
   `verifyCloseAccount.js:173`, `verifyCloseTransfer.js:180` and
   `verifyClosureSettlement.js:124` already did. This script had never needed it
   because the plain close writes no transaction at all.
+- **The boot-path counterpart is exercised too, by
+  `backend/scripts/verifyBootGuards.js`.** 15 assertions, none failing, all
+  rolled back. `ensureBalanceReversal` carries two refusals that only fire on a
+  database that already exists - it returns early when `movement_types` is
+  absent, and it skips the column and the pairing constraint when
+  `account_registry` is absent instead of pointing the key elsewhere - and
+  `db:parity` cannot reach either, because it builds both databases from zero.
+  The probe makes that situation inside a savepoint. The assertion carrying the
+  weight is not that the column is missing but that no foreign key on it points
+  at any other table, read from `pg_constraint` through `confrelid`:
+  `user_accounts` has a column of the same name and would accept the reference.
 
 ### 14.7 The one point where the code and the ruling do not yet agree
 
@@ -3739,3 +3750,42 @@ each other in cost:
   transactions move first and the empty rows then leave through the close engine
   like any other account.
 
+### 14.8 Three things measured and found not to be problems
+
+Recorded because each looks like a defect on a first reading, and each cost a
+session most of an afternoon to dismiss. A negative that is not written down is
+re-chased.
+
+- **The close's `pocket_saving` branch has an empty subject set, not an
+  unreachable one.** Migration 020 step 5b deletes every `pocket_saving` row
+  from `user_accounts`, and the extension row goes with it through
+  `pocket_saving_accounts.account_id`, which is `ON DELETE CASCADE`. Production
+  held exactly one such account and ran 020 on 2026-08-27, measured on the
+  untouched dump and on the rehearsal by the migration session. Pocket creation
+  is withdrawn - the handler is gone with its route - so nothing replenishes it.
+  **The type stays in `USER_CREATABLE_ACCOUNT_TYPES` even so**, because this
+  module's guard reads that list and removing the entry would make a surviving
+  historical pocket account permanently undeletable. The rule is kept; the
+  instance is no longer described as live.
+- **Nothing lets a request create an account of the compensation type.** The
+  doc comment on that list describes it as the creation-side guard, while its
+  only consumer outside its own file is this module's deletion guard, which
+  reads as a hole and is not one: `createBasicAccount` compares the body's type
+  against the URL segment and only three such paths are mounted,
+  `createCategoryBudgetAccount` hardcodes its own, and the debtor path - the one
+  that did reach the catalog unchecked - calls `assertUserCreatableAccountType`
+  on both types it resolves. All of it is already stated at
+  `accountCreationController.js:511-517`. **The wrong turn that produced this
+  entry** was grepping for a function name inferred from a doc comment instead
+  of read: `resolveAccountType` does not exist, the name is
+  `assertUserCreatableAccountType`, and the invented name returned a single hit
+  and made the guard look absent.
+- **The four extension tables really do cascade, on production's schema and not
+  only on a developer's.** The close deletes the extension row explicitly
+  anyway, for the reason its own comment gives - the explicit delete yields a
+  count this path reports, and a cascade is a schema property a later migration
+  can change without this file mentioning it. `confdeltype` on the `account_id`
+  key into `user_accounts` is `c` for all four tables on `fintrack_dev`, on the
+  untouched production dump and on the rehearsal. Read from the catalog rather
+  than from `002_accounts.sql`, because migration 010 was edited in place and a
+  file is not what a database ran.
