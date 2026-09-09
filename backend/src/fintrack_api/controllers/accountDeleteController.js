@@ -11,6 +11,8 @@ import {
   foldNetAdjustmentTotal,
 } from '../services/delete_account/getAnnulmentImpactReport.js';
 
+import { getRelatedAccounts } from '../services/delete_account/getRelatedAccounts.js';
+
 import { deleteAccountService } from '../services/delete_account/deleteAccountService.js';
 
 import { getClosePreview } from '../services/delete_account/getClosePreview.js';
@@ -88,11 +90,24 @@ export const generateImpactReport = async (req, res, next) => {
     // the amount whose counterparty an earlier deletion already detached. The
     // report cannot carry it - it has no account to name - and the execution
     // path must not act on it, since that earlier deletion already reversed it.
-    const [impactReport, pocketImpact, unattributed] = await Promise.all([
-      getAnnulmentImpactReport(pool, userId, targetAccountId),
-      getPocketAllocationImpact(pool, userId, targetAccountId),
-      getUnattributedAnnulmentTotal(pool, userId, targetAccountId),
-    ]);
+    // relatedAccounts is the fourth read and the one the close screen renders.
+    // It is not a variant of impactReport: that array projects what ANNULLING
+    // this account would do to each counterparty, and the owner ruled on
+    // 2026-09-08 that CLOSE settles nothing, so every projected figure is zero.
+    // This one states what is true either way - which accounts this one has
+    // operated with, how often, and when last.
+    //
+    // IT TRAVELS WITH THE REPORT RATHER THAN ON ITS OWN ROUTE because both are
+    // built from TARGET_ACCOUNT_TRANSACTIONS_CTE over the same rows. Two
+    // endpoints reading the same population is how one screen ends up naming
+    // more counterparties than the other for the same account.
+    const [impactReport, pocketImpact, unattributed, relatedAccounts] =
+      await Promise.all([
+        getAnnulmentImpactReport(pool, userId, targetAccountId),
+        getPocketAllocationImpact(pool, userId, targetAccountId),
+        getUnattributedAnnulmentTotal(pool, userId, targetAccountId),
+        getRelatedAccounts(pool, userId, targetAccountId),
+      ]);
 
     // Folded on the server rather than in the browser, which is where it was
     // being summed: adding money on the client is the thing this codebase does
@@ -112,6 +127,9 @@ export const generateImpactReport = async (req, res, next) => {
         impactReport: impactReport,
         totalNetAdjustmentAmount,
         pocketImpact,
+        // The close screen's related-accounts panel. Same population as
+        // impactReport, different question asked of it.
+        relatedAccounts,
         // Displayed beside the report, never added to it. Zero and zero is the
         // ordinary answer; a nonzero amount is activity of this account that no
         // live account can be credited with, and the screen has to say so

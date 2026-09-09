@@ -126,6 +126,17 @@
   text-transform: uppercase;
 }
 
+/* THE CLOSE PANEL'S TWO COLUMNS. The count sits right with the other figures
+   so the digits line up between rows; the date reads left because it is text,
+   like the name and the type it sits beside. */
+.impact-report-table td.interaction-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.impact-report-table td.last-interaction {
+  text-align: left;
+}
+
 .impact-report-table .net-adjustment.positive {
   color: var(--green-600);
   font-weight: 600;

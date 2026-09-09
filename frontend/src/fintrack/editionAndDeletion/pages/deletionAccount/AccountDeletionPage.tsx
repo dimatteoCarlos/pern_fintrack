@@ -170,6 +170,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
   const {
     //Data and status from the GET request
     affectedAccountReport,
+    relatedAccounts,
     totalNetAdjustmentAmount,
     unattributedAmount,
     unattributedTransactionCount,
@@ -304,6 +305,10 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
   // (Dynamic rendering)
   // =============================
   const renderReportContent = () => {
+    const rowsOnScreenCount = isAnnulmentOffered
+      ? affectedAccountReport.length
+      : relatedAccounts.length;
+
     //Loading state
     if (isLoadingReport) {
       return <LoadingReportUI language={language} />;
@@ -318,7 +323,10 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
    // console.log('report:', affectedAccountReport)
    //---------------------------
    //No impact REPORT
-    if (affectedAccountReport.length === 0) {
+    // WHICHEVER ARRAY THIS MODE RENDERS decides whether there is anything to
+    // render. The two are built from one CTE on the server and agree on the
+    // population, but only the one on screen can be empty on screen.
+    if (rowsOnScreenCount === 0) {
      // console.log('no report');
       return (
         <NoImpactReportUI
@@ -332,6 +340,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
     return (
       <ImpactReportUI
         report={affectedAccountReport}
+        relatedAccounts={relatedAccounts}
         totalNetAdjustmentAmount={totalNetAdjustmentAmount}
         unattributedAmount={unattributedAmount}
         unattributedTransactionCount={unattributedTransactionCount}

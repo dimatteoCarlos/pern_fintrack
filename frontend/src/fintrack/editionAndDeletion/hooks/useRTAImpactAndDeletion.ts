@@ -76,6 +76,15 @@ export const useRTAImpactAndDeletion = (
   const unattributedTransactionCount =
     reportResponse?.data?.unattributedTransactionCount ?? null;
 
+  // The close screen's related-accounts panel, read from the same response
+  // rather than from a route of its own. The server builds it and impactReport
+  // from one CTE over one population, so the panel and the report cannot name
+  // different sets of counterparties for the same account.
+  const relatedAccounts = useMemo(
+    () => reportResponse?.data?.relatedAccounts || [],
+    [reportResponse?.data?.relatedAccounts],
+  );
+
   // Pockets losing backing from this account (POCKET_MODULE_SPEC.md §11.1
   // Q8b) - preview only, shown to the owner ahead of confirmation.
   const pocketImpact = useMemo(
@@ -168,6 +177,7 @@ export const useRTAImpactAndDeletion = (
   return {
     //Data and status from the GET request
     affectedAccountReport,
+    relatedAccounts,
     totalNetAdjustmentAmount,
     unattributedAmount,
     unattributedTransactionCount,

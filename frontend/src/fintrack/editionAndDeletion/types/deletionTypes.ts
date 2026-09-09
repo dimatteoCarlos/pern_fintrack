@@ -31,6 +31,28 @@ export type ImpactReportRowType = {
   affectedAccountCurrencyCode: string;
 };
 
+// ONE ROW OF THE CLOSE SCREEN'S RELATED-ACCOUNTS PANEL, which is not a
+// narrower ImpactReportRowType above. That row carries a projection - what
+// annulling this account would leave on the counterparty - and CLOSE settles
+// nothing, so every one of those figures is zero. This row carries facts that
+// hold whichever method runs: an account this one has operated with, how many
+// movements they share, and the date of the most recent one.
+//
+// Balance is absent deliberately, on the owner's decision of 2026-09-08: the
+// current balance of an account this one once transacted with has no causal
+// link to the close, and showing it beside one implies there is.
+export type RelatedAccountRowType = {
+  accountId: number;
+  accountName: string;
+  accountTypeName: string;
+  interactionCount: number;
+  // TIMESTAMPTZ folded by MAX() on the server, so it reaches here as an ISO
+  // instant and is formatted in the reader's own zone, not in UTC. The UTC
+  // calendar day and the owner's disagree for any movement recorded late in
+  // the evening, which is when a lot of them are.
+  lastInteractionDate: string;
+};
+
 // Pockets that lose backing if this account is deleted (getPocketAllocationImpact,
 // POCKET_MODULE_SPEC.md §11.1 Q8b) - preview only, shown before confirmation.
 export type PocketImpactRowType = {
@@ -100,6 +122,9 @@ export type ReportResponseType = {
     // unattributedAmount below - the one figure no row holds.
     totalNetAdjustmentAmount: number;
     pocketImpact: PocketImpactRowType[];
+    // The close screen's panel. Same population as impactReport - both are
+    // built from the same CTE on the server - asked a different question.
+    relatedAccounts: RelatedAccountRowType[];
     // Activity of the account being deleted that no live account can be
     // credited with, because an earlier deletion already reversed it. Shown
     // beside the total, never added to it: the annulment does not act on it.
