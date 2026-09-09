@@ -55,6 +55,10 @@ Two tracks. Nothing outside these nine files is a source.
 
 ### How it looks
 
+All five mockups moved to `plan-docs/mockups/overview/` on 2026-09-08, the
+central folder the README there describes. The filenames below are unchanged and
+are relative to that folder.
+
 | file | covers |
 |---|---|
 | `bosquejo-overview-nivel-1.html` | the whole page at page density: month picker, hero, six domain cards, monthly snapshot, goals, activity teaser, charts |
