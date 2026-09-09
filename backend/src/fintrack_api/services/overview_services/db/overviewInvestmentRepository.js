@@ -12,7 +12,10 @@
 // The closure adjustment is the sixth figure and the newest. It exists because
 // the identity had two terms over a balance holding three kinds of row, so the
 // card told every owner who had ever deleted an investment account that their
-// books were inconsistent.
+// books were inconsistent. It answers for what the CLOSING PATH wrote, whatever
+// that path currently writes: a settlement, an annulment, or the balance
+// reversal 037 added. That is the term's definition, not a list of types it
+// happens to hold, and a new way of closing an account joins it here.
 //
 // R211: movement_type_id 3 (investment) is dead — no write path produces it, and
 // the local probe found zero rows of it. Contributions and withdrawals are
@@ -22,6 +25,7 @@
 import {
  ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID,
  ACCOUNT_OPENING_MOVEMENT_TYPE_ID,
+ BALANCE_REVERSAL_MOVEMENT_TYPE_ID,
  PNL_MOVEMENT_TYPE_ID,
  TRANSFER_MOVEMENT_TYPE_ID,
 } from './movementTypes.js';
@@ -151,9 +155,42 @@ const INVESTMENT_FIGURES_QUERY = `
   -- silent change to a published figure on any database that holds one, and
   -- this database's zero says nothing about another's.
   --
-  -- The two arms answer different questions and neither substitutes for the
-  -- other: an RTA-prefixed row is an annulment carrying the profit-and-loss
-  -- type, and a type-10 row was a settlement that carried no prefix.
+  -- The three arms answer different questions and none substitutes for
+  -- another: an RTA-prefixed row is an annulment carrying the profit-and-loss
+  -- type, a type-10 row was a settlement that carried no prefix, and a
+  -- BALANCE_REVERSAL_MOVEMENT_TYPE_ID row is the neutralisation the owner
+  -- authorised so the account could be closed.
+  --
+  -- WHY THE REVERSAL BELONGS IN THIS TERM AND NOT IN A FOURTH ONE, AND WHY IT
+  -- IS NOT OPTIONAL. 037_add_balance_reversal.sql seeds the type for a writer
+  -- that posts -currentBalance on an account being closed, and investment is
+  -- in the list of types that can only close at zero (deleteAccountService.js
+  -- :68-73). The identity this file publishes at :8 is stated over an account
+  -- set that OUTLIVES the account: ACCOUNT_IDS_BY_TYPE_QUERY
+  -- (overviewAccountRepository.js:220-227) reads through account_identity and
+  -- keeps a closed account's id, while the accounts CTE above reads FROM
+  -- user_accounts and so contributes nothing for it. A closed account
+  -- therefore keeps its whole history in contributions and realized against a
+  -- balance side of zero, and the identity holds only if the terms sum to zero
+  -- over it. The reversal amount is by construction the negative of everything
+  -- that account accumulated, which is exactly the figure that makes them. Left
+  -- out, the card would not report an unexplained reversal - it would report
+  -- that account's entire history as unexplained.
+  --
+  -- BOTH PLACES, NOT ONE. The FILTER decides which rows land in the sum, and
+  -- the outer WHERE decides which rows reach the FILTER at all. Widening the
+  -- FILTER alone changes nothing while the CTE is still bounded to IN (9, 10).
+  --
+  -- THE THREE ARMS CANNOT DOUBLE-COUNT ONE ACCOUNT, and the reason is a fork in
+  -- the caller rather than a property of the rows. deleteAccountService.js:1682
+  -- chooses processCloseAccount OR processStandardDelete on deletionType, never
+  -- both, and recordAnnulmentTransaction is called only from
+  -- processRTAAnnulment (:408) which sits on the standard path. Measured over
+  -- processCloseAccount's whole body (:747-1376): its only writes are the
+  -- account_registry insert, the extension-table delete and the user_accounts
+  -- delete, plus the reversal pair once its writer lands. So an account that
+  -- was reversed and closed carries type 11 legs and no RTA prefix, and an
+  -- annulled account carries prefixed type 9 rows and no type 11.
   realized AS (
     SELECT
       COALESCE(SUM(t.amount) FILTER (
@@ -162,12 +199,19 @@ const INVESTMENT_FIGURES_QUERY = `
                OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
       ), 0) AS realized_pnl,
       COALESCE(SUM(t.amount) FILTER (
-        WHERE t.movement_type_id = ${ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID}
+        WHERE t.movement_type_id IN (
+                ${ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID},
+                ${BALANCE_REVERSAL_MOVEMENT_TYPE_ID}
+              )
            OR t.description LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%'
       ), 0) AS closure_adjustment
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
-      AND t.movement_type_id IN (${PNL_MOVEMENT_TYPE_ID}, ${ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID})
+      AND t.movement_type_id IN (
+            ${PNL_MOVEMENT_TYPE_ID},
+            ${ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID},
+            ${BALANCE_REVERSAL_MOVEMENT_TYPE_ID}
+          )
       AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   )
   SELECT

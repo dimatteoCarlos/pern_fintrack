@@ -10,8 +10,9 @@
  *
  * The values are the movement_types catalog as measured on 2026-09-07:
  * 1 expense, 2 income, 3 investment, 4 debt, 5 pocket, 6 transfer, 7 receive,
- * 8 account-opening, 9 pnl, 10 account-closure. Only the seven this module reads
- * are named here; naming the other three would invent readers that do not exist.
+ * 8 account-opening, 9 pnl, 10 account-closure, and 11 balance-reversal seeded
+ * by 037_add_balance_reversal.sql. Only the eight this module reads are named
+ * here; naming the other three would invent readers that do not exist.
  *
  * The two an account's ledger already defines are re-exported rather than
  * restated. Two constants holding the same number under one name is the
@@ -51,3 +52,19 @@ export const TRANSFER_MOVEMENT_TYPE_ID = 6;
  * settlement. The type alone is not enough to read profit from.
  */
 export const PNL_MOVEMENT_TYPE_ID = 9;
+
+/**
+ * The neutralisation of an account's balance so that it can be closed.
+ *
+ * An account whose type is in CLOSE_ZERO_BALANCE_TYPES (deleteAccountService.js
+ * :68-73) can only be closed at zero, and the owner is offered one action for a
+ * balance that blocks it: FinTrack posts -currentBalance and closes, in one
+ * transaction. Two legs, one on the account and one on the compensation
+ * account, both carrying this type and both naming the same account in
+ * transactions.reversal_of_account_id.
+ *
+ * It is not capital the owner moved and it is not a result: read it beside the
+ * closure settlement, in whatever term already answers for what the closing
+ * path wrote.
+ */
+export const BALANCE_REVERSAL_MOVEMENT_TYPE_ID = 11;
