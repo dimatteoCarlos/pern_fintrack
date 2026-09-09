@@ -228,14 +228,15 @@ export async function getOverviewActivity(req, res, next) {
   const userId = requireUserId(req, res);
   if (!userId) return;
 
-  const { from, to, page, pageSize } = overviewActivityQuerySchema.parse(req.query);
+  const { from, to, search, movementType, page, pageSize } =
+   overviewActivityQuerySchema.parse(req.query);
 
   const timeZone = await getUserTimeZone(pool, userId);
 
   const data = await overviewActivityService.getActivity(
    pool,
    userId,
-   { from, to, page, pageSize },
+   { from, to, search, movementType, page, pageSize },
    timeZone,
   );
 

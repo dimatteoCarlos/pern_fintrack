@@ -28,15 +28,26 @@ export const overviewActivityService = {
   *
   * @param {object} pool - Database pool
   * @param {string} userId - UUID from the token, never from the client body
-  * @param {object} request - { from, to, page, pageSize }, already validated
+  * @param {object} request - { from, to, search, movementType, page, pageSize },
+  *   already validated
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} the rows, the page and the range they came from
   */
- async getActivity(pool, userId, { from, to, page, pageSize }, timeZone = 'UTC') {
+ async getActivity(
+  pool,
+  userId,
+  { from, to, search, movementType, page, pageSize },
+  timeZone = 'UTC',
+ ) {
   const { rows, totalRows } = await getActivityPage(
    pool,
    userId,
-   { from: from ?? null, to: to ?? null },
+   {
+    from: from ?? null,
+    to: to ?? null,
+    search: search ?? null,
+    movementType: movementType ?? null,
+   },
    timeZone,
    { page, pageSize },
   );
@@ -54,6 +65,15 @@ export const overviewActivityService = {
    range: {
     from: from ?? null,
     to: to ?? null,
+   },
+   // Echoed for the same reason the range is. A list of five rows out of two
+   // thousand is not a short list, it is a filtered one, and a client that had
+   // to remember what it asked for could not tell the reader which of the two
+   // it is looking at — least of all after a reload that restored the query
+   // from the address bar.
+   filters: {
+    search: search ?? null,
+    movementType: movementType ?? null,
    },
   };
  },

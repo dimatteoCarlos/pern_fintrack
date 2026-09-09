@@ -15,6 +15,7 @@
 import { z } from 'zod';
 import { monthBound } from './budgetValidators.js';
 import { ANALYSIS_LEVELS } from '../../fintrack_api/services/overview_services/core/analysisLevels.js';
+import { MOVEMENT_TYPE_NAMES } from '../../fintrack_api/services/overview_services/db/movementTypes.js';
 
 // The six domains of §3 of the contract. A literal list rather than a catalog
 // read: a domain is a calculator this module either has or does not have, not a
@@ -50,6 +51,12 @@ const MAX_PAGE_SIZE = 100;
 // the reason for a cap is that pageSize arrives from the client, and that reason
 // does not vary by endpoint.
 const DEFAULT_ACTIVITY_PAGE_SIZE = 5;
+
+// The longest search term the endpoint will run. Not a security boundary -
+// the term is a bind parameter and never concatenated - but a term longer than
+// this cannot be a search for anything, and refusing it at the door is cheaper
+// than a sequential scan that was never going to match.
+const MAX_SEARCH_LENGTH = 80;
 
 /**
  * GET /overview/:domain
@@ -131,6 +138,27 @@ export const overviewDomainQuerySchema = z.object({
 export const overviewActivityQuerySchema = z.object({
  from: monthBound.optional(),
  to: monthBound.optional(),
+ // The reader's text box. Trimmed before anything else, so a term that is only
+ // spaces is refused rather than run as a match against every row.
+ //
+ // min(1) after the trim rather than allowing '': an empty search is the absence
+ // of a search, and the way to express that is to omit the key. Sending
+ // search='' would otherwise be a third state the repository has to tell from
+ // both of the other two.
+ search: z.string()
+  .trim()
+  .min(1, { message: 'search must not be empty' })
+  .max(MAX_SEARCH_LENGTH, {
+   message: `search must not exceed ${MAX_SEARCH_LENGTH} characters`,
+  })
+  .optional(),
+ // By catalog NAME, validated against the catalog. An unrecognised value
+ // answers 400 naming the key rather than being read as "no filter" - asking to
+ // see a kind of movement this server does not have is a mistake, and silently
+ // returning everything would look like a filter that did not work.
+ movementType: z.enum(MOVEMENT_TYPE_NAMES, {
+  message: `movementType must be one of: ${MOVEMENT_TYPE_NAMES.join(', ')}`,
+ }).optional(),
  page: z.coerce.number().int().positive({
   message: 'page must be a positive integer',
  }).default(DEFAULT_PAGE),

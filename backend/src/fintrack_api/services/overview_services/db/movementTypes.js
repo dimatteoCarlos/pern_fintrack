@@ -27,6 +27,37 @@ import {
 
 export { ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID, ACCOUNT_OPENING_MOVEMENT_TYPE_ID };
 
+/**
+ * Every movement_type_name the catalog holds, in catalog order.
+ *
+ * The ids above are what statements select on; this is what a READER picks from.
+ * The two are different jobs: an id is an argument to a predicate, a name is a
+ * value a client sends and a schema validates, and a client that had to send 9
+ * for a realised result would be holding the catalog in its head.
+ *
+ * A literal list and not a query, for the same reason OVERVIEW_DOMAINS is one:
+ * a schema has to answer 400 for an unknown value at the door, before any
+ * connection is opened, and a catalog read cannot run there.
+ *
+ * It is the whole catalog and not the eight this module's statements select on.
+ * The activity list shows every movement the owner made, so a filter over it
+ * has to be able to name every one of them - including the two the closing path
+ * writes, which are exactly the rows an owner would go looking for.
+ */
+export const MOVEMENT_TYPE_NAMES = [
+ 'expense',
+ 'income',
+ 'investment',
+ 'debt',
+ 'pocket',
+ 'transfer',
+ 'receive',
+ 'account-opening',
+ 'pnl',
+ 'account-closure',
+ 'balance-reversal',
+];
+
 /** Money leaving the owner's accounts for a category. */
 export const EXPENSE_MOVEMENT_TYPE_ID = 1;
 

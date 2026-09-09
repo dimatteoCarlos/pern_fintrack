@@ -822,6 +822,16 @@ five rows, and this endpoint is an addition rather than a move.
 type GetOverviewActivityParams = {
  from?: string;      // YYYY-MM, inclusive. Absent means unbounded below
  to?: string;        // YYYY-MM, inclusive — the WHOLE month, not its first day
+ // Added 2026-09-09. Texto libre, ya recortado por el esquema. Ausente es "no
+ // hay búsqueda"; '' no existe como valor y answers 400.
+ search?: string;    // 1..80 caracteres
+ // Added 2026-09-09. Un movement_type_name del catálogo completo, no de los
+ // ocho que las consultas de este módulo seleccionan: la lista de actividad
+ // muestra todo movimiento del dueño, incluidas las dos filas que escribe el
+ // camino de cierre, que son justo las que alguien iría a buscar.
+ movementType?: 'expense' | 'income' | 'investment' | 'debt' | 'pocket'
+  | 'transfer' | 'receive' | 'account-opening' | 'pnl'
+  | 'account-closure' | 'balance-reversal';
  page?: number;      // default 1
  pageSize?: number;  // default 5 — the size of the teaser; max 100, the shared ceiling
 };
@@ -840,10 +850,51 @@ type GetOverviewActivityData = {
   from: string | null;
   to: string | null;
  };
+ // Added 2026-09-09, y devuelto por la misma razón que el rango: cinco filas de
+ // dos mil no es una lista corta, es una lista filtrada, y un cliente que
+ // tuviera que acordarse de lo que pidió no puede distinguir las dos — menos
+ // todavía después de una recarga que restauró la consulta desde la barra de
+ // direcciones.
+ filters: {
+  search: string | null;
+  movementType: string | null;
+ };
 };
 
 type GetOverviewActivityResponse = ApiEnvelope<GetOverviewActivityData>;
 ```
+
+### Type change — 2026-09-09
+
+El endpoint gana **dos parámetros de lectura** y **un campo de eco**.
+
+**Por qué acá y no en el nivel 3.** Son seis consultas de listado distintas:
+`ACTIVITY_PAGE_QUERY` sirve esta sección y las otras cinco sirven un dominio cada
+una. Escribir el predicado acá es una consulta; escribirlo en nivel 3 son cinco.
+Y esta es la única lista que cruza los seis dominios, que es donde un buscador
+cambia algo — en nivel 3 el lector ya filtró por dominio y por mes.
+
+**El predicado no entra en `ACTIVITY_FILTER`.** Ese fragmento dice qué cuenta
+como movimiento en esta sección y lo comparte el teaser de la página; un teaser
+que se recortara por una búsqueda que nadie escribió contestaría otra pregunta.
+Los dos nuevos viven en `ACTIVITY_READER_FILTER`, que sólo usan las dos
+sentencias paginadas.
+
+**`$5` y `$6`, antes de los límites de página y no después.** PostgreSQL rechaza
+una lista de binds más larga que el mayor marcador que la sentencia nombra, y la
+sentencia de conteo no vincula ni `LIMIT` ni `OFFSET`: un parámetro de búsqueda
+en `$7` sería inalcanzable para el conteo, que tiene que responder por el mismo
+conjunto que la página.
+
+**`strpos(lower(...))` y no `ILIKE`.** Con `ILIKE`, el `%` y el `_` del propio
+término son comodines: alguien buscando `50%` traería todas las filas de la
+cuenta. No es una búsqueda, es el lenguaje de patrones filtrándose a la caja de
+texto.
+
+**Se busca sobre la descripción entera**, que es un superconjunto de la nota que
+la fila muestra. A propósito: la mitad que no se ve es la oración que narra el
+servidor (`Transaction: ... from X to Y`), que es exactamente donde alguien busca
+una contraparte que no recuerda haber tecleado.
 
 **No `ServedWindow` here, and no month ceiling.** The period of this section is
 independent of the month the page reports, so publishing the reference month

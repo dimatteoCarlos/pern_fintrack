@@ -115,3 +115,48 @@ test('the page endpoint takes no analysis level', () => {
  // six analyses at once.
  assert.throws(() => overviewPageQuerySchema.parse({ analysis: 'derived' }));
 });
+
+test('activity takes no search and no filter by default', () => {
+ // Absent and not empty. The repository tells "the reader typed nothing" from
+ // "the reader typed something" by the null, and a '' arriving here would be a
+ // third state that means the first and looks like the second.
+ const query = overviewActivityQuerySchema.parse({});
+
+ assert.equal(query.search, undefined);
+ assert.equal(query.movementType, undefined);
+});
+
+test('a search term is trimmed, and spaces alone are not a search', () => {
+ assert.equal(overviewActivityQuerySchema.parse({ search: '  netflix  ' }).search, 'netflix');
+
+ assert.throws(
+  () => overviewActivityQuerySchema.parse({ search: '   ' }),
+  /search must not be empty/,
+ );
+});
+
+test('a search term has a ceiling', () => {
+ assert.equal(overviewActivityQuerySchema.parse({ search: 'x'.repeat(80) }).search.length, 80);
+
+ assert.throws(
+  () => overviewActivityQuerySchema.parse({ search: 'x'.repeat(81) }),
+  /search must not exceed 80 characters/,
+ );
+});
+
+test('the movement filter is a catalog name and an unknown one answers 400', () => {
+ assert.equal(overviewActivityQuerySchema.parse({ movementType: 'pnl' }).movementType, 'pnl');
+ // The two the closing path writes are filterable, which is the reason the list
+ // is the whole catalog and not the eight this module's statements select on.
+ assert.equal(
+  overviewActivityQuerySchema.parse({ movementType: 'account-closure' }).movementType,
+  'account-closure',
+ );
+
+ // Read as "no filter" instead, a typo would return every movement and look
+ // like a filter that silently did nothing.
+ assert.throws(
+  () => overviewActivityQuerySchema.parse({ movementType: 'expenses' }),
+  /movementType must be one of/,
+ );
+});

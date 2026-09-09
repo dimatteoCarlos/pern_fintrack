@@ -266,6 +266,43 @@ const ACTIVITY_FILTER = `
     -- a decision this change did not make.
     AND act.account_type_name <> 'boundary'`;
 
+// The reader's own two narrowings, written once for the page and for the count
+// that has to answer over the same set. They are NOT part of ACTIVITY_FILTER:
+// that one says what counts as a movement in this section and the teaser shares
+// it, and a teaser that narrowed itself by a search nobody typed would answer a
+// different question from the one it is asked.
+//
+// Both are optional and a null one drops out of the statement rather than
+// widening to a wildcard the client could send.
+//
+// $5 is the term and $6 the movement type, and they are numbered BEFORE the page
+// bounds rather than appended after them. PostgreSQL refuses a bind list longer
+// than the highest placeholder a statement names, so a search parameter sitting
+// at $7 could not be reached by the count statement at all - the count binds
+// neither LIMIT nor OFFSET.
+const ACTIVITY_READER_FILTER = `
+    -- strpos over lower() and not ILIKE. With ILIKE the term's own % and _ are
+    -- wildcards, so a reader looking for "50%" would match every row in the
+    -- account, and an owner searching "credit_card" would match "credit-card"
+    -- too. Neither is a search; both are the pattern language leaking into the
+    -- text box.
+    --
+    -- The column is the WHOLE description and not the note the row displays.
+    -- That is a superset on purpose: the half this does not show on screen is
+    -- the sentence the server narrates ("Transaction: ... from X to Y"), which
+    -- is exactly where an owner looks for a counterparty they cannot remember
+    -- typing. extractNoteFromDescription splits the two for display and this
+    -- searches both.
+    AND (
+      $5::text IS NULL
+      OR strpos(lower(tr.description), lower($5::text)) > 0
+      OR strpos(lower(COALESCE(ua.account_name, '')), lower($5::text)) > 0
+    )
+    -- By NAME and not by id. The id is what the statements of this module select
+    -- on; the name is what a client can send without holding the catalog in its
+    -- head, and the schema has already refused anything outside it.
+    AND ($6::text IS NULL OR mt.movement_type_name = $6::text)`;
+
 // Newest first, and the id breaks the tie. Two movements can carry the same
 // actual date, and a page boundary falling between them would show one row
 // twice and skip another without the second key.
@@ -306,8 +343,8 @@ const RECENT_ACTIVITY_QUERY = `
 const ACTIVITY_PAGE_QUERY = `
   SELECT${transactionRowColumns('$4')}${TRANSACTION_ROW_SOURCE}${ACTIVITY_FILTER}
     AND ($2::date IS NULL OR tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4))
-    AND ($3::date IS NULL OR tr.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $4))${ACTIVITY_ORDER}
-  LIMIT $5 OFFSET $6
+    AND ($3::date IS NULL OR tr.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $4))${ACTIVITY_READER_FILTER}${ACTIVITY_ORDER}
+  LIMIT $7 OFFSET $8
 `;
 
 // How many rows the page was cut out of. A whole second statement over the same
@@ -317,7 +354,7 @@ const ACTIVITY_PAGE_QUERY = `
 const ACTIVITY_COUNT_QUERY = `
   SELECT COUNT(*) AS total_rows${TRANSACTION_ROW_SOURCE}${ACTIVITY_FILTER}
     AND ($2::date IS NULL OR tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4))
-    AND ($3::date IS NULL OR tr.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $4))
+    AND ($3::date IS NULL OR tr.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $4))${ACTIVITY_READER_FILTER}
 `;
 
 /**
@@ -412,14 +449,32 @@ export async function getRecentActivity(pool, userId, timeZone = 'UTC') {
  *
  * @param {object} pool - Database pool
  * @param {string} userId - UUID from the token
- * @param {{from: (string|null), to: (string|null)}} range - months, both inclusive
+ * @param {{from: (string|null), to: (string|null), search: (string|null), movementType: (string|null)}} range
+ *   - the months, both inclusive, and the reader's own two narrowings
  * @param {string} timeZone - IANA zone of the account owner
  * @param {{page: number, pageSize: number}} paging - already validated as positive integers
  * @returns {Promise<{rows: object[], totalRows: number}>}
  */
-export async function getActivityPage(pool, userId, { from, to }, timeZone = 'UTC', { page, pageSize }) {
+export async function getActivityPage(
+ pool,
+ userId,
+ { from, to, search, movementType },
+ timeZone = 'UTC',
+ { page, pageSize },
+) {
  const offset = (page - 1) * pageSize;
- const bounds = [userId, from ?? null, to ?? null, timeZone];
+
+ // The six the count shares. The page adds two of its own and the count binds
+ // none of them, which is why the search pair sits inside this list rather than
+ // after the page bounds.
+ const bounds = [
+  userId,
+  from ?? null,
+  to ?? null,
+  timeZone,
+  search ?? null,
+  movementType ?? null,
+ ];
 
  // Both in flight at once: the count does not depend on the page and the page
  // does not depend on the count, so serialising them would pay for the slower
