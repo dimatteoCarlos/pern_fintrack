@@ -3103,19 +3103,30 @@ so far"). The erasure has no such filter:
   alone: 785 rows on `fintrack_prod_data`, the untouched 2026-08-21 dump, 780 on
   each rehearsal copy, 139 on `fintrack_dev`. That is stronger than "none exists
   today"; it says the column has never carried a second value.
-- **What makes it live.** The first second status — a scheduled or pending row,
-  which is what the backdating work introduces — turns the asymmetry into a row
+- **What makes it live.** The first second status turns the asymmetry into a row
   that is skipped by the arithmetic and removed by the erasure in the same
   transaction.
+- **That status has no author today**, corrected 2026-09-08 after the migration
+  session checked instead of assuming. Backdating was named as the likely author
+  and is not: `PLAN_BACKDATING` sits in `plan-docs/completed/` and never needed a
+  second status, because a backdated movement happened and is simply earlier, so
+  it is written `'complete'` like any other. No plan in `plan-docs/ongoing/`
+  proposes a scheduled transaction either - the only recurrence there is budget
+  allocations, and `PLAN_BUDGET_V1.md:132` is titled "Recurrence is not a column"
+  and encodes it as rows. The single mention of a scheduled or pending row in
+  `ongoing/` was this section's own.
 - **The fix is one predicate in one statement**, and it belongs with whoever
   adds the second status, not here: either the erasure filters the same way, or
   the report stops filtering.
-- **A CHECK constraint pinning the column was deliberately NOT added.** It would
-  make the hazard impossible to introduce silently, because a second status would
-  then require a migration and that is the moment someone reads the erasure
-  filter - but it pre-empts a schema decision that belongs to whoever designs the
-  scheduled or pending row. The finding stays a precondition on a future
-  migration rather than becoming a constraint today.
+- **A CHECK constraint pinning the column was deliberately NOT added**, and the
+  reason first recorded here was withdrawn by the session that gave it. It said
+  the constraint would pre-empt a schema decision belonging to whoever designs
+  the pending row; there is no such designer, per the bullet above. The reason
+  that survives is narrower and is about the run, not the schema: adding it now
+  would make the production run seven files when the owner authorized six by
+  name. The migration session's recommendation is to add it AFTER `031` through
+  `036` land, as its own file with its own authorization. The owner has not
+  decided.
 
 ### 12.3 The deleted account's name survives permanently in the rows the reversal itself wrote
 
