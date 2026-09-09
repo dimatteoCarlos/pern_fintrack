@@ -18,10 +18,14 @@ const ROLE_LEVELS = {
   super_admin: 3,
 };
 
+// All three answer 401, not 403: they are failures to establish who the caller
+// is, and a fresh token fixes every one of them. 403 is reserved for a caller
+// we did identify and still refuse — verifyUser below, and the ownership checks
+// in the pocket, budget and deletion services.
 const TOKEN_ERRORS = {
   TokenExpiredError: { message: 'Token expired.', status: 401 },
-  JsonWebTokenError: { message: 'Invalid token.', status: 403 },
-  NotBeforeError: { message: 'Token not yet active.', status: 403 },
+  JsonWebTokenError: { message: 'Invalid token.', status: 401 },
+  NotBeforeError: { message: 'Token not yet active.', status: 401 },
 };
 
 // =================================
@@ -109,7 +113,7 @@ NotBeforeError	Sucede si se intenta usar un token antes de su fecha de validez (
 const handleTokenError = (error, req, res) => {
   const errorConfig = TOKEN_ERRORS[error.name] || {
     message: 'Invalid token. Please sign in again.', //Authentication failed
-    status: 403,
+    status: 401,
   };
 
   // Clear cookie. if token expired and was in cookies
