@@ -4,10 +4,17 @@ import pc from 'picocolors';
 import { createError, handlePostgresError } from '../../errorHandling.js';
 import { getCurrencyIdSync } from '../../currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../fintrack_api/config/fintrackConfig.js';
+import { RTA_ANNULMENT_TARGET_PREFIX } from './annulmentRowIdentity.js';
 import {
   DEFAULT_EXCHANGE_RATE,
   DEFAULT_EXCHANGE_RATE_SOURCE,
 } from '../../../fintrack_api/services/fx_services/core/fxConfig.js';
+
+// Kept so the three overview repositories that import the prefix from here
+// keep working unchanged. They can repoint to annulmentRowIdentity.js whenever
+// that module chooses; nothing forces it, and nothing breaks either way.
+export { RTA_ANNULMENT_TARGET_PREFIX } from './annulmentRowIdentity.js';
+
 /*
 🎯 GENERAL PURPOSE
 This function is responsible for undoing/reversing the financial impact that a "Target" account had on other accounts.
@@ -38,19 +45,12 @@ AL ELIMINAR TARGET, SE REVIERTE:
 // cancel there: the affected leg sits on the owner's account and its opposite on
 // the compensation account.
 //
-// FIVE predicates, not four, and they do not all point the same way (counted
-// 2026-09-07 after pern-fintrack-cf found this comment had drifted). Two
-// exclusions in overviewTransactionRepository.js, one in
-// overviewMonthlyRepository.js, and in overviewInvestmentRepository.js a PAIR
-// that splits on this string: realised profit excludes the prefixed rows and
-// the closure adjustment includes them. The earlier wording said four and
-// described them all as NOT LIKE, which hid the positive one - the filter most
-// likely to be missed, since it is the only one that would start summing
-// nothing rather than summing too much.
-//
-// The count is the fragile part of this comment, not the list: a filter added
-// in Overview lands in a file this module does not own and nothing here fails.
-export const RTA_ANNULMENT_TARGET_PREFIX = 'RTA Annulment Target(';
+// The prefix moved to annulmentRowIdentity.js, and this module now reads it
+// from there like every other consumer. It is the identity of a stored row and
+// five read-only predicates in the overview module depend on it, so it should
+// not sit in a module whose job is to WRITE - a read path had to import a
+// writer to get a string. Re-exported below so nothing has to be repointed in
+// the same change that moves it.
 
 /**
  * 🛠️ Helper function to construct the annulment transaction description.
