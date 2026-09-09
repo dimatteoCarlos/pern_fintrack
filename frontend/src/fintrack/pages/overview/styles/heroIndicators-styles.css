@@ -119,6 +119,18 @@
  color: var(--color-content-primary);
 }
 
+/* The tip trigger, centred on the label's own text box.
+   .tooltip__wrapper is inline-block, so its height is a LINE box: the button
+   inside it sits on that line's baseline with the descender space still under
+   it, and centring the wrapper then leaves the glyph riding above the middle of
+   the word. Making the wrapper a flex box of its own collapses that slack, and
+   the label's align-items: center does the rest. */
+.heroIndicators__label .tooltip__wrapper {
+ display: inline-flex;
+ align-items: center;
+ line-height: 1;
+}
+
 .heroIndicators__amount {
  font-size: var(--font-size-sm);
  font-weight: var(--font-weight-semibold);
