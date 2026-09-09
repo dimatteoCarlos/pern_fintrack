@@ -394,6 +394,21 @@ authorization: the lift itself, a previous run having been approved, and a peer
 session relaying that he said yes. Nothing in this module may treat the lift as
 a date.
 
+**A second condition, in his own words, relayed by the Overview session on
+2026-09-08.** Asked again about production he answered: "si pero bajo mi
+autorizacion no quiero migrar a produccion si todavia hay codigo que completar y
+decisiones abiertas". That is a hold on a different axis from approval of the
+files: open code or open decisions are reason enough to wait even where he would
+sign off on `031` through `036` themselves. This module has open decisions - the
+reversal route on the screen, the divider token, whether frames 02, 03 and 10 are
+built - so the condition binds here and not only on the migration session.
+
+Recorded as relayed, and nothing in this plan is reasoned on top of it until he
+has stated it here directly. Its one immediate effect is on the section below:
+the feature flag stops being a way of shipping early and becomes the only shape
+the change can take, because the event it waits on is now conditioned on this
+module's own open decisions closing.
+
 Until that file is applied:
 
 - `dashboardController.js` must NOT be moved onto the CTE. Today it omits rows
