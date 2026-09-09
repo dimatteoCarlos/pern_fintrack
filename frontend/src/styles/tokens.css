@@ -81,6 +81,20 @@
     step that clears the floor on every surface this line is drawn against:
     sunken 3.21, deep 3.10, raised 3.26, app 3.25. */
  --color-border-subtle: rgba(232, 228, 218, 0.4);
+ /* THE SAME LINE ON THE OPPOSITE SURFACE, added 2026-09-08 on the owner's
+    decision. --color-border-subtle is calibrated against the dark surfaces and
+    composites to nothing on --color-surface-inverse, while
+    --color-border-strong at #141414 is a rule rather than a hairline. Neither
+    is the separator a panel needs between its own sections.
+
+    IT IS NOT HELD TO 3:1, and that is a claim about what it is, not an
+    exemption taken. 1.4.11 asks that ratio of the boundary of a control and of
+    a graphic carrying meaning; this divides sections of one panel and carries
+    none, so removing it loses rhythm and no information. Anything that encloses
+    a control on this surface takes --color-border-strong instead.
+
+    First consumer: accountDeletionPage.css, which had it as a page-local. */
+ --color-border-subtle-on-inverse: #e5e7eb;
 
  /* COLOR - FEEDBACK AND THE FINANCIAL SEMAPHORE
     The status square is the signature indicator: teal when a figure is healthy,

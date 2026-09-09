@@ -1454,6 +1454,7 @@
     <h2 class="review__name">Residual, destinations available</h2>
     <span class="review__tag">state</span>
    </div>
+   <p class="review__note" style="border-left:3px solid #b3261e;padding-left:12px"><strong>OBSOLETE FOR CLOSE, 2026-09-08.</strong> The owner ruled that CLOSE requires a zero balance and settles nothing: a balance that blocks the close is resolved outside it, and the refusal state is the official path. It exists to move a balance out during the close, and the close no longer moves a balance. This frame is kept as a record of a state that was drawn and is not implementable; it is not a specification. The recommendation at the foot of this file, that this frame should govern over the refusal, is withdrawn by the same ruling. See PLAN_CLOSE_ACCOUNT.md section 13.</p>
    <p class="review__note">The count of eligible destinations is 3, so the choice between moving the balance and discarding it is real. The figure shown is formatted; <strong>the raw text the preview handed over is what goes back</strong> with the confirmation, carried on <code>data-residual-raw</code> here so it is visible in the markup. Each option in the selector carries its own <code>accountId</code> as its value, never its position in the array.</p>
    <div class="review__frame">
     <div class="close-page">
@@ -1553,6 +1554,7 @@
     <h2 class="review__name">Residual, no destination exists</h2>
     <span class="review__tag">state</span>
    </div>
+   <p class="review__note" style="border-left:3px solid #b3261e;padding-left:12px"><strong>OBSOLETE FOR CLOSE, 2026-09-08.</strong> The owner ruled that CLOSE requires a zero balance and settles nothing: a balance that blocks the close is resolved outside it, and the refusal state is the official path. Its answer was to discard the balance; the ruling's answer is that the account cannot be closed until the balance is resolved. The remedy it already draws, creating an account, survives - the discard does not. This frame is kept as a record of a state that was drawn and is not implementable; it is not a specification. The recommendation at the foot of this file, that this frame should govern over the refusal, is withdrawn by the same ruling. See PLAN_CLOSE_ACCOUNT.md section 13.</p>
    <p class="review__note">The count of eligible destinations is 0. <strong>No selector is drawn at all</strong> — not a disabled empty one, which reads as a load that failed. Discard is stated as the answer it is, and the way to get a destination is a real route. This frame also carries <strong>the reason field in its invalid state</strong>: the database refuses spaces, tabs and newlines, so whitespace alone is rejected in the browser first.</p>
    <div class="review__frame">
     <div class="close-page">
@@ -1988,6 +1990,7 @@
     <h2 class="review__name">Confirmation — transfer</h2>
     <span class="review__tag">step 3</span>
    </div>
+   <p class="review__note" style="border-left:3px solid #b3261e;padding-left:12px"><strong>OBSOLETE FOR CLOSE, 2026-09-08.</strong> The owner ruled that CLOSE requires a zero balance and settles nothing: a balance that blocks the close is resolved outside it, and the refusal state is the official path. It confirms a transfer destination, and there is no destination inside CLOSE to name. This frame is kept as a record of a state that was drawn and is not implementable; it is not a specification. The recommendation at the foot of this file, that this frame should govern over the refusal, is withdrawn by the same ruling. See PLAN_CLOSE_ACCOUNT.md section 13.</p>
    <p class="review__note">The step Carlos named. It restates the account, the figure, where the money goes and what the owner wrote, then lists what is lost. <strong>No checkbox and no typed confirmation</strong>: the consequences sit in the same panel as the button.</p>
    <div class="review__frame">
     <div class="close-scrim">
