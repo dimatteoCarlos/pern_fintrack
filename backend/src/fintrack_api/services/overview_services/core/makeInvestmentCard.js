@@ -19,7 +19,7 @@
 // toRate and not toAmount: concentration is a ratio that never enters a sum, so
 // it is rounded by the rule that exists for ratios rather than by the one that
 // exists for money.
-import { money, toRate } from '../../budget_services/core/money.js';
+import { money, toAmount, toRate } from '../../budget_services/core/money.js';
 
 // Said when the user owns no investment account, so there is nothing to be
 // concentrated in. Different from "your money is spread evenly": one is an
@@ -93,6 +93,15 @@ export const UNRECONCILED_BALANCE_NOTICE =
  *   deleted: a soft delete writes neither arm, and only the annulment leg lands
  *   here at all.
  * @param {number|null} figures.largestBalance - the biggest single balance, null with no accounts
+ * @param {number|null} figures.priorLedgerBalance - the same ledger balance read
+ *   at the close of the PRIOR month, or null when the owner held no account
+ *   through any part of it. It is the same statement at a different bound, not
+ *   a second formula: the two figures have to be comparable and the surest way
+ *   to guarantee that is for them to be one query run twice.
+ * @param {'complete'|'partial'|'none'} [figures.priorPeriodCoverage] - how much
+ *   of the prior month the owner existed for, decided by priorPeriodCoverageOf
+ *   in makeDomainCard.js. 'partial' still compares: a young baseline is a weaker
+ *   comparison, not an absent one.
  * @param {number|null} figures.daysSinceLastContribution - V5
  * @param {number} figures.transactionCount - movements on these accounts in the
  *   reference month, the one field this card shares with the other five
@@ -107,6 +116,8 @@ export const makeInvestmentCard = ({
  realizedPnl,
  closureAdjustment,
  largestBalance,
+ priorLedgerBalance = null,
+ priorPeriodCoverage = 'none',
  transactionCount,
  daysSinceLastContribution,
  currency,
@@ -129,6 +140,22 @@ export const makeInvestmentCard = ({
  if (daysSinceLastContribution === null && accountCount > 0) {
   cardNotices.push(NO_CONTRIBUTIONS_NOTICE);
  }
+
+ // THE ONE COMPARISON THIS CARD MAKES, and it is on the ledger balance because
+ // that is the figure the card leads with. The other three money figures are
+ // accumulations too and each of them has a month-over-month change, but the
+ // identity below ties all three to this one - their deltas sum to this delta -
+ // so publishing four would be publishing one fact four times.
+ //
+ // Both null together, the same nullity the five shared cards use: a baseline
+ // with no change measured against it is a state no consumer knows how to read.
+ // The subtraction runs through money for the reason every comparison in this
+ // module does, and toAmount because the result is money and not a ratio.
+ const isComparable = priorPeriodCoverage !== 'none' && priorLedgerBalance !== null;
+
+ const ledgerBalanceDelta = isComparable
+  ? toAmount(money(ledgerBalance).minus(priorLedgerBalance))
+  : null;
 
  // Compared through money for the reason every comparison in this module is:
  // a cent of binary float error must not raise a flag that tells the user their
@@ -171,6 +198,17 @@ export const makeInvestmentCard = ({
   ledgerBalance,
   realizedPnl,
   closureAdjustment,
+  // After the four terms and not beside ledgerBalance, so the identity the
+  // UNRECONCILED_BALANCE_NOTICE checks still reads as four adjacent lines. The
+  // baseline comes before the change for the same reason makeDomainCard orders
+  // them that way: a reader meets the figure it was measured from first.
+  priorLedgerBalance: isComparable ? priorLedgerBalance : null,
+  ledgerBalanceDelta,
+  // Published beside the change it qualifies, because the client cannot derive
+  // it: with 'partial' the delta is a number like any other, and reading the
+  // English of meta.notices to find out otherwise would tie the frontend to the
+  // wording of a sentence.
+  priorPeriodCoverage,
   concentration,
   daysSinceLastContribution,
   currency,

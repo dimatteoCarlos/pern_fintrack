@@ -73,10 +73,16 @@ export const priorPeriodNotices = (coverage) => {
  *
  * @param {string|null} oldestAccountDate - 'YYYY-MM-DD', or null with no accounts
  * @param {string} priorMonth - 'YYYY-MM-01'
+ * Exported because Investment needs the same three answers and cannot reach
+ * them through makePeriodDelta: that builder searches a monthly series for the
+ * two points it subtracts, and the investment card has no series - its figures
+ * are accumulations read at one month's close. One rule, two callers, rather
+ * than the same three comparisons written twice.
+ *
  * @param {string} referenceMonth - 'YYYY-MM-01'
  * @returns {'complete'|'partial'|'none'}
  */
-const priorPeriodCoverageOf = (oldestAccountDate, priorMonth, referenceMonth) => {
+export const priorPeriodCoverageOf = (oldestAccountDate, priorMonth, referenceMonth) => {
  if (oldestAccountDate === null) return 'none';
  if (oldestAccountDate <= priorMonth) return 'complete';
  if (oldestAccountDate < referenceMonth) return 'partial';

@@ -174,8 +174,15 @@ export type OverviewPocketCard = OverviewDomainCardBase & {
 };
 
 // Investment shares none of the base. §6 of the contract gives it five figures
-// that are not a flow, so there is no totalAmount, no delta and no window: what
-// it reports is a position, and a position is not cut to a month.
+// that are not a flow, so there is no totalAmount and no window: what it reports
+// is a position, and a position is not cut to a month.
+//
+// IT DOES NOW CARRY A COMPARISON, added 2026-09-09 at Carlos's request, and the
+// three fields are named for the figure they measure rather than borrowing
+// `delta` and `priorTotalAmount` from the shared base. There is no totalAmount
+// on this card, so `priorTotalAmount` would name the prior of a field that does
+// not exist; `ledgerBalance` is the figure the card leads with and the one the
+// change is measured on.
 export type OverviewInvestmentCard = {
  domain: 'investment';
  accountCount: number;
@@ -184,6 +191,15 @@ export type OverviewInvestmentCard = {
  ledgerBalance: number;
  realizedPnl: number;
  closureAdjustment: number;
+ // The same ledger balance at the close of the PRIOR month, and the change
+ // between the two. Both null together, and only when the owner held no account
+ // through any part of that month — a young baseline still compares.
+ priorLedgerBalance: number | null;
+ ledgerBalanceDelta: number | null;
+ // How much of the prior month the owner existed for. 'partial' is a real
+ // comparison with a caveat, not a withheld one, so the card renders the change
+ // and says the baseline is short.
+ priorPeriodCoverage: 'complete' | 'partial' | 'none';
  // The largest account's share of the whole, as a ratio in 0-1 — the opposite
  // scale to pocket's progress, which is why neither is named 'percentage'.
  concentration: number;

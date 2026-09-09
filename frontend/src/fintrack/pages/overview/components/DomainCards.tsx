@@ -601,9 +601,32 @@ function DomainCards() {
     label='Investment'
     nature='position'
     sub={
-     investment.accountCount === 1
-      ? '1 account — the count is as of today'
-      : `${investment.accountCount} accounts — the count is as of today`
+     /* Two rows, the change over the account count, which is the order the PnL
+        card below uses: the comparison is what the reader came for and the
+        count is the context it sits in.
+
+        THE CARD IS THE ONE DOMAIN WITH NO delta FIELD, because §6 gives it no
+        totalAmount to measure one on. The server publishes the comparison under
+        the figure it is actually measured on - the ledger balance - and this
+        maps those three fields onto the shape deltaLine reads, so the sentence
+        the reader gets is word for word the one on the other five cards rather
+        than a second wording of the same idea. */
+     <div className='domainCard__lines'>
+      <span>
+       {deltaLine({
+        delta: investment.ledgerBalanceDelta,
+        priorTotalAmount: investment.priorLedgerBalance,
+        priorPeriodCoverage: investment.priorPeriodCoverage,
+        currency: investment.currency,
+       })}
+      </span>
+
+      <span className='domainCard__aside'>
+       {investment.accountCount === 1
+        ? '1 account — the count is as of today'
+        : `${investment.accountCount} accounts — the count is as of today`}
+      </span>
+     </div>
     }
    >
     <div className='domainCard__figure'>
