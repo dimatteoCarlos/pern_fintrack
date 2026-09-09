@@ -95,7 +95,10 @@ export const useCloseAccount = (targetAccountId: number | string) => {
  });
 
  const executeClose = useCallback(
-  async (closeReason: string) => {
+  // reverseBalance defaults to false, so the plain close keeps the behaviour
+  // it had: a blocking balance is refused rather than silently neutralised.
+  // Neutralising money is not something a caller should get by omission.
+  async (closeReason: string, reverseBalance: boolean = false) => {
    if (!isValidAccountId) {
     return { success: false, message: 'Invalid account ID' };
    }
@@ -113,6 +116,7 @@ export const useCloseAccount = (targetAccountId: number | string) => {
    const payload: CloseExecutionPayloadType = {
     deletionType: DELETION_TYPE_CLOSE,
     closeReason: reason,
+    reverseBalance,
    };
 
    const { data: executionData, error: executionError } =

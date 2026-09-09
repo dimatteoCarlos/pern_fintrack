@@ -179,6 +179,11 @@ export const DELETION_TYPE_CLOSE = 'CLOSE';
 export type CloseExecutionPayloadType = {
   deletionType: typeof DELETION_TYPE_CLOSE;
   closeReason: string;
+  // Whether to neutralise the balance against the compensation account before
+  // the close, in the server's same transaction. Absent means no, and the
+  // server compares against true rather than coercing, so an absent field and
+  // an explicit false mean the same thing.
+  reverseBalance?: boolean;
 };
 
 // The identity half of GET /account/delete/close_preview/:targetAccountId.

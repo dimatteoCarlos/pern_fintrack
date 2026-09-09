@@ -476,6 +476,21 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
 
               <h3 className='content-title'>{getReportTitle()}</h3>
 
+              {/* WHERE THE REVERSAL GOES, SAID BESIDE THE LIST IT IS NOT IN.
+                  The owner ruled on 2026-09-08 that the compensation account
+                  is not injected into this panel: it belongs here only if the
+                  account genuinely transacted with it, and adding it because
+                  the reversal will be posted there would make one row of a
+                  list titled "accounts this one has operated with" mean
+                  something different from every other row. So the screen
+                  states the boundary separately, above the panel, and only
+                  while the operation that uses it is on offer. */}
+              {isBalanceBlockingTheClose && (
+                <p className='account-relations__boundary' role='note'>
+                  {translateText('closeReversalBoundaryStatement')}
+                </p>
+              )}
+
               {renderReportContent()}
 
             </div>
@@ -543,6 +558,16 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
                   {translateText('softDeactivateTriggerButton')}
                 </button>
               )}
+              {/* ONE BUTTON, TWO NAMES, AND THE BALANCE PICKS WHICH. A
+                  blocking balance used to leave a button on screen that could
+                  only refuse, with a notice above it explaining the refusal.
+                  It now carries the operation that resolves it: reverse the
+                  balance and close, which is one operation to the database and
+                  reads as one action to the owner.
+
+                  NOT A SECOND BUTTON BESIDE IT. Offering both would mean
+                  offering one that is guaranteed to fail, and the owner would
+                  have to read the notice to know which. */}
               <button
                 type='button'
                 className={`deletion-method-button deletion-method-button--close${
@@ -551,9 +576,17 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
                     : ''
                 }`}
                 onClick={() => setIsCloseModalOpen(true)}
-                aria-label={translateText('closeAccountTriggerButton')}
+                aria-label={translateText(
+                  isBalanceBlockingTheClose
+                    ? 'closeAccountReverseTriggerButton'
+                    : 'closeAccountTriggerButton',
+                )}
               >
-                {translateText('closeAccountTriggerButton')}
+                {translateText(
+                  isBalanceBlockingTheClose
+                    ? 'closeAccountReverseTriggerButton'
+                    : 'closeAccountTriggerButton',
+                )}
               </button>
               {!CLOSE_IS_THE_ONLY_METHOD && (
                 <button
@@ -597,7 +630,10 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
           Placed between SOFT and HARD because that is where it sits in cost:
           reversible deactivation, then closure that keeps the history, then
           erasure that keeps none of it. */}
+      {/* The dialog confirms whichever operation the button named, so the
+          two cannot disagree: both read isBalanceBlockingTheClose. */}
       <CloseAccountUI
+        isBalanceReversed={isBalanceBlockingTheClose}
         t={translateText}
         isOpen={isCloseModalOpen}
         targetAccountId={targetAccountId}
