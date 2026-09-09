@@ -4,11 +4,13 @@
 state below was measured in the code of `feat/overview`, not read from another
 plan. Where a figure is named, it is the identifier the payload publishes.
 
-It supersedes the stage sequencing of `PLAN_OVERVIEW_RECOVERY.md` and the
-open-decision tables of `PLAN_OVERVIEW_LEVEL2.md` and `OVERVIEW.md` section 7,
-all three of which had drifted from the code. It does **not** supersede the two
-companion documents that carry the semantics and the layout, nor the frozen
-payload contract. Section 2 says exactly which file answers which question.
+On 2026-09-09 it absorbed the three documents whose sequencing and scope it had
+already superseded - `PLAN_OVERVIEW_RECOVERY.md`, `OVERVIEW.md` and
+`PLAN_OVERVIEW_LEVEL2.md` - so the stage board, the exit conditions, what is out
+of scope and the traps are here rather than in four files that disagreed. It does
+**not** supersede the reference that carries the semantics, the one that carries
+the layout, or the frozen payload contract. Section 2 says which file answers
+which question.
 
 ---
 
@@ -40,20 +42,23 @@ Everything Overview computes is computed and discarded.
 
 ## 2. The reference set — which file answers what
 
-Two tracks. Nothing outside these eleven files is a source.
+Two tracks. **Five documents and three mockups, once the layout merge below is
+done. Nothing outside them is a source.** Eleven documents became seven on
+2026-09-09 and become five when `OVERVIEW_LAYOUT.md` absorbs the last two: the
+same stage board lived in three of them, the same out-of-scope list in two, and
+the open decisions in six.
 
 ### What to build
 
 | file | answers |
 |---|---|
-| `OVERVIEW_PLAN.md` (this file) | what is done, what remains, in what order |
-| `OVERVIEW.md` | what each figure measures, its formula, its null semantics |
+| `OVERVIEW_PLAN.md` (this file) | what is done, what remains, in what order, what is out of scope, and the traps |
 | `OVERVIEW_INDICATORS.md` | the vocabulary the formulas are written in, and every indicator with its temporal nature, owning module, level and state |
 | `OVERVIEW_LAYOUT.md` | which published field feeds each block, on which endpoint, at which depth |
-| `OVERVIEW_LEVEL3.md` | which entity each domain opens, the field carrying its id, and the screen it lands on |
-| `PLAN_OVERVIEW_CONTRACT.md` | the exact wire shape of the payload — consulted, not read front to back |
-| `OVERVIEW_DECISIONS.md` | why a thing was decided the way it was — consulted |
-| `OVERVIEW_CHART_TECHNIQUE.md` | how a chart is drawn in this module, taken off the one that ships |
+| `PLAN_OVERVIEW_CONTRACT.md` | the exact wire shape of the payload - consulted, not read front to back |
+| `OVERVIEW_DECISIONS.md` | why a thing was decided the way it was, and the rulings frozen for P5 - consulted |
+| `OVERVIEW_CHART_TECHNIQUE.md` | how a chart is drawn in this module - **folds into `OVERVIEW_LAYOUT.md`** |
+| `OVERVIEW_LEVEL3.md` | which entity each domain opens and the field carrying its id - **folds into `OVERVIEW_LAYOUT.md`** |
 
 ### How it looks
 
@@ -220,6 +225,18 @@ sum of pocket targets and the overall pocket progress are refused by Overview
 rather than merely missing from it. Reopening that boundary is the developer's
 call.
 
+### 4.6 What the page owes the reader, and what the payload owes the page
+
+From `OVERVIEW.md` section 2.1, deleted 2026-09-09. Four rules that are not
+restatements of 4.1 to 4.4.
+
+| rule | what it says |
+|---|---|
+| **one request** | the whole page arrives in one response. A component that fetches its own figure fetches one the page already holds |
+| **a card is an entry, not a report** | three to five values. A card that grows a sixth is a screen that has not been designed |
+| **no charts at level 1 — qualified** | the original rule forbade every chart on the page. It was relaxed: the page already carries the six-point series and the category ranking **computed**, and discarding them to fetch them again is the second request rule 4.4 forbids |
+| **whoever computes, publishes** | a figure a repository computes and that never reaches the payload is this module's characteristic failure. Four such figures were found and closed in P3 |
+
 ---
 
 ## 5. What remains
@@ -256,6 +273,55 @@ it sent.** The served window publishes the month actually served, its bounds, an
 whether that month is still running; the label is conditional on that last field,
 because a closed month reads as the month and the current one reads as
 month-to-date.
+
+### The order P5 is built in
+
+One component per commit, each one whole. From `OVERVIEW.md` section 4.
+
+1. **The month picker**, with the conditional label. The control picks a whole
+   month in both cases; the label cannot — a closed month reads as the month, the
+   running month reads as month-to-date, and `isCurrentMonth` is the field that
+   decides which.
+2. **The hero**, with its four position figures and two flow figures, adopting the
+   new hierarchy whole rather than the old triad with a figure bolted on.
+3. **The six cards** — five on a shared component, **investment on its own**. The
+   investment card shares only `domain`, `currency` and `meta` with the other
+   five, so a shared component with exceptions prints undefined in four places.
+4. **The category distribution**, from the page payload, with no `analysis`
+   parameter and no reordering in the client.
+5. **Monthly snapshot, goals and the activity teaser**, all three from the same
+   payload.
+6. **The domain screens**, at `derived` where it suffices and `full` only where
+   there is a ranked breakdown.
+
+**What the sketches show that a ruling has since deleted.** The sketches predate
+the rulings, so none of this is anyone's mistake — it is the cost of the sketches
+being older than the decisions, and it is written here so it is paid once.
+
+| in the sketch | what replaced it |
+|---|---|
+| the cash position defined as bank plus pocket, and the note stating net worth as bank + investment + debt + pocket | the net-worth ruling (D54). The note is flagged in the sketch as a time-base defect; it is a double count as well, and fixing the time base alone would leave a wrong figure under a note saying it was fixed |
+| the pocket total labelled *dinero disponible en pockets* | a pocket is a plan, not a container. The money is in the bank account and is spendable; the word *disponible* states the retired model where a reader will believe it |
+| the flow and position labels written unconditionally | the label is conditional on `isCurrentMonth`. The sketch's own reasoning is right — the control picks a whole month — and its error is narrower than it looks: it conflates what the control selects with what the label says |
+| raw hex values in the sketch blocks | a stylesheet takes a token. Whoever translates a block asks for the missing token rather than carrying the literal across |
+| the hero as the old triad — net worth, cash position, net flow | the hierarchy this plan freezes: what is owned, how much of it is cash, and how much of that cash is unpromised. This is the largest gap, and it is why the hero is redesigned rather than corrected |
+
+### Definition of done, per stage
+
+Section 8 verifies the work as a whole. These are the exit conditions that stop a
+stage being declared finished early.
+
+| stage | does not advance until |
+|---|---|
+| **P1** | a past bank balance and a past investment balance both reconstruct correctly · the investment reconciliation still holds on historical months · the current month is month-to-date and a closed month is the full month |
+| **P2** | Overview's target, allocated, remaining and progress equal the Pocket board's, figure for figure |
+| **P3** | every level-1 indicator has a formula, a temporal nature, an owner, a null semantics and a currency semantics |
+| **P4** | the payload contract is frozen and the contract tests pass |
+| **P5** | the live screen has no remaining dependency on the balance-by-account-type endpoint for any Overview figure |
+| **P6** | every level-2 view reads a figure the level-1 payload already publishes, or an endpoint owned by the domain it belongs to — no second aggregation of rows a card has already summed |
+
+The last one is the point of the whole plan: today that screen makes five
+separate calls to build three figures.
 
 ### The two gaps that are not stage work
 
@@ -383,6 +449,42 @@ three in `PLAN_POCKET/POCKET_MODULE_SPEC.md` and one in
 `PLAN_POCKET/POCKET_DECISIONS.md`. `PLAN_POCKET/` is not this session's folder,
 so the session that owns it was told.
 
+
+### Deleted - the fourth batch, the same content in three files at once
+
+Removed 2026-09-09, immediately after the third, on the developer's reading that
+the folder still held too many files. What decided it was not the count but the
+repetition, measured: the five temporal natures were written in three documents,
+the stage board in three, the out-of-scope list in two, the traps in two, the
+verification table in two, and the open decisions in six.
+
+| file deleted | what only it held | where that lives now |
+|---|---|---|
+| `PLAN_OVERVIEW_RECOVERY.md` | the per-stage exit conditions, the out-of-scope list and the traps | sections 5, 8, 9 and 10 of this file |
+| `OVERVIEW.md` | the three clocks with the served window's field names, the P5 build order, and four render-authority rules | `OVERVIEW_INDICATORS.md` section 1, and sections 4.6 and 5 of this file |
+| `PLAN_OVERVIEW_LEVEL2.md` | the test a candidate level-2 figure has to pass, what level 2 refuses, and the ownership rule | `OVERVIEW_INDICATORS.md` section 9 |
+| `OVERVIEW_P5_FROZEN_DECISIONS.md` | the developer's rulings of 2026-09-08 | `OVERVIEW_DECISIONS.md`, final section |
+
+**Two documents both called themselves the plan of record**, which is the defect
+underneath the count: `OVERVIEW_PLAN.md` said *"this is the single plan for the
+Overview module"* and `PLAN_OVERVIEW_RECOVERY.md` said *"this is the plan of
+record for the Overview module"*, six days apart. A reader following either was
+following a real plan; the two disagreed on which stages were done.
+
+### Scheduled, not yet executed - the last two
+
+`OVERVIEW_CHART_TECHNIQUE.md` and `OVERVIEW_LEVEL3.md` are both render documents
+and both fold into `OVERVIEW_LAYOUT.md`. **They stay until that file is rewritten
+in English**, because deleting a document before its content lands is the failure
+this log exists to prevent. `OVERVIEW_LAYOUT.md` carries the pending note.
+
+**The folder becomes one language with that rewrite.** `OVERVIEW.md` and
+`OVERVIEW_LAYOUT.md` were the castellano pair; the developer ruled on 2026-09-09
+that the surviving set is English, as `CLAUDE.md` requires.
+`PLAN_OVERVIEW_CONTRACT.md` and `OVERVIEW_DECISIONS.md` keep their castellano
+bodies: one is a frozen contract and the other a dated register, and
+retranslating either changes text whose whole value is that it has not changed.
+
 ### Keep
 
 The files of section 2, plus:
@@ -390,12 +492,7 @@ The files of section 2, plus:
 | file | why it stays |
 |---|---|
 | `OVERVIEW_INDICATORS.md` | the indicator reference, written 2026-09-09 |
-| `OVERVIEW_CHART_TECHNIQUE.md` | how a chart is drawn here, taken off the one that ships |
-| `PLAN_OVERVIEW_LEVEL2.md` | the level-2 specification, and level 2 is the stage being built |
-| `OVERVIEW_LEVEL3.md` | the level-3 navigation specification |
-| `OVERVIEW_P5_FROZEN_DECISIONS.md` | the developer's own rulings for the frontend stage |
 | `benchmarking_lookUp/monthly_average_kpi_benchmark.md` | primary research. Its conclusion is inside D14, so nothing needs to open it, and deleting a survey to save one file is poor value |
-| `PLAN_OVERVIEW_RECOVERY.md` | **until its per-stage detail is compared against section 3 here, line by line.** Section 3 is the board; what that file holds beyond it has not been enumerated, and deleting it before that comparison is how a rule gets lost |
 
 **The stage board was duplicated and the copy drifted.** `OVERVIEW.md` section 4
 carried a second board whose contract-stage and level-2 rows both claimed
@@ -407,9 +504,158 @@ one to remove.
 
 ## 8. Verification
 
+### The rules a change is checked against
+
 - No figure enters a sketch without existing in the builder that publishes it.
 - A missing figure renders as a skeleton or a dash, never as `0` or `NaN`.
 - Every colour comes from `var(--token)`; a value with no token is asked for, never invented.
 - The month picker reads the reference month from the response, not from the request.
 - No level-2 figure re-aggregates rows a card already summed.
 - Before deleting a document, its citations from outside this folder are repointed in the same commit.
+
+### The checks each stage was closed on
+
+Merged 2026-09-09 from `PLAN_OVERVIEW_RECOVERY.md` part 5 and `OVERVIEW.md`
+section 9, which held the same table in two languages and disagreed on two rows.
+
+| step | check |
+|---|---|
+| **P1a** | the stored balance against the derived one, per account, **before** editing. Agreement means the change is inert and safe; disagreement is a separate bug |
+| **P1b** | **run 2026-09-06 against the local development database. The binding passes; the identity fails, and not for the reason the row expected.** Fifteen months on the one owner holding investment accounts. The running month comes back identical to the pre-change query, figure for figure, so nothing was bounded away that should not have been. Every month before the first movement holds the identity exactly. The two months carrying movements are short by the same 0.75, and a discrepancy identical in a month that bounds nothing away cannot be a bounding error. Its cause is one annulment row; the finding is in `OVERVIEW_DECISIONS.md` under the heading naming the deleted account |
+| **P2** | the pocket total in Overview equals the board's own total for the same month |
+| **P3 hero** | `netWorth - liquidNetWorth == receivable` wherever both are reported. **This is the single check that catches the inverted payable sign** — get it backwards and it fails immediately instead of producing a plausible wrong number. It is a validation identity and never the production formula: liquid net worth is not derived from net worth |
+| **P3 expense** | **corrected 2026-09-07.** There is no uncategorised field to check. Verify instead that `hasUncategorizedExpense` is true exactly when `totalAmount > categorizedExpense`, on a month that has uncategorised spend and on one that does not |
+| **P3 debt** | the legs the Overview card emits match the legacy endpoint's two directions **in magnitude**, the payable leg differing only in sign |
+| **P4 / P6** | the module's 69 contract tests pass. Run the files explicitly; pointing the runner at the directory makes it load the directory as a module and fail |
+| **P5, per component** | the three fetch states are three — skeleton, error with retry, empty — and no missing figure prints as `0` or `NaN` |
+| **all** | unit probes importing the builders directly, no database, following the pattern used for the savings rate. Boot test `APP LOADED OK` |
+
+---
+
+## 9. Out of scope
+
+From `PLAN_OVERVIEW_RECOVERY.md` part 4, deleted 2026-09-09. Nothing here is
+cancelled. Each item is out of **this plan's** scope, with the reason and the
+place it goes instead.
+
+### 9.1 Out because it already exists elsewhere
+
+| item | where it already lives |
+|---|---|
+| pocket monthly progress, gap against plan, plan adherence, required-by-now | the pocket board — **built and published today**, not future work |
+| required monthly contribution, the plan line, allocation history | the pocket detail screen |
+| total allocated, total target, total remaining as a hero | the pocket board's own hero. Overview shows a summary, not a second board |
+
+### 9.2 Out because it belongs at another level
+
+Accumulations, trends and detailed baselines: accumulated income · capital
+contributed since opening · realised result since opening · the largest position's
+weight · days since the last contribution · debt aging · investment composition ·
+the expense category ranking · six-month charts · full transaction tables · the
+3-month and 12-month averages as cards of their own.
+
+All computable, several already computed. **All level 2.** The rule that puts them
+there: a card may not print a figure whose time base differs from the card's
+without saying so, and "income this month 2,000 / income since January 17,000" on
+one card is two scales pretending to be one.
+
+### 9.3 Out because the data does not exist
+
+**Market value, return percentage, and unrealised gain.** Measured rather than
+assumed: no price, quantity, holding, ticker or market-value column exists
+anywhere in the backend, and the card header already forbids these figures
+(`makeInvestmentCard.js:12-14`). These are **not deferred indicators — they are
+uncomputable** until a valuation source exists. Listing them as backlog would
+imply otherwise.
+
+### 9.4 Out because it is infrastructure this scope does not need
+
+| not building | why |
+|---|---|
+| `account_balance_snapshots` or any balance-history table | the ledger derivation plus the month-end reconstruction already answer every question this plan asks |
+| a generic indicator engine, metric registry runtime, or dashboard framework | the registry is **documentation and contract**, never runtime infrastructure |
+| a new goals domain — service, repository, entity | Pocket is the only goal model. A second one would be the same data twice |
+| a Transfer card | a transfer is a supporting fact, not a financial domain |
+| rebuilding the month parameter | it exists, is validated, and rejects future months |
+| recomputing the category distribution | rank, running total and cumulative share are already computed. Only the renderer is missing |
+
+### 9.5 Out and deferred, pending a real need
+
+- **Pocket year-to-date allocation** — only if a genuinely cross-cutting question
+  justifies it. "How much did I put toward my goals this year?" is a different
+  question from "how is my pocket doing this month?", and only the second has a
+  home today.
+- **A global pocket time series** — level 2 at the earliest.
+- **Calendar-month averages** beside the active-month ones. If ever wanted, it is
+  a **separate indicator with its own name**, never a redefinition of the
+  existing one.
+
+### 9.6 Out, and recorded nowhere before this plan
+
+Named here so the omissions are decisions rather than oversights.
+
+- **The eight zero fallbacks on the live Overview screen.** They violate the rule
+  that a missing figure is a dash and never a zero, and they are real. But that
+  screen is the one this work replaces, so fixing them is effort invested in code
+  slated for deletion. **The rule binds the replacement.** Measured 2026-09-07:
+  they are fixed on both checkouts anyway, and so is the expense guard that tested
+  the income total to decide whether the expense total was a number — the comment
+  at `OverviewLayout.tsx:203-204` describes it in the past tense.
+- **The cleanup migration that migration `020` deferred.** It deliberately left the
+  retired pocket account-type row and the legacy table in place, deferring removal
+  to "a cleanup migration, last". **No such migration exists.** Out of scope here,
+  but it must not be forgotten: after P2 nothing reads that table, which is
+  precisely when the cleanup becomes safe.
+- **The text-prefix fragility in the realised result.** Both realised-result
+  figures exclude account-closure compensations by matching a description prefix
+  built at `recordAnnulmentTransaction.js:40`. A financial definition that depends
+  on a description string breaks the day someone edits that string. One writer
+  against **four** readers — the investment figure, the monthly profit-and-loss
+  figure, and twice in the transaction repository — so a change to that string
+  reclassifies historical money in four places at once. Replacing it with a typed
+  flag is its own work.
+- **Debt aging.** Named in earlier proposals as a level-2 chart. Its semantics have
+  never been defined, and a chart must not be drawn before them.
+- **A dead guard in the deletion service, behind wrong fallback constants.** Those
+  constants (`deleteAccountService.js:94-98`) set the profit-and-loss movement type
+  to 1 — that type is 9, and 1 is expense — and invert deposit and withdraw.
+  Measured on the development database, the fallback is **not** reachable while the
+  catalog is healthy. The defect is the shape: the throw at `:133-141`, written to
+  stop the operation when a catalog row is missing, is raised inside the `try` and
+  caught by the same function's own `catch`, which returns the constants when the
+  cache is null on a cold process — so the guard downgrades the operation to
+  silently wrong ids in exactly the case it exists for. Belongs to the deletion
+  module; recorded here because this module is where it would surface.
+- **Account deletion appeared unable to complete since migration 018.** Read
+  statically, not executed: that migration turned the three account foreign keys on
+  the transactions table to `ON DELETE RESTRICT` and describes a deletion engine
+  that detaches every reference first. Outside this scope, and worth executing once
+  before it is trusted.
+
+---
+
+## 10. Traps already paid for
+
+From `PLAN_OVERVIEW_RECOVERY.md` part 6 and `OVERVIEW.md` section 8, merged
+2026-09-09. Recorded because each one produces **a plausible wrong number** rather
+than an error.
+
+- **The sign trap.** The legacy endpoint emits the payable leg **negative**; the
+  frozen contract declares it a **positive magnitude**. Getting it backwards turns
+  a subtraction into an addition and still looks reasonable. The check that catches
+  it is `netWorth - liquidNetWorth == receivable`.
+- **The Decimal zero trap.** Testing positivity returns true for zero, because the
+  check tests the *sign* and zero is signed positive. The correct guard is a strict
+  greater-than. Documented in the pocket board and in the hero builder.
+- **The reconciliation trap.** Month-bounding one of the three investment
+  statements and not the other two silently converts a passing check into a
+  permanent failure notice.
+- **The floor-before-the-sum trap.** Free cash floors the remainder **per account**
+  before summing. Summing first lets one account's surplus conceal another's
+  shortfall.
+- **The rate granularity trap.** The shared rate helper rounds to two decimals on a
+  0-1 scale — one percentage point of granularity. A rate is for display and must
+  never be used to reconstruct an amount.
+- **The shared-card trap.** Five cards share a shape and the sixth shares **no**
+  base field. A shared component with exceptions prints undefined in four places or
+  throws, and it is the failure shape that survives a review.

@@ -4,6 +4,9 @@
 both stacks, not read from another plan. Where a field is named, it is the
 identifier the payload publishes or the route parameter the screen reads.
 
+**Scheduled to fold into `OVERVIEW_LAYOUT.md` on 2026-09-09.** It stays a
+separate file until that document is rewritten in English.
+
 **This is a P5 document, not a gate.** It specifies navigation wiring. It does
 not sit on the critical path of the stages that fix the figures, and nothing in
 P0 through P4 waits on it.

@@ -1213,7 +1213,8 @@ declaró que no mueven patrimonio.
 
 ## 14. The temporal frame and the ownership boundary
 
-Added 2026-09-06, closing the first stage of `PLAN_OVERVIEW_RECOVERY.md`. Every
+Added 2026-09-06, closing the first stage of the recovery plan, whose board is
+now `OVERVIEW_PLAN.md` section 3. Every
 section above states a **shape** — what a field is called and what type it has.
 This one states the two things a shape cannot carry: **when** a figure is read,
 and **who owns its definition**. Both were implicit until now, and each had

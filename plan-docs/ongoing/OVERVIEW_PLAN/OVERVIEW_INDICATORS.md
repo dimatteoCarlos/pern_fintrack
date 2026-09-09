@@ -13,7 +13,7 @@ from, which module owns that definition, at which level it appears, on which
 endpoint, and whether a person can see it today.
 
 **What it does not answer.** The wire shape is `PLAN_OVERVIEW_CONTRACT.md`; how a
-block is drawn is `OVERVIEW_LAYOUT.md`; why a figure was decided the way it was
+block is drawn, and where a level-2 row navigates to, is `OVERVIEW_LAYOUT.md`; why a figure was decided the way it was
 is `OVERVIEW_DECISIONS.md`; the sequence of work is `OVERVIEW_PLAN.md`.
 
 **The rule this file exists to enforce:** one indicator, one definition, one path.
@@ -85,6 +85,39 @@ choose.
   not. Which of the two a formula uses changes its answer, and the investment
   reconciliation depends on the difference.
 
+### The three clocks, and the window the server publishes
+
+From `OVERVIEW.md` section 3, deleted 2026-09-09. This is the correction the
+original plan received, and every temporal nature below rests on it.
+
+```
+1. REFERENCE DATE    - "what is my position?"  -> the close of the month, or today if the month is running
+2. ANALYSIS PERIOD   - "what happened?"        -> the start of the period -> the reference date
+3. ACTIVITY PERIOD   - "what do I want to read?" -> the reader chooses it, independent of the other two
+```
+
+**A flow never invents the days the month is still missing.** The running month is
+month-to-date, and the screen says so.
+
+**The server always reports the window it used, in named fields**, and the client
+never infers it from its own clock, because the client's clock is not the account
+owner's calendar. The served window publishes the reference month
+(`referenceMonth`), the bounds of the period (`periodStart`, `periodEnd`) and
+whether that month is still running (`isCurrentMonth`).
+
+Two consequences the frontend cannot get from the rule alone:
+
+- **The picker reads the reference month from the RESPONSE**, not from what it
+  sent — a request may name no month at all.
+- **`isCurrentMonth` is the field that decides the conditional label.** Without
+  naming it, the rule that the label changes is stated with no input to read it
+  from.
+
+`periodEnd` is the **reference date** and not the last day of the month: the two
+are equal in a closed month and are not in the running one. The same value reaches
+all six cards from this one object, so a payload cannot name two ends for one
+period.
+
 ---
 
 ## 2. The five temporal natures
@@ -102,9 +135,22 @@ figure whose question has not been settled.
 
 **Trend now has rows, and that is the change since the matrix was written.** It
 recorded that no field carried the trend nature and that nothing had been
-specified for level 2. Both are out of date: `PLAN_OVERVIEW_LEVEL2.md` specifies
-level 2, and the six-point card series and the thirteen-point analysis series are
-served for the domains §9 lists.
+specified for level 2. Both are out of date: §9 specifies level 2, and the
+six-point card series and the thirteen-point analysis series are served for the
+domains it lists.
+
+**The nature belongs to the figure, not to the field name.** `totalAmount` on the
+shared card is **Flow** for income, expense and profit and loss, and **Position**
+for debt and pocket — those two do not sum a period's movements, they declare a
+balance at the close. One name, two natures; a client that assumes the first
+reading for all five misreads two cards.
+
+**The one Accumulation allowed at level 1** is the investment card: capital
+contributed, realised result since opening and days since the last contribution
+are accumulations and they are on the page. It was accepted because that card
+**has no window** and therefore cannot confuse two scales — there is no period to
+label beside the figure.
+
 
 ## 3. The three states
 
@@ -328,6 +374,41 @@ first time. A request naming no analysis gets the level-1 response unchanged.
 
 **An absent analysis section is absent, not null.** A missing key means the
 statement never ran; a null would mean it ran and had no answer.
+
+---
+
+### What makes a figure a level-2 figure
+
+From `PLAN_OVERVIEW_LEVEL2.md`, deleted 2026-09-09.
+
+**Level 1 answers "what is my situation". Level 2 answers "why".** Level 2 is
+entered from one card and is about one domain. It is where a figure becomes a
+series, a total becomes a ranking, and a card's single delta becomes the reason
+for that delta.
+
+**The test a candidate figure has to pass.** Level 2 publishes a figure only when
+the question it answers cannot be asked of a single number. A series, a
+distribution, a ranking, a decomposition into named parts — those are level 2. A
+second total is not, and a figure that belongs on level 2 only because level 1 ran
+out of room belongs on level 1.
+
+**Level 2 is, first and mostly, where Trend becomes a published nature.** A page
+that gives each question one number has nowhere to put a shape.
+
+**What level 2 does not get.**
+
+| refused | why |
+|---|---|
+| a new aggregation of rows a level-1 card already summed | the defect that opened this module was a consolidated figure computed by a second path that disagreed with the detail beside it. A level-2 view that re-sums a card's rows is the same defect at a different altitude |
+| a forecast, a projection or a recommendation | a trend is what happened; an extrapolation is a claim about what will happen, and this module has no model behind such a claim |
+| any market valuation in the investment section | the contract forbids a return percentage and a market value at level 1 because there is no valuation model, and level 2 does not acquire one by being a deeper page |
+| cross-domain analysis | a level-2 view belongs to exactly one domain. "How does my spending relate to my income" is a hero question, and the hero answers it with the net monthly flow and the savings rate |
+
+**Each analysis belongs to the domain that owns the data.** Overview composes and
+does not recalculate: the category ranking is the expense module's, the
+counterparty breakdown is the debt module's, the contribution history is the
+investment module's. Overview's own code publishes them; it does not define them.
+That is an ownership rule, not a folder move.
 
 ---
 

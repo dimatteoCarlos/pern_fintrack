@@ -6,6 +6,9 @@ built and shipped, `TrendCharts.tsx` with its rules in `overview-styles.css`
 written down so the charts still to build come out the same way instead of each
 inventing its own.
 
+**Scheduled to fold into `OVERVIEW_LAYOUT.md` on 2026-09-09.** It stays a
+separate file until that document is rewritten in English.
+
 It is a technique document, not a design document. What a chart looks like is
 decided in the mockups and in `OVERVIEW_DECISIONS.md`. This says how it is made.
 

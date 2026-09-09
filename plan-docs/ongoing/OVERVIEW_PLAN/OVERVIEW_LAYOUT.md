@@ -1,9 +1,15 @@
 # Overview — layout y contrato de render
 
 **Documento único de presentación, escrito el 2026-09-07.** Su compañero es
-`OVERVIEW.md`, que dice qué se mide y por qué. Éste dice **cómo se dibuja**: para
-cada bloque de la pantalla, de qué campo publicado sale, en qué endpoint y a qué
-profundidad, con la forma exacta del payload.
+`OVERVIEW_INDICATORS.md`, que dice qué se mide y por qué. Éste dice **cómo se
+dibuja**: para cada bloque de la pantalla, de qué campo publicado sale, en qué
+endpoint y a qué profundidad, con la forma exacta del payload.
+
+> **Pendiente, fijado el 2026-09-09.** Este archivo pasa a inglés y absorbe
+> `OVERVIEW_CHART_TECHNIQUE.md` (cómo se dibuja un gráfico) y `OVERVIEW_LEVEL3.md`
+> (a qué entidad navega cada fila). Los dos siguen existiendo hasta que su
+> contenido aterrice acá. Es lo último que le falta a la consolidación de la
+> carpeta.
 
 Todo está medido sobre el código de `feat/overview`. Los nombres de campo van en
 inglés porque son identificadores del payload; el texto va en castellano.
