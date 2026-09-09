@@ -12,6 +12,126 @@ other fix · blast radius measured · how it was verified · lesson.
 
 ---
 
+## 2026-09-09 · `e7804cdd` · Three declared lifetimes for one refresh token
+
+**Backend** · group: Backend and Security · severity 🔴
+
+### Symptom
+
+Two, from one theme. The session died whenever the browser closed, even with a
+refresh token good for another week — this is also the mechanism behind the open
+item *the session expires even when a refresh token exists*, which is the same
+defect seen from the user's side. And separately, `refresh_tokens` grew one row
+on every refresh call, forever.
+
+### Mechanism — the lifetimes
+
+Three places declared how long a refresh token lives, and none of them agreed:
+
+| source | value | did it rule? |
+| :--- | :--- | :--- |
+| the signed JWT (`authFn.js:95-98`) | 8.9 days | no — the row killed it 1.9 days earlier |
+| the `refresh_tokens` row (`authController.js:149`, `:287`, `authFn.js:180`) | 7 days | yes, of the two written ones: the endpoint filters `expiration_date > NOW()` (`authRefreshToken.js:42`) |
+| the cookie (`cookieConfig.js:10-15`) | none declared | **in practice yes** — no `maxAge` makes it a session cookie |
+
+### Mechanism — the rotation threshold
+
+```js
+// authRefreshToken.js:81 — already in milliseconds
+const totalLifetime = (decoded.exp - decoded.iat) * 1000;
+// :86 — multiplied by a thousand a second time
+const limitRemLife = (totalLifetime * 1000) / 10;
+// :91 — therefore always true
+if (remainingTime < limitRemLife) { /* rotate */ }
+```
+
+The threshold sat a thousand lifetimes ahead of a remainder that never exceeds
+one, so the token rotated on **every** refresh rather than at 10% remaining life.
+Each rotation revokes a row and inserts another (`authFn.js:164-194`).
+
+### Code
+
+```js
+// backend/src/utils/authUtils/authFn.js — new, the only place the number is written
+export const REFRESH_TOKEN_DAYS = 7;
+export const REFRESH_TOKEN_MS = REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000;
+
+export const refreshTokenExpiryFrom = (from = new Date()) =>
+  new Date(from.getTime() + REFRESH_TOKEN_MS);
+```
+
+```js
+// authFn.js:95-98 — before
+const expiresIn =
+  process.env.NODE_ENV === 'development'
+    ? '8.9d'
+    : '8.9d';
+// after
+const expiresIn = `${REFRESH_TOKEN_DAYS}d`;
+```
+
+```js
+// authFn.js:180 and authController.js:149, :287 — before (three copies)
+const expirationDate = new Date();
+expirationDate.setDate(expirationDate.getDate() + 7);
+// after
+const expirationDate = refreshTokenExpiryFrom();
+```
+
+```js
+// cookieConfig.js:22 — before
+return baseOptions;
+// after
+return { ...baseOptions, maxAge: REFRESH_TOKEN_MS };
+```
+
+```js
+// authRefreshToken.js:86 — before
+const limitRemLife = (totalLifetime * 1000) / 10;
+// after
+const limitRemLife = totalLifetime / 10;
+```
+
+The `clear` branch of `getCookieOptions` deliberately keeps **no** `maxAge`:
+`clearCookie` expires a cookie, it does not renew one.
+
+### Why 7 days and not 8.9
+
+Seven is what the row already enforced, so **no live session is shortened**. The
+1.9 extra days the signature claimed were never reachable. Aligning the other way
+— raising the row to 8.9 — would have lengthened everyone's access without anyone
+deciding to.
+
+### What changes for the user
+
+The session now survives a browser restart for up to 7 days. That is the point of
+the item, and it is not a new policy: the backend had already chosen 7 days when
+it wrote `expiration_date`. The cookie simply stopped contradicting it.
+
+### Verified
+
+`APP LOADED OK` on boot, exit 0. Backend suite: 71 pass, 0 fail. Threshold
+arithmetic checked directly: 700 days before, 0.7 days (16.8 h) after, against a
+7-day lifetime.
+
+### Lesson
+
+**When several layers must agree on one number, the number gets one home and the
+layers read it.** Three literals for one lifetime is not redundancy, it is three
+chances to disagree — and they did, silently, because the shortest one wins
+without raising anything.
+
+**A missing value is a decision too.** The cookie declared no lifetime, which
+reads as *unset* and behaves as *shortest possible*. The bug was not a wrong
+number, it was the absence of one, and absence never shows up in a search for a
+wrong value.
+
+**Check units before trusting an expression that never fires.** `totalLifetime`
+already carried its unit; the second `* 1000` made a comparison that could not
+be false. A branch that is always taken looks exactly like a branch that works.
+
+---
+
 ## 2026-09-09 · `2f641f3a` · A broken token answered 403, not 401
 
 **Backend** · group: Authentication · severity 🔴

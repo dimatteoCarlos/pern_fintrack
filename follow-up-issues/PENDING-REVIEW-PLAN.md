@@ -17,18 +17,16 @@
 | | as the files read on 2026-09-06 | today |
 | :--- | ---: | ---: |
 | total items | 123 | 125 |
-| LISTO | 77 | 81 |
-| **PENDIENTE** | **46** | **44** |
+| LISTO | 77 | 83 |
+| **PENDIENTE** | **46** | **42** |
 
 Three corrections got the count here. The closing totals in the three source
 files had been left at the figures from before `f34f597e`, which closed two
-overview defects without lowering them. Two more items closed on 2026-09-09,
-struck through below. And one defect measured that day was in no list at all —
-the rotation threshold, row 3b.
+overview defects without lowering them. Four items closed on 2026-09-09, struck through below. And one defect measured that day was in no list at all — the rotation threshold, row 3b.
 
-The rows below are every item still marked PENDIENTE, the two struck-through ones
-kept for the record, plus three open findings that sit inside items marked LISTO
-and are therefore not counted anywhere.
+The rows below are every item still marked PENDIENTE, the struck-through ones kept
+for the record, plus three open findings that sit inside items marked LISTO and
+are therefore not counted anywhere.
 
 **How each closed defect was corrected, with the code before and after, why that
 fix was chosen over the alternative, and the lesson it leaves:** `FIXES-LOG.md`,
@@ -51,14 +49,14 @@ the mark states the effect on the user, not the size of the fix.
 
 ---
 
-## P0 — Source-fixable correctness (12 open, 2 closed)
+## P0 — Source-fixable correctness (10 open, 4 closed)
 
 | # | item | where | sev |
 | :-- | :--- | :--- | :-- |
 | ~~1~~ | ~~A `NULL` column makes the whole account uneditable (E-1)~~ — **RESOLVED 2026-09-09** (`36353a96`). Normalised at load, not in the schemas. Code and lesson in `FIXES-LOG.md` | `editionAccount/EditAccount.tsx:251` | 🔴 |
 | ~~2~~ | ~~A forbidden response does not end the session~~ — **RESOLVED 2026-09-09** (`2f641f3a`), and **not by the fix this row proposed**: the three broken-token statuses moved to 401 in the backend; widening the client to 403 would have signed out anyone mistyping their current password. Code and lesson in `FIXES-LOG.md` | `authMiddleware.js:21-25`, `:110-113` | 🔴 |
-| 3 | The refresh cookie is written with no lifetime, so it dies when the browser closes while the token inside it is signed for 8.9 days. Three sources declare three lifetimes for the same token — the JWT 8.9 days, the database row 7, the cookie none — and the row rules, because the endpoint filters `expiration_date > NOW()` (`authRefreshToken.js:42`) | `authUtils/cookieConfig.js:8-23`; `authFn.js:95-98`, `:180`; `authController.js:149`, `:287` | 🔴 |
-| 3b | **NEW 2026-09-09, in no backlog** — the rotation threshold carries a factor of one thousand too many, so the refresh token rotates on **every** refresh instead of at 10% remaining life. The total lifetime is already in milliseconds at `:81` and `:86` multiplies it by a thousand again, so the comparison at `:91` is always true. Each rotation revokes one row and inserts another (`authFn.js:164-194`), so `refresh_tokens` grows one row per refresh, unbounded | `authRefreshToken.js:81,86,91` | 🔴 |
+| ~~3~~ | ~~Three sources declared three lifetimes for one refresh token, and the cookie declared none~~ — **RESOLVED 2026-09-09** (`e7804cdd`). `REFRESH_TOKEN_DAYS` is now the only place the number is written; the signature, the row and the cookie read it, and the cookie gained a `maxAge`. Code and lesson in `FIXES-LOG.md` | `authFn.js`; `cookieConfig.js:22` | 🔴 |
+| ~~3b~~ | ~~The rotation threshold carried a factor of one thousand too many, so the token rotated on every refresh~~ — **RESOLVED 2026-09-09** (`e7804cdd`), found while measuring row 3 and present in no backlog. Threshold now 16.8 h of a 7-day life | `authRefreshToken.js:86` | 🔴 |
 | 4 | The money formatter's default currency is written upper case against an all-lower-case catalog, so the lookup returns `undefined` and the number formatter falls back silently to the machine's locale | `helpers/functions.ts:39`; `helpers/currencyConstants.ts:22-58` | 🔴 |
 | 5 | The role ladder, the admin guard and the authorization factory all exist and no route file imports any of them; every guarded route uses only token verification or ownership | `auth_api/middlewares/authMiddleware.js:228-294` | 🟡 |
 | 6 | The currency join is commented out for bank, investment and income-source accounts in the read endpoint, so any view reading a bank account's currency from it gets `undefined` (E-11) | `accountEditController.js:309-313` | 🟡 |
@@ -77,7 +75,7 @@ the mark states the effect on the user, not the size of the fix.
 | 14 | No type parser is registered anywhere in `backend/src`, so the driver default applies and `numeric` arrives as a string. **Gates the profit-percentage residue below** | Read the column types and decide whether the string is wanted, since the money arithmetic uses a decimal library that prefers it | 🔴 |
 | 15 | An expense account name over 25 characters warns and still creates the account with a blank category | Submit the over-length name and read the created row | 🔴 |
 | 16 | The transfer-between-accounts timestamp is four hours ahead of the moment the transfer was made | Read a stored row and compare its timestamp with the real moment | 🟡 |
-| 17 | The session expires even though a refresh token exists. Mechanism measured (item 3), symptom not | Close the browser, reopen it, confirm the session is gone while the token is still valid | 🟡 |
+| 17 | The session expires even though a refresh token exists. **Mechanism fixed 2026-09-09** (`e7804cdd`): the cookie now carries a 7-day `maxAge`. Open only on the check | Close the browser, reopen it, confirm the session is now kept | 🟡 |
 | 18 | The initial-amount error on an account with no transactions | Create an account with no transactions and read the screen | 🟡 |
 | 19 | Validation messages in the new-account form do not clear | Fill the form, trip a validation error, change the account type, see whether the message clears | 🟡 |
 | 20 | Toast messages and variables are not reset after a form submits. The mutation hook itself is sound — it drops the loading flag in its `finally` and exposes a reset that clears data, error and failure together (`hooks/useFetchLoad.ts:137-151`) | Form by form | 🟡 |

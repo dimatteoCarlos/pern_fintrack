@@ -22,7 +22,7 @@
 > El cerco de código que envolvía este archivo entero se retiró: era un bloque
 > abierto que rompía el resaltado de todo el documento y anulaba las casillas.
 
-**Total: 125 elementos — 81 LISTO, 44 PENDIENTE.**
+**Total: 125 elementos — 83 LISTO, 42 PENDIENTE.**
 
 > **Cómo se corrigió cada defecto, con el código.** Las entradas de este archivo
 > dicen qué quedó resuelto y con qué prueba. El código antes y después, el
@@ -50,8 +50,8 @@
 
 ### 🔄 PENDIENTE (4/16)
 
-- [ ] Investigate why the session expires even when a refresh token exists — **mecanismo medido, síntoma no**: la cookie de refresco se escribe sin vida útil (`backend/src/utils/authUtils/cookieConfig.js:10-15`) y el token dentro vale 8.9 días (`authFn.js:95-98`). Falta comprobarlo en navegador
-- [ ] Define how to keep the user signed in while the refresh token remains valid — bloqueado por la misma cookie sin vida útil y por una decisión de producto
+- [ ] Investigate why the session expires even when a refresh token exists — **el mecanismo quedó corregido el 2026-09-09** (`e7804cdd`): la cookie lleva ahora `maxAge` de 7 días, la misma vida que la firma y la fila. **Sigue abierto por la comprobación humana**: cerrar el navegador, reabrirlo y confirmar que la sesión se conserva
+- [ ] Define how to keep the user signed in while the refresh token remains valid — **ya no está bloqueado por la cookie**, que desde `e7804cdd` dura 7 días; queda sólo la decisión de producto sobre cuánto debe durar el recuerdo
 - [ ] Define and apply an authorization roles scheme — **definido y nunca aplicado**: escalera de roles, guardia de administrador y fábrica de autorización existen (`backend/src/auth_api/middlewares/authMiddleware.js:228-294`) y ningún archivo de rutas los importa
 - [ ] Gestión de múltiples sesiones: del mismo usuario, de varios usuarios, y del mismo usuario en varios dispositivos — decisión de diseño nunca tomada
 
@@ -59,17 +59,17 @@
 
 ## ⚙️ Backend and Security
 
-### ✅ LISTO (4/8)
+### ✅ LISTO (6/8)
 
+- [x] **RESUELTO 2026-09-09** (`e7804cdd`) — reglas de duración de cookies y tokens: tres fuentes declaraban tres vidas para el mismo refresh token, la firma 8.9 días, la fila 7 y la cookie ninguna. `REFRESH_TOKEN_DAYS` en `utils/authUtils/authFn.js` es ahora el único sitio donde se escribe el número, y la firma, la fila y la cookie lo leen; la cookie estrena `maxAge`, así que la sesión sobrevive al cierre del navegador. Se eligió 7 porque es lo que la fila ya imponía: no acorta ninguna sesión viva
+- [x] **RESUELTO 2026-09-09** (`e7804cdd`) — el umbral de rotación llevaba un factor mil de más (`authRefreshToken.js:86`), así que el token rotaba en cada refresco e insertaba una fila por llamada. El umbral queda en 16.8 horas de una vida de 7 días
 - [x] Verify user authentication and userId access control before allowing main app functions
 - [x] Adjust the backend so transaction searches prioritize account_id instead of account_name
 - [x] Minimize backend console.logs
 - [x] **NUEVO 2026-09-06** — estrategia multimoneda: una sola moneda contable almacenada y seis aceptadas en el borde, declaradas en el servidor (`fx_services/core/fxConfig.js:40`) y espejadas en el cliente (`helpers/currencyConstants.ts:22-29`)
 
-### 🔄 PENDIENTE (4/8)
+### 🔄 PENDIENTE (2/8)
 
-- [ ] Organize cookie and token duration rules — el ayudante de cookie no fija vida útil alguna (`utils/authUtils/cookieConfig.js:8-23`) y las duraciones viven en cuatro sitios con comentarios que contradicen sus valores (`authFn.js:59-62`, `:95-98`, `authController.js:192`, `:335`, `authRefreshToken.js:112`). **Ampliado 2026-09-09, no es elemento aparte:** tres fuentes declaran tres vidas para el mismo refresh token — el JWT 8.9 días (`authFn.js:95-98`), la fila de base de datos 7 (`authController.js:149`, `:287`, `authFn.js:180`) y la cookie ninguna; manda la fila, porque el endpoint filtra `expiration_date > NOW()` (`authRefreshToken.js:42`), y por encima manda la cookie, que muere al cerrar el navegador
-- [ ] **NUEVO 2026-09-09** — el umbral de rotación del refresh token lleva un factor mil de más, así que el token rota en cada refresco: la vida total ya viene en milisegundos (`authRefreshToken.js:81`) y el umbral la multiplica por mil otra vez (`:86`), de modo que la comparación de `:91` es siempre verdadera. Cada rotación revoca una fila e inserta otra (`authFn.js:164-194`), así que `refresh_tokens` crece una fila por refresco, sin tope
 - [ ] Review how numeric amounts are stored and why some values are returned as strings — **no hay ningún analizador de tipos registrado en `backend/src`**, así que rige el predeterminado del controlador. Falta leer la base de datos
 - [ ] Review the timestamp offset issue in transfer-between-accounts transactions — falta leer una fila almacenada y compararla con el momento real
 
@@ -362,7 +362,7 @@ Ninguno.
 | grupo | total | LISTO | PENDIENTE |
 | :--- | ---: | ---: | ---: |
 | Authentication | 16 | 12 | 4 |
-| Backend and Security | 8 | 4 | 4 |
+| Backend and Security | 8 | 6 | 2 |
 | General | 4 | 2 | 2 |
 | Transfer | 7 | 6 | 1 |
 | Pocket Detail and Category Budget Detail | 2 | 2 | 0 |
@@ -379,4 +379,4 @@ Ninguno.
 | Toasts and Notifications | 1 | 1 | 0 |
 | Database and Time | 2 | 2 | 0 |
 | Resolved by Design Decision | 10 | 10 | 0 |
-| **TOTAL** | **125** | **81** | **44** |
+| **TOTAL** | **125** | **83** | **42** |

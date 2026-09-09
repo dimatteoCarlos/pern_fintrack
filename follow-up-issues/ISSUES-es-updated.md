@@ -29,7 +29,7 @@ TÓPICOS LISTOS, PENDIENTES Y CONSULTAS AL CLIENTE
 >
 > Los conteos por grupo están en `summary-issues.md` y la misma lista en inglés
 > en `issues-en.md`. Los tres archivos cuentan lo mismo a esta fecha:
-> **125 elementos — 81 LISTO, 44 PENDIENTE.**
+> **125 elementos — 83 LISTO, 42 PENDIENTE.**
 >
 > **Cómo se corrigió cada defecto, con el código.** Las entradas de abajo dicen
 > qué quedó resuelto y con qué prueba. El código antes y después, el razonamiento
@@ -61,9 +61,9 @@ Validar el monto target en linea al crear una cuenta pocket. LISTO.
 
 Verificar auth refresh token y la logica de refresh toekn automatico.LISTO.
 
-Porque expira la sesion, si existe un refresh token, que deberia estar actualizado?. PENDIENTE. **El mecanismo ya esta medido, el sintoma no.** La cookie de refresco se escribe sin vida util: ni `maxAge` ni `expires` (`backend/src/utils/authUtils/cookieConfig.js:10-15`), asi que es una cookie de sesion y muere al cerrar el navegador, mientras el token que lleva dentro esta firmado por 8.9 dias (`backend/src/utils/authUtils/authFn.js:95-98`). Falta la comprobacion humana: cerrar el navegador, reabrirlo y confirmar que la sesion se perdio con el token todavia vigente.
+Porque expira la sesion, si existe un refresh token, que deberia estar actualizado?. PENDIENTE. **El mecanismo quedó corregido el 2026-09-09** (`e7804cdd`): la cookie de refresco se escribía sin vida útil, ni `maxAge` ni `expires`, así que era una cookie de sesión y moría al cerrar el navegador mientras el token que llevaba dentro seguía vigente; ahora lleva `maxAge` de 7 días, la misma vida que declaran la firma y la fila. **Sigue abierto por la comprobación humana:** cerrar el navegador, reabrirlo y confirmar que la sesión ahora se conserva.
 
-Como hacer para recordar al usuario y mantenerlo activo mientras refresh token este vigente. Verificar si esto es deseable. PENDIENTE. Bloqueado por la misma cookie sin vida util del punto anterior, y por una decision de producto sobre cuanto debe durar el recuerdo.
+Como hacer para recordar al usuario y mantenerlo activo mientras refresh token este vigente. Verificar si esto es deseable. PENDIENTE. **Ya no está bloqueado por la cookie**, que desde `e7804cdd` dura 7 días; queda sólo la decision de producto sobre cuanto debe durar el recuerdo.
 
 Definir y aplicar un esquema de roles de autorizacion. PENDIENTE. **Definido y nunca aplicado.** La escalera de roles, el guardia de administrador y la fabrica de autorizacion dinamica existen los tres (`backend/src/auth_api/middlewares/authMiddleware.js:228-294`) y **ningun archivo de rutas importa alguno de ellos**: cada ruta protegida usa solo verificacion de token o de propiedad.
 
@@ -113,29 +113,33 @@ rechazo del refresco, sin mirar el código de estado.
 ---
 
 BACKEND
-Organizar la asignacion de la duracion de cookies y tokens. PENDIENTE. El ayudante de cookie fija banderas pero **ninguna vida util** (`backend/src/utils/authUtils/cookieConfig.js:8-23`), y las duraciones viven en cuatro sitios cuyos comentarios contradicen sus valores: token de acceso de 1h (`backend/src/utils/authUtils/authFn.js:59-62`), token de refresco de 8.9d (`:95-98`), y un campo de respuesta de 3600 segundos rotulado *60 minutos* en un endpoint (`backend/src/auth_api/controllers/authController.js:192`) y *15 minutos* en otros dos (`:335`, `backend/src/auth_api/controllers/authRefreshToken.js:112`).
+Organizar la asignacion de la duracion de cookies y tokens. **LISTO 2026-09-09**
+(`e7804cdd`). Tres fuentes declaraban tres duraciones para el mismo refresh token:
+la firma decía 8.9 días (`utils/authUtils/authFn.js:95-98`), la fila de base de
+datos caducaba a los 7 (`authController.js:149`, `:287`, `authFn.js:180`) y la
+cookie no declaraba ninguna (`utils/authUtils/cookieConfig.js:8-23`), lo que la
+convertía en cookie de sesión y la mataba al cerrar el navegador.
+`REFRESH_TOKEN_DAYS` en `utils/authUtils/authFn.js` es ahora el único sitio donde
+se escribe ese número, y la firma, la fila y la cookie lo leen; la cookie estrena
+`maxAge`. **Se eligió 7 porque es lo que la fila ya imponía** —el endpoint filtra
+`expiration_date > NOW()` (`authRefreshToken.js:42`)—, así que no se acorta
+ninguna sesión viva y los 1.9 días extra que reclamaba la firma nunca fueron
+alcanzables. Los tres comentarios de respuesta que decían *60 minutos* en un
+endpoint y *15 minutos* en otros dos sobre el mismo 3600 quedaron corregidos: el
+valor estaba bien y el cliente nunca lo relee, porque `tokenExpiry` se escribe
+(`useAuth.ts:277-279`) y sólo se borra (`invalidateSession.ts:34`,
+`logoutCleanup.ts:37`). El código y la lección están en `FIXES-LOG.md`.
 
-**NUEVO 2026-09-09 — El umbral de rotación del refresh token lleva un factor mil
-de más, así que el token rota en cada refresco.** PENDIENTE. La vida total ya
-viene en milisegundos (`authRefreshToken.js:81`) y el umbral la vuelve a
-multiplicar por mil (`:86`), de modo que `limitRemLife` queda en 890 días
-expresados en milisegundos contra un `remainingTime` que nunca pasa de 8.9 días:
-la comparación de `:91` es siempre verdadera. El comentario declara un umbral del
-10% de vida restante que nunca se aplica. Cada rotación revoca una fila e inserta
-otra (`utils/authUtils/authFn.js:164-194`), así que `refresh_tokens` crece una
-fila por llamada al refresco, sin tope. Se midió leyendo el punto anterior, no
-estaba en esta lista.
-
-**Ampliación del punto anterior, medida el 2026-09-09 — no es un elemento aparte.**
-Tres fuentes declaran tres duraciones para el mismo refresh token, y el punto de
-arriba sólo nombraba dos de ellas.
-El JWT se firma por 8.9 días (`utils/authUtils/authFn.js:95-98`),
-la fila de base de datos caduca a los 7 (`authController.js:149`, `:287`,
-`authFn.js:180`) y la cookie no declara ninguna (`utils/authUtils/cookieConfig.js:10-15`).
-Manda la más corta de las dos escritas —los 7 días, porque el endpoint filtra
-`expiration_date > NOW()` (`authRefreshToken.js:42`)— y por encima de todas manda
-la cookie, que muere al cerrar el navegador. Es el mismo mecanismo que el punto de
-la sesión que expira con refresh token vigente, contado desde el otro lado.
+**El umbral de rotación del refresh token llevaba un factor mil de más, así que el
+token rotaba en cada refresco.** **LISTO 2026-09-09** (`e7804cdd`). La vida total
+ya viene en milisegundos (`authRefreshToken.js:81`) y el umbral la volvía a
+multiplicar por mil (`:86`), dejándolo mil vidas por delante de un remanente que
+nunca pasa de una: la comparación de `:91` era siempre verdadera y el umbral del
+10% de vida restante que declara el comentario nunca se aplicaba. Cada rotación
+revoca una fila e inserta otra (`utils/authUtils/authFn.js:164-194`), así que
+`refresh_tokens` crecía una fila por llamada al refresco, sin tope. El umbral
+queda en 16.8 horas de una vida de 7 días. Se midió leyendo el punto anterior y no
+estaba en ninguna lista.
 
 GENERAL
 
@@ -784,6 +788,6 @@ de una cuenta bancaria obtiene `undefined`.
 
 # RECUENTO AL CIERRE DE LA PASADA DEL 2026-09-06
 
-**125 elementos — 81 LISTO, 44 PENDIENTE.** El desglose por grupo está en
+**125 elementos — 83 LISTO, 42 PENDIENTE.** El desglose por grupo está en
 `summary-issues.md`, que debe coincidir línea por línea con `issues-en.md` y con
 este archivo.
