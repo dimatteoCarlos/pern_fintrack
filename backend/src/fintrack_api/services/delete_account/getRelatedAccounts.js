@@ -33,6 +33,19 @@ import { TARGET_ACCOUNT_TRANSACTIONS_CTE } from './getAnnulmentImpactReport.js';
  * is true before any method is picked and stays true after the close. Nothing
  * about it changes when the account is closed.
  *
+ * WHAT THE INTERACTIONS WERE, NOT ONLY HOW MANY. A count alone leaves the
+ * owner to guess why an account is in the list, and the guess is wrong for the
+ * compensation account: it is there because opening a funded account brings the
+ * money in from outside the application and that arrival is recorded against
+ * it, not because the close is about to post anything. `movementBreakdown`
+ * names the movement types behind the count, so the row says what it is.
+ *
+ * IT IS THE SAME ROWS, GROUPED ONE LEVEL DEEPER. The breakdown counts sum to
+ * `interaction_count` by construction - both are counts over
+ * TargetAccountTransactions, one grouped by counterparty and the other by
+ * counterparty and movement type - so the two figures in the cell can never
+ * disagree.
+ *
  * ITS SIGN IS READ FROM THE TARGET. The shared CTE selects `tr.amount` off the
  * target's own rows, so a positive total is what the target received net from
  * that counterparty and a negative one is what it sent. The counterparty's own
@@ -58,11 +71,34 @@ import { TARGET_ACCOUNT_TRANSACTIONS_CTE } from './getAnnulmentImpactReport.js';
  * @param {number} targetAccountId
  * @returns {Promise<Array<{accountId: number, accountName: string,
  *   accountTypeName: string, interactionCount: number, netAmount: number,
+ *   movementBreakdown: Array<{movementTypeName: string, count: number}>,
  *   lastInteractionDate: string}>>} ordered by interaction count, descending
  */
 export const getRelatedAccounts = async (dbClient, userId, targetAccountId) => {
  const relatedQuery = `
-${TARGET_ACCOUNT_TRANSACTIONS_CTE}
+${TARGET_ACCOUNT_TRANSACTIONS_CTE},
+
+ -- THE SAME ROWS, GROUPED ONE LEVEL DEEPER. Counted here per counterparty AND
+ -- movement type, then folded back onto the counterparty by the subquery
+ -- below, so the parts always sum to the interaction_count beside them.
+ MovementBreakdown AS
+ (
+  SELECT
+   tat.affected_account_id,
+   mt.movement_type_name,
+   COUNT(*)::int AS movement_count
+
+  FROM TargetAccountTransactions tat
+
+  -- Inner, and safe: transactions.movement_type_id is INTEGER NOT NULL with a
+  -- foreign key into movement_types, so every row has exactly one match.
+  JOIN
+   movement_types mt ON mt.movement_type_id = tat.movement_type_id
+
+  GROUP BY
+   tat.affected_account_id, mt.movement_type_name
+ )
+
  SELECT
   tat.affected_account_id,
   ua.account_name,
@@ -72,7 +108,28 @@ ${TARGET_ACCOUNT_TRANSACTIONS_CTE}
   -- than NUMERIC to match every other amount this module returns; the column
   -- is rendered to two decimals and never summed again downstream.
   SUM(tat.amount)::float AS net_amount,
-  MAX(tat.transaction_actual_date) AS last_interaction_date
+  MAX(tat.transaction_actual_date) AS last_interaction_date,
+
+  -- WHICH MOVEMENTS THOSE INTERACTIONS WERE. A correlated aggregate rather
+  -- than a second GROUP BY level, because the row this select produces is one
+  -- per counterparty and the breakdown is a detail of that row, not a
+  -- different grain. json_agg over an empty set returns NULL, which cannot
+  -- happen here - a counterparty only exists in this list because it has at
+  -- least one row - and is coalesced anyway so the field is always an array.
+  COALESCE(
+   (
+    SELECT json_agg(
+     json_build_object(
+      'movementTypeName', mb.movement_type_name,
+      'count', mb.movement_count
+     )
+     ORDER BY mb.movement_count DESC, mb.movement_type_name ASC
+    )
+    FROM MovementBreakdown mb
+    WHERE mb.affected_account_id = tat.affected_account_id
+   ),
+   '[]'::json
+  ) AS movement_breakdown
 
  FROM TargetAccountTransactions tat
 
@@ -106,6 +163,7 @@ ${TARGET_ACCOUNT_TRANSACTIONS_CTE}
   accountTypeName: row.account_type_name,
   interactionCount: row.interaction_count,
   netAmount: row.net_amount,
+  movementBreakdown: row.movement_breakdown,
   lastInteractionDate: row.last_interaction_date,
  }));
 };

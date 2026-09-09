@@ -41,6 +41,17 @@ export type ImpactReportRowType = {
 // Balance is absent deliberately, on the owner's decision of 2026-09-08: the
 // current balance of an account this one once transacted with has no causal
 // link to the close, and showing it beside one implies there is.
+// One movement type behind a counterparty's interaction count, and how many
+// of that counterparty's interactions it accounts for. The counts of a row's
+// entries sum to its interactionCount: both are counts over the same rows,
+// grouped one level apart on the server.
+export type MovementBreakdownEntryType = {
+  // The catalog name as movement_types holds it - 'account-opening', 'expense'.
+  // Not a label: the dictionary turns it into one at render time.
+  movementTypeName: string;
+  count: number;
+};
+
 export type RelatedAccountRowType = {
   accountId: number;
   accountName: string;
@@ -51,6 +62,10 @@ export type RelatedAccountRowType = {
   // what the two accounts have already moved between them, not what closing
   // will move. Closing changes it by nothing.
   netAmount: number;
+  // WHY THIS ACCOUNT IS IN THE LIST, in the words the catalog uses. The count
+  // beside it says how often the two accounts met; this says what those
+  // meetings were. Ordered by the server, most frequent movement type first.
+  movementBreakdown: MovementBreakdownEntryType[];
   // TIMESTAMPTZ folded by MAX() on the server, so it reaches here as an ISO
   // instant and is formatted in the reader's own zone, not in UTC. The UTC
   // calendar day and the owner's disagree for any movement recorded late in

@@ -3907,3 +3907,47 @@ column and the derivation read 17.42, measured on `fintrack_dev` for account
   `String(fundedId)` inside a savepoint and requires the two reversal legs: 26
   assertions, none failing, everything rolled back.
 
+### 14.12 The related-accounts list says what each interaction was, 2026-09-09
+
+The owner read the close screen's table and worked out for himself why the
+compensation account was in it: opening a funded account brings the money in
+from outside the application, and that arrival is recorded against `slack`. The
+table could not say so - it published a count and a date, and a count does not
+distinguish an opening from an expense.
+
+- **The shared CTE now carries the movement type.**
+  `TARGET_ACCOUNT_TRANSACTIONS_CTE` in `getAnnulmentImpactReport.js` selects
+  `tr.movement_type_id` beside the amount and the date. It reaches no other
+  consumer: both the impact report and the unattributed total name their
+  columns explicitly.
+- **`getRelatedAccounts.js` groups the same rows one level deeper.** A
+  `MovementBreakdown` CTE counts per counterparty AND movement type, and a
+  correlated `json_agg` folds it back onto the counterparty row as
+  `movement_breakdown`, ordered by count descending. The parts sum to the
+  `interaction_count` beside them by construction - both are counts over the
+  same rows - so the cell cannot show a total its own detail contradicts.
+- **The join to `movement_types` is inner and cannot lose a row.**
+  `transactions.movement_type_id` is `INTEGER NOT NULL` with a foreign key into
+  that catalog (`003_transactions.sql:24-25`).
+- **The interactions cell carries the breakdown as a visible second line, not
+  as a tooltip.** A tooltip is invisible to a touch screen and to a keyboard,
+  and this is the answer to the question the row raises rather than an
+  ornament. A single-entry breakdown states only the movement - "Account
+  opening" - because the count is already the figure above it.
+- **Eleven movement labels reach the dictionary in both languages,
+  prefixed.** `movement_account_opening`, `movement_expense`, and so on.
+  Prefixed because `investment` is both an account type and a movement type and
+  `languages.ts` is one flat record: a shared entry would make renaming either
+  label silently rename the other. A catalog name with no entry renders as the
+  name the database holds, never as the key.
+- **`verifyRelatedAccounts.js` is new, and is the first probe that reads this
+  query at all.** It fabricates a target and two counterparties inside a
+  transaction, writes movements with known answers, and asserts the count, the
+  net, the breakdown's contents and order, and that the parts sum to the whole:
+  9 assertions, all passing, everything rolled back. Verified failing by
+  changing one probe row's movement type before restoring it.
+
+Measured on `fintrack_dev` for account 109: `slack` now reads
+`account-opening`, the two category accounts read `expense`, the investment
+account reads `transfer` and the debtor reads `debt`.
+
