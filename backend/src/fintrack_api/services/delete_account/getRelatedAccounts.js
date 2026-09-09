@@ -25,6 +25,20 @@ import { TARGET_ACCOUNT_TRANSACTIONS_CTE } from './getAnnulmentImpactReport.js';
  * counterparties can appear. A second level would need a different query, not a
  * flag on this one.
  *
+ * THE NET AMOUNT IS HISTORY, NOT A PROJECTION, and that is why it comes back
+ * although the report's three money columns did not. `net_adjustment_amount`
+ * in the report is the same SUM over the same rows, but it is published there
+ * as what annulling this account WOULD apply to the counterparty. Here the
+ * figure answers what the two accounts have already moved between them, which
+ * is true before any method is picked and stays true after the close. Nothing
+ * about it changes when the account is closed.
+ *
+ * ITS SIGN IS READ FROM THE TARGET. The shared CTE selects `tr.amount` off the
+ * target's own rows, so a positive total is what the target received net from
+ * that counterparty and a negative one is what it sent. The counterparty's own
+ * rows are not read at all, so this is not the counterparty's balance movement
+ * and must not be labelled as one.
+ *
  * WHAT THIS LIST DOES NOT CONTAIN, deliberately. The compensation account
  * appears here only if the target genuinely transacted with it, which a funded
  * opening does. It is never added because the reversal will be posted against
@@ -43,7 +57,7 @@ import { TARGET_ACCOUNT_TRANSACTIONS_CTE } from './getAnnulmentImpactReport.js';
  * @param {number} userId
  * @param {number} targetAccountId
  * @returns {Promise<Array<{accountId: number, accountName: string,
- *   accountTypeName: string, interactionCount: number,
+ *   accountTypeName: string, interactionCount: number, netAmount: number,
  *   lastInteractionDate: string}>>} ordered by interaction count, descending
  */
 export const getRelatedAccounts = async (dbClient, userId, targetAccountId) => {
@@ -54,6 +68,10 @@ ${TARGET_ACCOUNT_TRANSACTIONS_CTE}
   ua.account_name,
   acctype.account_type_name,
   COUNT(*)::int AS interaction_count,
+  -- The target's own signed amounts, netted per counterparty. FLOAT rather
+  -- than NUMERIC to match every other amount this module returns; the column
+  -- is rendered to two decimals and never summed again downstream.
+  SUM(tat.amount)::float AS net_amount,
   MAX(tat.transaction_actual_date) AS last_interaction_date
 
  FROM TargetAccountTransactions tat
@@ -87,6 +105,7 @@ ${TARGET_ACCOUNT_TRANSACTIONS_CTE}
   accountName: row.account_name,
   accountTypeName: row.account_type_name,
   interactionCount: row.interaction_count,
+  netAmount: row.net_amount,
   lastInteractionDate: row.last_interaction_date,
  }));
 };

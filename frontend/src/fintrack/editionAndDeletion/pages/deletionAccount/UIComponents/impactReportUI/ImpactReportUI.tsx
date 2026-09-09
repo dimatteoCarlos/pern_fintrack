@@ -51,6 +51,11 @@ type ImpactReportUIPropsType = {
   //
   // Defaults to true, so every existing caller keeps the report it had.
   isProjectionShown?: boolean;
+  // The code the net-moved column is denominated in. It is the TARGET's, not
+  // each row's: the figure is summed off the target's own rows, so labelling
+  // it with the counterparty's code would name a currency the sum was never
+  // taken in. Absent renders the amount with no code rather than a wrong one.
+  targetAccountCurrency?: string;
   // language?:LanguageKeyType;
   t: (key: keyof DictionaryDataType) => string;
 };
@@ -84,6 +89,7 @@ const ImpactReportUI = ({
   unattributedAmount,
   unattributedTransactionCount,
   isProjectionShown = true,
+  targetAccountCurrency,
   t,
 }: ImpactReportUIPropsType) => {
   // The total is read, not summed here. A reduce over report is short by
@@ -154,6 +160,7 @@ const ImpactReportUI = ({
               {isProjectionShown && <th>{t('netAdjustmentColumn')}</th>}
               <th>{t('affectedAccountTypeColumn')}</th>
               {!isProjectionShown && <th>{t('interactionsColumn')}</th>}
+              {!isProjectionShown && <th>{t('netMovedColumn')}</th>}
               {!isProjectionShown && <th>{t('lastInteractionColumn')}</th>}
             </tr>
           </thead>
@@ -202,6 +209,22 @@ const ImpactReportUI = ({
 
                     <td className='interaction-count'>
                       {row.interactionCount}
+                    </td>
+
+                    {/* Zero takes neither colour. It is a real answer here -
+                        two accounts that moved money both ways in equal
+                        measure - and painting it green would read as a gain. */}
+                    <td
+                      className={`net-moved${
+                        row.netAmount > 0
+                          ? ' positive'
+                          : row.netAmount < 0
+                            ? ' negative'
+                            : ''
+                      }`}
+                    >
+                      {row.netAmount.toFixed(2)}
+                      {targetAccountCurrency ? ` ${targetAccountCurrency}` : ''}
                     </td>
 
                     <td className='last-interaction'>

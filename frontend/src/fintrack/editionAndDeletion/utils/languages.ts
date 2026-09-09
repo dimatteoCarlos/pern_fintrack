@@ -95,7 +95,10 @@ reportTitleWithImpact:string;
  netAdjustmentColumn: string;
  newBalanceColumn: string;
  tableOfRelatedAccountsDetails: string;
+ backButtonText: string;
+ backWithoutClosingLabel: string;
  interactionsColumn: string;
+ netMovedColumn: string;
  lastInteractionColumn: string;
  totalNetAdjustment: string; 
  unattributedAmount: string;
@@ -314,7 +317,10 @@ reportTitleWithImpact:"Impact on Affected Accounts",
  netAdjustmentColumn: 'Net Adjustment',
  newBalanceColumn: 'New Balance',
  tableOfRelatedAccountsDetails: 'Accounts this one has operated with',
+ backButtonText: 'Back',
+ backWithoutClosingLabel: 'Back, without closing this account',
  interactionsColumn: 'Interactions',
+ netMovedColumn: 'Net Moved',
  lastInteractionColumn: 'Last Interaction',
  totalNetAdjustment: 'Total Net Adjustment:',
  unattributedAmount: 'Not attributable to any account:',
@@ -389,8 +395,8 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   closeAccountReverseTitle: "Reverse the Balance and Close",
   closeAccountReverseDescription: "This account holds a balance, so it cannot be closed as it is. FinTrack will move that balance out and close the account, both in one operation - if either part fails, neither happens. You choose nothing else: the amount is exactly what the account holds, and the destination is the compensation account the system keeps for this.",
   closeAccountReverseConfirmButton: "Reverse and Close",
-  closeAccountReversalNotice: "{residual} will be moved out of this account, bringing it to zero, and then the account will be closed. Your net worth does not change: the compensation account that receives it sits outside every balance the app adds up.",
-  closeReversalBoundaryStatement: "The balance is reversed against the compensation account the system keeps for this. It is not one of your accounts and is not listed below. It sits outside your net worth and outside every aggregate balance, so moving a balance into it takes that balance out of your figures without destroying the record that it existed.",
+  closeAccountReversalNotice: "{residual} will be moved out of this account, bringing it to zero, and then the account will be closed. Whatever this balance was counting towards stops counting it: the compensation account that receives it sits outside every balance the app adds up, so a balance that was part of your net worth leaves it. Nothing is destroyed - the movement is recorded and the history stays readable.",
+  closeReversalBoundaryStatement: "The balance is reversed against the compensation account the system keeps for this. It is not one of your accounts: it sits outside your net worth and outside every aggregate balance, so moving a balance into it takes that balance out of your figures without destroying the record that it existed. It appears in the list below only if this account has already moved money with it before today, and that row is history like every other one there - it is not the reversal about to be made.",
   closeAccountPreviewError: "The balance could not be read, so the close cannot be offered yet.",
   closeAccountReasonLabel: "Reason for closing",
   closeAccountReasonPlaceholder: "e.g. Bank account closed at the branch",
@@ -485,7 +491,10 @@ currentBalanceColumn: 'Saldo Actual',
 netAdjustmentColumn: 'Ajuste Neto',
 newBalanceColumn: 'Nuevo Saldo',
 tableOfRelatedAccountsDetails: 'Cuentas con las que esta ha operado',
+backButtonText: 'Volver',
+backWithoutClosingLabel: 'Volver sin cerrar esta cuenta',
 interactionsColumn: 'Movimientos',
+netMovedColumn: 'Monto Neto Movido',
 lastInteractionColumn: 'Último Movimiento',
 totalNetAdjustment: 'Ajuste Neto Total:',
  unattributedAmount: 'No atribuible a ninguna cuenta:',
@@ -560,8 +569,8 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   closeAccountReverseTitle: "Revertir el Saldo y Cerrar",
   closeAccountReverseDescription: "Esta cuenta tiene saldo, así que no puede cerrarse tal como está. FinTrack sacará ese saldo y cerrará la cuenta, ambas cosas en una sola operación: si una parte falla, no ocurre ninguna. Usted no elige nada más, el monto es exactamente lo que la cuenta tiene y el destino es la cuenta de compensación que el sistema mantiene para esto.",
   closeAccountReverseConfirmButton: "Revertir y Cerrar",
-  closeAccountReversalNotice: "Se sacarán {residual} de esta cuenta, dejándola en cero, y después se cerrará. Su patrimonio no cambia: la cuenta de compensación que lo recibe queda fuera de todos los saldos que la aplicación suma.",
-  closeReversalBoundaryStatement: "El saldo se revierte contra la cuenta de compensación que el sistema mantiene para esto. No es una de sus cuentas y no aparece en la lista de abajo. Queda fuera de su patrimonio y fuera de todo saldo agregado, así que mover un saldo hacia ella lo retira de sus cifras sin destruir el registro de que existió.",
+  closeAccountReversalNotice: "Se sacarán {residual} de esta cuenta, dejándola en cero, y después se cerrará. Lo que ese saldo estuviera sumando deja de sumarlo: la cuenta de compensación que lo recibe queda fuera de todos los saldos que la aplicación suma, así que un saldo que formaba parte de su patrimonio sale de él. No se destruye nada: el movimiento queda registrado y la historia sigue siendo legible.",
+  closeReversalBoundaryStatement: "El saldo se revierte contra la cuenta de compensación que el sistema mantiene para esto. No es una de sus cuentas: queda fuera de su patrimonio y fuera de todo saldo agregado, así que mover un saldo hacia ella lo retira de sus cifras sin destruir el registro de que existió. Aparece en la lista de abajo solo si esta cuenta ya movió dinero con ella antes de hoy, y esa fila es historia como todas las demás: no es la reversión que está por hacerse.",
   closeAccountPreviewError: "No se pudo leer el saldo, as\u00ed que el cierre a\u00fan no puede ofrecerse.",
   closeAccountReasonLabel: "Motivo del cierre",
   closeAccountReasonPlaceholder: "p. ej. Cuenta bancaria cerrada en la sucursal",
