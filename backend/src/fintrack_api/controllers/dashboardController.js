@@ -17,11 +17,25 @@ import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTim
 import { resolveZonedWindow } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { derivedAccountBalanceSql } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 import { NOT_BOUNDARY_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
+import {
+ accountReadSource,
+ ACCOUNT_EXTENSION_JOIN,
+} from '../../utils/fintrackUtils/accountDataRetrieval/closedAccountReads.js';
 
 // The dashboard's totals come from the ledger, like every list beneath them.
 // Summing the stored column here while the lists derive would put a headline
 // figure above a list that contradicts it.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
+
+// What the nine movement queries below join to reach an account. Off, it is the
+// string 'user_accounts' and every one of them renders exactly what it rendered
+// before. On, it is a subquery over account_registry that carries closed
+// accounts too, so a closed account's movements stop disappearing from the
+// dashboard - transactions.account_id still holds its id, because CLOSE writes
+// nothing to transactions.
+//
+// Built once with '$1' because userId is the first bind in all nine.
+const ACCOUNT_READ_SOURCE = accountReadSource('$1');
 
 //COMMON FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
@@ -585,7 +599,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           tr.amount, tr.transaction_actual_date
 
         FROM transactions tr 
-            JOIN user_accounts ua ON
+            JOIN ${ACCOUNT_READ_SOURCE} ua ON
               (
                 (tr.amount > 0 AND ua.account_id = tr.destination_account_id) OR
                 (tr.amount < 0 AND ua.account_id = tr.source_account_id)
@@ -645,7 +659,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           tr.transaction_actual_date
 
         FROM transactions tr 
-          JOIN user_accounts ua ON
+          JOIN ${ACCOUNT_READ_SOURCE} ua ON
             tr.account_id = ua.account_id
                             
           JOIN account_types act
@@ -715,7 +729,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           tr.transaction_id
 
           FROM transactions tr 
-            JOIN user_accounts ua ON tr.account_id = ua.account_id
+            JOIN ${ACCOUNT_READ_SOURCE} ua ON tr.account_id = ua.account_id
             JOIN account_types act ON ua.account_type_id = act.account_type_id
             JOIN currencies ct ON ua.currency_id = ct.currency_id
 
@@ -739,11 +753,11 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         tr.description, tr.transaction_actual_date, tr.amount, tr.transaction_id
 
          FROM transactions tr 
-          JOIN user_accounts ua ON tr.account_id = ua.account_id
+          JOIN ${ACCOUNT_READ_SOURCE} ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
-          JOIN pocket_saving_accounts psa ON ua.account_id = psa.account_id
+          ${ACCOUNT_EXTENSION_JOIN} pocket_saving_accounts psa ON ua.account_id = psa.account_id
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2) AND ua.account_name != $3
               ${NOT_BOUNDARY_ACCOUNT}
@@ -785,12 +799,12 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           tr.transaction_actual_date, tr.amount, tr.transaction_id
 
         FROM transactions tr 
-          JOIN user_accounts ua ON tr.account_id = ua.account_id
+          JOIN ${ACCOUNT_READ_SOURCE} ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
           JOIN transaction_types tp ON tp.transaction_type_id = tr.transaction_type_id
-            JOIN debtor_accounts dbt ON ua.account_id = dbt.account_id
+            ${ACCOUNT_EXTENSION_JOIN} debtor_accounts dbt ON ua.account_id = dbt.account_id
             WHERE ua.user_id = $1
           AND (act.account_type_name = $2) AND ua.account_name != $3
           ${NOT_BOUNDARY_ACCOUNT}
@@ -823,7 +837,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         tp.transaction_type_name, tr.description, tr.transaction_actual_date, tr.amount, tr.transaction_id
 
           FROM transactions tr 
-          JOIN user_accounts ua ON tr.account_id = ua.account_id
+          JOIN ${ACCOUNT_READ_SOURCE} ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
@@ -852,7 +866,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         // stored value.
         text: `SELECT mt.movement_type_name, ua.*, ${DERIVED_BALANCE} AS account_balance, tr.*
          FROM transactions tr
-        JOIN user_accounts ua ON tr.account_id = ua.account_id
+        JOIN ${ACCOUNT_READ_SOURCE} ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
@@ -965,7 +979,7 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
     -- stored account_balance is what the client receives. Measured, not assumed.
     CAST(tr.amount AS FLOAT), CAST(${DERIVED_BALANCE} AS FLOAT) AS account_balance, CAST(ua.account_starting_amount AS FLOAT)
   FROM transactions tr
-          JOIN user_accounts ua ON tr.account_id = ua.account_id
+          JOIN ${ACCOUNT_READ_SOURCE} ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
@@ -1088,7 +1102,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
   -- an un-aliased cast is called float8 and leaves ua.* holding the name.
   CAST(${DERIVED_BALANCE} AS FLOAT) AS account_balance
     FROM transactions tr
-      JOIN user_accounts ua ON tr.account_id = ua.account_id
+      JOIN ${ACCOUNT_READ_SOURCE} ua ON tr.account_id = ua.account_id
       JOIN account_types act ON ua.account_type_id = act.account_type_id
       JOIN currencies ct ON ua.currency_id = ct.currency_id
       JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id

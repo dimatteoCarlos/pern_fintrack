@@ -88,20 +88,25 @@
  * @param {string} [userIdPlaceholder] - The bind placeholder holding the owner's id, e.g. '$1'
  * @returns {string} - The CTE body, to follow a `WITH`
  */
-export function accountIdentityCte(userIdPlaceholder = '$1') {
+export function accountIdentitySelect(userIdPlaceholder = '$1') {
  // Interpolated into SQL, so it is restricted to a bind placeholder and can
  // never carry a value. The values themselves stay bound by the caller. Same
  // guard, and same reason, as accountLedgerCte in derivedBalance.js.
  if (!/^\$\d+$/.test(userIdPlaceholder)) {
   throw new Error(
-   `accountIdentityCte expects a bind placeholder such as '$1', received: ${userIdPlaceholder}`,
+   `accountIdentitySelect expects a bind placeholder such as '$1', received: ${userIdPlaceholder}`,
   );
  }
 
  return `
-      account_identity AS (
         SELECT
           ar.account_id,
+          -- Selected as well as filtered on. A caller that swaps this in for
+          -- \`user_accounts ua\` keeps whatever \`ua.user_id\` predicate it already
+          -- had, so the swap is one line per query and touches nothing else.
+          -- Redundant against the WHERE below, never contradictory: both read
+          -- the same column of the same row.
+          ar.user_id,
           COALESCE(ua.account_name, ar.account_name) AS account_name,
           COALESCE(ua.account_type_id, ar.account_type_id) AS account_type_id,
           COALESCE(ua.currency_id, ar.currency_id) AS currency_id,
@@ -121,7 +126,40 @@ export function accountIdentityCte(userIdPlaceholder = '$1') {
         LEFT JOIN
           user_accounts ua ON ua.account_id = ar.account_id
         WHERE
-          ar.user_id = ${userIdPlaceholder}
+          ar.user_id = ${userIdPlaceholder}`;
+}
+
+/**
+ * The same rows as a derived table, to be joined where `user_accounts` was.
+ *
+ * WHY BOTH SHAPES EXIST. A CTE has to be declared before the SELECT that uses
+ * it, so moving a query onto it edits two places: the head of the statement and
+ * the join. `dashboardController.js` holds nine such joins inside template
+ * literals whose SELECT does not always start on its own line, and editing
+ * eighteen points instead of nine is eighteen chances to break a query that
+ * works. A derived table substitutes for the table name alone:
+ *
+ *   JOIN user_accounts ua ON tr.account_id = ua.account_id
+ *   JOIN ${accountIdentitySource('$1')} ua ON tr.account_id = ua.account_id
+ *
+ * Every `ua.` in the rest of the query keeps working, including the
+ * `ua.user_id` predicate, because the alias and the column set are the same.
+ *
+ * Same precondition as the CTE: a database without `account_registry` raises
+ * `relation "account_registry" does not exist`. Production is at `030` and the
+ * table arrives with `035`, so no caller may reach this before that file runs.
+ *
+ * @param {string} [userIdPlaceholder] - The bind placeholder holding the owner's id, e.g. '$1'
+ * @returns {string} - A parenthesised subquery, to be followed by an alias
+ */
+export function accountIdentitySource(userIdPlaceholder = '$1') {
+ return `(${accountIdentitySelect(userIdPlaceholder)}
+      )`;
+}
+
+export function accountIdentityCte(userIdPlaceholder = '$1') {
+ return `
+      account_identity AS (${accountIdentitySelect(userIdPlaceholder)}
       )`;
 }
 

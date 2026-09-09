@@ -418,6 +418,42 @@ Until that file is applied:
   wider surface than one operation.
 - The ordering is the owner's to set. Raised 2026-09-08, not answered.
 
+**WRITTEN, OFF, 2026-09-08.** The owner authorised the fix ("Arreglar las
+catorce consultas: autorizado") and the constraint above forbids applying it, so
+it is written behind a flag that defaults to off, which is what `CLAUDE.md`
+prescribes for exactly this: "Use feature flags to isolate new functionality".
+
+- **The switch is `INCLUDE_CLOSED_ACCOUNTS`**, read once at import in
+  `closedAccountReads.js`. Absent or anything but `true` renders the identical
+  SQL the file rendered before, so the deploy is inert on a `030` database.
+- **The replacement is a derived table, not the CTE**, and that choice is what
+  keeps the change to one line per query. A CTE has to be declared before the
+  SELECT that uses it, so nine joins would have meant eighteen edit points
+  inside template literals; `accountIdentitySource` substitutes for the table
+  NAME alone, so the alias `ua` and every `ua.` reference after it survive
+  untouched. `accountIdentityCte` is now built from the same body and its output
+  is unchanged for Overview's five statements.
+- **The subquery had to select `user_id`.** Eight of the nine queries filter
+  `WHERE ua.user_id = $1`, and the CTE only ever filtered on that column without
+  publishing it. Selecting it is additive and cannot affect a consumer that does
+  not read it.
+- **Two of the nine needed a second change, and this is the part a count of
+  joins does not show.** `dashboardController.js:760` joins
+  `pocket_saving_accounts` and `:807` joins `debtor_accounts`, both INNER, and
+  CLOSE deletes the extension row with the account. Widening only the account
+  source would have found the closed account and then dropped it again for
+  having no extension row. Both take `ACCOUNT_EXTENSION_JOIN`, which is `JOIN`
+  off and `LEFT JOIN` on. The consequence for the consumer: a closed pocket
+  arrives with `target` and `desired_date` NULL, which is the correct answer -
+  the plan those columns describe ended with the account - and a shape the
+  screen did not previously receive.
+- **The flip is a step after `035`, not a date.** Turning it on against a
+  database below `035` fails loudly on the first dashboard request with
+  `relation "account_registry" does not exist`, never silently with an empty
+  result.
+- **Overview's five statements are untouched** and need no flag: they already
+  read `accountIdentityCte` and carry the same precondition.
+
 **The closing reason is capped in the database, not in the form.** A limit that
 lives only in the interface is not honoured by a second writer, and the column
 is what every writer meets. The length itself is the migration session's to
