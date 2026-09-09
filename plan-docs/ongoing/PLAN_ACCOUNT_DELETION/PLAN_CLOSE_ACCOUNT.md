@@ -3650,5 +3650,49 @@ The owner made the distinction explicitly so that a later reader does not turn
   `formatDateToDDMMYYYY` reads UTC parts and would print tomorrow for it.
 - **Both ledes were rewritten.** Each said the close leaves "every balance
   above" unchanged, naming a column that is no longer on screen.
-- **Not built, and blocked on nothing but sequence**: the reversal writer, its
-  movement type and column, the endpoint, and the screen's own copy.
+- **`037_add_balance_reversal.sql` and both build paths.** Movement type 11 and
+  transaction type 7, both `balance-reversal`; the `movement_types` CHECK
+  widened to eleven values; `transactions.reversal_of_account_id` keyed on
+  `account_registry(account_id)`; and the biconditional
+  `CHECK ((movement_type_id = 11) = (reversal_of_account_id IS NOT NULL))`,
+  which is where the pairing is enforced because `status` one column over shows
+  what happens when a bind in a shared writer has no such place.
+- **`recordBalanceReversal.js`**, the writer. Two legs, both carrying the column
+  and both naming the account being closed, so what is identified structurally
+  is the operation rather than a leg. Sequential rather than `Promise.all`: one
+  transactional client serialises them anyway, and interleaving makes which leg
+  failed unreadable.
+- **The close calls it, atomically.** `processCloseAccount` takes
+  `reverseBalance`, resolves the compensation account before the lock because it
+  must exist to be locked, locks both accounts, writes the pair, follows both
+  stored balances from the ledger and re-derives to assert zero before the close
+  proceeds. The state `reversed = yes, closed = no` is not reachable.
+- **The screen offers it.** With a blocking balance the one trigger button reads
+  "Reverse the Balance and Close" rather than a button that can only refuse, the
+  dialog confirms that operation, and the boundary is stated above the panel the
+  compensation account is deliberately not in.
+- **The investment card counts it.** `closure_adjustment` was widened in both
+  places it had to be - the FILTER and the outer WHERE that bounds the CTE - by
+  the overview module, since the term's meaning is theirs to decide. Verified in
+  their commit rather than on relay.
+
+### 14.7 The one point where the code and the ruling do not yet agree
+
+**THE COMPENSATION ACCOUNT IS ONE ROW PER USER IN THE CODE, AND THE RULING SAYS
+GLOBAL.** `checkAndInsertAccount.js:69` filters `WHERE ua.user_id = $1`, so each
+owner gets their own account named `slack` and typed `boundary`, created the
+first time one is needed.
+
+- **Nothing built here changed that, deliberately.** The reversal takes its
+  counterpart from the caller and the caller uses the existing find-or-create,
+  so this operation behaves exactly as the annulment already does.
+- **What a single system-wide row would cost, measured rather than estimated**:
+  a migration that merges the existing per-user rows and repoints their
+  transactions, plus a sweep of the read filters that exclude the account by
+  name - `031_add_boundary_account_type.sql` counts 26 or more of them.
+- **The reading this plan applied**: "global" was answering a proposal to create
+  a NEW per-user compensation account for reversals, and it settled that there
+  is one compensation account concept rather than one per module. It did not
+  order the existing rows merged, and merging them moves stored data, which is
+  not a decision to take by inference.
+
