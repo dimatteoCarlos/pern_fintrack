@@ -68,6 +68,7 @@
 import { pool } from '../src/db/config/configDB.js';
 import { processCloseAccount } from '../src/fintrack_api/services/delete_account/deleteAccountService.js';
 import { derivedAccountBalanceSql } from '../src/utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { loadCurrencyCatalog } from '../src/fintrack_api/services/fx_services/currency_catalog/loadCurrencyCatalog.js';
 
 const readOption = (flag, fallback) => {
  const index = process.argv.indexOf(flag);
@@ -184,6 +185,14 @@ try {
  await assertLocalDatabase(client);
 
  await client.query('BEGIN');
+
+ // THE CATALOG IS LOADED AT BOOT BY app.js:66, AND A SCRIPT IS NOT THE SERVER.
+ // recordBalanceReversal resolves the accounting currency through
+ // getCurrencyIdSync, which throws outright when the catalog was never loaded.
+ // Nothing above the reversal needed it: the plain close writes no transaction
+ // at all, so this script only reached that dependency once the reversal
+ // existed.
+ await loadCurrencyCatalog(client);
 
  // ------------------------------------------------------------------ target
  //

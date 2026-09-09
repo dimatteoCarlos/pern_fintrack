@@ -3675,6 +3675,24 @@ The owner made the distinction explicitly so that a later reader does not turn
   places it had to be - the FILTER and the outer WHERE that bounds the CTE - by
   the overview module, since the term's meaning is theirs to decide. Verified in
   their commit rather than on relay.
+- **It has been run, on 2026-09-08, against `fintrack_dev`.**
+  `backend/scripts/verifyClose.js` reports 25 assertions passing and none
+  failing, and rolls the whole transaction back; a check afterwards found no probe account, no registry
+  row, no movement type 11 row and no `reversal_of_account_id` committed. The
+  nine that are new cover the reversal: the probe account really holds 137.50,
+  the same account is refused without the flag, two legs are written, both carry
+  movement type 11, the target's leg is -137.50, the pair sums to zero, the
+  counterpart sits on a `boundary`-typed account, and the account is gone in the
+  same transaction. The database refuses a hand-written type-11 row with no
+  `reversal_of_account_id` by name:
+  `transactions_reversal_pairing_check`.
+- **The run found one defect, in the script rather than in the operation.**
+  `recordBalanceReversal` resolves the accounting currency through
+  `getCurrencyIdSync`, which throws when the catalog has never been loaded;
+  `app.js:66` loads it at boot and a script has to load it itself, exactly as
+  `verifyCloseAccount.js:173`, `verifyCloseTransfer.js:180` and
+  `verifyClosureSettlement.js:124` already did. This script had never needed it
+  because the plain close writes no transaction at all.
 
 ### 14.7 The one point where the code and the ruling do not yet agree
 
