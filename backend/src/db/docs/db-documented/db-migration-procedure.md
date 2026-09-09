@@ -266,6 +266,12 @@ of this writing, deliberately not half-applied: three of the four writers are
 that module's and `recordTransaction.js` is on every ordinary transaction path
 and belongs to none. Delete this section when the four move.
 
+The measurement behind this section is in
+`plan-docs/ongoing/PLAN_ACCOUNT_DELETION/DELETION_FINDINGS.md`, under the boot
+that swallows a currency-catalog failure. It was session memory until
+2026-09-09, when it was moved there and the memory deleted, so that file is now
+the only copy.
+
 ---
 
 ## 4. Applying to a local database

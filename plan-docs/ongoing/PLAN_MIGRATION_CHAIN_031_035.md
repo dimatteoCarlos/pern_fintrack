@@ -115,6 +115,26 @@ proof the repoint happened.
   measurement is in `PLAN_ACCOUNT_DELETION/DELETION_FINDINGS.md`, under the
   retyping migration; 032 through 034 have runtime counterparts, are independent
   of the registry, and no code waits on them.
+- **032 and 037 seed catalog rows on the id, which cannot fail when that id is
+  already taken by another name.** Four inserts:
+  `ON CONFLICT (movement_type_id) DO NOTHING` at
+  `032_add_account_closure_movement_type.sql:241` and
+  `037_add_balance_reversal.sql:178`, and the same clause on
+  `transaction_type_id` at `032:245` and `037:182`. A name already bound to a
+  different id raises 23505 and stops the run; an id already bound to a
+  different name is swallowed, the migration reports success, and application
+  constants that hold the id (`ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID = 10` in
+  `derivedBalance.js`) then mean a row that says something else. The
+  measurement is in `PLAN_ACCOUNT_DELETION/DELETION_FINDINGS.md`, under the
+  catalog seed keyed on the id.
+- **That direction has no subject in this run, measured on the production
+  copies.** `fintrack_prod_data` holds `max(movement_type_id) = 9` and
+  `max(transaction_type_id) = 5`, so ids 10, 11, 6 and 7 are free, and no
+  migration between 021 and 030 touches either catalog: `005_base_catalogs.sql`,
+  `032` and `037` are the only files in the chain that insert into them. The
+  four seeds will therefore insert rather than conflict. **Read both maxima on
+  production before the run anyway** — this reads a dump taken 2026-08-21 plus
+  an argument about what ran since, and the check costs one query.
 - **Code that runs without 031 fails in two different ways, and only one is
   audible.** `transactionController.js` raises *"Account type 'boundary' not
   found: the migration chain has not reached 031"*. The Overview reads instead
