@@ -181,7 +181,12 @@ function OverviewLayout() {
      </button>
     </div>
    ) : (
-    <BigBoxResult bigScreenInfo={bigScreenInfo} />
+    // The accounting currency the payload published, not a constant. Every
+    // figure in the rows above comes from that same answer.
+    <BigBoxResult
+     bigScreenInfo={bigScreenInfo}
+     currency={hero?.currency ?? null}
+    />
    )}
 
    <Outlet />
