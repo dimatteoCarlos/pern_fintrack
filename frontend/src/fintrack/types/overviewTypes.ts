@@ -1,4 +1,6 @@
 // frontend/src/fintrack/types/overviewTypes.ts
+import type { PocketStatus } from './pocketTypes';
+
 // The shapes GET /api/fintrack/overview answers with.
 //
 // Typed against PLAN_OVERVIEW_CONTRACT.md, which is frozen, and not against
@@ -182,6 +184,18 @@ export type OverviewDomainCards = {
  pnl: OverviewPnlCard;
 };
 
+// The same six as a union, for the level-2 screen, which is handed ONE of them
+// and does not know which until it reads the domain. Discriminated on `domain`,
+// so narrowing on that field gives the specific type back. Not a replacement for
+// OverviewDomainCards: the page holds all six at once and addresses them by key.
+export type OverviewDomainCard =
+ | OverviewIncomeCard
+ | OverviewExpenseCard
+ | OverviewInvestmentCard
+ | OverviewDebtCard
+ | OverviewPocketCard
+ | OverviewPnlCard;
+
 // The stocks at the top of the page. Every one of them is a position, so none is
 // bounded by the month the flows are bounded by.
 export type OverviewHero = {
@@ -349,6 +363,279 @@ export type GetOverviewData = {
  // the reference month: the teaser answers what happened last, and a month with
  // no activity would otherwise show an empty list while the account was moving.
  recentActivity: { transactions: OverviewActivityRow[] };
+};
+
+// ---------------------------------------------------------------------------
+// LEVEL 2 — the domain screen, GET /overview/:domain
+//
+// Every type below was read off the builder that produces it, never inferred
+// from a name: makeExpenseAnalysis.js, makeIncomeAnalysis.js, makePnlAnalysis.js,
+// makeInvestmentAnalysis.js, makeDebtAnalysis.js and makePocketAnalysis.js, plus
+// the two shared shapes makeTrendSeries.js and makeDistribution.js.
+//
+// AN ABSENT SECTION IS ABSENT, NOT NULL, and that is why almost every analysis
+// field below is optional rather than nullable. The builders spread each section
+// in conditionally, so a request that asked for the shallow depth returns an
+// object with no such key at all. The two states differ: a missing key means the
+// statement was never run, and a value of null would mean it ran and had no
+// answer. A component that treats them alike tells the owner they have no income
+// sources when nobody asked.
+
+// The two depths the request can ask for. Omitting the parameter is a third
+// state - the level-1 response, with no analysis section at all - and it has no
+// member here because it is the absence of the value rather than a value.
+export type OverviewAnalysisLevel = 'derived' | 'full';
+
+// The series of a level-2 analysis is the SAME point shape the six-month card
+// series uses, declared once above at OverviewTrendPoint. Only the length
+// differs - thirteen months here, six on the card - and a length is not a type.
+
+// One part of a ranked distribution, from makeDistribution.js. share is a 0-1
+// ratio at four decimals, and it is NULL when the whole is zero - a share of
+// nothing is not a small share.
+export type OverviewDistributionPart = {
+ label: string;
+ amount: number;
+ rank: number;
+ share: number | null;
+};
+
+// One row of a domain's transaction page, in the server's own column names.
+//
+// THE ACCOUNT COLUMNS ARE NULLABLE AND THE JOIN IS WHY. transactionRowShape.js
+// joins user_accounts LEFT because CLOSE deletes that row while the transaction
+// survives, so a closed account's movement comes back with every ua.* column
+// null. An INNER join dropped those rows from the page while the count beside it
+// still counted them, and the paginator offered a short page.
+export type OverviewTransactionRow = {
+ transaction_id: number;
+ user_id: string;
+ description: string;
+ amount: number;
+ movement_type_id: number;
+ transaction_type_id: number;
+ currency_id: number;
+ account_id: number;
+ source_account_id: number | null;
+ destination_account_id: number | null;
+ status: string;
+ transaction_actual_date: string;
+ created_at: string;
+ updated_at: string;
+ movement_type_name: string;
+ transaction_type_name: string;
+ // LEFT-joined through user_accounts, so null on a closed account's movement.
+ account_type_name: string | null;
+ currency_code: string;
+ account_name: string | null;
+ account_type_id: number | null;
+ account_starting_amount: number | null;
+ account_balance: number | null;
+ account_start_date: string | null;
+ // The movement's date on the OWNER's calendar, 'YYYY-MM-DD'. Read this and not
+ // transaction_actual_date wherever a day is rendered: the other is an instant.
+ transaction_local_date: string;
+};
+
+export type OverviewTransactionPage = {
+ rows: OverviewTransactionRow[];
+ page: number;
+ pageSize: number;
+ totalRows: number;
+};
+
+export type OverviewAnalysisMeta = {
+ notices: string[];
+};
+
+// Expense - the series, and the one decomposition level 1 refuses.
+//
+// categorization is absent when the server has no categorised figure at all, and
+// its notice says so. When present the two terms sum back to the card's
+// totalAmount by construction, which is what makes it a decomposition rather
+// than a second total.
+export type OverviewExpenseAnalysis = {
+ domain: 'expense';
+ level: OverviewAnalysisLevel;
+ series: OverviewTrendPoint[];
+ categorization?: {
+  categorized: number;
+  uncategorized: number;
+ };
+ meta: OverviewAnalysisMeta;
+};
+
+// Income - where the month came from, and how exposed the owner is to losing one
+// source.
+//
+// A source row with accountId null is real income attributed to no account. It
+// keeps its amount and its share and it is the one row that renders without a
+// link, which is the level-3 rule for this domain.
+export type OverviewIncomeSourcePart = OverviewDistributionPart & {
+ accountId: number | null;
+ accountName: string | null;
+};
+
+export type OverviewIncomeAnalysis = {
+ domain: 'income';
+ level: OverviewAnalysisLevel;
+ series: OverviewTrendPoint[];
+ bySource?: OverviewIncomeSourcePart[];
+ // The largest source's share, read off bySource[0] and never recomputed. Null
+ // exactly when the shares are.
+ concentration?: number | null;
+ meta: OverviewAnalysisMeta;
+};
+
+// Profit and loss - both terms always present, both able to be negative, and
+// neither ever absent. A losing month is a loss, not a missing figure.
+export type OverviewPnlAnalysis = {
+ domain: 'pnl';
+ level: OverviewAnalysisLevel;
+ series: OverviewTrendPoint[];
+ byAccountType: {
+  investment: number;
+  other: number;
+ };
+ meta: OverviewAnalysisMeta;
+};
+
+// Investment - the itemised reconciliation, plus two sections the deeper depth
+// pays for.
+//
+// difference AND tolerance travel together, and the pair is the condition on
+// which level 2 may publish a figure level 1 refuses. The client cannot
+// reconstruct the threshold below which the server calls the difference zero, so
+// a client subtracting in floating point would find a cent the server did not
+// and tell the owner their books are broken.
+export type OverviewReconciliation = {
+ capitalContributed: number;
+ realizedPnl: number;
+ closureAdjustment: number;
+ ledgerBalance: number;
+ difference: number;
+ tolerance: number;
+};
+
+export type OverviewInvestmentBalancePart = OverviewDistributionPart & {
+ accountId: number;
+ accountName: string;
+};
+
+// One funding event. Not a monthly series: the question is when money went in,
+// and a month with no contribution is not a point on this line.
+export type OverviewContributionEvent = {
+ transactionId: number;
+ accountId: number;
+ // Null on a closed account, for the same LEFT join reason the transaction rows
+ // carry.
+ accountName: string | null;
+ amount: number;
+ // 'YYYY-MM-DD' on the owner's calendar.
+ contributionDate: string;
+};
+
+export type OverviewInvestmentAnalysis = {
+ domain: 'investment';
+ level: OverviewAnalysisLevel;
+ reconciliation: OverviewReconciliation;
+ balanceByAccount?: OverviewInvestmentBalancePart[];
+ // The NEWEST page of a history with no lower bound. totalRows is what says how
+ // much of it is not in rows - a reader that cannot tell a page from the whole
+ // would report five hundred contributions as five.
+ contributionHistory?: {
+  rows: OverviewContributionEvent[];
+  totalRows: number;
+ };
+ meta: OverviewAnalysisMeta;
+};
+
+// Debt - who, and the two legs kept apart.
+//
+// direction is the word the sign carries, served rather than derived: above zero
+// the counterparty owes the owner, below zero the owner owes them, and exactly
+// zero is a counterparty with a history that came back to nothing, which stays
+// in the list.
+export type OverviewDebtDirection = 'receivable' | 'payable' | 'settled';
+
+export type OverviewDebtCounterparty = {
+ accountId: number;
+ accountName: string;
+ // Signed. Ranked by MAGNITUDE, so the largest debt and the largest credit both
+ // sit at the top rather than every debt sinking under every credit.
+ balance: number;
+ direction: OverviewDebtDirection;
+ rank: number;
+};
+
+// The two legs at each month close, never netted. A net position that has not
+// moved can hide both legs doubling, which is the whole reason this is two
+// series and not one.
+export type OverviewDebtLegsPoint = {
+ month: string;
+ receivable: number;
+ payable: number;
+};
+
+export type OverviewDebtAnalysis = {
+ domain: 'debt';
+ level: OverviewAnalysisLevel;
+ byCounterparty?: OverviewDebtCounterparty[];
+ legsOverTime?: OverviewDebtLegsPoint[];
+ meta: OverviewAnalysisMeta;
+};
+
+// Pocket - the board's own rows, and the hero's pair stated as three terms.
+//
+// progressByPocket carries PocketStatus unchanged, imported rather than
+// restated: the rows ARE the board's, spread through by pocketBoardService, and
+// a second declaration of the same shape is the divergence this file avoids
+// elsewhere. pocketId is the level-3 identity and is never derived from an
+// account.
+export type OverviewPocketAnalysis = {
+ domain: 'pocket';
+ level: OverviewAnalysisLevel;
+ series: OverviewTrendPoint[];
+ progressByPocket?: PocketStatus[];
+ committedAgainstFree?: {
+  bankBalance: number;
+  committed: number;
+  freeCash: number;
+  // What the per-account floor cost. 0 when every account covers its own
+  // commitments, and positive by exactly the shortfall the floor absorbed - the
+  // one figure that explains why the three terms above do not add up.
+  flooredShortfall: number;
+ };
+ meta: OverviewAnalysisMeta;
+};
+
+export type OverviewAnalysis =
+ | OverviewExpenseAnalysis
+ | OverviewIncomeAnalysis
+ | OverviewPnlAnalysis
+ | OverviewInvestmentAnalysis
+ | OverviewDebtAnalysis
+ | OverviewPocketAnalysis;
+
+// What GET /overview/:domain answers with, under data.
+//
+// trend and categories are NOT the analysis. They are level-1 material the
+// endpoint serves whether or not an analysis was asked for, and categories is
+// the expense domain's alone. The analysis key is the only part that appears and
+// disappears with the request.
+export type GetOverviewDomainData = {
+ window: ServedWindow;
+ card: OverviewDomainCard;
+ transactions: OverviewTransactionPage;
+ trend: OverviewTrendPoint[];
+ categories?: OverviewExpenseCategory[];
+ analysis?: OverviewAnalysis;
+};
+
+export type GetOverviewDomainResponse = {
+ status: number;
+ message: string;
+ data: GetOverviewDomainData;
 };
 
 // The envelope, and it is NOT the shape /budget answers with: the budget
