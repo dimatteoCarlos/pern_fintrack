@@ -278,12 +278,13 @@ same person deciding, with the record kept for free. It is not proposed yet
 because it puts production credentials into CI secrets, which is a new exposure
 and a separate decision.
 
-### 5.B The four conditions the decision carries
+### 5.B The five conditions the decision carries
 
 The manual run as it was performed on 2026-08-22 is not good enough on its own:
 it left `align.log` at the repository root and a ledger row typed by hand under
 a name no runner produces. The first three conditions are what make the manual
-run auditable; the fourth is what makes it authorized.
+run auditable, the fourth is what makes it authorized, and the fifth is what
+decides whether the moment has arrived at all.
 
 1. **Through `db:align` and `db:migrate`, never through `psql`.** The runner
  writes the ledger row inside the same transaction as the schema it names. A
@@ -301,6 +302,13 @@ run auditable; the fourth is what makes it authorized.
  the code enforces this one — `DB_EXPECTED` and `DB_REMOTE_OK` assert which
  database, not who agreed to it — so it is enforced by the operator naming the
  files about to run and getting a yes for those files.
+5. **With no code left to complete and no open decisions.** Carlos, 2026-09-08:
+ *"no quiero migrar a produccion si todavia hay codigo que completar y
+ decisiones abiertas"*. This one holds the run even when he would approve the
+ files, so it is checked before condition 4 is worth asking about. It is a
+ condition on the moment and not on the method: nothing about the six files
+ changes while it holds, and none of the other four is satisfied any less. What
+ it forbids is treating a green rehearsal as a reason to go.
 
 ### 5.0 Prove which database you are about to write to
 
@@ -443,6 +451,23 @@ this decision.
 The consequence for the branch: `main` must not merge into
 `feat/vercel-serverless` until the chain has run against production. That is a
 sequencing constraint on the merge, not a second decision.
+
+**The constraint binds the merge rather than the deploy, deliberately.** Neither
+`backend/vercel.json` nor `frontend/vercel.json` names a branch — the first
+declares only a legacy `builds` entry for `index.js`, the second only a rewrite —
+so which branch triggers a production deployment lives in the Vercel project
+settings and cannot be read from this repository. With the trigger invisible, the
+merge is treated as the deploy. Anyone who establishes otherwise from the Vercel
+side can loosen this, and should record where they read it.
+
+**Cleaning `main` is not blocked by any of the above.** The constraint was raised
+on 2026-09-08 against a wish to merge on the grounds that `main` carries
+leftovers and obsolete comments, and those are two different actions: removing a
+leftover is a commit on `main`, while the merge is what publishes `main` to the
+branch that reaches production. Merging a `main` that needs tidying moves the
+untidiness rather than removing it, and it carries the three executing readers
+above with it. So the tidying can proceed at any time and the merge waits — the
+two wishes only compete if the merge is assumed to be the tool for the tidying.
 
 ### 5.3 Back up production, immediately before writing
 
