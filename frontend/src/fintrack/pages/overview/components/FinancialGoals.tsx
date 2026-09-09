@@ -1,7 +1,15 @@
 // frontend/src/fintrack/pages/overview/components/FinancialGoals.tsx
 // Block 06: what was promised to a goal and how much of it is set aside.
 //
-// ONE CARD AND NOT THREE. Saved, Target and Remaining are three parts of one
+// THE HEADLINE FIGURE IS NOT "SAVED". It is goalsTotalBalance, the money that
+// sits in pockets, and a pocket is a commitment rather than a container: the
+// balance never left the bank account it was promised from
+// (makeHeroSection.js:16-30). "Saved" put a second savings figure on a page
+// whose hero already publishes what is spendable and what of it is unpromised -
+// cashPosition and freeCash - and a reader adding this one to those was adding
+// the same money twice. "Committed to pockets" is what freeCash subtracts.
+//
+// ONE CARD AND NOT THREE. The headline, Target and Remaining are three parts of one
 // statement, not three readings that stand on their own: Remaining is the plain
 // subtraction of the other two, so three cards side by side invited the reader
 // to compare figures that cannot disagree. The card carries the saved figure as
@@ -118,7 +126,7 @@ function FinancialGoals() {
    <section className='domainCards domainCards--single'>
     <article className='snapshot'>
      <div className='snapshot__head'>
-      <span className='snapshot__domain'>Saved</span>
+      <span className='snapshot__domain'>Committed to pockets</span>
       <span className='snapshot__period'>Position</span>
      </div>
 
