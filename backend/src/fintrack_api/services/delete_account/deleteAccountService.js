@@ -40,7 +40,11 @@ import { eraseAccountTail } from '../../../utils/fintrackUtils/accountDeletionUt
 import { USER_CREATABLE_ACCOUNT_TYPES } from '../../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 import { assessDeletionImpact } from './getAnnulmentImpactReport.js';
 // import { assertTransferDestinationEligible } from './getCloseTransferDestinations.js';
-// import { getCurrencyCode } from '../../../utils/currencyLookup.js';
+// Uncommented 2026-09-08 for the balance reversal, which stamps the currency
+// code into both legs' descriptions. It had been commented with the settlement
+// that used it.
+import { getCurrencyCode } from '../../../utils/currencyLookup.js';
+import { recordBalanceReversal } from '../../../utils/fintrackUtils/accountDeletionUtils/recordBalanceReversal.js';
 
 // Block 3 step 1. Both are reused rather than reimplemented, on the owner's
 // ruling of 2026-09-08: the close does not write its own version of a release
@@ -753,6 +757,13 @@ export const processCloseAccount = async (
   // The owner's stated reason for closing. Mandatory, free text, and it is the
   // schema that makes it so - see the refusal below.
   closeReason,
+  // WHETHER THE OWNER ASKED TO REVERSE THE BALANCE FIRST. The one decision the
+  // screen offers for a balance that blocks the close, and the only thing the
+  // owner chooses about the reversal - not the amount, the destination, the
+  // date or the direction, all of which follow from the balance itself.
+  //
+  // Defaults to false, so every existing caller keeps the refusal it had.
+  reverseBalance = false,
   // RETIRED 2026-09-08. The three parameters that drove the settlement:
   // policy, destinationAccountId, expectedResidual. Removed from the
   // signature rather than left as ignored parameters, so a caller that still
@@ -928,10 +939,26 @@ export const processCloseAccount = async (
   // D; with the settlement retired there is no second account to serialise
   // against, and the lock exists now only so the balance the refusal reads is
   // the balance the close acts on.
-  const balances = await lockAndDeriveBalances(dbClient, userId, [
-    targetAccountId,
-  ]);
-  const residual = parseFloat(balances.get(targetAccountId));
+  //
+  // THE COMPENSATION ACCOUNT JOINS THE LOCK SET WHEN A REVERSAL IS ASKED FOR,
+  // and it is resolved before the lock because it has to exist to be locked -
+  // checkAndInsertAccount is find-or-create and identifies it structurally by
+  // account_type 'boundary', never by name alone. Two concurrent closes of two
+  // different accounts both post a leg on it, and without it in the lock set
+  // their two derivations of its balance interleave.
+  let counterpartAccount = null;
+
+  if (reverseBalance) {
+    const { account } = await checkAndInsertAccount(dbClient, userId);
+    counterpartAccount = account;
+  }
+
+  const lockSet = counterpartAccount
+    ? [targetAccountId, counterpartAccount.account_id]
+    : [targetAccountId];
+
+  const balances = await lockAndDeriveBalances(dbClient, userId, lockSet);
+  let residual = parseFloat(balances.get(targetAccountId));
 
   // THE ZERO-BALANCE PRECONDITION, ruled by the owner on 2026-09-08 and the
   // reason the settlement above is retired. The refusal replaces the
@@ -956,6 +983,77 @@ export const processCloseAccount = async (
   const targetTypeName = String(
     accountCheck.rows[0].account_type_name ?? '',
   ).toLowerCase();
+
+  // THE REVERSAL RUNS BEFORE THE REFUSAL, INSIDE THIS SAME TRANSACTION. Two
+  // actions to the owner, one atomic operation to the database: the state
+  // "reversed, not closed" must not be reachable, which is the whole reason
+  // this is one request rather than two.
+  //
+  // NOT GATED ON THE TYPE. CLOSE_ZERO_BALANCE_TYPES decides which types are
+  // OFFERED the reversal on the screen, because the other three close at any
+  // balance and never need neutralising. The owner made that distinction
+  // explicitly as a statement about the offer and not a prohibition, so a
+  // caller that asks for it on another type gets it rather than a refusal
+  // invented here.
+  //
+  // The residual is reassigned rather than recomputed from a second read. The
+  // reversal writes exactly its negation on a locked account, so zero is the
+  // arithmetic result; the assertion after the writes is what checks it against
+  // the ledger rather than against this line.
+  if (reverseBalance && residual !== 0) {
+    const currencyCode = await getCurrencyCode(
+      dbClient,
+      accountCheck.rows[0].currency_id,
+    );
+
+    await recordBalanceReversal(dbClient, {
+      userId,
+      targetAccountId,
+      targetAccountName: accountCheck.rows[0].account_name,
+      counterpartAccountId: counterpartAccount.account_id,
+      counterpartAccountName: counterpartAccount.account_name,
+      balance: residual,
+      currencyId: accountCheck.rows[0].currency_id,
+      currencyCode,
+      transactionDate,
+    });
+
+    // Both stored columns follow the ledger, the compensation account's
+    // included. Its balance means something historically - it is excluded from
+    // net worth and from aggregate balances, not from itself.
+    await setAccountBalanceFromLedger(dbClient, targetAccountId, userId);
+    await setAccountBalanceFromLedger(
+      dbClient,
+      counterpartAccount.account_id,
+      userId,
+    );
+
+    // RE-DERIVED RATHER THAN TRUSTED, the same discipline the retired
+    // settlement applied and the hard-delete guard still does. If this is not
+    // zero the reversal did not do what it was for, and the close must not
+    // proceed on the assumption that it did - 500, because nothing the owner
+    // sent explains it.
+    const postReversalBalances = await lockAndDeriveBalances(
+      dbClient,
+      userId,
+      [targetAccountId],
+    );
+    residual = parseFloat(postReversalBalances.get(targetAccountId));
+
+    if (residual !== 0) {
+      throw createError(
+        500,
+        `Balance reversal failed to zero account ${targetAccountId} ` +
+          `(balance ${residual}). Nothing was closed.`,
+      );
+    }
+
+    console.log(
+      pc.green(
+        `CLOSE: account ${targetAccountId} reversed to zero against ${counterpartAccount.account_id}.`,
+      ),
+    );
+  }
 
   if (CLOSE_ZERO_BALANCE_TYPES.includes(targetTypeName) && residual !== 0) {
     // 409, not 400: the request was well formed and the state is what refuses
@@ -1433,6 +1531,7 @@ export const deleteAccountService = async (
   targetAccountName = 'Unknown', // RTA execution data - cosmetic only, see processRTAAnnulment
   // CONDITIONAL CLOSE PARAMETER:
   closeReason, // the owner's stated reason for closing; mandatory for CLOSE by 035's CHECK, ignored by every other deletion type
+  reverseBalance = false, // CLOSE only: neutralise the balance against the compensation account first, in this same transaction; ignored by every other deletion type
   // RETIRED 2026-09-08 with the settlement policies. Removed from the signature
   // rather than left in place, because a positional parameter nobody passes
   // shifts every argument after it:
@@ -1687,6 +1786,7 @@ export const deleteAccountService = async (
               accountCheck,
               new Date(),
               closeReason,
+              reverseBalance,
               // RETIRED 2026-09-08 with the settlement policies:
               // policy, destinationAccountId, expectedResidual
             )
