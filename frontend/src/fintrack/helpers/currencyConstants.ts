@@ -70,5 +70,16 @@ export const SELECT_CURRENCY_OPTIONS: DropdownOptionType<CurrencyType>[] =
 // The currency the interface renders in when the owner has expressed no choice.
 // Read from the environment so it can follow the backend's own accounting
 // currency without a code change.
-export const DEFAULT_CURRENCY = (import.meta.env
- .VITE_ACCOUNTING_CURRENCY_CODE || 'usd') as CurrencyType;
+const declaredCurrency = String(
+ import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE ?? '',
+).toLowerCase();
+
+// The cast cannot check the value, so the value is checked here. A key that is
+// not in CURRENCY_OPTIONS leaves every lookup undefined and the formatters fall
+// back to the machine's locale without throwing -- 'USD' does it by case, 'gbp'
+// by not being supported.
+export const DEFAULT_CURRENCY = (
+ SUPPORTED_CURRENCIES.includes(declaredCurrency as CurrencyType)
+  ? declaredCurrency
+  : 'usd'
+) as CurrencyType;
