@@ -1240,6 +1240,155 @@ export async function ensureAccountRegistry(client = pool) {
  *
  * @param {object} client - Database client (pool or transaction)
  */
+/**
+ * Seed 'balance-reversal' into both catalogs, widen the movement_types CHECK to
+ * accept it, and add transactions.reversal_of_account_id keyed on
+ * account_registry.
+ *
+ * The runtime counterpart of migration 037. An already-created database needs
+ * it because the mainTables DDL is CREATE TABLE IF NOT EXISTS and never runs
+ * again, and because the seeders in populateDB.js run only inside the
+ * first-time block of initializeDatabase().
+ *
+ * MUST RUN AFTER ensureAccountRegistry(). The column references
+ * account_registry, and on this path that table arrives from that call - not
+ * from the DDL above, where transactions is declared before it exists. That
+ * ordering is why the column is added here instead of inline in mainTables.
+ *
+ * WHAT THE COLUMN IS FOR. An account whose type is in CLOSE_ZERO_BALANCE_TYPES
+ * can only be closed at zero; the one action offered for a balance that blocks
+ * the close is to reverse it, in the same transaction, as two legs against the
+ * compensation account. Both legs carry movement type 11 and both name the
+ * account being reversed, so what is identified is the operation rather than a
+ * leg. It points at account_registry because the user_accounts row it names is
+ * deleted moments later by the close itself.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureBalanceReversal(client = pool) {
+ const present = await client.query(`
+  SELECT
+   to_regclass('public.movement_types') IS NOT NULL AS catalog_exists,
+   to_regclass('public.account_registry') IS NOT NULL AS registry_exists
+ `);
+
+ // A virgin database gets the catalogs from the seeder's CREATE TABLE and its
+ // insert loop, which carry the current list already.
+ if (!present.rows[0].catalog_exists) return;
+
+ const { rows: checks } = await client.query(`
+  SELECT con.conname, pg_get_constraintdef(con.oid) AS definition
+   FROM pg_constraint con
+   JOIN pg_class rel ON rel.oid = con.conrelid
+   JOIN pg_namespace ns ON ns.oid = rel.relnamespace
+   WHERE ns.nspname = 'public'
+    AND rel.relname = 'movement_types'
+    AND con.contype = 'c'
+ `);
+
+ // Skips a no-op that would still take an ACCESS EXCLUSIVE lock on every boot.
+ if (!checks.some((row) => row.definition.includes("'balance-reversal'"))) {
+  for (const { conname } of checks) {
+   await client.query(
+    `ALTER TABLE movement_types DROP CONSTRAINT "${conname.replace(/"/g, '""')}"`,
+   );
+  }
+
+  // The value order matches migration 037 and the seeder exactly:
+  // pg_get_constraintdef renders an inline column check and a named table
+  // check identically, so the two build paths compare equal only while both
+  // lists stay in this order.
+  await client.query(`
+   ALTER TABLE movement_types
+    ADD CONSTRAINT movement_types_movement_type_name_check
+    CHECK (movement_type_name IN (
+     'expense','income','investment','debt','pocket','transfer','receive',
+     'account-opening','pnl','account-closure','balance-reversal'))
+  `);
+  console.log(pc.green('movement_types check constraint realigned for 037.'));
+ }
+
+ const inserted = await client.query(`
+  WITH movement AS (
+   INSERT INTO movement_types (movement_type_id, movement_type_name)
+   VALUES (11, 'balance-reversal')
+   ON CONFLICT (movement_type_id) DO NOTHING
+   RETURNING 1
+  ), transaction_kind AS (
+   INSERT INTO transaction_types (transaction_type_id, transaction_type_name)
+   VALUES (7, 'balance-reversal')
+   ON CONFLICT (transaction_type_id) DO NOTHING
+   RETURNING 1
+  )
+  SELECT
+   (SELECT count(*) FROM movement) AS movement_rows,
+   (SELECT count(*) FROM transaction_kind) AS transaction_rows
+ `);
+
+ const { movement_rows, transaction_rows } = inserted.rows[0];
+ if (Number(movement_rows) > 0 || Number(transaction_rows) > 0) {
+  console.log(pc.green('balance-reversal catalog entries added.'));
+ }
+
+ // REFUSES RATHER THAN REPOINTS when the registry is absent. Adding the column
+ // keyed on user_accounts would make the close delete refuse or null it, which
+ // is the one thing the column exists to prevent - and a later step would have
+ // to find and repoint a key nothing records. Migration 022's counterpart above
+ // can choose its parent because either parent is correct for it; this one has
+ // only one correct parent.
+ if (!present.rows[0].registry_exists) {
+  console.log(
+   pc.yellow(
+    'account_registry absent, transactions.reversal_of_account_id skipped.',
+   ),
+  );
+  return;
+ }
+
+ const {
+  rows: [column],
+ } = await client.query(`
+  SELECT EXISTS (
+   SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'transactions'
+      AND column_name = 'reversal_of_account_id'
+  ) AS column_present
+ `);
+
+ if (!column.column_present) {
+  await client.query(`
+   ALTER TABLE transactions
+    ADD COLUMN reversal_of_account_id INTEGER
+     REFERENCES account_registry (account_id)
+     ON DELETE RESTRICT ON UPDATE CASCADE
+  `);
+  console.log(
+   pc.green('transactions.reversal_of_account_id added, keyed on registry.'),
+  );
+ }
+
+ // Both halves, as one biconditional: a reversal leg without the column is a
+ // reversal nothing can find, and a non-reversal row carrying it claims
+ // membership in an operation it is not in. Dropped first so this is safe to
+ // run against a database that already carries an earlier form of it.
+ await client.query(`
+  ALTER TABLE transactions
+   DROP CONSTRAINT IF EXISTS transactions_reversal_pairing_check
+ `);
+
+ await client.query(`
+  ALTER TABLE transactions
+   ADD CONSTRAINT transactions_reversal_pairing_check
+   CHECK ((movement_type_id = 11) = (reversal_of_account_id IS NOT NULL))
+ `);
+
+ await client.query(`
+  CREATE INDEX IF NOT EXISTS idx_transactions_reversal_of_account
+   ON transactions (reversal_of_account_id)
+   WHERE reversal_of_account_id IS NOT NULL
+ `);
+}
+
 export async function ensureCategoryBudgetFxColumns(client = pool) {
  await client.query(`
   ALTER TABLE category_budget_accounts
