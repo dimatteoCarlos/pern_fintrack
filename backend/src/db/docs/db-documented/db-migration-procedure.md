@@ -25,10 +25,13 @@ That is what `supabase/001_production_alignment.sql` exists for.
 
 List the directory before writing one rather than trusting the number above.
 That number goes stale on every migration and has been behind four times.
-Listing `main` is also not enough on its own: `037_add_balance_reversal.sql`
-was written 2026-09-08 on `feat/deletion` and is not on `main`, so the next
-free number is `038` and a listing of `main` alone would hand out `037`
-twice. Ask on the shared channel before claiming a number.
+
+**Listing `main` is not enough on its own, and asking is.** A number can be
+claimed on a branch hours before it reaches `main`, and a listing of `main`
+during that window hands the same number to two authors. `037` spent
+2026-09-08 in exactly that state, written on `feat/deletion` and invisible to
+`main` until it merged the same day. Ask on the shared channel before claiming
+one.
 
 This is the only kind that is written from now on.
 
@@ -499,11 +502,11 @@ DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run db:migrate
 - **The pending set is every numbered file above production's last ledger row,
  and it is read rather than quoted.** The record puts production at `030` with
  the alignment applied and the ledger at 31 rows, read 2026-09-06, which makes
- the set `031` upward — six files as of 2026-09-08, `031` through `036`. Derive
- it, do not copy the six: `sql_migrations/` grows, and this figure has already
- aged twice. A seventh file, `037_add_balance_reversal.sql`, was written on
- 2026-09-08 on `feat/deletion` and is not on `main`, so it is outside the set
- until it merges and then inside it without anyone editing this line.
+ the set `031` upward. Derive it from that reading; do not carry a count here.
+ The figure has aged three times, most recently within a single day:
+ `037_add_balance_reversal.sql` merged to `main` on 2026-09-08, hours after
+ this bullet was written to name it as pending on a branch, and the derivation
+ absorbed it with no edit. That is what the rule is for.
 - **The record is not the reading, and 5.0 is what turns it into one.** Read the
  ledger before writing. If it does not end at `030_add_jpy_currency.sql`, stop:
  the pending set is not the one this section describes.
