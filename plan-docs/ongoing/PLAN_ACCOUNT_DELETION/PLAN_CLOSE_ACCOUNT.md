@@ -3329,3 +3329,147 @@ Nothing is deleted. `processRTAAnnulment`, `getAnnulmentImpactReport` and the
 `DELETION_TYPE_RTA` branch stay exactly as they are, reachable from the API and
 covered by the assessment endpoint; only the button leaves the screen. The
 decision is the owner's.
+
+## 13. The owner's decisions of 2026-09-08
+
+Every open decision this plan carried was settled on one day, and the settlement
+overrides two earlier recommendations that were written before it — including
+one of this module's own. They are recorded here rather than left in the
+sections that raised them, so a reader who wants to know what governs reads one
+place.
+
+### 13.1 The contract, and what it supersedes
+
+**CLOSE requires a zero balance and settles nothing.** A balance that blocks the
+close is resolved outside CLOSE, and the refusal screen is the official path.
+
+```
+CLOSE
+  |
+  +-- balance = 0 --> close
+  |
+  +-- balance != 0 --> refuse; the balance is resolved outside CLOSE
+```
+
+**This supersedes the recommendation at the end of `mockup-close-account.html`.**
+That file states as its first unsettled item that frames 02 and 06 cannot both
+be right, and this plan then recommended that 02 govern — that CLOSE settle a
+non-zero balance rather than refuse it. The owner ruled the other way and the
+recommendation is withdrawn. It is named here rather than quietly dropped
+because it is still written in the mockup and a later reader will find it.
+
+| Decision | Ruling |
+|---|---|
+| `CLOSE_POLICY_TRANSFER` | Not reactivated |
+| `CLOSE_POLICY_DISCARD` | Not reactivated |
+| Balance not zero | 409, CLOSE refuses |
+| Mockup frames 02, 03 and 10 | **Obsolete for CLOSE, not implementable** |
+| The "delete with adjustment" button | Off the screen, code kept |
+| Pocket release | Inside the same CLOSE transaction |
+| `writeLedgerRow` | Extract a primitive taking `dbClient` |
+| Identifying a reversal | A column, never the description |
+| A reversed account and the registry | It must stamp: historical identity is preserved |
+| A zero-balance gate on the reversal | Not added; removing the route answers it |
+| A divider token on a light surface | Created |
+| The eighteen loose files | Archived, never deleted |
+| The budget curve | Goes to implementation |
+| A theme toggle | Out of scope |
+| Migrations `031` to `036` | **Production not authorized yet** |
+
+### 13.2 Why the three frames are obsolete rather than deferred
+
+- **Frame 02, a residual with destinations available, has no executable state
+  left.** It exists to let the owner move a balance out during the close, and
+  the close no longer moves a balance.
+- **Frame 03, a residual with no destination, disappears with it.** Its answer
+  was "then discard", and the ruling's answer is "you cannot close yet, resolve
+  the balance first". The remedy the frame already draws — create an account —
+  survives as the remedy; the discard does not.
+- **Frame 10, the transfer confirmation, has nothing to confirm**, because there
+  is no destination inside CLOSE to name.
+- **The investment inconsistency the mockup raised resolves itself.** That frame
+  was drawn on an investment account precisely because transfer destinations are
+  bank accounts and there is no in-screen route, and the ruling is that CLOSE
+  does not need one: liquidating a position is that module's flow, not an
+  operation invented inside the close.
+
+### 13.3 What is being designed to replace the route, and what it is not
+
+The owner is designing a second operation, and its whole point is that it takes
+no decisions from the owner:
+
+```
+balance != 0
+  |
+  +-- resolve manually --> Tracker
+  |
+  +-- reverse the balance --> reversalAmount = -currentBalance
+                              |
+                              balance = 0 --> CLOSE
+```
+
+- **It runs BEFORE the close, not instead of it.** CLOSE stays a zero-balance
+  operation; this is what gets an account to zero. Naming it that way is what
+  keeps CLOSE from becoming a settlement engine again by a different door.
+- **The owner chooses nothing but whether to use it.** No destination, no
+  amount, no date, no currency, no method, no splitting across accounts. The
+  amount is `-currentBalance` and the sign follows from it, which is why the
+  label says "reverse the balance" and never "withdraw" or "deposit": it is an
+  administrative operation on a position, not a movement the owner chose.
+- **It reuses the components already on the screen.** `ProceedButtonUI` for its
+  button and `ImpactReportUI` for the related-accounts panel. That is the reason
+  nothing was deleted when the route left the screen: the switch in
+  `AccountDeletionPage.tsx` turns off what the annulment put on screen, and the
+  components stay whole.
+- **What is NOT settled and blocks its implementation** is the counterparty. The
+  earlier design sent the residual to the compensation account, and whether that
+  is right depends on six questions about that account which have never been
+  answered here: whether it is per user or global, whether it is excluded from
+  net worth, whether it appears in aggregate balances, whether it may hold a
+  non-zero balance permanently, whether its history means anything to the owner,
+  and whether this operation writes a real reversal or a boundary movement of
+  its own kind. Nothing may be built on the compensation account until those are
+  answered.
+
+### 13.4 The related-accounts panel survives the route that produced it
+
+The accordion was built to show what annulling an account would do to every
+other account. The annulment is gone and the panel is not, because its value was
+never the projection:
+
+- **Its question changes from consequence to fact.** It stops saying "these
+  accounts will be adjusted" and says "this account has operated with these
+  accounts", which is true regardless of which operation the owner picks.
+- **One level, never recursive.** The counterparties of the account being
+  closed, not their counterparties. A second level is an accounting graph and
+  answers no question the owner is asking.
+- **What it should carry per account, beyond the balance**: how many
+  interactions, when the last one was, and the net effect on that account if a
+  reversal runs. The count is what answers "why is this account listed at all",
+  which the balance alone never does.
+- **A total on that panel must not be called a net adjustment.** The name
+  invites reading it as a change in net worth, and whether it is one depends
+  entirely on the compensation-account questions in 13.3. Until those are
+  answered, no total on that panel may be labelled as an effect on net worth.
+
+### 13.5 One ruling could not be carried out as stated
+
+**The gate on movement type 10 that the owner ordered retired is not where the
+ruling places it, and retiring the one that exists would change a published
+figure.** Recorded rather than acted on.
+
+- **There is no gate on `movement_type_id = 10` in `dashboardController.js`.**
+  The line the ruling names is a join, not a predicate, and a search of that
+  file for the value and for the constant returns nothing.
+- **The gate that does exist is in Overview's file**, at
+  `overviewInvestmentRepository.js:164-165`, and it is two predicates: a
+  `FILTER` summing rows of that movement type into `closure_adjustment`, and the
+  `IN` list that admits the type to the query at all.
+- **Its own header already argues against retiring it, on a ground the ruling
+  does not address.** The writer is gone — `recordClosureSettlement.js:186` was
+  the only one and its imports are commented out — but the type still counts
+  rows written BEFORE the settlement was retired. Dropping it would not remove a
+  dead branch; it would stop counting those rows, silently, on any database that
+  holds one. Zero on `fintrack_dev` says nothing about another database.
+- **It is Overview's file and the fix is Overview's to make**, if the owner
+  confirms the ruling against this reading.

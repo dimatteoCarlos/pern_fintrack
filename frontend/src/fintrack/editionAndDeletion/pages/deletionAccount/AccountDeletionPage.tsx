@@ -136,8 +136,27 @@ const AccountDeletionView = ({
     close.residual !== null &&
     !close.canClose;
 
-  const isAnnulmentOffered =
-    !CLOSE_IS_THE_ONLY_METHOD || isBalanceBlockingTheClose;
+  // THE REVERSAL ROUTE LEAVES THE SCREEN, 2026-09-08 (Carlos). CLOSE requires a
+  // zero balance and settles nothing; a balance that blocks it is resolved
+  // outside CLOSE, and the notice below is the official path. The route that
+  // rewrote other accounts' history is not the answer to a non-zero balance.
+  //
+  // ONE SWITCH, NOT SIX EDITS. Everything the route put on screen already hung
+  // off this flag - the projection columns, the section title, the note and the
+  // button - so turning it off removes all of them together and turning it back
+  // on restores them together. isBalanceBlockingTheClose stays live: the blocked
+  // notice reads it directly and is what the owner keeps.
+  //
+  // WHAT REPLACES IT is not this route. The operation being designed is
+  // "reverse the balance and close": FinTrack computes -currentBalance, the
+  // owner chooses nothing, and it runs BEFORE close rather than instead of it.
+  // When it exists it reuses these same components - ProceedButtonUI for its
+  // button, ImpactReportUI for the related-accounts panel - which is why none
+  // of them is deleted here.
+  //
+  // const isAnnulmentOffered =
+  //   !CLOSE_IS_THE_ONLY_METHOD || isBalanceBlockingTheClose;
+  const isAnnulmentOffered: boolean = false;
 
   //-------------------------------
   // RTA ACCOUNT DELETION HOOK

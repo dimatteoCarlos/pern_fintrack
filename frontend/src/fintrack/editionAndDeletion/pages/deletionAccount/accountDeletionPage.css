@@ -38,9 +38,15 @@
    is #141414, far heavier than the line this replaces. Scoped to this page and
    prefixed so it cannot collide with a design-system name the way the block
    above did. Waiting on a decision from the owner. */
+/* SETTLED 2026-09-08. The owner ruled that the design system gains the token
+   rather than the lines being replaced by spacing, so this local is retired and
+   its uses read --color-border-subtle-on-inverse. Left commented rather than
+   deleted, per the standing rule.
+
 .account-deletion-page {
   --deletion-divider-on-light: #e5e7eb;
 }
+*/
 
 /* Page Container. The product's dark ground, which is what the mockup draws
    and what every other board in the application sits on. */
@@ -155,7 +161,7 @@
   margin-bottom: var(--space-6);
   padding-bottom: var(--space-4);
   border-bottom: var(--border-width-thin) solid
-    var(--deletion-divider-on-light);
+    var(--color-border-subtle-on-inverse);
 
 }
 
@@ -163,7 +169,7 @@
 .action-section {
   margin-top: var(--space-8);
   padding-top: var(--space-6);
-  border-top: var(--border-width-thin) solid var(--deletion-divider-on-light);
+  border-top: var(--border-width-thin) solid var(--color-border-subtle-on-inverse);
   display: flex;
   justify-content: flex-end;
   /* background-color: orange; */
