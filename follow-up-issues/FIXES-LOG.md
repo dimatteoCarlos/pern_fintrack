@@ -12,6 +12,45 @@ other fix · blast radius measured · how it was verified · lesson.
 
 ---
 
+## The lesson is typed, and it carries both versions of the code
+
+**In force for every entry written from 2026-09-09 onward. The four entries below
+predate the rule and are NOT rewritten to it** — a lessons log is a record of what
+was learned when, and back-dating its form would misrepresent when each lesson was
+actually available.
+
+Every new entry closes with a `### Lesson` section built from three required
+parts, in this order:
+
+| part | what it must contain |
+| :--- | :--- |
+| **Type** | one label from the table below, on its own line as `**Type:** <label>` |
+| **Wrong** | the erroneous code, in a fenced block, exactly as it stood — not paraphrased, not shortened to the offending token |
+| **Right** | the corrected code, in a fenced block, from the same file and the same scope, so the two blocks can be read side by side |
+
+The prose that follows states what the type means **in this codebase**, and what
+to check to catch the next one before it ships. Prose alone is not a lesson: a
+reader who has not seen the defect cannot recognise a shape from a description of
+it, only from the two versions of the code.
+
+### The types
+
+A closed list, so the same defect is filed under the same name twice. It grew out
+of the defects this repository has actually produced; a defect that fits none of
+these gets a new row added here in the same commit, never a free-text label.
+
+| type | what makes a defect this type |
+| :--- | :--- |
+| `unchecked-boundary` | a value enters the program from outside — environment, response body, query string, form — and is typed or trusted without being validated |
+| `contract-mismatch` | two sides of a boundary disagree about the accepted shape or value, and the disagreement is only visible at runtime |
+| `duplicated-constant` | one number or value is written in more than one place, so the places can drift apart silently |
+| `unit-error` | an expression mixes units, or applies the same conversion factor twice, producing a comparison that cannot fail or cannot succeed |
+| `wrong-protocol-semantics` | the mechanism works and reports the wrong standard code or state, so a correct caller reacts wrongly |
+| `stale-reference` | code, comment or document points at a file, line, column or value that has since moved or changed meaning |
+| `silent-fallback` | a failure is absorbed by a default that keeps the program running and produces a wrong result nothing throws on |
+
+---
+
 ## 2026-09-09 · `4a840346` · A cast that laundered an unchecked currency code
 
 **Frontend** · group: Locale and money formatting · severity 🟡
