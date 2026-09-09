@@ -96,6 +96,39 @@ in the `018` header is right, that run already happened on 2026-08-22 and
 production and local already share the same chain; section 5 then describes what
 was done rather than what remains. Confirm before treating it as either.
 
+### The boot path is not a third kind, and it never reaches production
+
+`run_time_db_init/createTables.js` holds an `ensure*()` function for most of
+what the chain does, and this document is full of them because a migration
+without its boot-path counterpart leaves a preexisting local database behind.
+None of that is a production mechanism. **Every `ensure*()` function is a
+local-development and attended-run device.**
+
+The reason is one guard. `src/index.js` calls `startServer()` — the only caller
+that reaches `initializeDatabase()` on a boot — inside
+`if (!process.env.VERCEL)`, and Vercel sets that variable in its own
+environment. The deployed entry point is `backend/index.js`, which imports
+`./src/app.js` and exports a handler, and never imports `src/index.js` at all.
+So the deployed backend calls no initializer, and no `ensure*()` has ever run
+against production.
+
+**The consequence is the reason this document exists.** Production receives a
+schema change through the migration chain and through nothing else. A deploy
+self-heals nothing, so every outstanding migration needs an attended run before
+a backend that depends on it is deployed — which is section 5.C stated from the
+other end.
+
+It is kept this way deliberately, ruled 2026-09-07: wiring the initializer into
+the serverless handler would run DDL on the path of a user request, let
+concurrent cold starts contend for `ACCESS EXCLUSIVE` locks, and — decisively —
+its first-time branch would build the whole schema from JavaScript against
+production with no ledger, no ordering and no `DOWN`.
+
+**One run applies every pending file, not one run per file.** `db:migrate`
+takes all of them in a single invocation inside one transaction, so the number
+of files pending and the number of runs needed are different questions with
+different answers.
+
 ---
 
 ## 2. How the runner works
