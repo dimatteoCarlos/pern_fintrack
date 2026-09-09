@@ -293,6 +293,25 @@
   line-height: 1.5;
 }
 
+/* WHERE THE REVERSAL GOES, SAID BESIDE THE LIST IT IS NOT IN. The compensation
+   account is deliberately absent from the panel below it, so this sentence is
+   the only place on the screen that names it - which is why it reads as a
+   statement of fact rather than as a caption on the table.
+
+   THE INFO TRIAD, the same one .deletion-methods-blocked uses further down, so
+   the two sentences that explain the same balance agree with each other on
+   screen. Not the warning triad: nothing here is a refusal or a risk, it is
+   where the money lands. */
+.account-relations__boundary {
+  margin: 0 0 var(--space-4) 0;
+  padding: var(--space-3);
+  border-left: var(--border-width-thick) solid var(--color-feedback-info-border);
+  background-color: var(--color-feedback-info-surface);
+  color: var(--color-feedback-info-content);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
 /* The refusal, stated on the panel rather than inside the dialog.
    THE INFO TRIAD, NOT THE WARNING ONE, and the distinction is what the notice
    and the button beneath it are. This is a condition the owner can meet, and

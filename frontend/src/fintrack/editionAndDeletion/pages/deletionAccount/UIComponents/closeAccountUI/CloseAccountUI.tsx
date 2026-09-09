@@ -45,6 +45,15 @@ export type CloseAccountUIPropType = {
  // Called once, only after a successful close - the caller navigates away
  // since the account row no longer exists.
  onClosed: () => void;
+ // WHICH OPERATION THIS DIALOG CONFIRMS, and it changes three things: the
+ // title and the confirm label, whether a blocking balance still disables the
+ // button, and whether the boundary statement is shown.
+ //
+ // The page decides it, not this dialog, because the page is where the balance
+ // is already known and where the trigger button carries the same name. A
+ // checkbox in here would let the owner open "reverse and close" and confirm
+ // something else.
+ isBalanceReversed?: boolean;
 };
 
 export const CloseAccountUI = ({
@@ -55,6 +64,7 @@ export const CloseAccountUI = ({
  close,
  onClose,
  onClosed,
+ isBalanceReversed = false,
 }: CloseAccountUIPropType) => {
 // The schema's ceiling on the reason (036's chk_close_reason_length), restated
 // here so the field stops at it rather than letting the owner write past it and
@@ -90,8 +100,17 @@ const CLOSE_REASON_MAX_LENGTH = 255;
  // has not answered yet, the preview says the balance refuses the close, and
  // the owner has not written a reason. Each has its own sentence below, so a
  // disabled button always has a visible cause beside it.
+ // canClose DROPS OUT OF THIS WHEN THE BALANCE IS BEING REVERSED, and that is
+ // the whole point of the operation rather than an exception to the rule: the
+ // reversal exists to make a blocking balance closeable, so a button that
+ // refuses on the balance it is about to neutralise would never be pressable.
+ // The other three conditions still hold - a preview that has not answered or
+ // failed leaves the reversal without an amount to state.
  const isConfirmDisabled =
-  isLoadingPreview || !!previewError || !canClose || trimmedReason.length === 0;
+  isLoadingPreview ||
+  !!previewError ||
+  (!canClose && !isBalanceReversed) ||
+  trimmedReason.length === 0;
 
  const successMessage = useMemo(
   () =>
@@ -109,11 +128,19 @@ const CLOSE_REASON_MAX_LENGTH = 255;
   if (isLoadingPreview || previewError || canClose || residual === null) {
    return undefined;
   }
+  // THE SAME BALANCE, TWO DIFFERENT SENTENCES. Under the plain close it is a
+  // refusal and names the remedy. Under the reversal it is not a refusal at
+  // all - it states what is about to be moved and where - so quoting the
+  // refusal here would tell the owner the button will fail while it is about
+  // to succeed.
+  if (isBalanceReversed) {
+   return t('closeAccountReversalNotice').replace('{residual}', residual);
+  }
   return t('closeAccountBlockedByBalance').replace('{residual}', residual);
- }, [canClose, isLoadingPreview, previewError, residual, t]);
+ }, [canClose, isBalanceReversed, isLoadingPreview, previewError, residual, t]);
 
  const handleConfirm = () => {
-  executeClose(closeReason);
+  executeClose(closeReason, isBalanceReversed);
  };
 
  const handleClose = () => {
@@ -129,10 +156,20 @@ const CLOSE_REASON_MAX_LENGTH = 255;
    t={t}
    isOpen={isOpen}
    variant="hard"
-   title={t('closeAccountTitle')}
-   description={t('closeAccountDescription')}
+   title={t(
+    isBalanceReversed ? 'closeAccountReverseTitle' : 'closeAccountTitle',
+   )}
+   description={t(
+    isBalanceReversed
+     ? 'closeAccountReverseDescription'
+     : 'closeAccountDescription',
+   )}
    warning={balanceWarning}
-   confirmLabel={t('closeAccountConfirmButton')}
+   confirmLabel={t(
+    isBalanceReversed
+     ? 'closeAccountReverseConfirmButton'
+     : 'closeAccountConfirmButton',
+   )}
    confirmDisabled={isConfirmDisabled}
    successMessage={successMessage}
    errorMessage={fetchLoadError}

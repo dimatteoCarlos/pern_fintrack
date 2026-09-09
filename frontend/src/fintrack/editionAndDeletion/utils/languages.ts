@@ -170,6 +170,12 @@ reportTitleWithImpact:string;
  closeAccountSuccessMessage: string;
  closeAccountBalanceLabel: string;
  closeAccountBlockedByBalance: string;
+ closeAccountReverseTriggerButton: string;
+ closeAccountReverseTitle: string;
+ closeAccountReverseDescription: string;
+ closeAccountReverseConfirmButton: string;
+ closeAccountReversalNotice: string;
+ closeReversalBoundaryStatement: string;
  closeAccountPreviewError: string;
  closeAccountReasonLabel: string;
  closeAccountReasonPlaceholder: string;
@@ -351,7 +357,7 @@ reportTitleWithImpact:"Impact on Affected Accounts",
 
   closeOnlyPageTitle: "Delete Account",
   closeOnlyDetailsTitle: "Account to Delete",
-  closeOnlyBlockedNotice: "This account still holds a balance, so it cannot be closed yet. Bring it to zero with ordinary movements and then delete it, which keeps its name on every movement that mentions it. The other route is the button below: it adjusts the accounts this one has moved money with and then removes this one WITHOUT keeping its name.",
+  closeOnlyBlockedNotice: "This account still holds a balance, so it cannot be closed as it is. Two ways forward: move the balance out yourself with an ordinary transfer and then close it, or use the button below, which reverses the balance and closes in one operation. Either way the account keeps its name on every movement that mentions it.",
   relatedAccountsSummary: "Related accounts",
   relatedAccountsNote: "New balance and net adjustment show what deleting this account with adjustment would do to each of these accounts. The close changes none of these figures.",
   relatedAccountsHeading: "Accounts this one has moved money with",
@@ -378,7 +384,13 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   closeAccountConfirmButton: "Delete Account",
   closeAccountSuccessMessage: "{targetAccountName} has been deleted. Its history stays in the registry under the same name.",
   closeAccountBalanceLabel: "Balance to close with:",
-  closeAccountBlockedByBalance: "This account still holds {residual}. Closing does not move money: it only runs on an account at zero. Move the balance out with a transfer first and then close it. The other route on this screen deletes the account with adjustment instead, reversing its effects on the other accounts - and it does not keep this account's name.",
+  closeAccountBlockedByBalance: "This account still holds {residual}. Closing does not move money: it only runs on an account at zero. Move the balance out with a transfer first and then close it, or use the button that reverses the balance and closes in one step.",
+  closeAccountReverseTriggerButton: "Reverse the Balance and Close",
+  closeAccountReverseTitle: "Reverse the Balance and Close",
+  closeAccountReverseDescription: "This account holds a balance, so it cannot be closed as it is. FinTrack will move that balance out and close the account, both in one operation - if either part fails, neither happens. You choose nothing else: the amount is exactly what the account holds, and the destination is the compensation account the system keeps for this.",
+  closeAccountReverseConfirmButton: "Reverse and Close",
+  closeAccountReversalNotice: "{residual} will be moved out of this account, bringing it to zero, and then the account will be closed. Your net worth does not change: the compensation account that receives it sits outside every balance the app adds up.",
+  closeReversalBoundaryStatement: "The balance is reversed against the compensation account the system keeps for this. It is not one of your accounts and is not listed below. It sits outside your net worth and outside every aggregate balance, so moving a balance into it takes that balance out of your figures without destroying the record that it existed.",
   closeAccountPreviewError: "The balance could not be read, so the close cannot be offered yet.",
   closeAccountReasonLabel: "Reason for closing",
   closeAccountReasonPlaceholder: "e.g. Bank account closed at the branch",
@@ -516,7 +528,7 @@ totalNetAdjustment: 'Ajuste Neto Total:',
 
   closeOnlyPageTitle: "Eliminar Cuenta",
   closeOnlyDetailsTitle: "Cuenta a Eliminar",
-  closeOnlyBlockedNotice: "Esta cuenta todavía tiene saldo, así que aún no se puede cerrar. Llévelo a cero con movimientos normales y elimínela: su nombre queda en cada movimiento que la menciona. La otra vía es el botón de abajo: ajusta las cuentas con las que esta movió dinero y después la elimina SIN conservar su nombre.",
+  closeOnlyBlockedNotice: "Esta cuenta todavía tiene saldo, así que no se puede cerrar tal como está. Hay dos caminos: saque el saldo usted mismo con una transferencia normal y después ciérrela, o use el botón de abajo, que revierte el saldo y cierra en una sola operación. En ambos casos la cuenta conserva su nombre en cada movimiento que la menciona.",
   relatedAccountsSummary: "Cuentas relacionadas",
   relatedAccountsNote: "El saldo nuevo y el ajuste neto muestran lo que le haría a cada una de estas cuentas eliminar esta con ajuste. El cierre no cambia ninguna de esas cifras.",
   relatedAccountsHeading: "Cuentas con las que esta ha movido dinero",
@@ -543,7 +555,13 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   closeAccountConfirmButton: "Eliminar Cuenta",
   closeAccountSuccessMessage: "{targetAccountName} ha sido eliminada. Su historial permanece en el registro bajo el mismo nombre.",
   closeAccountBalanceLabel: "Saldo con el que cerrar\u00eda:",
-  closeAccountBlockedByBalance: "Esta cuenta todav\u00eda tiene {residual}. Cerrar no mueve dinero: solo se ejecuta sobre una cuenta en cero. Saque el saldo con una transferencia primero y despu\u00e9s ci\u00e9rrela. La otra v\u00eda de esta pantalla la elimina con ajuste, revirtiendo sus efectos sobre las dem\u00e1s cuentas, y no conserva el nombre de esta cuenta.",
+  closeAccountBlockedByBalance: "Esta cuenta todavía tiene {residual}. Cerrar no mueve dinero: solo se ejecuta sobre una cuenta en cero. Saque el saldo con una transferencia primero y después ciérrela, o use el botón que revierte el saldo y cierra en un solo paso.",
+  closeAccountReverseTriggerButton: "Revertir Saldo y Cerrar",
+  closeAccountReverseTitle: "Revertir el Saldo y Cerrar",
+  closeAccountReverseDescription: "Esta cuenta tiene saldo, así que no puede cerrarse tal como está. FinTrack sacará ese saldo y cerrará la cuenta, ambas cosas en una sola operación: si una parte falla, no ocurre ninguna. Usted no elige nada más, el monto es exactamente lo que la cuenta tiene y el destino es la cuenta de compensación que el sistema mantiene para esto.",
+  closeAccountReverseConfirmButton: "Revertir y Cerrar",
+  closeAccountReversalNotice: "Se sacarán {residual} de esta cuenta, dejándola en cero, y después se cerrará. Su patrimonio no cambia: la cuenta de compensación que lo recibe queda fuera de todos los saldos que la aplicación suma.",
+  closeReversalBoundaryStatement: "El saldo se revierte contra la cuenta de compensación que el sistema mantiene para esto. No es una de sus cuentas y no aparece en la lista de abajo. Queda fuera de su patrimonio y fuera de todo saldo agregado, así que mover un saldo hacia ella lo retira de sus cifras sin destruir el registro de que existió.",
   closeAccountPreviewError: "No se pudo leer el saldo, as\u00ed que el cierre a\u00fan no puede ofrecerse.",
   closeAccountReasonLabel: "Motivo del cierre",
   closeAccountReasonPlaceholder: "p. ej. Cuenta bancaria cerrada en la sucursal",
