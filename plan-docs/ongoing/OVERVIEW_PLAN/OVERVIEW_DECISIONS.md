@@ -2548,3 +2548,36 @@ lista ahí habría sido un segundo renderizador para una misma forma de fila.
 publicando y `Overview.tsx` ya no lo mapea —el mapeo quedó comentado, no
 borrado—. Si la consulta de `/overview` debe dejar de traer cinco filas que nadie
 dibuja es una pregunta sobre ese statement, no sobre el frontend.
+---
+
+# 2026-09-09 - Tres hallazgos de Overview viven en el documento de borrado
+
+`plan-docs/ongoing/PLAN_ACCOUNT_DELETION/DELETION_FINDINGS.md`, en `main` desde
+el merge `8d9baa7a`. La sesion del modulo de borrado saco 24 hallazgos de su
+memoria de sesion a ese archivo por orden de Carlos, y tres de ellos son de este
+modulo. Se apuntan y no se copian: dos copias de un hallazgo son dos versiones
+en cuanto una se edite.
+
+**El filtro de baja logica no se aplica a ninguna consulta de saldo ni de
+historia.** Un mes en que la cuenta existia es un mes en que el dueno tenia ese
+saldo, asi que filtrar `deleted_at` en una serie mensual dobla la curva en el mes
+de la baja y borra un pasado verdadero. La regla es por FORMA DE SALIDA y no por
+columna: la unica superficie que si filtra es el selector de cuenta del
+formulario de transaccion. El repositorio de cuentas de Overview ya lo documenta
+en el sitio donde el filtro esta ausente.
+
+**La reconciliacion de la tarjeta de inversion es una comprobacion, no una
+identidad.** `capitalContributed + realizedPnl + closureAdjustment` puede no dar
+`ledgerBalance`, y por eso `makeInvestmentCard.js:136-139` lo prueba y emite un
+aviso en vez de darlo por hecho.
+
+**Ningun constraint ata un tipo de movimiento a un tipo de cuenta.** La
+correspondencia es convencion, sostenida por el codigo que escribe las filas y
+por nada en el esquema. Toda consulta de este modulo que corte por tipo de
+movimiento asume esa convencion.
+
+**Cuatro hallazgos mas me fueron dirigidos y no son de este modulo.** Los dos de
+la migracion que retipa la cuenta de compensacion, el del seed de catalogo con
+`ON CONFLICT` sobre el id, y el del arranque que se traga el fallo del catalogo
+de monedas: pertenecen a la cadena de migraciones y al arranque, no a Overview.
+Quedan anotados aqui unicamente para que conste a quien se le dijeron.
