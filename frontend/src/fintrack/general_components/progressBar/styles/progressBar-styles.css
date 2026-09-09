@@ -1,0 +1,61 @@
+/* frontend/src/fintrack/general_components/progressBar/styles/progressBar-styles.css
+   The shared part-of-whole bar. Imported by ProgressBar.tsx and by nothing else.
+
+   Not namespaced to a page selector, unlike the block stylesheets under pages/:
+   this is a shared component and the whole point is that it looks the same
+   wherever it lands. What it must NOT do is set its own width or margin - the
+   row it sits in owns those, and a bar that reserved space would break every
+   layout that did not expect it. */
+
+/* --space-1 tall: a bar this thin is a rule with a filled portion, which is
+   what a figure beside it needs. Taller and it becomes a second headline
+   competing with the amount it is only qualifying. */
+.progressBar {
+ height: var(--space-1);
+ border-radius: var(--radius-full);
+ background-color: var(--color-border-subtle);
+ /* The fill is a rounded rectangle inside a rounded track; without this its
+    square corners show through at both ends of a partial bar. */
+ overflow: hidden;
+}
+
+/* The neutral fill, and the default. Muted ink and not a status colour: a share
+   whose caller took no reading has nothing to report, and a teal bar would
+   report that it is fine. */
+.progressBar__fill {
+ height: 100%;
+ border-radius: var(--radius-full);
+ background-color: var(--color-content-on-dark-subtle);
+ transition: width var(--motion-slow);
+}
+
+/* One rule per reading of the shared status vocabulary. The hues are the
+   tokens the squares already use, so a bar and the square on its row cannot
+   disagree about what a colour means. */
+.progressBar__fill--ok {
+ background-color: var(--color-status-ok);
+}
+
+.progressBar__fill--warning {
+ background-color: var(--color-status-warning);
+}
+
+.progressBar__fill--alert {
+ background-color: var(--color-status-alert);
+}
+
+.progressBar__fill--info {
+ background-color: var(--color-status-info);
+}
+
+.progressBar__fill--neutral {
+ background-color: var(--color-content-on-dark-subtle);
+}
+
+/* A bar animating from 0 to its value on every render is motion that carries no
+   information, and it is the kind this setting exists to stop. */
+@media (prefers-reduced-motion: reduce) {
+ .progressBar__fill {
+  transition: none;
+ }
+}

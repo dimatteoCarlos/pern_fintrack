@@ -817,19 +817,36 @@ a.icon {
  min-width: 0;
 }
 
-/* The month's budget: the same pair the card's head and headline are, one step
-   down. Carlos asked for "Budget con el mismo style de Expense", so the label
-   takes .domainCard__label's size, weight and capitalisation and the amount
-   takes .domainCard__figure's weight and ink at the label's size - a figure that
+/* The budget block: a heading row, the bar, and the verdict row under it. A
+   column of three and not three loose lines, because the bar has to span the
+   same width the two figures are measured across - a bar narrower than its own
+   labels reads as a fourth figure rather than as the proportion of them. */
+.overviewLayout .domainCard__budget {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+}
+
+/* The two ends of a reading: what it is on the left, how much of it on the
+   right. space-between and not a gap, so the figures of the head and the foot
+   land on the same two edges and the bar between them reads as spanning both. */
+.overviewLayout .domainCard__budgetHead,
+.overviewLayout .domainCard__budgetFoot {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2);
+}
+
+/* Carlos asked for "Budget con el mismo style de Expense", so the label takes
+   .domainCard__label's size, weight and capitalisation and the amount takes
+   .domainCard__figure's weight and ink at the label's size - a figure that
    qualifies the headline rather than a second headline.
 
    No letter-spacing, though .domainCard__label carries 0.2px: that is a
    hardcoded pixel the style rules forbid, it has no token, and at 0.2px it is
    below the threshold at which the two lines could look unlike each other. */
-.overviewLayout .domainCard__budget {
- display: flex;
- align-items: baseline;
- gap: var(--space-2);
+.overviewLayout .domainCard__budgetHead {
  font-size: var(--font-size-sm);
 }
 
@@ -844,6 +861,24 @@ a.icon {
  font-size: inherit;
  font-weight: var(--font-weight-semibold);
  color: var(--color-content-on-dark);
+}
+
+/* The square rides WITH the remainder, so the two cannot wrap apart: a mark on
+   one line and the sentence it grades on the next is a mark with no subject.
+   align-items over baseline, because the square is an empty box and has no
+   baseline of its own to sit on. */
+.overviewLayout .domainCard__budgetRemainder {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ min-width: 0;
+}
+
+/* Spending outside any live category. Subtle rather than muted: it is the one
+   line on the card that states a fact and grades nothing, so it sits a step
+   below every clause that does. */
+.overviewLayout .domainCard__aside {
+ color: var(--color-content-on-dark-subtle);
 }
 
 /* The caveat on a delta measured against a partial prior month. Quieter than

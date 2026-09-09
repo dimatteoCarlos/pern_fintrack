@@ -23,7 +23,9 @@ import {
  budgetRemainWord,
  budgetSquareState,
  budgetStatusLevel,
+ BudgetStatusLevel,
 } from '../../../helpers/budgetStatus';
+import { ProgressBar, ProgressTone } from '../../../general_components/progressBar/ProgressBar';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import {
@@ -226,32 +228,22 @@ const executionPercentage = (card: OverviewExpenseCard): number | null => {
 // budgetVariance is budgetAmount minus the month's WHOLE spending, so it is
 // negative when the budget was exceeded. Null is a month with no budget in force
 // anywhere, which is an absent decision and not a breach.
-const expenseSquare = (card: OverviewExpenseCard): SquareClass => {
- // Ahead of the budget reading, and red rather than amber. Carlos, 2026-09-08:
- // "si hay algo uncategorized, por supuesto seria aparte, y seria un alerta
- // roja". Spending that resolves to no live category is either a category that
- // was closed - whose spending now has no budget behind it - or an account that
- // never had its category_budget_accounts row, which is a fault. Neither is a
- // condition an amber square should carry, and neither is quieter than being
- // over budget: the budget reading itself is incomplete while it holds.
- if (card.hasUncategorizedExpense) return 'alert';
-
- if (card.budgetVariance === null) return 'unknown';
-
- return budgetSquareState(
-  executionPercentage(card),
-  card.budgetVariance < 0,
- ) as SquareClass;
-};
-
-// The budget verdict in words, which is what the card was missing: it printed
-// the budget as a bare figure beside the spend and left the comparison to the
-// reader. budgetVariance is the comparison, already computed by the server.
 // One decimal, which is the budget module's own precision for a share
 // (ListCategory.tsx and BudgetBigBoxResult.tsx both print toFixed(1)). The
 // change against the prior month prints at the same precision, so the two
 // percentages on an Expense card are read on one scale.
 const SHARE_DECIMALS = 1;
+
+// The bar's tone, from the SAME call the square and the percentage make.
+// budgetStatusLevel speaks in ok/near/over and the shared bar in the status
+// vocabulary, so this is a rename and not a second decision - which is the
+// point: three marks on one block lighting from three calls is how a row ends
+// up contradicting itself.
+const BAR_TONE: Record<BudgetStatusLevel, ProgressTone> = {
+ ok: 'ok',
+ near: 'warning',
+ over: 'alert',
+};
 
 // The word is budgetRemainWord's, the same one the four budget screens print, so
 // the two modules cannot describe the same remainder with different verbs. It
@@ -273,23 +265,30 @@ const SHARE_DECIMALS = 1;
 // measured against, so a reader could see "$500 left" without knowing whether
 // the month's budget was $600 or $6,000.
 //
-// null in the same case the remainder is withheld: no budget in force, or a
-// category set spanning currencies. The line disappears rather than printing a
-// zero budget, which would be a decision the owner never made.
-const budgetAmountLine = (card: OverviewExpenseCard) => {
- if (card.budgetAmount === null) return null;
-
- return (
-  <span className='domainCard__budget'>
-   <span className='domainCard__budgetLabel'>Budget</span>
-   <span className='domainCard__budgetAmount'>
-    {money(card.currency, card.budgetAmount)}
-   </span>
-  </span>
- );
-};
-
-const budgetClause = (card: OverviewExpenseCard) => {
+// The month's budget, as one block of three rows rather than a clause inside a
+// sentence. Carlos, 2026-09-09: the card printed the REMAINDER and never the
+// ceiling it was measured against, so a reader saw "$500 left" without knowing
+// whether the month's budget was $600 or $6,000.
+//
+//   Budget                          $3,500.00
+//   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░
+//   ■ $465.40 left                  86.7% spent
+//
+// The bar is what a percentage cannot do: a budget is a part of a whole and a
+// bar states the proportion at a glance. It does not replace the figure, which
+// stays because the bar is approximate and the number is exact.
+//
+// THE SQUARE LIVES HERE and not at the head of the card's whole subtitle, which
+// is where it was until 2026-09-09 - a 12px mark in front of the word Budget,
+// grading a block it was not inside. It grades this reading, so it sits on this
+// reading's line.
+//
+// The whole block is absent when no budget is in force, or when the category
+// accounts span currencies and V1 will not add across them. Absent and not
+// blanked: there is no reading to report, so there is no square either. Every
+// mark this card makes comes from spending measured against the budget, and
+// with no budget there is no measurement.
+const BudgetBlock = ({ card }: { card: OverviewExpenseCard }) => {
  // The middle argument is what the variance was measured against, so it is
  // totalAmount: budgetRemainWord reads the pair to tell an unbudgeted card from
  // one at zero, and handing it the other figure would answer for a comparison
@@ -300,39 +299,60 @@ const budgetClause = (card: OverviewExpenseCard) => {
   card.budgetVariance,
  );
 
- if (!word) return null;
+ if (card.budgetAmount === null || !word) return null;
 
  const execution = executionPercentage(card);
-
- // No "budget:" prefix any more - budgetAmountLine above names the figure on
- // the line before this one, so repeating the word here would label the
- // remainder as if it were the budget.
- const remainder = `${money(
-  card.currency,
-  Math.abs(card.budgetVariance ?? 0),
- )} ${word}`;
-
- // Withheld rather than printed as a dash: the amount beside it is a whole
- // answer on its own, and a dash inside a parenthesis after it would read as a
- // broken figure instead of an absent one.
- if (execution === null) return remainder;
+ const isOver = card.budgetVariance !== null && card.budgetVariance < 0;
+ const level = budgetStatusLevel(execution, isOver);
 
  return (
-  <>
-   {remainder}{' '}
-   <span
-    className={`domainCard__share domainCard__share--${budgetStatusLevel(
-     execution,
-     card.budgetVariance !== null && card.budgetVariance < 0,
-    )}`}
-   >
-    ({execution.toFixed(SHARE_DECIMALS)}% spent)
-   </span>
-  </>
+  <div className='domainCard__budget'>
+   <div className='domainCard__budgetHead'>
+    <span className='domainCard__budgetLabel'>Budget</span>
+    <span className='domainCard__budgetAmount'>
+     {money(card.currency, card.budgetAmount)}
+    </span>
+   </div>
+
+   {/* Withheld and not drawn empty when the share is unmeasurable, which is a
+       zero budget: an empty track states that nothing has been spent, and the
+       remainder beside it says otherwise. */}
+   {execution !== null && (
+    <ProgressBar
+     value={execution}
+     tone={BAR_TONE[level]}
+     label='Share of this budget spent this month'
+    />
+   )}
+
+   <div className='domainCard__budgetFoot'>
+    <span className='domainCard__budgetRemainder'>
+     <StatusSquare alert={budgetSquareState(execution, isOver)} />
+     {money(card.currency, Math.abs(card.budgetVariance ?? 0))} {word}
+    </span>
+
+    {/* The share is SPENT and it says so. The amount to its left is the
+        remainder, and a bare percentage beside a remainder reads as the share
+        LEFT, which is the opposite figure. */}
+    {execution !== null && (
+     <span className={`domainCard__share domainCard__share--${level}`}>
+      {execution.toFixed(SHARE_DECIMALS)}% spent
+     </span>
+    )}
+   </div>
+  </div>
  );
 };
 
-// How much of the month's spending the budget verdict above did NOT cover.
+// How much of the month's spending resolves to no live category.
+//
+// A DATUM AND NOTHING ELSE. Carlos, 2026-09-09: "para mi es solo un dato, no se
+// hace ninguna comparacion o alerta, nada (...) todos los alertas de expense es
+// resultado de la comparacion de expense spent vs el budget". So it carries no
+// square, no colour and no place in any verdict - it is shown when there is
+// some and omitted when there is none. Until today it forced a red square onto
+// the card ahead of the budget reading, which put an alert on the one figure
+// that is not a comparison.
 //
 // The server publishes a FLAG and never this amount, deliberately: it is
 // totalAmount minus categorizedExpense, a subtraction over two fields already
@@ -340,9 +360,6 @@ const budgetClause = (card: OverviewExpenseCard) => {
 // be wrong. The flag is what decides whether the clause appears at all - the
 // subtraction alone can land on a fraction of a cent of binary float error and
 // would print a clause for spending that does not exist.
-//
-// Without it the amber square says the reading is incomplete and gives the
-// reader no way to tell whether that means a cent or half the month.
 const uncategorizedClause = (card: OverviewExpenseCard) => {
  if (!card.hasUncategorizedExpense) return null;
 
@@ -459,8 +476,6 @@ function DomainCards() {
 
  const { income, expense, pnl, debt, pocket, investment } = domainCards;
 
- const budget = budgetClause(expense);
- const budgetAmount = budgetAmountLine(expense);
  const uncategorized = uncategorizedClause(expense);
 
  return (
@@ -485,10 +500,13 @@ function DomainCards() {
     </div>
    </DomainCard>
 
+   {/* No square prop, and that is the change of 2026-09-09: the card's one
+       mark belongs to the budget reading and now sits inside BudgetBlock, on
+       the line it grades. Passed here it sat in front of the whole subtitle,
+       which is why it read as a stray dash before the word Budget. */}
    <DomainCard
     label='Expense'
     nature='flow'
-    square={expenseSquare(expense)}
     sub={
      /* ROWS and not one wrapping sentence, which is the shape Carlos drew on
         2026-09-09: the change, then the budget, then what is left of it. The
@@ -501,15 +519,14 @@ function DomainCards() {
       {/* Closest to the figure above it, because it is a reading OF that
           figure rather than of the budget. */}
       <span>{deltaLine(expense)}</span>
-      {budgetAmount}
-      {/* The verdict the square grades: how much of that budget is left, and
-          what share of it the month has spent. */}
-      {budget && <span>{budget}</span>}
-      {/* The reason the verdict above can be incomplete, and the clause the
-          red square is pointing at. Spending that lost its category is not
-          counted against the budget, so the card can be inside its budget and
-          still not know where the month went. */}
-      {uncategorized && <span>{uncategorized}</span>}
+
+      <BudgetBlock card={expense} />
+
+      {/* Last, quietest, and unqualified. It is spending the budget reading
+          above does not account for - worth knowing, and not a verdict. */}
+      {uncategorized && (
+       <span className='domainCard__aside'>{uncategorized}</span>
+      )}
      </div>
     }
    >

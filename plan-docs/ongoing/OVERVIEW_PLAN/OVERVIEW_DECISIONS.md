@@ -2414,3 +2414,87 @@ columna.
 frase una sola vez para los cinco calculadores). El render en `DomainCards.tsx`:
 la línea de la delta aparece siempre y la acotación es un `(partial)` atenuado a
 su lado, con la frase completa del servidor en su `title`.
+
+
+---
+
+# El gasto sin categorizar no alerta nada, y el bloque de Budget se rediseña — fallo de Carlos, 2026-09-09
+
+## Lo primero: qué era ese "guion feo delante de Budget"
+
+El cuadrito de estado compartido (`StatusSquare`, un `<span>` de 0.75rem
+declarado en `generalStyles.css`). Se pasaba como propiedad de la tarjeta, así
+que se dibujaba **al principio de todo el subtítulo**, delante de la palabra
+Budget, calificando un bloque en el que no estaba. A 12px, al lado de una
+leyenda de 12px, se lee como un guion.
+
+**Se muda adentro del bloque de Budget, a la línea del remanente**, que es la
+lectura que califica.
+
+## Lo segundo: el gasto sin categorizar no participa de ninguna alerta
+
+Carlos, textual:
+
+> *no estoy de acuerdo de la complicacion que existe con gastos sin
+> categorizar, para mi es solo un dato, no se hace ninguna comparacion o alerta,
+> nada. Las alertas son con respecto al presupuesto, ahi fue donde se aplico el
+> near limit, no en gastos sin categorizar. todos los alertas de expense, es
+> resultado de la comparacion de expense spent vs el budget. uncategorized
+> expenses, no entra en ninguna, solo se muestra si hay o no.*
+
+**Esto revierte una decisión del 2026-09-08.** Ese día la regla fue *"si hay algo
+uncategorized (...) seria un alerta roja"*, y quedó implementada como la primera
+condición del cuadrito, por delante de la lectura del presupuesto. Queda sin
+efecto: gana el fallo posterior.
+
+**Lo que se borró y por qué la función entera se va.** `expenseSquare` tenía tres
+ramas y las dos primeras eran las que Carlos descarta:
+
+| rama | qué hacía | por qué se va |
+|---|---|---|
+| `hasUncategorizedExpense → 'alert'` | cuadrito rojo por gasto sin categoría | no es una comparación, así que no es una alerta |
+| `budgetVariance === null → 'unknown'` | cuadrito hueco cuando no hay presupuesto | sin presupuesto no hay medición, y entonces no hay marca: el bloque entero desaparece |
+| `budgetSquareState(...)` | la lectura gastado contra presupuesto | **es la única que queda**, y ahora vive dentro del bloque |
+
+El monto sin categorizar sigue apareciendo, último y en tinta apagada
+(`.domainCard__aside`), sin cuadrito y sin color.
+
+## Lo tercero: cómo queda Budget dentro de la tarjeta de Expense
+
+```
+EXPENSE                                 FLOW
+$3,034.60
+▲ 8.4% ($234.60) vs prior month
+
+Budget                             $3,500.00
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░
+■ $465.40 left                    86.7% spent
+
+$120.00 outside a category
+```
+
+**Por qué una barra y no sólo el porcentaje.** Un presupuesto es una parte de un
+todo, y una barra dice la proporción de un vistazo donde un número exige leerlo.
+No reemplaza a la cifra: la barra es aproximada y el número exacto, así que van
+los dos.
+
+**Por qué encabezado y pie tienen los mismos dos bordes.** `space-between` en las
+dos filas: el nombre y el techo arriba, la marca con el remanente y la parte
+gastada abajo. La barra queda entre ellas cubriendo el mismo ancho, así se lee
+como la proporción de esas dos cifras y no como una cuarta cifra.
+
+**La barra sale de un componente compartido nuevo**, `general_components/progressBar/`.
+Tres módulos quieren el mismo objeto — un bolsillo contra su meta, una categoría
+contra su presupuesto, un mes contra su techo — y `PocketCard.tsx` ya tiene una
+copia privada. Esa copia **no se toca**: el módulo de bolsillos tiene otro dueño y
+decide cuándo adoptarlo.
+
+**Su tono sale de la misma llamada que el cuadrito y el porcentaje.**
+`budgetStatusLevel` habla en `ok/near/over` y la barra en el vocabulario de
+estado; `BAR_TONE` es un renombre y no una segunda decisión. Tres marcas en un
+bloque encendidas por tres llamadas distintas es como una fila termina
+contradiciéndose.
+
+**Cuándo no hay barra.** Cuando la parte gastada no se puede medir, que es un
+presupuesto en cero: una pista vacía afirma que no se gastó nada, y el remanente
+al lado dice lo contrario.
