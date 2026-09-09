@@ -177,6 +177,38 @@ So: **the code that writes the new columns must be deployed in the same window
 as the migration that requires them.** Schema first, then code, with nobody
 creating records in between; or relax the `NOT NULL`, deploy, and restore it.
 
+### A data step that calls a transaction writer is not a chain file
+
+`runMigrations.js:97` filters the directory with `.endsWith('.sql')`, so the
+chain executes SQL and nothing else. A data change that a SQL file cannot
+express is therefore a script run by hand, and that changes what it depends on.
+
+Four writers read the in-memory currency catalog before they write a row:
+`recordTransaction.js:25`, `recordAnnulmentTransaction.js:127`,
+`recordClosureSettlement.js:153` and `recordBalanceReversal.js:135`. Each calls
+`getCurrencyIdSync` above its own `try`, so an unloaded catalog throws before
+any statement is issued. Under HTTP that never happens: `app.js:66` awaits
+`loadCurrencyCatalog()` at boot and every request inherits it. A script started
+with `node scripts/...` never runs `app.js` and inherits nothing.
+
+**The failure lands at the worst moment for a migration.** The DDL has already
+applied and committed, and the data step that was supposed to follow it dies on
+its first call. Found 2026-09-08 by the deletion session, when
+`backend/scripts/verifyClose.js` ran for the first time and died exactly there.
+The three older verifiers already load it — `verifyCloseAccount.js:173`,
+`verifyCloseTransfer.js:180` and `verifyClosureSettlement.js:124`, the last with
+the comment explaining why.
+
+So a hand-run data step calls `loadCurrencyCatalog()` before it writes, or it
+writes through SQL and avoids the dependency entirely. Pure SQL migrations are
+unaffected and this section does not apply to them.
+
+**A related failure is quieter and is not a migration problem.** `app.js:66`
+wraps that load in a `try` whose `catch` only logs, so a boot where the catalog
+fails produces a running server that answers requests and cannot write a
+transaction. Worth knowing when a production write fails for no visible reason
+after a restart.
+
 ---
 
 ## 4. Applying to a local database
