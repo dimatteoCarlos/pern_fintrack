@@ -3117,23 +3117,24 @@ so far"). The erasure has no such filter:
   `recordClosureSettlement.js:187` and `:216`, and
   `prepareTransactionOption.js:23`. All seven write `'complete'`, so the count
   changes and the conclusion does not.
-- **None of the seven takes the status as a parameter.** Every one writes
-  `status: 'complete'` as a literal inside an object body, so no caller can pass
-  a different value through any existing path. A second status therefore cannot
-  arrive by configuration or by a caller's argument: it needs an edit to one of
-  those seven files, or a new insert path that bypasses all of them. Both are
-  changes a reviewer sees, which is what makes the routing in the last bullet of
-  this case workable.
-- **`prepareTransactionOption.js:23` is a shared builder, but not of ordinary
-  movements.** Its own header calls it a standardized transaction option object
-  for database insertion, and its six call sites are all account creation -
-  `accountCreationController.js:393`, `:406`, `:928`, `:940` and
-  `accountCategoryCreationcontroller.js:485`, `:497` - so what it builds is the
-  opening and funding legs. Ordinary movements do not pass through it:
-  `transactionController.js:823-826` and `:864-868` build their two option
-  objects inline. Stated because the relayed description of this file as the
-  central writer for ordinary movements would send a future author to the wrong
-  file.
+- **The seven literals are option builders, not the insert.** An earlier version
+  of this bullet read them as sealing the column and concluded a second status
+  could only arrive through a file edit. That is wrong, withdrawn twice by the
+  session that supplied it and checked here in the writers.
+- **THE COLUMN IS A BIND, AND ITS VALUE COMES FROM THE CALLER.** Three
+  statements insert into `transactions`: `recordAnnulmentTransaction.js:207`,
+  `recordClosureSettlement.js:235`, and `recordTransaction.js:100`. The third is
+  the general writer - the other two say so in their own comments - and its
+  column list names `status` fourth against `VALUES($1,$2,$3,$4,...)`, taken
+  from the caller's `values` array. It hardcodes nothing. So a second status
+  arrives the moment any caller passes one, with no file edited and no new
+  insert path.
+- **THAT IS WHY THE DATABASE IS THE ONLY PLACE THAT CAN ENFORCE IT.** `status`
+  is a bind in a shared writer whose callers each supply their own value, so
+  there is no single point in the code where the legal set can be stated. Every
+  caller passes through the column; none passes through a common guard. A CHECK
+  is not a way of making a future hazard loud - it is the only enforcement point
+  that exists.
 - **No other value has ever existed.** The migration session queried the
   distinct values across four databases on 2026-09-08 and found `'complete'`
   alone: 785 rows on `fintrack_prod_data`, the untouched 2026-08-21 dump, 780 on
