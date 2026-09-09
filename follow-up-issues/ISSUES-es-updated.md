@@ -29,7 +29,12 @@ TÓPICOS LISTOS, PENDIENTES Y CONSULTAS AL CLIENTE
 >
 > Los conteos por grupo están en `summary-issues.md` y la misma lista en inglés
 > en `issues-en.md`. Los tres archivos cuentan lo mismo a esta fecha:
-> **123 elementos — 77 LISTO, 46 PENDIENTE.**
+> **125 elementos — 81 LISTO, 44 PENDIENTE.**
+>
+> **Cómo se corrigió cada defecto, con el código.** Las entradas de abajo dicen
+> qué quedó resuelto y con qué prueba. El código antes y después, el razonamiento
+> de por qué se eligió ese arreglo y no el otro, y la lección que deja, están en
+> `FIXES-LOG.md`, una entrada por corrección.
 
 ---
 
@@ -70,15 +75,67 @@ ADICIONALES PENDIENTES:
 | :-- | :---------------------------------------------- | :--------------------- | :-------- | :------------------------- |
 | 1   | La bandera de autenticacion en memoria se separaba del token en almacenamiento | `auth_utils/invalidateSession.ts:29-55` + `auth/hooks/useAuth.ts:170-229` | 🔴 Alta | **LISTO 2026-09-06.** Una sola funcion limpia almacenamiento y estado juntos y es el unico camino que limpia cualquiera de los dos; el arranque de sesion revalida el token guardado contra el servidor en cada montaje y llama a esa funcion cuando falla |
 | 2   | Un 401 no terminaba la sesion ni redirigia | `auth_utils/authFetch.ts:56-96`, `auth_utils/authRefreshManager.ts:59-69`, `components/protectedRoute/ProtectedRoute.tsx:40-53` | 🔴 Alta | **LISTO 2026-09-06.** Reintento unico detras de un refresco de vuelo unico; el refresco fallido guarda la direccion de retorno e invalida la sesion; el guardia de ruta redirige llevando la razon de expiracion |
-| 2b  | Un 403 sigue sin terminar la sesion | `auth_utils/authFetch.ts:58` | 🔴 Alta | **PENDIENTE.** La rama de reintento prueba el codigo de estado solo contra 401, asi que un 403 cae al lanzamiento generico y deja la sesion obsoleta en pie |
+| 2b  | Un token roto respondía 403, indistinguible para el cliente de una negativa de dominio | `auth_api/middlewares/authMiddleware.js:21-25`, `:110-113` | 🔴 Alta | **LISTO 2026-09-09** (`2f641f3a`). El arreglo **no** era ampliar `authFetch.ts:58` a 403, como decía este renglón: ver el bloque de abajo |
 | 3   | La validacion de campos no se limpia en el formulario de cuenta nueva | `pages/forms/newAccount/NewAccount.tsx` | 🟡 Media | **PENDIENTE.** No verificable leyendo codigo. Falta la comprobacion humana: llenar el formulario, provocar un error de validacion, cambiar el tipo de cuenta y ver si el mensaje se limpia |
 | 4   | El indicador de carga persistia despues de un error | `hooks/useFetchLoad.ts:137-151` | 🟡 Media | **LISTO 2026-09-06** para la capa de carga: el hook baja la bandera en su `finally` pase lo que pase, y expone un reseteo que limpia datos, error y fallo juntos. El reseteo del toast en cada formulario sigue pendiente de comprobacion humana |
 | 5   | El manejador que abre el registro usaba el estado equivocado | `auth/components/authPage/AuthPage.tsx:255-260` | 🟢 Baja | **LISTO 2026-09-06.** Pone el modo de inicio de sesion en falso y fija el estado de interfaz de registro, que es el estado correcto para abrir el registro |
+
+**Detalle del renglón 2b — por qué el arreglo estaba en el backend.** `403` en
+esta app significa casi siempre *estás autenticado y aun así no*: propiedad del
+recurso (`authMiddleware.js:212`), un bolsillo o una cuenta de presupuesto ajenos
+(`pocketController.js:10`, `budgetController.js:83,172`), transacciones de una
+cuenta ajena (`getTransactionsForAccountById.js:118`), la cuenta de compensación
+reservada (`deleteAccountService.js:1601`) y **la contraseña actual incorrecta**
+(`userController.js:352`, con `403: Current password wrong (NO logout)` escrito en
+`:293`). Ampliar la rama de reintento del cliente a 403 habría deslogueado a quien
+sólo se equivocó tecleando.
+
+El defecto real era que `handleTokenError` —invocado sólo desde los dos guardias
+de autenticación, `verifyToken:152` y `verifyUser:170`— devolvía 403 en dos de las
+tres comprobaciones de `jwt.verify` (firma alterada, `nbf` futuro) y en el caso sin
+nombre. Las tres son fallos al establecer **quién** es el llamante, y un token
+nuevo las arregla: eso es un 401. Los tres pasaron a 401 y el frontend no se tocó,
+porque la rama de 401 de `authFetch.ts:56-96` ya pide un refresco de vuelo único,
+reintenta una vez e invalida la sesión si el refresco falla
+(`authRefreshManager.ts:59-69`).
+
+**Lo que estaba roto en la práctica.** En el arranque de sesión el 403 se saltaba
+esa rama, así que `useAuth.ts:206-211` atrapaba el lanzamiento genérico y cerraba
+la sesión **sin haber intentado el refresco ni una vez**, aun con la cookie de
+refresco viva. Y en el cambio de contraseña, un token roto se le reportaba al dueño
+como un error de tecleo suyo (`useAuth.ts:503-504`).
+
+**Fuera del alcance, anotado:** el endpoint de refresco devuelve 403 para una firma
+de refresco inválida (`authRefreshToken.js:36,124`). Es la misma inconsistencia
+semántica y **no** es un defecto vivo: `authRefreshManager` invalida ante cualquier
+rechazo del refresco, sin mirar el código de estado.
 
 ---
 
 BACKEND
 Organizar la asignacion de la duracion de cookies y tokens. PENDIENTE. El ayudante de cookie fija banderas pero **ninguna vida util** (`backend/src/utils/authUtils/cookieConfig.js:8-23`), y las duraciones viven en cuatro sitios cuyos comentarios contradicen sus valores: token de acceso de 1h (`backend/src/utils/authUtils/authFn.js:59-62`), token de refresco de 8.9d (`:95-98`), y un campo de respuesta de 3600 segundos rotulado *60 minutos* en un endpoint (`backend/src/auth_api/controllers/authController.js:192`) y *15 minutos* en otros dos (`:335`, `backend/src/auth_api/controllers/authRefreshToken.js:112`).
+
+**NUEVO 2026-09-09 — El umbral de rotación del refresh token lleva un factor mil
+de más, así que el token rota en cada refresco.** PENDIENTE. La vida total ya
+viene en milisegundos (`authRefreshToken.js:81`) y el umbral la vuelve a
+multiplicar por mil (`:86`), de modo que `limitRemLife` queda en 890 días
+expresados en milisegundos contra un `remainingTime` que nunca pasa de 8.9 días:
+la comparación de `:91` es siempre verdadera. El comentario declara un umbral del
+10% de vida restante que nunca se aplica. Cada rotación revoca una fila e inserta
+otra (`utils/authUtils/authFn.js:164-194`), así que `refresh_tokens` crece una
+fila por llamada al refresco, sin tope. Se midió leyendo el punto anterior, no
+estaba en esta lista.
+
+**Ampliación del punto anterior, medida el 2026-09-09 — no es un elemento aparte.**
+Tres fuentes declaran tres duraciones para el mismo refresh token, y el punto de
+arriba sólo nombraba dos de ellas.
+El JWT se firma por 8.9 días (`utils/authUtils/authFn.js:95-98`),
+la fila de base de datos caduca a los 7 (`authController.js:149`, `:287`,
+`authFn.js:180`) y la cookie no declara ninguna (`utils/authUtils/cookieConfig.js:10-15`).
+Manda la más corta de las dos escritas —los 7 días, porque el endpoint filtra
+`expiration_date > NOW()` (`authRefreshToken.js:42`)— y por encima de todas manda
+la cookie, que muere al cerrar el navegador. Es el mismo mecanismo que el punto de
+la sesión que expira con refresh token vigente, contado desde el otro lado.
 
 GENERAL
 
@@ -607,17 +664,32 @@ frontend es la única puerta sobre ese payload.
 
 ## Los dos que dejan cuentas reales sin poder editarse
 
-**🔴 Alta — Una columna nula deja la cuenta entera sin poder editarse (E-1).**
-PENDIENTE. El cargador copia a estado de formulario cualquier valor que no sea
-`undefined`, así que un `NULL` de Postgres llega como `null`
-(`frontend/src/fintrack/editionAndDeletion/pages/editionAccount/EditAccount.tsx:251`).
-Los dos esquemas que usan los campos aceptan sólo `undefined`, nunca `null`
-(`frontend/src/fintrack/editionAndDeletion/validations_zod/commonEditionSchemas.ts:118-123`),
-y un error en un campo aborta el envío completo en vez de ese campo
-(`EditAccount.tsx:325-334`). Columnas anulables vivas que alcanza: `subcategory`
-(`backend/src/db/migrations/sql_migrations/002_accounts.sql:150`), `debtor_name` y
-`debtor_lastname` (`:176-177`). **La corrección es una decisión:** volver los
-esquemas tolerantes al nulo, o normalizar `null` a `undefined` en la carga.
+**🔴 Alta — Una columna nula dejaba la cuenta entera sin poder editarse (E-1).**
+**LISTO 2026-09-09** (`36353a96`). El cargador copiaba a estado de formulario
+cualquier valor que no fuera `undefined`, así que un `NULL` de Postgres llegaba
+como `null`, los esquemas aceptaban sólo `undefined`, y un error en un campo
+abortaba el envío completo en vez de ese campo (`EditAccount.tsx:325-334`).
+Columnas anulables que alcanzaba: `subcategory`
+(`backend/src/db/migrations/sql_migrations/002_accounts.sql:150`), `debtor_name`
+y `debtor_lastname` (`:176-177`).
+
+**Se normalizó en la carga, no en los esquemas.** El cargador descarta ahora el
+`null` junto con el `undefined`
+(`frontend/src/fintrack/editionAndDeletion/pages/editionAccount/EditAccount.tsx:251`),
+así que la clave llega ausente y `optionalButNotEmptySchema` la acepta
+(`validations_zod/editSchemas.ts:39,55,56` →
+`validations_zod/commonEditionSchemas.ts:122`). Aflojar los esquemas a `.nullish()`
+habría dejado pasar un `null` al PATCH, que no lleva middleware de validación
+(`backend/src/fintrack_api/routes/accountRoutes.js:104`) — el hallazgo estructural
+de arriba. Las otras dos pantallas que hidratan desde el servidor ya normalizaban
+así (`pages/forms/editPocket/EditPocket.tsx:143,147` y
+`auth/auth_utils/profileTransformation.ts:52-59`); ésta era la única que no.
+
+**Sin regresión en el botón de guardar:** la foto contra la que `isDirty` compara
+(`EditAccount.tsx:241,259,269-277`) pierde la clave a la vez que el formulario, y
+`areValuesEqual` es identidad estricta (`:79-83`), así que un formulario intacto
+sigue leyéndose como limpio. En pantalla no cambia nada:
+`UniversalDynamicInput.tsx:96` ya pintaba vacío para `null` y para `undefined`.
 
 **🔴 Alta — Un bolsillo con fecha objetivo vencida no se guardaba nunca (E-2).**
 **LISTO 2026-09-06.** El bolsillo salió por completo de este editor: el mapa de
@@ -712,6 +784,6 @@ de una cuenta bancaria obtiene `undefined`.
 
 # RECUENTO AL CIERRE DE LA PASADA DEL 2026-09-06
 
-**123 elementos — 77 LISTO, 46 PENDIENTE.** El desglose por grupo está en
+**125 elementos — 81 LISTO, 44 PENDIENTE.** El desglose por grupo está en
 `summary-issues.md`, que debe coincidir línea por línea con `issues-en.md` y con
 este archivo.

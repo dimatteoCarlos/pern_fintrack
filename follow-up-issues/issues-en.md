@@ -26,10 +26,15 @@
 > Counts by group are in `summary-issues.md`; the long-form Spanish list is in
 > `ISSUES-es-updated.md`. The three files describe the same list and are
 > consistent as of this date.
+>
+> **How each defect was corrected, with the code.** The entries below say what is
+> resolved and with which proof. The code before and after, why that fix was
+> chosen over the alternative, and the lesson it leaves are in `FIXES-LOG.md`,
+> one entry per correction.
 
 ---
 
-## Authentication — 11 LISTO / 5 PENDIENTE
+## Authentication — 12 LISTO / 4 PENDIENTE
 
 - Sign out redirects to Sign In instead of the main menu. LISTO
 - Review cross-field validation between password, new password, and confirm password in the frontend. LISTO
@@ -45,16 +50,17 @@
 - Investigate why the session expires even when a refresh token exists and should have been updated. PENDIENTE — **the mechanism is now measured, the symptom is not.** The refresh cookie is written with no `maxAge` and no `expires` (`backend/src/utils/authUtils/cookieConfig.js:10-15`), so it is a session cookie and dies when the browser closes, while the token inside it is signed for 8.9 days (`backend/src/utils/authUtils/authFn.js:95-98`). *Human check: close the browser, reopen it, and confirm the session is gone while the token is still valid.*
 - Define how to keep the user signed in while the refresh token remains valid. PENDIENTE — blocked by the same missing cookie lifetime above, and by a product decision on how long "remembered" should mean.
 - Define and apply an authorization roles scheme. PENDIENTE — **defined but never applied.** A role ladder, an admin guard and a dynamic authorization factory all exist (`backend/src/auth_api/middlewares/authMiddleware.js:228-294`), and **no route file imports any of them**; every guarded route uses only token verification or ownership.
-- A forbidden response does not end the session. PENDIENTE — the retry branch tests the status code for 401 only (`frontend/src/auth/auth_utils/authFetch.ts:58`), so a 403 falls through to the generic throw and leaves the stale session in place.
+- A broken token answered 403, which the client cannot tell apart from a domain refusal. **LISTO 2026-09-09** (`2f641f3a`) — **the fix was not the one this entry proposed.** Widening the client's retry branch to 403 would have signed out anyone who mistyped their current password, because 403 in this app almost always means *authenticated and still refused*: resource ownership (`backend/src/auth_api/middlewares/authMiddleware.js:212`), someone else's pocket or budget account (`pocketController.js:10`, `budgetController.js:83,172`), transactions on an account that is not the caller's (`getTransactionsForAccountById.js:118`), the reserved compensation account (`deleteAccountService.js:1601`), and a wrong current password (`userController.js:352`, with `403: Current password wrong (NO logout)` written at `:293`). The real defect was in `handleTokenError`, which is called only from the two authentication guards (`authMiddleware.js:152`, `:170`) and answered 403 for two of the three checks `jwt.verify` makes — an altered signature and an `nbf` still in the future — plus the unnamed fallback. All three are failures to establish *who* the caller is, and a fresh token fixes every one of them, which is what 401 means. The three statuses moved to 401 (`authMiddleware.js:21-25`, `:110-113`) and no frontend line changed: the 401 branch already refreshes once behind a single flight, retries, and invalidates the session when the refresh fails (`authFetch.ts:56-96`, `authRefreshManager.ts:59-69`). **What was broken in practice:** on the session bootstrap the 403 skipped that branch, so `useAuth.ts:206-211` caught the generic throw and ended the session without the refresh having been tried once, even with a live refresh cookie; and on change-password a broken token was reported to the owner as their own typo (`useAuth.ts:503-504`). **Out of scope, recorded:** the refresh endpoint answers 403 for an invalid refresh signature (`authRefreshToken.js:36,124`) — the same semantic inconsistency, but not a live defect, since `authRefreshManager` invalidates on any rejection without reading the status.
 - Session management across several sessions of one user, several users, and several devices. PENDIENTE — design decision, never taken.
 
-## Backend and Security — 4 LISTO / 3 PENDIENTE
+## Backend and Security — 4 LISTO / 4 PENDIENTE
 
 - Verify user authentication and userId access control before allowing main app functions. LISTO
 - Adjust the backend so transaction searches prioritize account_id instead of account_name. LISTO
 - Minimize backend console.logs. LISTO
 - Define a multicurrency strategy for keeping balances in Fintrack. **LISTO** — one accounting currency is stored and six currencies are accepted at the edge; the accepted set is declared once on the server (`backend/src/fintrack_api/services/fx_services/core/fxConfig.js:40`) and mirrored on the client (`frontend/src/fintrack/helpers/currencyConstants.ts:22-29`), with the currency the user sends kept as origin-only exchange metadata.
-- Organize cookie and token duration rules. PENDIENTE — the cookie helper sets flags but **no lifetime at all** (`backend/src/utils/authUtils/cookieConfig.js:8-23`), and the durations live in four places whose comments contradict their values: access token 1h (`backend/src/utils/authUtils/authFn.js:59-62`), refresh token 8.9d (`:95-98`), and a response field of 3600 seconds labelled "60 minutos" in one endpoint (`backend/src/auth_api/controllers/authController.js:192`) and "15 minutos" in two others (`:335`, `backend/src/auth_api/controllers/authRefreshToken.js:112`).
+- Organize cookie and token duration rules. PENDIENTE — the cookie helper sets flags but **no lifetime at all** (`backend/src/utils/authUtils/cookieConfig.js:8-23`), and the durations live in four places whose comments contradict their values: access token 1h (`backend/src/utils/authUtils/authFn.js:59-62`), refresh token 8.9d (`:95-98`), and a response field of 3600 seconds labelled "60 minutos" in one endpoint (`backend/src/auth_api/controllers/authController.js:192`) and "15 minutos" in two others (`:335`, `backend/src/auth_api/controllers/authRefreshToken.js:112`). **Widened 2026-09-09, not a separate item:** three sources declare three lifetimes for the same refresh token — the JWT is signed for 8.9 days (`authFn.js:95-98`), the database row expires at 7 (`authController.js:149`, `:287`, `authFn.js:180`), and the cookie declares none. The shorter of the two written ones rules, because the endpoint filters `expiration_date > NOW()` (`authRefreshToken.js:42`), and above both rules the cookie, which dies when the browser closes. That `expiresIn` field is written to `tokenExpiry` by the client (`useAuth.ts:277-279`) and **never read** — only cleared (`invalidateSession.ts:34`, `logoutCleanup.ts:37`) — so the contradictory comments mislead a reader without changing behaviour.
+- **NEW 2026-09-09 — The refresh-token rotation threshold carries a factor of one thousand too many, so the token rotates on every refresh.** PENDIENTE — the total lifetime is already in milliseconds (`backend/src/auth_api/controllers/authRefreshToken.js:81`) and the threshold multiplies it by a thousand again (`:86`), leaving `limitRemLife` at 890 days expressed in milliseconds against a `remainingTime` that never exceeds 8.9 days, so the comparison at `:91` is always true. The comment declares a 10%-remaining-life threshold that never applies. Each rotation revokes one row and inserts another (`backend/src/utils/authUtils/authFn.js:164-194`), so `refresh_tokens` grows by one row per refresh call, unbounded. Measured while reading the item above; it was not in this list.
 - Review how numeric amounts are stored in the database and why some values are returned as strings. PENDIENTE — **no type parser is registered anywhere in `backend/src`**, so the driver's default applies and `numeric` arrives as a string. *Human check: read the column types in the database and decide whether the string is the wanted behaviour, since the money arithmetic uses a decimal library that prefers it.*
 - Review the timestamp offset issue in transfer-between-accounts transactions. PENDIENTE — *human check: read a stored row and compare its timestamp with the moment the transfer was made.* Not verifiable from source.
 
@@ -93,7 +99,7 @@
 - Implement retrospective total annulment as the deletion strategy for accounts and transactions. LISTO
 - Optimize the account deletion page using a reducer instead of a centralized memoized modal state. PENDIENTE — confirmed still open by absence: **`useReducer` appears nowhere in `frontend/src`.**
 
-## Account editor register — 3 LISTO / 8 PENDIENTE
+## Account editor register — 4 LISTO / 7 PENDIENTE
 
 > **Origin, and why these are here.** These eleven were measured on 2026-08-20 and
 > lived only in `plan-docs/on-hold/PLAN_EDIT_BLOCK/PLAN_EditAccount.md`, section
@@ -104,7 +110,7 @@
 > given and the drift noted. Their internal labels (E-1 … E-11) are kept only as
 > a back-reference to that document.
 
-- **A null column makes the whole account uneditable (E-1).** 🔴 Alta. PENDIENTE. The loader copies any value that is not `undefined` into form state, so a database `NULL` arrives as `null` (`frontend/src/fintrack/editionAndDeletion/pages/editionAccount/EditAccount.tsx:251`). The two schemas the fields use accept only `undefined`, never `null` (`frontend/src/fintrack/editionAndDeletion/validations_zod/commonEditionSchemas.ts:118-123`), and one field error aborts the entire submit rather than that field (`EditAccount.tsx:325-334`). Live nullable columns it reaches: `subcategory` (`backend/src/db/migrations/sql_migrations/002_accounts.sql:150`), `debtor_name` and `debtor_lastname` (`:176-177`). The fix is a decision — make the schemas nullish, or normalise `null` to `undefined` at load.
+- **A null column made the whole account uneditable (E-1).** 🔴 Alta. **LISTO 2026-09-09** (`36353a96`) — the loader copied any value that was not `undefined` into form state, so a database `NULL` arrived as `null`, the field schemas accept only `undefined`, and one field error aborts the entire submit rather than that field (`EditAccount.tsx:325-334`). Nullable columns it reached: `subcategory` (`backend/src/db/migrations/sql_migrations/002_accounts.sql:150`), `debtor_name` and `debtor_lastname` (`:176-177`). **Normalised at load, not in the schemas:** the loader now drops `null` alongside `undefined` (`frontend/src/fintrack/editionAndDeletion/pages/editionAccount/EditAccount.tsx:251`), so the key arrives absent and `optionalButNotEmptySchema` accepts it (`validations_zod/editSchemas.ts:39,55,56` → `commonEditionSchemas.ts:122`). Loosening the schemas to `.nullish()` would have let a `null` reach a PATCH that carries no validation middleware (`backend/src/fintrack_api/routes/accountRoutes.js:104`) — the structural finding below. The other two screens that hydrate from the server already normalised this way (`pages/forms/editPocket/EditPocket.tsx:143,147`, `auth/auth_utils/profileTransformation.ts:52-59`); this was the only one that did not. **No regression on the save button:** the snapshot `isDirty` compares against (`EditAccount.tsx:241,259,269-277`) loses the key together with the form state, and `areValuesEqual` is strict identity (`:79-83`), so an untouched form still reads clean. Nothing changes on screen — `UniversalDynamicInput.tsx:96` already rendered `null` and `undefined` alike.
 - **A pocket whose target date has passed could not be edited at all (E-2).** 🔴 Alta. **LISTO** — the pocket left this editor entirely: the type-to-schema map holds no pocket key (`frontend/src/fintrack/editionAndDeletion/validations_zod/editSchemas.ts:64-70`) and the loader records that no date field survives it (`EditAccount.tsx:252-254`). The pocket now has its own screen, which sends only the fields that changed precisely so an untouched overdue deadline is never re-validated (`frontend/src/fintrack/pages/forms/editPocket/EditPocket.tsx:249-253`). **Residue, still open:** the deadline field itself is bounded at today (`EditPocket.tsx:521`), so an overdue deadline cannot be corrected to a past date if the owner touches it.
 - **The debtor account name preview disagreed with what the server stores (E-3).** **LISTO** — the client now joins lastname and name with a comma and a space, and the comment records that this is the separator both write paths use (`frontend/src/fintrack/editionAndDeletion/validations_zod/accountEditSchema.ts:175-187`), matching the server (`backend/src/fintrack_api/controllers/accountEditController.js:219`).
 - **The amount owed on a debtor is editable nowhere (E-4).** 🟡 Media. PENDIENTE. The column exists (`backend/src/db/migrations/sql_migrations/002_accounts.sql:170`) and is returned by the read endpoint, but the debtor arm of the write endpoint sets only name, lastname and note (`backend/src/fintrack_api/controllers/accountEditController.js:187-191`). The linked account cannot be reassigned either. **Decision needed:** does the amount owed belong to this editor, or only to a transaction?
@@ -164,7 +170,7 @@
 
 - Enable export of movements to PDF, Excel, Google Sheets and CSV. PENDIENTE — confirmed still open by absence: **no PDF, spreadsheet or CSV library appears in any `package.json` in the repository.**
 
-## Accounts and Overview — 9 LISTO / 1 PENDIENTE
+## Accounts and Overview — 11 LISTO / 0 PENDIENTE
 
 - List all accounts in Accounting, including income, expense, debtors, investment, bank, and pocket, as a centralized editing and deletion hub. LISTO
 - Implement pages for account details. LISTO
@@ -221,5 +227,5 @@
 
 ## Totals after the 2026-09-06 pass
 
-**123 items — 77 LISTO, 46 PENDIENTE.** Per-group counts are in
+**125 items — 81 LISTO, 44 PENDIENTE.** Per-group counts are in
 `summary-issues.md` and must match this file line for line.

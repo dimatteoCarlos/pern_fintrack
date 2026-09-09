@@ -22,13 +22,18 @@
 > El cerco de código que envolvía este archivo entero se retiró: era un bloque
 > abierto que rompía el resaltado de todo el documento y anulaba las casillas.
 
-**Total: 123 elementos — 77 LISTO, 46 PENDIENTE.**
+**Total: 125 elementos — 81 LISTO, 44 PENDIENTE.**
+
+> **Cómo se corrigió cada defecto, con el código.** Las entradas de este archivo
+> dicen qué quedó resuelto y con qué prueba. El código antes y después, el
+> razonamiento de por qué se eligió ese arreglo y no otro, y la lección que deja,
+> están en `FIXES-LOG.md`, una entrada por corrección.
 
 ---
 
 ## 🔐 Authentication
 
-### ✅ LISTO (11/16)
+### ✅ LISTO (12/16)
 
 - [x] Sign out redirects to Sign In instead of the main menu
 - [x] Review cross-field validation between password, new password, and confirm password
@@ -41,29 +46,30 @@
 - [x] Review navigation behavior in authentication flows
 - [x] **NUEVO 2026-09-06** — la bandera de autenticación en memoria ya no se separa del token en almacenamiento: una sola función limpia ambos (`auth_utils/invalidateSession.ts:29-55`) y el arranque de sesión revalida contra el servidor (`auth/hooks/useAuth.ts:170-229`)
 - [x] **NUEVO 2026-09-06** — un 401 ya termina la sesión y redirige: reintento único (`auth_utils/authFetch.ts:56-96`), invalidación al fallar el refresco (`auth_utils/authRefreshManager.ts:59-69`) y redirección en el guardia de ruta (`components/protectedRoute/ProtectedRoute.tsx:40-53`)
+- [x] **RESUELTO 2026-09-09** (`2f641f3a`) — un token roto respondía 403, indistinguible de una negativa de dominio. **El arreglo no fue el que este renglón proponía:** ampliar la rama del cliente a 403 habría deslogueado a quien escribe mal su contraseña actual (`userController.js:352`, con `NO logout` escrito en `:293`). Las tres comprobaciones de token roto pasaron a 401 (`authMiddleware.js:21-25`, `:110-113`) y el frontend no se tocó
 
-### 🔄 PENDIENTE (5/16)
+### 🔄 PENDIENTE (4/16)
 
 - [ ] Investigate why the session expires even when a refresh token exists — **mecanismo medido, síntoma no**: la cookie de refresco se escribe sin vida útil (`backend/src/utils/authUtils/cookieConfig.js:10-15`) y el token dentro vale 8.9 días (`authFn.js:95-98`). Falta comprobarlo en navegador
 - [ ] Define how to keep the user signed in while the refresh token remains valid — bloqueado por la misma cookie sin vida útil y por una decisión de producto
 - [ ] Define and apply an authorization roles scheme — **definido y nunca aplicado**: escalera de roles, guardia de administrador y fábrica de autorización existen (`backend/src/auth_api/middlewares/authMiddleware.js:228-294`) y ningún archivo de rutas los importa
-- [ ] **NUEVO 2026-09-06** — un 403 no invalida la sesión: la rama de reintento sólo prueba el código 401 (`auth_utils/authFetch.ts:58`)
 - [ ] Gestión de múltiples sesiones: del mismo usuario, de varios usuarios, y del mismo usuario en varios dispositivos — decisión de diseño nunca tomada
 
 ---
 
 ## ⚙️ Backend and Security
 
-### ✅ LISTO (4/7)
+### ✅ LISTO (4/8)
 
 - [x] Verify user authentication and userId access control before allowing main app functions
 - [x] Adjust the backend so transaction searches prioritize account_id instead of account_name
 - [x] Minimize backend console.logs
 - [x] **NUEVO 2026-09-06** — estrategia multimoneda: una sola moneda contable almacenada y seis aceptadas en el borde, declaradas en el servidor (`fx_services/core/fxConfig.js:40`) y espejadas en el cliente (`helpers/currencyConstants.ts:22-29`)
 
-### 🔄 PENDIENTE (3/7)
+### 🔄 PENDIENTE (4/8)
 
-- [ ] Organize cookie and token duration rules — el ayudante de cookie no fija vida útil alguna (`utils/authUtils/cookieConfig.js:8-23`) y las duraciones viven en cuatro sitios con comentarios que contradicen sus valores (`authFn.js:59-62`, `:95-98`, `authController.js:192`, `:335`, `authRefreshToken.js:112`)
+- [ ] Organize cookie and token duration rules — el ayudante de cookie no fija vida útil alguna (`utils/authUtils/cookieConfig.js:8-23`) y las duraciones viven en cuatro sitios con comentarios que contradicen sus valores (`authFn.js:59-62`, `:95-98`, `authController.js:192`, `:335`, `authRefreshToken.js:112`). **Ampliado 2026-09-09, no es elemento aparte:** tres fuentes declaran tres vidas para el mismo refresh token — el JWT 8.9 días (`authFn.js:95-98`), la fila de base de datos 7 (`authController.js:149`, `:287`, `authFn.js:180`) y la cookie ninguna; manda la fila, porque el endpoint filtra `expiration_date > NOW()` (`authRefreshToken.js:42`), y por encima manda la cookie, que muere al cerrar el navegador
+- [ ] **NUEVO 2026-09-09** — el umbral de rotación del refresh token lleva un factor mil de más, así que el token rota en cada refresco: la vida total ya viene en milisegundos (`authRefreshToken.js:81`) y el umbral la multiplica por mil otra vez (`:86`), de modo que la comparación de `:91` es siempre verdadera. Cada rotación revoca una fila e inserta otra (`authFn.js:164-194`), así que `refresh_tokens` crece una fila por refresco, sin tope
 - [ ] Review how numeric amounts are stored and why some values are returned as strings — **no hay ningún analizador de tipos registrado en `backend/src`**, así que rige el predeterminado del controlador. Falta leer la base de datos
 - [ ] Review the timestamp offset issue in transfer-between-accounts transactions — falta leer una fila almacenada y compararla con el momento real
 
@@ -142,15 +148,15 @@ Ninguno.
 > remidieron el 2026-09-06 con las líneas de hoy. Sus etiquetas internas (E-1 …
 > E-11) se conservan sólo como referencia hacia atrás a ese documento.
 
-### ✅ LISTO (3/11)
+### ✅ LISTO (4/11)
 
 - [x] **Un bolsillo con fecha objetivo vencida ya no queda bloqueado (E-2)** — 🔴 Alta. El bolsillo salió de este editor: el mapa de tipos no tiene su clave (`validations_zod/editSchemas.ts:64-70`) y el cargador lo deja escrito (`pages/editionAccount/EditAccount.tsx:252-254`). Su pantalla propia envía sólo lo que cambió, para no revalidar un plazo intacto (`pages/forms/editPocket/EditPocket.tsx:249-253`). **Resto abierto:** el campo de plazo sigue acotado a hoy (`EditPocket.tsx:521`)
 - [x] **La vista previa del nombre de un deudor ya coincide con lo que guarda el servidor (E-3)** — el cliente une apellido y nombre con coma y espacio (`validations_zod/accountEditSchema.ts:175-187`), igual que el servidor (`accountEditController.js:219`)
+- [x] **🔴 Alta — Una columna nula dejaba la cuenta entera sin poder editarse (E-1). RESUELTO 2026-09-09** (`36353a96`). El cargador copiaba todo lo que no fuera `undefined`, así que un `NULL` llegaba como `null`, los esquemas aceptan sólo `undefined` y un solo error aborta el envío completo (`EditAccount.tsx:325-334`). **Se normalizó en la carga**, que es lo que ya hacían las otras dos pantallas que hidratan desde el servidor (`EditPocket.tsx:143,147`, `profileTransformation.ts:52-59`): el cargador descarta el `null` junto con el `undefined` (`pages/editionAccount/EditAccount.tsx:251`). Aflojar los esquemas a `.nullish()` habría dejado pasar un `null` al PATCH, que no lleva middleware de validación (`accountRoutes.js:104`)
 - [x] **La rama de presupuesto del endpoint de edición ya no existe (E-9)** — el endpoint declara por escrito que ignora esa clave porque el monto es decisión de cuatro partes del endpoint de presupuesto (`accountEditController.js:104-107`)
 
-### 🔄 PENDIENTE (8/11)
+### 🔄 PENDIENTE (7/11)
 
-- [ ] **🔴 Alta — Una columna nula deja la cuenta entera sin poder editarse (E-1).** El cargador copia todo lo que no sea `undefined`, así que un `NULL` llega como `null` (`pages/editionAccount/EditAccount.tsx:251`); los esquemas aceptan sólo `undefined` (`validations_zod/commonEditionSchemas.ts:118-123`) y un solo error aborta el envío completo (`EditAccount.tsx:325-334`). Columnas vivas que alcanza: `subcategory` (`002_accounts.sql:150`), `debtor_name` y `debtor_lastname` (`:176-177`)
 - [ ] **🟡 Media — El monto adeudado de un deudor no se edita en ningún sitio (E-4).** La columna existe (`002_accounts.sql:170`) y la rama de escritura fija sólo nombre, apellido y nota (`accountEditController.js:187-191`). Decisión pendiente: ¿pertenece a este editor o sólo a una transacción?
 - [ ] **🟡 Media — Editar la meta de un bolsillo deja obsoletos sus metadatos de cambio (E-5).** El endpoint escribe la meta y no toca ninguna de las seis columnas de cambio que la acompañan (`accountEditController.js:91-92`)
 - [ ] **🟢 Baja — La bandera de campo obligatorio no valida nada y contradice a los esquemas (E-6).** Su único consumidor es el asterisco de la etiqueta (`pages/editionAccount/UniversalDynamicInput.tsx:256`, desplazado desde 242)
@@ -355,22 +361,22 @@ Ninguno.
 
 | grupo | total | LISTO | PENDIENTE |
 | :--- | ---: | ---: | ---: |
-| Authentication | 16 | 11 | 5 |
-| Backend and Security | 7 | 4 | 3 |
+| Authentication | 16 | 12 | 4 |
+| Backend and Security | 8 | 4 | 4 |
 | General | 4 | 2 | 2 |
 | Transfer | 7 | 6 | 1 |
 | Pocket Detail and Category Budget Detail | 2 | 2 | 0 |
 | Editing and Deleting | 10 | 9 | 1 |
-| Account editor register | 11 | 3 | 8 |
+| Account editor register | 11 | 4 | 7 |
 | Logic and Business Rules | 14 | 5 | 9 |
 | Frontend and UI/UX | 16 | 5 | 11 |
 | Locale and money formatting | 4 | 0 | 4 |
 | Data and Export | 1 | 0 | 1 |
-| Accounts and Overview | 10 | 9 | 1 |
+| Accounts and Overview | 11 | 11 | 0 |
 | PnL Tracker | 3 | 3 | 0 |
 | Debts | 4 | 4 | 0 |
 | Categories | 1 | 1 | 0 |
 | Toasts and Notifications | 1 | 1 | 0 |
 | Database and Time | 2 | 2 | 0 |
 | Resolved by Design Decision | 10 | 10 | 0 |
-| **TOTAL** | **123** | **77** | **46** |
+| **TOTAL** | **125** | **81** | **44** |
