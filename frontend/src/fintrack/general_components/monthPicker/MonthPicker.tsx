@@ -26,8 +26,12 @@ type MonthPickerProps = {
  // has one: the budget board covers every account, so it has no single opening
  // date to bound itself by.
  minMonth?: string | null;
- // The surface the badge lands on, not its own colour.
- surface?: 'dark' | 'light';
+ // The surface the badge lands on, not its own colour. Three, because the pill
+ // lands on three grounds and its own fill follows: 'dark' is the app surface,
+ // 'light' the white header with a near-black pill, and 'cream' the white header
+ // with a cream pill. The third is not a variant of the second - it inverts it,
+ // so the ink on it inverts too.
+ surface?: 'dark' | 'light' | 'cream';
  // Opt-in, so the three screens that render the badge alone are untouched: the
  // budget board, the category detail and the debtor detail pass nothing and
  // get exactly what they have today. The arrows live here and not in a local
@@ -110,7 +114,7 @@ const MonthTrigger = React.forwardRef<
  HTMLButtonElement,
  {
   label?: string;
-  surface?: 'dark' | 'light';
+  surface?: 'dark' | 'light' | 'cream';
   onClick?: () => void;
   onKeyDown?: React.KeyboardEventHandler<HTMLButtonElement>;
   onFocus?: React.FocusEventHandler<HTMLButtonElement>;

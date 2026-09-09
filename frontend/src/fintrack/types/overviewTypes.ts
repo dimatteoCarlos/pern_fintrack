@@ -210,6 +210,23 @@ export type OverviewHero = {
  // cashPosition when an account is overdrawn, which the contract states rather
  // than clamps.
  freeCash: number;
+ // THE TWO FLOWS, which this type omitted while makeHeroSection.js published
+ // them. A type that declares fewer fields than the payload carries does not
+ // make the fields absent - it makes them unreachable, and the hero rendered
+ // three of its six figures for exactly that reason.
+ //
+ // Negative is a real answer and the most useful one the figure has: it says the
+ // month went backwards.
+ netMonthlyFlow: number;
+ // The same movement as a share of what came in, on a 0-1 scale. null when
+ // income cannot be a denominator, and never 0 - a month with no income did not
+ // save nothing, it has no rate at all, and the two read identically once
+ // printed as 0%.
+ savingsRate: number | null;
+ // The accounting currency the four stocks and the flow are in. Read from here
+ // and never from a constant: a component naming its own currency can label a
+ // figure with a currency the figure is not in.
+ currency: string;
 };
 
 // The three domains the monthly widget is defined for, and not every

@@ -155,6 +155,18 @@
  border-color: var(--color-content-primary);
 }
 
+/* The third ground: the white header with a CREAM pill rather than a near-black
+   one. It is not a lighter --light, it is its inverse, so every rule below that
+   names an ink has a counterpart here and none of them is shared.
+
+   The border is the fill: a cream pill on white needs an edge or it dissolves
+   into the band, and the subtle border is the quietest one that still separates
+   them. --light does not need this because #141414 on white separates itself. */
+.monthStepper--cream {
+ background-color: var(--color-accent);
+ border-color: var(--color-border-subtle);
+}
+
 /* The badge loses its own outline here — it is content inside the pill now,
    not a second pill beside the arrows. Horizontal padding stays, unlike the
    version this replaces: at zero, the dark/light hover fill below painted only
@@ -184,6 +196,12 @@
 
 .monthStepper--light .month-badge {
  color: var(--color-accent);
+}
+
+/* The inverse of the rule above: dark ink, because the fill is the cream that
+   rule uses as its ink. */
+.monthStepper--cream .month-badge {
+ color: var(--color-content-primary);
 }
 
 /* The drawn box is smaller than the tap target it sits inside — see the
@@ -238,10 +256,10 @@
  transition: stroke-width var(--motion-fast);
 }
 
-/* ONE resting colour for both modifiers, and no per-surface split, because the
-   modifier names the row the pill lands in and NOT the pill: --dark fills with
-   --color-surface-raised (#161a22) and --light with --color-content-primary
-   (#141414), so the chevron sits on a dark fill either way.
+/* ONE resting colour for the two DARK-FILLED modifiers, and the reason is the
+   fill and not the row: --dark fills with --color-surface-raised (#161a22) and
+   --light with --color-content-primary (#141414), so on both of those the
+   chevron sits on a dark fill and takes the same light ink.
 
    The split it replaces was painting an invisible control on one of them.
    --light gave the arrow --color-content-primary, which is the very value that
@@ -273,6 +291,28 @@
  color: var(--color-content-on-dark);
 }
 
+/* The cream pill runs the same two steps in the other direction, because its
+   fill is light: quiet grey at rest, FULL BLACK under the pointer. The light
+   ink above would be #ffffff on #e8e4da — 1.24:1, which is not a hover, it is a
+   disappearance.
+
+   Both rules are written against the modifier and not the arrow alone, so the
+   two surfaces cannot fall through to each other: an unqualified hover would win
+   on document order over whichever came first. */
+.monthStepper--cream .monthStepper__arrow {
+ color: var(--color-content-secondary);
+}
+
+.monthStepper--cream .monthStepper__arrow:hover,
+.monthStepper--cream .monthStepper__arrow:active {
+ color: var(--color-content-primary);
+}
+
+/* The focus ring is already near-black and the cream pill is light, so --light's
+   ring is the right one here and no override is needed. Stated rather than left
+   to inference: the --dark override below exists because that ring lands on the
+   app surface, which is the case this pill is not. */
+
 .monthStepper__arrow:hover .monthStepper__chevron,
 .monthStepper__arrow:active .monthStepper__chevron {
  stroke-width: 2.5;
@@ -289,7 +329,13 @@
 }
 
 /* At its bound. The forward arrow wears this on the current month, which is
-   what makes the server's 422 for a later month unreachable from here. */
+   what makes the server's 422 for a later month unreachable from here.
+
+   pointer-events: none is what makes the hover above conditional on the arrow
+   being live, which is the behaviour the rule set was asked for: a disabled
+   chevron stays at its resting ink under the pointer because no hover ever
+   fires on it. The 0.5 then reads as a second, non-colour cue for the same
+   state, so it does not rest on hue alone. */
 .monthStepper__arrow:disabled {
  opacity: 0.5;
  pointer-events: none;
