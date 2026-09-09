@@ -402,10 +402,20 @@ type ExpenseCategoryStatus = {
 - Incluye categorías borradas con gasto real en el mes, para que la suma de
   `actualSpent` reconcilie exacto con el total de la tarjeta.
 
-**Dos campos declarados y NO implementados todavía:** `cumulativeBudget` y
-`cumulativeBudgetPercentage`. El constructor de la distribución sigue acumulando
-sólo el gasto. Es deuda de servidor conocida — el bloque de dos curvas se
-construye cuando lleguen; el de una curva se puede construir hoy.
+**Servidos desde el 2026-09-08.** `cumulativeBudget`,
+`cumulativeBudgetPercentage` y `hasSkippedBudget` los construye
+`makeCategoryBreakdown.js` en la misma pasada que los dos del gasto, sobre la
+misma ordenación. El bloque de dos curvas ya se puede construir.
+
+**Una precisión sobre la bandera, porque el contrato la dice más suelta.**
+`hasSkippedBudget` es verdadera **incluyendo la fila que se salta**, no sólo a
+partir de la siguiente. La bandera existe para decir si la cifra corrida impresa
+a su lado cubre todas las filas hasta ese punto, así que la fila que la rompe es
+la que tiene que levantarla.
+
+**Una fila con plan de 0 no se salta.** `budgetAmount` es nulo únicamente cuando
+la categoría mezcla monedas; un plan de cero es una decisión y entra a la
+acumulación aportando 0.
 
 ### 3.2 Líneas de tendencia — seis puntos en la página, trece en el análisis
 
@@ -638,7 +648,7 @@ está publicado hoy**.
 | 11 | Metas financieras | `financialGoals` | `GET /` · nivel 1 | **SERVIDO** |
 | 12 | Teaser de actividad reciente | `recentActivity.transactions` | `GET /` · nivel 1 | **SERVIDO** |
 | 13 | Pareto del gasto — barras de gasto y curva acumulada | `charts.expenseCategories` con `rank`, `cumulativeActual`, `cumulativePercentage` | `GET /` · nivel 1 | **SERVIDO** |
-| 14 | Pareto — segunda barra de plan y segunda curva | `budgetAmount` + `cumulativeBudget`, `cumulativeBudgetPercentage`, `hasSkippedBudget` | `GET /` · nivel 1 | **FALTA EN EL SERVIDOR** — los dos acumulados están declarados y no implementados |
+| 14 | Pareto — segunda barra de plan y segunda curva | `budgetAmount` + `cumulativeBudget`, `cumulativeBudgetPercentage`, `hasSkippedBudget` | `GET /` · nivel 1 | **SERVIDO** desde 2026-09-08 — falta el frontend |
 | 15 | Líneas de tendencia, 6 puntos | `charts.trend.income`, `.expense`, `.pocket` | `GET /` · nivel 1 | **SERVIDO — sólo 3 de 6 dominios** |
 | 16 | Pantalla de actividad con rango | `GET /activity` → `transactions` + `range` | `GET /activity` | **SERVIDO** |
 | 17 | Listado paginado por dominio | `transactions{rows, page, pageSize, totalRows}` | `GET /:domain` · nivel 1 | **SERVIDO** |

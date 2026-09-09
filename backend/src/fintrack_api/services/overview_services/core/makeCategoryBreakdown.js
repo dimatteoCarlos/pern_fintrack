@@ -43,8 +43,22 @@ const SHARE_SCALE = 4;
  * and the notice budgetCalculationService already raised says why. Dropping the
  * row instead would break D19's reconciliation with the card.
  *
+ * THE PLAN'S CURVE RIDES THE SPEND'S ORDER AND DOES NOT GET ITS OWN. Ranking the
+ * plan by plan would draw a second curve over a second sequence of categories,
+ * and the two points above one x position would belong to different categories.
+ * The order is the spend's, once, and both accumulations are folded in the same
+ * pass so they cannot be built over different sequences.
+ *
+ * A ROW WITH NO PLAN DOES NOT TRUNCATE THE CURVE. budgetAmount is null only when
+ * the category spans currencies, which is the same condition that nulls
+ * actualSpent (makeBudgetCategoryStatus.js:49-62); such a row carries the
+ * running plan forward unchanged and the curve continues past it. Its last point
+ * then means the plan of the categories that HAVE one, which is not the total
+ * budget, and hasSkippedBudget is what says so rather than leaving the reader to
+ * compare two totals that were never meant to match.
+ *
  * @param {object[]} categories - ExpenseCategoryStatus base fields, frozen objects
- * @returns {object[]} the same rows with rank, cumulativeActual and cumulativePercentage
+ * @returns {object[]} the same rows with rank and the two curves
  */
 export const makeCategoryBreakdown = (categories) => {
  const spentOf = (category) => category.actualSpent ?? 0;
@@ -56,7 +70,18 @@ export const makeCategoryBreakdown = (categories) => {
 
  const total = ranked.reduce((sum, category) => sum.plus(spentOf(category)), money(0));
 
+ // The denominator of the plan's curve is the plan of the rows that HAVE one,
+ // not the budget the card publishes. Dividing by the card's figure would give a
+ // curve that never reaches 1 whenever a row was skipped, and a curve short of
+ // its own end reads as missing data rather than as a stated exclusion.
+ const budgetTotal = ranked.reduce(
+  (sum, category) => (category.budgetAmount === null ? sum : sum.plus(category.budgetAmount)),
+  money(0),
+ );
+
  let running = money(0);
+ let runningBudget = money(0);
+ let skipped = false;
 
  // Spread into a new object rather than assigned: makeBudgetCategoryStatus
  // returns Object.freeze'd rows, so a mutation here would fail silently in
@@ -64,6 +89,19 @@ export const makeCategoryBreakdown = (categories) => {
  // be editing a value another caller may already hold.
  return ranked.map((category, index) => {
   running = running.plus(spentOf(category));
+
+  // INCLUSIVE OF THIS ROW, and the contract's wording is looser than that.
+  // PLAN_OVERVIEW_CONTRACT.md says "true si alguna fila anterior no tenia plan",
+  // which would leave the first skipped row itself reporting false - a row whose
+  // own plan is missing standing beside a flag that says nothing is missing. The
+  // flag exists to say whether the running figure printed next to it accounts
+  // for every row up to that point, so the row that breaks it is the row that
+  // has to raise it.
+  if (category.budgetAmount === null) {
+   skipped = true;
+  } else {
+   runningBudget = runningBudget.plus(category.budgetAmount);
+  }
 
   return {
    ...category,
@@ -78,6 +116,17 @@ export const makeCategoryBreakdown = (categories) => {
    cumulativePercentage: total.isZero()
     ? 0
     : running.dividedBy(total).toDecimalPlaces(SHARE_SCALE).toNumber(),
+   // Rounded the same way cumulativeActual is, and for the same reason: the last
+   // point has to equal the sum of the budgetAmount values the user can read off
+   // the rows, rather than missing it by a cent.
+   cumulativeBudget: toAmount(runningBudget),
+   // 0 when no row carries a plan, which is the same division-by-zero refusal
+   // the spend's share makes one line above. It is not "the plan is complete at
+   // this point": hasSkippedBudget beside it says which of the two it is.
+   cumulativeBudgetPercentage: budgetTotal.isZero()
+    ? 0
+    : runningBudget.dividedBy(budgetTotal).toDecimalPlaces(SHARE_SCALE).toNumber(),
+   hasSkippedBudget: skipped,
   };
  });
 };

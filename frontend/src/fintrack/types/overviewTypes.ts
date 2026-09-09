@@ -290,6 +290,17 @@ export type OverviewExpenseCategory = {
  rank: number;
  cumulativeActual: number;
  cumulativePercentage: number;
+ // The plan's curve, over the SAME ranking. It is not ranked by plan: two
+ // curves ranked separately would put two different categories above one x
+ // position.
+ cumulativeBudget: number;
+ // cumulativeBudget over the plan of the rows that have one, 0-1. Not over the
+ // budget the expense card publishes, which is why it always reaches 1.
+ cumulativeBudgetPercentage: number;
+ // Whether the running plan beside it omits a row. True from the first category
+ // whose currency is mixed onwards, and the block writes the caveat only when it
+ // is true rather than on every render.
+ hasSkippedBudget: boolean;
 };
 
 export type OverviewCharts = {
