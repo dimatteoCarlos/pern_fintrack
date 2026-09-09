@@ -25,7 +25,7 @@ y del limitador global declarados en la app, así que ninguna ruta los repite.
 |---|---|---|---|
 | `GET /` | `month` | la página entera en una respuesta | la página de Overview |
 | `GET /:domain` | `month`, `page`, `pageSize`, `analysis` | un dominio en profundidad, con su propio listado paginado | el detalle por dominio |
-| `GET /activity` | `from`, `to`, `page`, `pageSize` | movimientos sobre un rango que elige el lector | la pantalla de actividad |
+| `GET /activity` | `from`, `to`, `search`, `movementType`, `page`, `pageSize` | movimientos sobre un rango que elige el lector | la pantalla de actividad |
 
 Tres cosas de esto condicionan el frontend:
 
@@ -627,9 +627,23 @@ plausible**, que es la peor.
 
 ### 4.4 La pantalla de actividad
 
-`GET /activity` devuelve `transactions` más el `range` que efectivamente sirvió.
-Es la única pantalla del módulo cuyo período **elige el lector**, y sus dos cotas
-son opcionales con default sin cota.
+`GET /activity` devuelve `transactions`, el `range` que efectivamente sirvió y
+`filters` con el término y el tipo de movimiento que aplicó. Es la única pantalla
+del módulo cuyo período **elige el lector**, y sus dos cotas son opcionales con
+default sin cota.
+
+**Los tres estrechamientos se sirven, ninguno se filtra en el cliente.** El
+término va en `search` y el tipo en `movementType`, así que `totalRows` responde
+por el conjunto entero. Un filtro sobre la página en la mano diría "3 de 5"
+mientras la cuenta tiene dos mil movimientos.
+
+**`filters` se devuelve por la misma razón que `range`.** Cinco filas de dos mil
+no es una lista corta, es una lista filtrada, y sólo el servidor puede decir cuál
+de las dos está mirando el lector.
+
+**El término es literal, no un patrón.** La consulta usa `strpos(lower(...))` y
+no `ILIKE`: con `ILIKE` el `%` y el `_` que escriba el lector serían comodines, y
+buscar `50%` devolvería todas las filas.
 
 ---
 
@@ -652,11 +666,11 @@ está publicado hoy**.
 | 9 | Tarjeta de inversión | `domainCards.investment` — **forma propia**, comparte sólo `domain`, `currency` y `meta` | `GET /` · nivel 1 | **SERVIDO, con su propio componente** |
 | 10 | Snapshot mensual, 3 dominios | `monthlySnapshot[]` | `GET /` · nivel 1 | **SERVIDO** |
 | 11 | Metas financieras | `financialGoals` | `GET /` · nivel 1 | **SERVIDO** |
-| 12 | Teaser de actividad reciente | `recentActivity.transactions` | `GET /` · nivel 1 | **SERVIDO** |
+| 12 | Actividad reciente, con buscador, filtro y paginación | `GET /activity` → `transactions` + `range` + `filters` | `GET /activity` | **CONSTRUIDO 2026-09-09** — `RecentActivity.tsx`. El teaser de `recentActivity.transactions` que traía la página quedó sin lector |
 | 13 | Pareto del gasto — barras de gasto y curva acumulada | `charts.expenseCategories` con `rank`, `cumulativeActual`, `cumulativePercentage` | `GET /` · nivel 1 | **SERVIDO** |
 | 14 | Pareto — segunda barra de plan y segunda curva | `budgetAmount` + `cumulativeBudget`, `cumulativeBudgetPercentage`, `hasSkippedBudget` | `GET /` · nivel 1 | **SERVIDO** desde 2026-09-08 — falta el frontend |
 | 15 | Líneas de tendencia, 6 puntos | `charts.trend.income`, `.expense`, `.pocket` | `GET /` · nivel 1 | **SERVIDO — sólo 3 de 6 dominios** |
-| 16 | Pantalla de actividad con rango | `GET /activity` → `transactions` + `range` | `GET /activity` | **SERVIDO** |
+| 16 | Pantalla de actividad con rango | `GET /activity` → `transactions` + `range` | `GET /activity` | **ABSORBIDA POR LA 12** — el bloque de nivel 1 ya elige su período, así que no hay una segunda pantalla que construir |
 | 17 | Listado paginado por dominio | `transactions{rows, page, pageSize, totalRows}` | `GET /:domain` · nivel 1 | **SERVIDO** |
 | 18 | Serie larga, 13 puntos | `analysis.series` | `?analysis=derived` | **SERVIDO — 4 de 6 dominios** |
 | 19 | Dona de ingreso por fuente | `analysis.bySource` + `concentration` | `?analysis=full` | **SERVIDO** |

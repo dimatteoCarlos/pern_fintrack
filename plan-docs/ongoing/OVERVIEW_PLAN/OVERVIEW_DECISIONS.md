@@ -2498,3 +2498,53 @@ contradiciéndose.
 **Cuándo no hay barra.** Cuando la parte gastada no se puede medir, que es un
 presupuesto en cero: una pista vacía afirma que no se gastó nada, y el remanente
 al lado dice lo contrario.
+---
+
+# 2026-09-09 — Actividad reciente deja de ser un teaser
+
+Commit `4f8f1418`, sobre el backend de `c41f1f23`. El bloque entero, con su
+buscador, su filtro por tipo de movimiento, su período y su paginación.
+
+**Nada se filtra en el navegador.** Cada estrechamiento es un parámetro de la
+petición, así que el conteo debajo de la lista responde por el conjunto entero.
+Un filtro sobre la página que está en la mano diría "3 de 5" mientras la cuenta
+tiene dos mil movimientos.
+
+**El estado es un hook y no un store.** `useOverviewActivity.ts`. `useOverviewStore`
+existe porque entrar al detalle de una cuenta desmonta el layout de Overview y el
+payload se volvería a pedir al regresar; lo que guarda este bloque es una
+elección pasajera del lector —un término que escribió, una página a la que
+avanzó— y volver a una lista limpia es el comportamiento correcto.
+
+**Una respuesta que llega tarde se descarta.** `requestId` es un `useRef` que
+lleva el número de la petición vigente. Escribir "netflix" dispara varias y la
+red puede devolverlas fuera de orden: sin esto, la respuesta de "netfl" aterriza
+última y pinta una lista que el lector ya dejó atrás.
+
+**El período por defecto es sin cota, no el mes en pantalla.** Esta sección
+responde qué pasó **último**, no qué pasó en el mes que se está estudiando. Un
+lector mirando agosto igual quiere saber qué se movió ayer.
+
+**Las cotas del período se calculan desde `window.currentMonth`, no del reloj del
+navegador.** El calendario del dueño es contra lo que está cortada cada cifra de
+la página, y un mes armado con la hora local discreparía para un lector cuya zona
+ya cambió de día.
+
+**El esqueleto es sólo para la primera respuesta.** Un paso de página o un
+término nuevo con una lista ya en pantalla conserva las filas y marca el paginador
+ocupado. Reemplazar la lista por un esqueleto en cada tecla es el bloque saltando
+bajo la mano del lector.
+
+**`Pagination.tsx` vive en `general_components/`** porque seis listas lo quieren:
+ésta y las cinco por dominio del nivel 2. No sabe qué es una fila y calcula una
+sola cosa, el número de páginas, sobre dos números que mandó el servidor.
+
+**`RecentActivity.tsx` compone a `LastMovements`, no lo reemplaza.** Ese
+componente es el título, el subtítulo y la lista, y sigue siendo exactamente eso;
+lo que se agrega son los controles arriba y el paginador abajo. Reescribir la
+lista ahí habría sido un segundo renderizador para una misma forma de fila.
+
+**El teaser del payload queda sin lector.** `recentActivity.transactions` se sigue
+publicando y `Overview.tsx` ya no lo mapea —el mapeo quedó comentado, no
+borrado—. Si la consulta de `/overview` debe dejar de traer cinco filas que nadie
+dibuja es una pregunta sobre ese statement, no sobre el frontend.
