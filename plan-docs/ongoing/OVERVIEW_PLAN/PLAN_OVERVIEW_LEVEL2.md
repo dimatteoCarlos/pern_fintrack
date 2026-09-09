@@ -1,7 +1,8 @@
 # Overview — Level 2 specification
 
 Written 2026-09-07. This document exists because both `PLAN_OVERVIEW_CONTRACT.md`
-and `OVERVIEW_INDICATOR_MATRIX.md` state, in as many words, that **nothing has
+and the indicator matrix - consolidated into `OVERVIEW_INDICATORS.md` on
+2026-09-09 - state, in as many words, that **nothing has
 been specified for level 2**. That absence is what blocks the last stage of
 `PLAN_OVERVIEW_RECOVERY.md`, not the frontend stage ahead of it: a backend can
 be built before a screen exists, but not before a contract does.

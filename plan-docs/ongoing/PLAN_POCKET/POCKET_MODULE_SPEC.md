@@ -1781,7 +1781,7 @@ wait for a migration.
 
 Written into §17 first, then moved to the overview plan at the developer's
 instruction — `OVERVIEW_DECISIONS.md` D44 for the closure and its invalidations,
-`PLAN_OVERVIEW_KPI_CATALOG.md` §3bis for the pocket entries and §3ter for the
+`OVERVIEW_INDICATORS.md` §12 for the pocket entries and §13 for the
 savings entries. §17 keeps only the three pocket facts those sections rest on: the
 fold is over accounts, a pocket measures intention while savings measures fact, and
 the rejected pace figure is answerable from `transactions`.
@@ -2064,8 +2064,8 @@ subject only one of them decides.
 | where | what it holds |
 |---|---|
 | `OVERVIEW_DECISIONS.md`, **D44** | the closure — *a pocket is an allocation* — and the entry-by-entry list of what that invalidates in the overview plan |
-| `PLAN_OVERVIEW_KPI_CATALOG.md`, **§3bis** | the pocket entries that replace P1-P4: free cash, the count of over-allocated accounts, committed cash as a memo line |
-| `PLAN_OVERVIEW_KPI_CATALOG.md`, **§3ter** | the savings entries: net cash change, savings rate, its 6-month series, and the required-pace comparison |
+| `OVERVIEW_INDICATORS.md`, **§12** | the pocket entries that replace P1-P4: free cash, the count of over-allocated accounts, committed cash as a memo line |
+| `OVERVIEW_INDICATORS.md`, **§13** | the savings entries: net cash change, savings rate, its 6-month series, and the required-pace comparison |
 
 Three statements from this document are what those sections are built on, and they
 stay here because they are pocket facts, not overview facts:

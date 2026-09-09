@@ -40,7 +40,7 @@ Everything Overview computes is computed and discarded.
 
 ## 2. The reference set — which file answers what
 
-Two tracks. Nothing outside these nine files is a source.
+Two tracks. Nothing outside these eleven files is a source.
 
 ### What to build
 
@@ -48,10 +48,12 @@ Two tracks. Nothing outside these nine files is a source.
 |---|---|
 | `OVERVIEW_PLAN.md` (this file) | what is done, what remains, in what order |
 | `OVERVIEW.md` | what each figure measures, its formula, its null semantics |
+| `OVERVIEW_INDICATORS.md` | the vocabulary the formulas are written in, and every indicator with its temporal nature, owning module, level and state |
 | `OVERVIEW_LAYOUT.md` | which published field feeds each block, on which endpoint, at which depth |
 | `OVERVIEW_LEVEL3.md` | which entity each domain opens, the field carrying its id, and the screen it lands on |
 | `PLAN_OVERVIEW_CONTRACT.md` | the exact wire shape of the payload — consulted, not read front to back |
 | `OVERVIEW_DECISIONS.md` | why a thing was decided the way it was — consulted |
+| `OVERVIEW_CHART_TECHNIQUE.md` | how a chart is drawn in this module, taken off the one that ships |
 
 ### How it looks
 
@@ -134,7 +136,93 @@ a module and fail.
 
 ---
 
-## 4. What remains
+## 4. Guard rules - non-negotiable
+
+Inherited from `PLAN_OVERVIEW.md` sections 4 and 7-bis, deleted 2026-09-09. The
+other sections of that file were a reading of the code on 2026-08-20 and are
+superseded by section 3 here, by `OVERVIEW_DECISIONS.md` and by
+`OVERVIEW_INDICATORS.md`. The four rules below and the table at 4.5 are the part
+nothing else carried.
+
+The deleted file paired each rule with the site that violated it in August 2026.
+Those counts were a measurement, not the rule, and they are replaced here by
+where the rule stands today.
+
+### 4.1 Server-authoritative financial calculation
+
+Totals, conversions, percentages, balances, periods and indicators are computed
+in the backend. The frontend renders the supplied figure. **Do not reproduce a
+financial formula in React.**
+
+This is the rule `PLAN_OVERVIEW_CONTRACT.md` cites as the batch-payload
+precedent: one request answers with every figure a screen needs, already
+computed, rather than with rows the client folds.
+
+*Today:* six sites recomputed money in the browser when the rule was written. The
+sixteen-request mount they belonged to is gone, and `makeHeroSection.js` with the
+six domain services publishes the figures those sites derived.
+
+### 4.2 One indicator, one formula, one implementation, many consumers
+
+The same indicator must not be independently recomputed in Overview, a domain
+page and the consolidated card. The consolidated card consolidates domain facts;
+it does not re-derive them - consolidating by re-running the calculation is how a
+dashboard's total drifts from the sum of its parts.
+
+*Today:* stated as an ownership rule in `PLAN_OVERVIEW_CONTRACT.md` section 14.3,
+and it is why the count of movements behind a card is the count of the rows the
+total summed rather than a `FILTER` of its own (D21). `OVERVIEW_INDICATORS.md` is
+the table that enforces it: one row, one formula, one path.
+
+### 4.3 Currency: convert before aggregating, server-side only
+
+The backend converts, conversion happens before aggregation, the client never
+converts, and aggregation is in the single accounting currency. Reuse
+`currencyAmountConversion`; do not introduce a second implementation for
+Overview. Mixed-currency values are never silently added - an aggregate that
+cannot be represented safely returns an explicit `null` with a notice rather than
+an invented figure.
+
+*Today:* the rule holds by construction, because every amount is written in the
+accounting currency (D7) and nothing converts on read. The mixed-currency branch
+is written and unreachable under one accounting currency per installation, and it
+is written anyway: the day it becomes reachable, a silent sum is a wrong number
+on screen and a `null` is a question the owner can answer.
+
+### 4.4 One read model, not a request aggregator
+
+`GET /overview` must be a genuine read model. Moving a fan-out from the browser
+into a `Promise.all` inside the controller is the same waterfall one layer down
+and does not satisfy this rule.
+
+*Exception:* if profiling proves independent queries materially improve latency
+and the count stays bounded, document the reason and get it approved explicitly,
+in this file, before writing it.
+
+### 4.5 One module, one question - set by the developer 2026-08-29
+
+**Overview is not touched to solve another module's problem.** The developer
+placed this above adding indicators to Overview, and it is what decides where a
+figure belongs: a figure that does not answer the module's question is on the
+wrong screen.
+
+| module | the question it answers |
+|---|---|
+| Overview | What is my overall financial situation? |
+| Bank accounts | Where is my real money? |
+| Debts | Who owes me and whom do I owe? |
+| Budget | How am I executing my budget? |
+| Pocket | Which savings goals am I funding, and how close am I? |
+| Investments | How is my wealth invested? |
+
+This is the rule `PLAN_POCKET/POCKET_DECISIONS.md` names when it records that the
+sum of pocket targets and the overall pocket progress are refused by Overview
+rather than merely missing from it. Reopening that boundary is the developer's
+call.
+
+---
+
+## 5. What remains
 
 ### P5 — the frontend, one component per commit
 
@@ -204,7 +292,7 @@ code and is removed rather than corrected.
 
 ---
 
-## 5. Decisions
+## 6. Decisions
 
 ### Settled by the code since the level-2 specification was written
 
@@ -231,7 +319,7 @@ None of these blocks building a component.
 
 ---
 
-## 6. Folder cleanup
+## 7. Folder cleanup
 
 Fourteen files and one folder remain here. No code comment cites any of them —
 twenty stems searched case-insensitively across `backend/src`, `frontend/src`
@@ -267,23 +355,47 @@ found five, two of them in files this folder still holds.
 The two missed here sit inside documents scheduled for the third batch, so a
 search limited to outside the folder finds neither.
 
-### Merge first, delete after
+### Deleted - the third batch, after merging what only they held
 
-Each carries something no other file does.
+Removed 2026-09-09 on the developer's instruction to leave the files that serve
+development and delete what is obsolete. Every citation was repointed in the same
+commit, four of them from outside this folder.
 
-| file | what only it has |
-|---|---|
-| `PLAN_OVERVIEW.md` | section 4, the guard rules, and section 5, the contract obligations; its own header says the rest is superseded |
-| `PLAN_OVERVIEW_LEVEL2.md` | the null semantics per analysis. Its second claim to uniqueness — the per-category budget variance — is void: the variance is built and published at level 1 |
-| `OVERVIEW_INDICATOR_MATRIX.md` | each indicator's temporal nature, owning module and level |
-| `PLAN_OVERVIEW_KPI_CATALOG.md` | the entry format of an indicator; `POCKET_MODULE_SPEC.md` cites it three times |
-| `INVENTARIO_ENDPOINTS_E_INDICADORES.md` | a historical endpoint measurement, declared unmaintained |
-| `benchmarking_lookUp/monthly_average_kpi_benchmark.md` | the market research behind the monthly-average window and denominator |
+| file deleted | what only it held | where that lives now |
+|---|---|---|
+| `OVERVIEW_INDICATOR_MATRIX.md` | each indicator's temporal nature, owning module and level | `OVERVIEW_INDICATORS.md`, consolidated with the file below |
+| `PLAN_OVERVIEW_KPI_CATALOG.md` | the vocabulary every formula depends on, the eleven-field entry format, and the pocket and savings entries | `OVERVIEW_INDICATORS.md` sections 1, 11, 12 and 13 |
+| `PLAN_OVERVIEW.md` | the guard rules and the one-module-one-question table; its section 5, the eleven declared fields, was already carried | section 4 of this file, and `OVERVIEW_INDICATORS.md` section 11 |
+| `INVENTARIO_ENDPOINTS_E_INDICADORES.md` | a historical endpoint measurement, declared unmaintained by its own header | nowhere, deliberately: `overviewRoutes.js` answers which routes exist and cannot go stale |
+
+**Why the two indicator documents became one.** They answered the same question
+from two sides and had drifted. The catalogue had already declared itself
+superseded as the list of indicators, which left the vocabulary every formula
+depends on - the three catalogues, the pseudo-account rule, the dead
+`movement_type_id = 3`, the annulment description prefix - reachable only through
+a file nobody was meant to open. Two statements of the consolidated file reverse
+both sources: the budget variance is measured against total spend, not against
+the categorized part, and the sections the catalogue numbered 3bis and 3ter are
+12 and 13.
+
+**Four citations from outside this folder were repointed** in the same commit:
+three in `PLAN_POCKET/POCKET_MODULE_SPEC.md` and one in
+`PLAN_POCKET/POCKET_DECISIONS.md`. `PLAN_POCKET/` is not this session's folder,
+so the session that owns it was told.
 
 ### Keep
 
-The eight files of section 2, plus `PLAN_OVERVIEW_RECOVERY.md` until its
-per-stage detail is folded into this file.
+The files of section 2, plus:
+
+| file | why it stays |
+|---|---|
+| `OVERVIEW_INDICATORS.md` | the indicator reference, written 2026-09-09 |
+| `OVERVIEW_CHART_TECHNIQUE.md` | how a chart is drawn here, taken off the one that ships |
+| `PLAN_OVERVIEW_LEVEL2.md` | the level-2 specification, and level 2 is the stage being built |
+| `OVERVIEW_LEVEL3.md` | the level-3 navigation specification |
+| `OVERVIEW_P5_FROZEN_DECISIONS.md` | the developer's own rulings for the frontend stage |
+| `benchmarking_lookUp/monthly_average_kpi_benchmark.md` | primary research. Its conclusion is inside D14, so nothing needs to open it, and deleting a survey to save one file is poor value |
+| `PLAN_OVERVIEW_RECOVERY.md` | **until its per-stage detail is compared against section 3 here, line by line.** Section 3 is the board; what that file holds beyond it has not been enumerated, and deleting it before that comparison is how a rule gets lost |
 
 **The stage board was duplicated and the copy drifted.** `OVERVIEW.md` section 4
 carried a second board whose contract-stage and level-2 rows both claimed
@@ -293,7 +405,7 @@ one to remove.
 
 ---
 
-## 7. Verification
+## 8. Verification
 
 - No figure enters a sketch without existing in the builder that publishes it.
 - A missing figure renders as a skeleton or a dash, never as `0` or `NaN`.

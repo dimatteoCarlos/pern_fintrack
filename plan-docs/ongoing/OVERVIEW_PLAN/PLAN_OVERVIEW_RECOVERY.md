@@ -2,7 +2,8 @@
 
 **Written 2026-09-06. This is the plan of record for the Overview module.**
 
-It supersedes the sequencing in `PLAN_OVERVIEW.md` and consolidates three
+It supersedes the sequencing in the original plan, deleted 2026-09-09, and is
+in turn superseded by `OVERVIEW_PLAN.md` section 3. It consolidates three
 proposals into one. It does not supersede `PLAN_OVERVIEW_CONTRACT.md`, which
 remains the frozen payload contract; where this plan changes the contract, the
 change is named explicitly in Part 3.
@@ -512,7 +513,8 @@ the net-worth ruling (D54) removes exactly that term. The composition rule stand
 the term list does not. Writing the boundary without saying so would have left
 two live decisions contradicting each other in the same document.
 
-**The indicator matrix is written: `OVERVIEW_INDICATOR_MATRIX.md`.** Every
+**The indicator matrix is written, and since 2026-09-09 it is
+`OVERVIEW_INDICATORS.md`.** Every
 indicator with its formula, temporal nature, owner, level, chart and endpoint,
 plus a column the stage added on purpose — whether the figure is on screen,
 computed and unrendered, or specified only. It is its own document rather than a

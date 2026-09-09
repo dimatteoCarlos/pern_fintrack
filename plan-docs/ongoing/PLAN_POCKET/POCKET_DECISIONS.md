@@ -3383,7 +3383,7 @@ app-wide overview and not to the module board. It stays on this page until the
 overview carries it.
 
 **The overview does not merely omit that obligation today; it refuses it by
-name.** Its KPI catalog (`OVERVIEW_PLAN/PLAN_OVERVIEW_KPI_CATALOG.md`) excludes
+name.** Its indicator reference (`OVERVIEW_PLAN/OVERVIEW_INDICATORS.md`) excludes
 the sum of the targets, the overall progress and the counts of finished and late
 pockets under the module-boundary ruling it shares with budget, and states that
 the overview calls no pocket endpoint at all. **Nothing was written into the

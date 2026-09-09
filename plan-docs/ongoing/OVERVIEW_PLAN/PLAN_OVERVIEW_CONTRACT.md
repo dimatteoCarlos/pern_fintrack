@@ -2,13 +2,14 @@
 
 **Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 
-Depende de `PLAN_OVERVIEW_KPI_CATALOG.md` (fase 1, cerrada y aprobada
+Depende de `OVERVIEW_INDICATORS.md`, que consolido el catalogo de fase 1
+con la matriz de indicadores el 2026-09-09 (fase 1, cerrada y aprobada
 2026-08-20). Cada tipo de abajo es la forma de cable de una entrada del
 catálogo — el id `snake_case` del catálogo es el nombre de la fórmula, el campo
 `camelCase` de aquí es lo que el cliente recibe. La convención camelCase sigue
 el precedente ya en producción: `budgetCalculationService.js` (`budgetAmount`,
 `referenceMonth`, `executionPercentage`), citado como precedente de forma en
-`PLAN_OVERVIEW.md` §4.1 ("batch-payload precedent"). Es distinta a propósito de
+`OVERVIEW_PLAN.md` §4.1 ("batch-payload precedent"). Es distinta a propósito de
 la convención `snake_case` de los endpoints legacy del dashboard — `overview_services`
 es un módulo nuevo (D2), no una extensión de esos.
 
@@ -903,7 +904,7 @@ figures were not cut at. No component has to change for the payload to carry the
 field; the ones above are what it unlocks.
 
 **No carga filas de transacción** fuera de `recentActivity` (§5 de
-`PLAN_OVERVIEW.md`, obligación de contrato) — un domain card completo con su
+`OVERVIEW_INDICATORS.md` §11, obligación de contrato) — un domain card completo con su
 paginación vive sólo en `GET /overview/:domain`. `charts` no la contradice: un
 punto de serie y una fila de categoría son agregados, no filas de transacción.
 
@@ -1041,7 +1042,7 @@ type MonthlyTrendPoint = {
 // cifras distintas para la misma categoría. Los ocho primeros campos vienen
 // tal cual de makeBudgetCategoryStatus, sin abrir su contrato (D6).
 // rank/cumulativeActual/cumulativePercentage son cálculo nuevo, server-side
-// (§4.1 de PLAN_OVERVIEW.md): makeCategoryGroups ordena alfabéticamente hoy,
+// (§4.1 de OVERVIEW_PLAN.md): makeCategoryGroups ordena alfabéticamente hoy,
 // no por gasto. Incluye categorías borradas (soft-delete) con gasto real en
 // el mes — la query no hereda el filtro deleted_at IS NULL de
 // accountUtils.js, que responde una pregunta distinta ("cuentas asignables a
@@ -1273,14 +1274,14 @@ is an input to the averages of §8 and is published as no figure of its own. Tha
 absence is recorded here rather than left to a reader's inference: a trend is
 level 2 work and nothing has been specified for it.
 
-The full assignment, figure by figure, is `OVERVIEW_INDICATOR_MATRIX.md`.
+The full assignment, figure by figure, is `OVERVIEW_INDICATORS.md`.
 
 ### 14.3 What a domain owns, and what Overview owns
 
 **Overview composes; it does not recalculate.** A figure's definition belongs to
 the module that owns the data behind it, and Overview imports that service rather
 than writing a second query producing the same name. This is the one-figure,
-one-formula principle (`PLAN_OVERVIEW.md` §4.2) stated as an ownership rule, and
+one-formula principle (`OVERVIEW_PLAN.md` §4.2) stated as an ownership rule, and
 it is the rule §7 already applies to the consolidated card and D27 already
 applies to the hero.
 
