@@ -35,6 +35,7 @@ import { CardTitle } from '../../../general_components/CardTitle';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
+import { monthLabel } from '../helpers/monthLabel';
 import {
  MonthlySnapshot as MonthlySnapshotRow,
  MonthlySnapshotDomain,
@@ -74,20 +75,6 @@ const DOMAIN_LABEL: Record<MonthlySnapshotDomain, string> = {
 
 const money = (currency: string, value: number) =>
  currencyFormat(currency, value, formatNumberCountry);
-
-// 'YYYY-MM-01' to 'Sep 2026'. Split and rebuilt rather than passed to the Date
-// constructor: 'YYYY-MM-01' parses as UTC midnight, which is the previous month
-// for every reader west of Greenwich.
-const monthLabel = (month: string | null) => {
- if (!month) return NO_FIGURE;
-
- const [year, monthNumber] = month.split('-').map(Number);
-
- return new Date(year, monthNumber - 1, 1).toLocaleDateString('en-US', {
-  month: 'short',
-  year: 'numeric',
- });
-};
 
 type Tier = 'calm' | 'watch' | 'alert' | 'unknown';
 
@@ -183,7 +170,7 @@ const SnapshotCard = ({
   <article className='snapshot'>
    <div className='snapshot__head'>
     <span className='snapshot__domain'>{DOMAIN_LABEL[row.domain]}</span>
-    <span className='snapshot__period'>{monthLabel(month)}</span>
+    <span className='snapshot__period'>{monthLabel(month, 'short')}</span>
    </div>
 
    {/* The typical active month, over twelve. The twelve and not the three for
@@ -233,7 +220,7 @@ const SnapshotCard = ({
         because it is one of the two operands of the variance above, and a
         difference whose operands are not both on screen cannot be checked. */}
     <div className='snapshot__baseline'>
-     <span className='snapshot__label'>{monthLabel(month)}</span>
+     <span className='snapshot__label'>{monthLabel(month, 'short')}</span>
      <span className='snapshot__figure'>
       {money(row.currency, row.domainMonthlyActual)}
      </span>

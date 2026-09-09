@@ -26,6 +26,7 @@ import { CardTitle } from '../../../general_components/CardTitle';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
+import { monthLabel } from '../helpers/monthLabel';
 import { OverviewFinancialGoals } from '../../../types/overviewTypes';
 
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
@@ -34,20 +35,6 @@ const NO_FIGURE = '—';
 
 const money = (currency: string, value: number) =>
  currencyFormat(currency, value, formatNumberCountry);
-
-// 'YYYY-MM-01' to 'September 2026'. Split and rebuilt rather than passed to the
-// Date constructor: 'YYYY-MM-01' parses as UTC midnight, which is the previous
-// month for every reader west of Greenwich.
-const monthLabel = (month: string | null) => {
- if (!month) return NO_FIGURE;
-
- const [year, monthNumber] = month.split('-').map(Number);
-
- return new Date(year, monthNumber - 1, 1).toLocaleDateString('en-US', {
-  month: 'long',
-  year: 'numeric',
- });
-};
 
 // The class the shared StatusSquare appends, from the pocket module's
 // vocabulary. Only two of its seven levels are reachable from this block and

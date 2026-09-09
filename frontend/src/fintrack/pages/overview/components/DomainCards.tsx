@@ -28,6 +28,7 @@ import {
 import { ProgressBar, ProgressTone } from '../../../general_components/progressBar/ProgressBar';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
+import { monthLabel } from '../helpers/monthLabel';
 import {
  OverviewDomainCardBase,
  OverviewExpenseCard,
@@ -43,7 +44,11 @@ const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 // Rendered when a FIGURE did not arrive - a cell in a row of figures, where a
 // dash is read as "not this one" against its neighbours. Never a 0: a withheld
 // delta is one the server refused to invent.
-const NO_FIGURE = '—';
+//
+// Its only reader was this file's copy of monthLabel, which now lives in
+// helpers/monthLabel.ts with its own dash. Kept commented rather than removed:
+// the next figure this file withholds needs exactly this constant.
+// const NO_FIGURE = '—';
 
 // Rendered when a whole CLAUSE is absent, which is a different thing. A dash
 // alone at the head of a sentence reads as a stray character rather than as a
@@ -114,20 +119,6 @@ const deltaFigures = (delta: number, priorTotalAmount: number | null, currency: 
  if (share === null) return amount;
 
  return `${Math.abs(share).toFixed(SHARE_DECIMALS)}% (${amount})`;
-};
-
-// 'YYYY-MM-01' to 'September 2026'. Split and rebuilt rather than passed to the
-// Date constructor: 'YYYY-MM-01' parses as UTC midnight, which is the previous
-// month for every reader west of Greenwich.
-const monthLabel = (month: string | null) => {
- if (!month) return NO_FIGURE;
-
- const [year, monthNumber] = month.split('-').map(Number);
-
- return new Date(year, monthNumber - 1, 1).toLocaleDateString('en-US', {
-  month: 'long',
-  year: 'numeric',
- });
 };
 
 // The delta is an AMOUNT and not a rate, because the prior month's own figure is
