@@ -17,6 +17,7 @@ import { useCallback, useEffect } from 'react';
 import { Outlet, useSearchParams } from 'react-router-dom';
 
 import { BigBoxResult } from './components/BigBoxResult.tsx';
+import HeroIndicators from './components/HeroIndicators.tsx';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import MonthPicker from '../../general_components/monthPicker/MonthPicker.tsx';
 import ScrollJump from '../../general_components/scrollJump/ScrollJump';
@@ -87,37 +88,23 @@ function OverviewLayout() {
  // flipped its sign. The card publishes the month's income as a flow, and
  // flipping a flow would report every month's income as a loss.
  //
- // SIX ROWS AND NOT THREE. The hero published six figures and rendered three,
- // so liquidNetWorth, cashPosition, freeCash and netMonthlyFlow were computed on
- // every request and thrown away - the characteristic failure of this module,
- // which the plan names "whoever computes, publishes".
+ // THREE ROWS AGAIN, and this time nothing is thrown away. The hero grew to
+ // seven when liquidNetWorth, cashPosition, freeCash and netMonthlyFlow turned
+ // out to be computed on every request and rendered nowhere. Four of those
+ // seven answer narrower questions than the three below, and a reader who is
+ // not asking one of them was reading past four rows to reach the page: they
+ // moved to HeroIndicators, which opens and closes and carries a definition for
+ // each. Published, and no longer in the way.
  //
- // The order is the hierarchy the plan freezes and it is not decorative: what is
- // owned, then how much of that is cash, then how much of that cash is
- // unpromised. Each row narrows the one above it, so a reader going down the
- // column is answering a narrower question each time rather than reading six
- // unrelated totals.
- //
- // savingsRate is deliberately absent from this list: it is a RATE on a 0-1
- // scale and every row here is an amount in the accounting currency, so
- // BigBoxResult would format 0.23 as $0.23. It gets its own row when the
- // component learns to carry a unit.
+ // savingsRate is still absent from both: it is a RATE on a 0-1 scale and every
+ // row here is an amount in the accounting currency, so BigBoxResult would
+ // format 0.23 as $0.23. It gets its own row when a component carries a unit.
  const bigScreenInfo = [
   // What is owned, receivable leg included.
   { title: 'net worth', amount: hero?.netWorth ?? null },
-  // The same holdings with the receivable leg taken out. null - and so a dash -
-  // only when the debt card's payable leg did not arrive, which is a real
-  // absence and not a zero.
-  { title: 'liquid net worth', amount: hero?.liquidNetWorth ?? null },
-  // Spendable without selling a position or collecting a debt. Bank and cash.
-  { title: 'cash position', amount: hero?.cashPosition ?? null },
-  // How much of that cash no pocket has promised.
-  { title: 'free cash', amount: hero?.freeCash ?? null },
-  // The two flows of the month, under the four positions.
+  // The two flows of the month, under the position.
   { title: 'income', amount: domainCards?.income.totalAmount ?? null },
   { title: 'expenses', amount: domainCards?.expense.totalAmount ?? null },
-  // Negative is a real answer here and the most useful one the figure has.
-  { title: 'net monthly flow', amount: hero?.netMonthlyFlow ?? null },
  ];
 
  return (
@@ -181,12 +168,19 @@ function OverviewLayout() {
      </button>
     </div>
    ) : (
-    // The accounting currency the payload published, not a constant. Every
-    // figure in the rows above comes from that same answer.
-    <BigBoxResult
-     bigScreenInfo={bigScreenInfo}
-     currency={hero?.currency ?? null}
-    />
+    <>
+     {/* The accounting currency the payload published, not a constant. Every
+         figure in the rows comes from that same answer. */}
+     <BigBoxResult
+      bigScreenInfo={bigScreenInfo}
+      currency={hero?.currency ?? null}
+     />
+
+     {/* Directly under the hero and inside the same branch: the four figures it
+         carries come from the same payload, so a failed request must not leave
+         a card offering to open onto four dashes. */}
+     <HeroIndicators />
+    </>
    )}
 
    <Outlet />

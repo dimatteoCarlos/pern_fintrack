@@ -1,0 +1,112 @@
+/* frontend/src/fintrack/general_components/kpiTooltip/styles/kpiTooltip.css
+   The indicator's definition chip and the button that opens it.
+   Imported by KpiTooltip.tsx and by nothing else.
+
+   Only the chip's own shape is here. Its position, its hover and focus rules
+   and its Escape dismissal belong to tooltip.css, which the shared component
+   brings with it.
+
+   The --cream and --dark modifiers name the surface the trigger SITS ON. Both
+   exist because the two account panels of Overview are cream and the app ground
+   under them is not, and a chip that keeps one palette disappears on one of
+   them. */
+
+.kpiTooltip__trigger {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ /* The glyph's own box and not a tap target: the row is short, and a control
+    sized for a thumb beside a label would out-weigh the label it explains. */
+ width: var(--font-size-sm);
+ height: var(--font-size-sm);
+ padding: 0;
+ background-color: transparent;
+ border: none;
+ cursor: pointer;
+ vertical-align: middle;
+ transition: color var(--motion-fast);
+}
+
+.kpiTooltip__trigger svg {
+ width: 100%;
+ height: 100%;
+}
+
+.kpiTooltip__trigger--dark {
+ color: var(--color-content-on-dark-subtle);
+}
+
+.kpiTooltip__trigger--dark:hover,
+.kpiTooltip__trigger--dark:active {
+ color: var(--color-content-on-dark);
+}
+
+.kpiTooltip__trigger--cream {
+ color: var(--color-content-secondary);
+}
+
+.kpiTooltip__trigger--cream:hover,
+.kpiTooltip__trigger--cream:active {
+ color: var(--color-content-primary);
+}
+
+.kpiTooltip__trigger--dark:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+ border-radius: var(--radius-full);
+}
+
+.kpiTooltip__trigger--cream:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+ border-radius: var(--radius-full);
+}
+
+/* Compound selector, the way rateTooltip.css does it: the base chip's rules
+   live in another file and this has to beat them without !important.
+
+   A DEFINITION IS A SENTENCE, so the base's nowrap goes: that rule is right for
+   a rate on one line and wrong for a measure. The cap is in characters, which
+   is the unit a line length is measured in.
+
+   Anchored left rather than centred on the trigger, which sits a few characters
+   into the row - a centred chip would hang off the card. */
+.tooltip__wrapper--text.kpiTooltip__tip {
+ left: 0;
+ transform: none;
+ width: max-content;
+ max-width: 28ch;
+ margin-bottom: var(--space-1);
+ padding: var(--space-2);
+ white-space: normal;
+ text-align: left;
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
+ line-height: 1.45;
+ border-radius: var(--radius-sm);
+ box-shadow: var(--shadow-md);
+ /* The chip stays mounted at opacity 0 while nothing points at it, and it sits
+    over whatever is above the row. Nothing in it is clickable, so it must never
+    take a click meant for the element behind it. */
+ pointer-events: none;
+}
+
+/* On the app ground the chip is the cream one the base already paints. Restated
+   through the token rather than inherited, so the pair below reads as one
+   decision made twice. */
+.tooltip__wrapper--text.kpiTooltip__tip--dark {
+ background-color: var(--color-surface-panel);
+ color: var(--color-content-primary);
+}
+
+/* On a cream card it inverts, or it is a cream chip on a cream ground. */
+.tooltip__wrapper--text.kpiTooltip__tip--cream {
+ background-color: var(--color-surface-raised);
+ color: var(--color-content-on-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .kpiTooltip__trigger {
+  transition: none;
+ }
+}

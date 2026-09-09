@@ -1,0 +1,115 @@
+/* frontend/src/fintrack/pages/overview/styles/heroIndicators-styles.css
+   The four secondary hero figures, in a card that opens and closes.
+   Imported by HeroIndicators.tsx and by nothing else.
+
+   It matches the hero box it sits under - same width, same cream surface, same
+   radius - because it is the same card at a second level of detail, and a
+   narrower or differently coloured block under it would read as another kind of
+   thing. The widths there are literals in overview-styles.css; here they are the
+   tokens whose values those literals happen to be. */
+
+.heroIndicators {
+ width: 88%;
+ margin: var(--space-3) auto 0;
+ /* The same cream the hero box paints with var(--creme), named through the
+    token system: both resolve to the one value. */
+ background-color: var(--color-surface-panel);
+ border-radius: var(--radius-xl);
+ overflow: hidden;
+}
+
+/* The whole head is the control, so the target is the row and not the chevron:
+   a reader aiming at a 16px glyph on a phone is a reader who misses it. */
+.heroIndicators__toggle {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ width: 100%;
+ padding: var(--space-3) var(--space-5);
+ background-color: transparent;
+ border: none;
+ color: var(--color-content-primary);
+ font-family: var(--font-family-sans);
+ text-align: left;
+ cursor: pointer;
+}
+
+.heroIndicators__title {
+ flex: 1 1 auto;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+}
+
+/* Which month the three positions are read at. On the head rather than on each
+   row: it is the same answer for all four and repeating it four times would be
+   four places for one fact. */
+.heroIndicators__period {
+ flex: 0 0 auto;
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-secondary);
+ font-variant-numeric: tabular-nums;
+}
+
+.heroIndicators__chevron {
+ flex: 0 0 auto;
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+ color: var(--color-content-secondary);
+ transition: transform var(--motion-fast);
+}
+
+.heroIndicators__chevron.is-open {
+ transform: rotate(180deg);
+}
+
+.heroIndicators__toggle:hover .heroIndicators__chevron,
+.heroIndicators__toggle:active .heroIndicators__chevron {
+ color: var(--color-content-primary);
+}
+
+.heroIndicators__toggle:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: calc(-1 * var(--border-width-thick));
+}
+
+.heroIndicators__panel {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ padding: 0 var(--space-5) var(--space-4);
+}
+
+.heroIndicators__row {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+}
+
+/* The label and its tip button are one unit, which is why the gap is here and
+   not between two siblings of the row: the button explains this label and has
+   to sit against it rather than float between the two columns. */
+.heroIndicators__label {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-1);
+ font-size: var(--font-size-sm);
+ color: var(--color-content-primary);
+}
+
+.heroIndicators__amount {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-primary);
+ font-variant-numeric: tabular-nums;
+ text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .heroIndicators__chevron {
+  transition: none;
+ }
+}
