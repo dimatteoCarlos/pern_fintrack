@@ -20,9 +20,18 @@ export type LastMovementType = {
 type LastMovementsProps = {
   data: LastMovementType[] | null;
   title: string;
+  // What bounds the list, in the reader's terms. It used to be the fixed
+  // sentence "Last 30 days", which was true of the five per-domain lists this
+  // component was written for and false of the activity teaser, whose rows are
+  // the five most recent whenever they happened.
+  subtitle?: string;
 };
 
-function LastMovements({ data, title }: LastMovementsProps) {
+function LastMovements({
+  data,
+  title,
+  subtitle = 'Last 30 days',
+}: LastMovementsProps) {
   //Last Movements
 
   // An absent list is an empty list, and ListContent renders its own empty
@@ -39,7 +48,7 @@ function LastMovements({ data, title }: LastMovementsProps) {
           <CardTitle>{title}</CardTitle>
         </div>
 
-        <div className='main__subtitle'>Last 30 days</div>
+        <div className='main__subtitle'>{subtitle}</div>
 
         <ListContent listOfItems={lastMovements} />
       </article>

@@ -297,6 +297,32 @@ export type OverviewCharts = {
  expenseCategories: OverviewExpenseCategory[];
 };
 
+// One row of the activity teaser, in the server's own column names. Not
+// renamed on the way in: the page service publishes the shared transaction row
+// shape (transactionRowShape.js:52-83) and every other consumer of that shape
+// reads it as it arrives, so a camelCase copy here would be a second name for
+// the same column.
+//
+// The five columns the teaser draws, of the twenty the row carries. The rest
+// are on the wire and typed loosely on purpose - declaring them here would put
+// a second copy of that shape in the frontend, and the row is the level-2
+// detail's payload as well.
+export type OverviewActivityRow = {
+ transaction_id: number;
+ account_name: string;
+ amount: number;
+ description: string;
+ // What the owner typed, split out of description by the server. Null when the
+ // row carries none.
+ note: string | null;
+ transaction_actual_date: string;
+ // A plain string, like every other currency in this file: the payload's codes
+ // are the accounting currency's, not the narrowed union the forms validate
+ // against, and narrowing here would make a new code a compile error in the
+ // client rather than a value it renders.
+ currency_code: string;
+};
+
 // The slice of the payload the frontend reads today.
 export type GetOverviewData = {
  window: ServedWindow;
@@ -307,6 +333,11 @@ export type GetOverviewData = {
  // An array and not a map, which is how the server sends it. Three entries, in
  // the order income, expense, pocket.
  monthlySnapshot: MonthlySnapshot[];
+ // The five most recent movements over every domain, which the server caps at
+ // five in the statement itself (overviewPageRepository.js:286). Not bounded by
+ // the reference month: the teaser answers what happened last, and a month with
+ // no activity would otherwise show an empty list while the account was moving.
+ recentActivity: { transactions: OverviewActivityRow[] };
 };
 
 // The envelope, and it is NOT the shape /budget answers with: the budget

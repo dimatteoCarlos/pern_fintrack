@@ -22,6 +22,7 @@ import { getOverviewPage } from '../api/overviewApi.ts';
 import { onAccountChanged, onTransactionRecorded } from './transactionEvents.ts';
 import {
  MonthlySnapshot,
+ OverviewActivityRow,
  OverviewCharts,
  OverviewDomainCards,
  OverviewFinancialGoals,
@@ -54,6 +55,11 @@ type OverviewState = {
  // whole rather than indexed by domain: the array IS the contract's shape, and
  // an index built here would be a second place to keep in step with it.
  monthlySnapshot: MonthlySnapshot[] | null;
+ // The five most recent movements across every domain. Held unmapped, the way
+ // the server sent them - the one consumer maps at the point of render, so a
+ // shape written here would have to be kept in step with the level-2 detail
+ // that reads the same rows.
+ recentActivity: OverviewActivityRow[] | null;
  // What is in memory, keyed the way it was asked for. 'current' is the omitted
  // month, which is a different key from the current month spelled out.
  loadedMonth: string | null;
@@ -84,6 +90,7 @@ export const useOverviewStore = create<OverviewState>((set, get) => ({
  financialGoals: null,
  charts: null,
  monthlySnapshot: null,
+ recentActivity: null,
  loadedMonth: null,
  requestedMonth: null,
  isLoading: false,
@@ -121,6 +128,7 @@ export const useOverviewStore = create<OverviewState>((set, get) => ({
     financialGoals: data.financialGoals,
     charts: data.charts,
     monthlySnapshot: data.monthlySnapshot,
+    recentActivity: data.recentActivity.transactions,
     loadedMonth: key,
     isLoading: false,
     error: null,

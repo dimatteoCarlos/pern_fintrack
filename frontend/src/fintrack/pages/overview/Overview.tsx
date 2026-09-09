@@ -46,6 +46,7 @@ import {
 
 //FUNCTIONS
 import { overviewFetchAll } from './overviewFetchAll.ts';
+import { useOverviewStore } from '../../stores/useOverviewStore.ts';
 // The browser-side average the widget used to run. The same four figures now
 // arrive computed in makeMonthlySnapshot.js, so nothing here calls it.
 // import {
@@ -139,9 +140,35 @@ function Overview() {
   const navigateTo: NavigateFunction = useNavigate();
   const location = useLocation();
   const originRoute = location.pathname;
+
+  // The activity teaser, from the page payload the layout already fetched. No
+  // request of its own: subscribing to the store is what keeps this list and
+  // the cards above it reading the same answer.
+  const recentActivity = useOverviewStore((state) => state.recentActivity);
+
+  // Mapped at the point of render and not in the store, because the shape it is
+  // mapped INTO belongs to this page's list component. The five columns are the
+  // same ones the per-domain lists were mapped from, so nothing about a row
+  // changes - only how many lists there are.
+  const recentMovements: LastMovementType[] | null = recentActivity
+    ? recentActivity.map((row) => ({
+        accountName: row.account_name,
+        record: row.amount,
+        description: row.description,
+        note: row.note,
+        date: row.transaction_actual_date,
+        currency: row.currency_code as LastMovementType['currency'],
+        transactionId: row.transaction_id,
+      }))
+    : null;
   // console.log({ originRoute });
   //-- STATES----
-  const [kpiData, setKpiData] = useState<KPIDataStateType>({
+  // The setter only. Nothing reads this state any more: the five per-domain
+  // lists it fed were replaced by the one activity teaser, which comes from the
+  // /overview payload. The five requests behind it are still fired and are
+  // retired in the commit that follows this one - they are a separate change
+  // and they touch the endpoint list, the mapping and the effect.
+  const [, setKpiData] = useState<KPIDataStateType>({
     // MonthlyMovementKPI: null,
     // YearlyTotals: null,
     LastExpenseMovements: null,
@@ -503,31 +530,23 @@ function Overview() {
           />
         }
 {/* ------------------ */}
-        <LastMovements
-          data={kpiData.LastExpenseMovements}
-          title='Last Movements (expense)'
-        />
+        {/* One teaser, not five lists. The five that stood here came from
+            /dashboard, one request per domain, and carried no row cap: on this
+            data they were more than half the height of the page, and level 2
+            is where every transaction of the period for one domain belongs.
 
-        <LastMovements
-          data={kpiData.LastDebtMovements}
-          title='Last Movements (debts)'
-        />
+            The rows come from the /overview payload, which already caps them at
+            five in the statement itself and orders them across every domain
+            together. The page was fetching that list on every load and throwing
+            it away - it had no reader until now.
 
-        {
-          <LastMovements
-            data={kpiData.LastIncomeMovements}
-            title='Last Movements (income)'
-          />
-        }
-
+            Not bounded by the reference month, which is why the subtitle does
+            not name one: the teaser answers what happened last, so a month with
+            no activity still shows the account moving. */}
         <LastMovements
-          data={kpiData.LastInvestmentMovements}
-          title='Last Movements (investment)'
-        />
-
-        <LastMovements
-          data={kpiData.LastPnLMovements}
-          title='Last Movements (PnL)'
+          data={recentMovements}
+          title='Recent activity'
+          subtitle='The five most recent, across every domain'
         />
       </div>
     </section>
