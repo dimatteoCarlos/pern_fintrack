@@ -140,6 +140,22 @@ export const overviewPocketService = {
     target: summary.totalTarget,
     remaining: summary.totalRemaining,
     progress: summary.overallProgress,
+    // THE TERM WITHOUT WHICH THE OTHER THREE CONTRADICT EACH OTHER, and the
+    // board already learned this: "The identity is allocated - excess +
+    // remaining = target, and this is the only term of it that was not on
+    // screen. A reader who added the two visible amounts got a third total and
+    // nothing to explain it" (PocketBigBoxResult.tsx:353-360).
+    //
+    // Measured on fintrack_dev 2026-09-09: totalAmount 304.27, target 1885.27,
+    // remaining 1707.24. A reader adding the first and the third gets 2011.51,
+    // and the 126.24 that explains the gap is money committed past the goal it
+    // was committed to - clamped out of remaining per pocket so that an
+    // over-funded goal cannot cancel an underfunded one.
+    //
+    // Passed through as the board reports it, null included, for the same reason
+    // its three siblings above are: P2's exit condition is that these equal the
+    // board's figure for figure.
+    excess: summary.totalExcess,
     // The status line under the four figures: `5 funded · 2 overdue · 1 uncovered`.
     // Three counts and not a fourth card — seven figures rendered as seven
     // figures would make this a miniature board inside the Overview.

@@ -167,7 +167,22 @@ export type OverviewPocketCard = OverviewDomainCardBase & {
  remaining: number;
  // A rate OVER 100 and not a ratio in 0-1. Multiplying it as if it were one
  // prints a hundred times the figure.
+ //
+ // COVERAGE and not the share of the headline: it is SUM(MIN(allocated,
+ // target)) / SUM(target), so one pocket at 300% cannot report coverage it does
+ // not provide, and it is capped at 100 by construction. totalAmount divided by
+ // target is a DIFFERENT number and the two must not be worded the same way.
  progress: number;
+ // Money committed past the goal it was committed to. The fourth term of the
+ // board's identity - allocated - excess + remaining = target - and without it
+ // the other three do not add up on screen: remaining is clamped per pocket
+ // before summing, so an over-funded goal contributes 0 to the gap instead of a
+ // negative.
+ //
+ // null on a board with no pockets, where a sum over nothing is not a sum of
+ // zero. Its three siblings above are typed as numbers and can also arrive null
+ // from the same builder; that inaccuracy is not this field's to inherit.
+ excess: number | null;
  fundedCount: number;
  overdueCount: number;
  uncoveredCount: number;
