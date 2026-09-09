@@ -3631,5 +3631,23 @@ The owner made the distinction explicitly so that a later reader does not turn
   `TARGET_ACCOUNT_TRANSACTIONS_CTE` with the annulment report, which gained
   `transaction_actual_date` and is now exported; both existing consumers name
   their columns and group explicitly, so the extra column reaches neither.
+- **`ImpactReportUI` renders both readings** rather than a second component
+  being written beside it, which is what the owner asked for. `isProjectionShown`
+  already chose the columns; it now chooses the rows too, reading `report` in
+  the projection and `relatedAccounts` in the close. Two arrays and not one
+  union type, because every column the projection draws is required on its row
+  and folding the shapes would make those four optional - handing the projection
+  a row it cannot render, checked by nothing.
+- **The panel travels on the impact report's response**, not on a route of its
+  own. `generateImpactReport` runs `getRelatedAccounts` as a fourth parallel
+  read and publishes `relatedAccounts` beside `impactReport`. Both come from
+  one CTE over one population; two endpoints reading the same rows is how one
+  screen ends up naming more counterparties than the other for one account.
+- **The date is formatted in the reader's zone.** `transaction_actual_date` is
+  `TIMESTAMPTZ` and `MAX()` folds it to an instant, so a movement recorded at
+  21:00 in a UTC-4 zone is already the next calendar day in UTC. The existing
+  `formatDateToDDMMYYYY` reads UTC parts and would print tomorrow for it.
+- **Both ledes were rewritten.** Each said the close leaves "every balance
+  above" unchanged, naming a column that is no longer on screen.
 - **Not built, and blocked on nothing but sequence**: the reversal writer, its
   movement type and column, the endpoint, and the screen's own copy.
