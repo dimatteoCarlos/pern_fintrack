@@ -1,9 +1,15 @@
 //frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/loadingReportUI/impactReportUI/ImpactReportUI.ts/
 
 //currency should be configured as a global state
-import { DEFAULT_CURRENCY } from '../../../../../helpers/constants.ts';
+import {
+  DEFAULT_CURRENCY,
+  DATE_TEXT_FORMAT,
+} from '../../../../../helpers/constants.ts';
 
-import { ImpactReportRowType } from '../../../../types/deletionTypes.ts';
+import {
+  ImpactReportRowType,
+  RelatedAccountRowType,
+} from '../../../../types/deletionTypes.ts';
 
 import { DictionaryDataType } from '../../../../utils/languages.ts';
 
@@ -12,19 +18,36 @@ import './impactReportUI.css';
 //-------------------------------
 //TYPES DEFINITION AND IMPORT
 type ImpactReportUIPropsType = {
-  report: ImpactReportRowType[];
+  // THE PROJECTION'S ROWS. Read only while isProjectionShown is true.
+  report?: ImpactReportRowType[];
+  // THE FACT'S ROWS. Read only while isProjectionShown is false.
+  //
+  // TWO ARRAYS RATHER THAN ONE OF A UNION TYPE, and the reason is the
+  // projection: every column it renders - current balance, new balance, net
+  // adjustment, currency code - is required on its row. Folding the two shapes
+  // into one type would make those four optional and hand the projection mode
+  // a row it cannot render, checked by nothing. Kept apart, each mode's row
+  // stays exactly as complete as the columns it draws.
+  relatedAccounts?: RelatedAccountRowType[];
   // Folded by the server. null when the response does not carry it, which
   // is not the same as 0 and does not render like it.
   totalNetAdjustmentAmount: number | null;
   unattributedAmount: number | null;
   unattributedTransactionCount: number | null;
-  // WHETHER THE ANNULMENT'S PROJECTION IS SHOWN, and it is the difference
-  // between two readings of the same rows. New balance, net adjustment, the
-  // folded total and the unattributed amount are all what ANNULLING this
-  // account would do to the accounts listed. CLOSE changes none of them, so on
-  // a screen offering only CLOSE those four are columns of figures that will
-  // never happen. What survives is true either way: which accounts share
-  // movements with this one, what they are, and what they hold today.
+  // WHICH READING OF THE SAME ACCOUNTS IS ON SCREEN, and it now picks the rows
+  // as well as the columns. New balance, net adjustment, the folded total and
+  // the unattributed amount are all what ANNULLING this account would do to
+  // the accounts listed. CLOSE changes none of them, so on a screen offering
+  // only CLOSE those are columns of figures that will never happen.
+  //
+  // CURRENT BALANCE GOES WITH THEM, on the owner's decision of 2026-09-08. It
+  // is not a projection and it is still wrong here: the balance an account
+  // holds today has no causal link to closing the account it once transacted
+  // with, and standing it beside a close implies one.
+  //
+  // What replaces all four answers the question the panel is actually asked -
+  // why is this account in the list at all. A count of shared movements and
+  // the date of the last one answer it; a balance never did.
   //
   // Defaults to true, so every existing caller keeps the report it had.
   isProjectionShown?: boolean;
@@ -32,11 +55,31 @@ type ImpactReportUIPropsType = {
   t: (key: keyof DictionaryDataType) => string;
 };
 
+// The reader's own zone, not UTC. transaction_actual_date is TIMESTAMPTZ and
+// MAX() folds it into an instant, so a movement recorded at 21:00 in a UTC-4
+// zone is already the next calendar day in UTC. Formatting off UTC parts would
+// print tomorrow's date for it.
+const formatInteractionDate = (isoInstant: string) => {
+  const parsed = new Date(isoInstant);
+
+  // A date that does not parse renders as a dash, never as "Invalid Date".
+  if (Number.isNaN(parsed.getTime())) {
+    return '—';
+  }
+
+  return parsed.toLocaleDateString(DATE_TEXT_FORMAT, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
 //=============================
 // UI COMPONENT: ImpactReportUI
 //=============================
 const ImpactReportUI = ({
-  report,
+  report = [],
+  relatedAccounts = [],
   totalNetAdjustmentAmount,
   unattributedAmount,
   unattributedTransactionCount,
@@ -56,9 +99,16 @@ const ImpactReportUI = ({
     unattributedAmount !== null &&
     unattributedAmount !== 0;
 
+  // The count in the title comes from whichever array is on screen. Both are
+  // built from one CTE on the server, so they agree on the population, but the
+  // title has to count the rows the reader can actually see.
+  const displayedRowCount = isProjectionShown
+    ? report.length
+    : relatedAccounts.length;
+
   //Replace {count}
   const formatImpactReportTitle = (title: string) =>
-    title.replace('{count}', report.length.toString());
+    title.replace('{count}', displayedRowCount.toString());
 
   const formatUnattributedNote = (note: string) =>
     note.replace('{count}', (unattributedTransactionCount ?? 0).toString());
@@ -76,8 +126,8 @@ const ImpactReportUI = ({
         <p className='impact-warning-title '>
           {formatImpactReportTitle(t('relatedAccountsTitle'))}
         </p>
-        {/* The lede is where the two modes differ, because the two extra
-            columns are what differs. */}
+        {/* The lede is where the two modes differ, because the columns are
+            what differ. */}
         <p className='impact-warning-message'>
           {t(
             isProjectionShown
@@ -90,57 +140,82 @@ const ImpactReportUI = ({
       <div className='impact-report-table-wrapper'>
         <table
           className='impact-report-table'
-          aria-label={t('tableOfAffectedAccountsDetails')}
+          aria-label={t(
+            isProjectionShown
+              ? 'tableOfAffectedAccountsDetails'
+              : 'tableOfRelatedAccountsDetails',
+          )}
         >
           <thead>
             <tr>
               <th>{t('affectedAccountColumn')}</th>
-              <th>{t('currentBalanceColumn')}</th>
+              {isProjectionShown && <th>{t('currentBalanceColumn')}</th>}
               {isProjectionShown && <th>{t('newBalanceColumn')}</th>}
               {isProjectionShown && <th>{t('netAdjustmentColumn')}</th>}
               <th>{t('affectedAccountTypeColumn')}</th>
+              {!isProjectionShown && <th>{t('interactionsColumn')}</th>}
+              {!isProjectionShown && <th>{t('lastInteractionColumn')}</th>}
             </tr>
           </thead>
           <tbody>
-            {report.map((row) => (
-              // INCLUIRE UN HOVER QUE CAMBIE EL BACKGROUND A GRIS CLARO DE LA LINEA ROW O TR.
-              <tr key={row.affectedAccountId}>
-                <td className='account-name'>{row.affectedAccountName}</td>
+            {isProjectionShown
+              ? report.map((row) => (
+                  // INCLUIRE UN HOVER QUE CAMBIE EL BACKGROUND A GRIS CLARO DE LA LINEA ROW O TR.
+                  <tr key={row.affectedAccountId}>
+                    <td className='account-name'>{row.affectedAccountName}</td>
 
-                <td className='current-balance'>
-                  {row.affectedAccountCurrentBalance.toFixed(2)}{' '}
-                  {row.affectedAccountCurrencyCode}
-                </td>
+                    <td className='current-balance'>
+                      {row.affectedAccountCurrentBalance.toFixed(2)}{' '}
+                      {row.affectedAccountCurrencyCode}
+                    </td>
 
-                {isProjectionShown && (
-                  <td className='new-balance'>
-                    {(
-                      row.affectedAccountCurrentBalance +
-                      row.affectedAccountNetAdjustmentAmount
-                    ).toFixed(2)}{' '}
-                    {row.affectedAccountCurrencyCode}
-                  </td>
-                )}
+                    <td className='new-balance'>
+                      {(
+                        row.affectedAccountCurrentBalance +
+                        row.affectedAccountNetAdjustmentAmount
+                      ).toFixed(2)}{' '}
+                      {row.affectedAccountCurrencyCode}
+                    </td>
 
-                {isProjectionShown && (
-                  <td
-                    className={`net-adjustment
+                    <td
+                      className={`net-adjustment
         ${row.affectedAccountNetAdjustmentAmount >= 0 ? 'positive' : 'negative'}`}
-                  >
-                    {row.affectedAccountNetAdjustmentAmount.toFixed(2)}{' '}
-                    {row.affectedAccountCurrencyCode}
-                  </td>
-                )}
+                    >
+                      {row.affectedAccountNetAdjustmentAmount.toFixed(2)}{' '}
+                      {row.affectedAccountCurrencyCode}
+                    </td>
 
-                <td className='account-type'>
-                  {t(`${row.affectedAccountType as keyof DictionaryDataType}`)}
-                </td>
-              </tr>
-            ))}
+                    <td className='account-type'>
+                      {t(
+                        `${row.affectedAccountType as keyof DictionaryDataType}`,
+                      )}
+                    </td>
+                  </tr>
+                ))
+              : relatedAccounts.map((row) => (
+                  <tr key={row.accountId}>
+                    <td className='account-name'>{row.accountName}</td>
+
+                    <td className='account-type'>
+                      {t(`${row.accountTypeName as keyof DictionaryDataType}`)}
+                    </td>
+
+                    <td className='interaction-count'>
+                      {row.interactionCount}
+                    </td>
+
+                    <td className='last-interaction'>
+                      {formatInteractionDate(row.lastInteractionDate)}
+                    </td>
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>
 
+      {/* REMOVED FROM THE CLOSE'S PANEL, not renamed. Total Net Adjustment
+          reads as a change in net worth, and with the three money columns gone
+          there is nothing left to total. */}
       {isProjectionShown && (
       <p className='impact-report-total'>
         {t('totalNetAdjustment')}

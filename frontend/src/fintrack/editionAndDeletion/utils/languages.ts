@@ -94,6 +94,9 @@ reportTitleWithImpact:string;
  currentBalanceColumn: string;
  netAdjustmentColumn: string;
  newBalanceColumn: string;
+ tableOfRelatedAccountsDetails: string;
+ interactionsColumn: string;
+ lastInteractionColumn: string;
  totalNetAdjustment: string; 
  unattributedAmount: string;
  unattributedNote: string;
@@ -304,6 +307,9 @@ reportTitleWithImpact:"Impact on Affected Accounts",
  currentBalanceColumn: 'Current Balance',
  netAdjustmentColumn: 'Net Adjustment',
  newBalanceColumn: 'New Balance',
+ tableOfRelatedAccountsDetails: 'Accounts this one has operated with',
+ interactionsColumn: 'Interactions',
+ lastInteractionColumn: 'Last Interaction',
  totalNetAdjustment: 'Total Net Adjustment:',
  unattributedAmount: 'Not attributable to any account:',
  unattributedNote:
@@ -350,7 +356,7 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   relatedAccountsNote: "New balance and net adjustment show what deleting this account with adjustment would do to each of these accounts. The close changes none of these figures.",
   relatedAccountsHeading: "Accounts this one has moved money with",
   relatedAccountsTitle: "This account has moved money with {count} accounts",
-  relatedAccountsLede: "Closing this account leaves every balance above exactly as it is. The movements they share with it keep its name, because the closed account is recorded before its row is removed.",
+  relatedAccountsLede: "How many movements this account shares with each of them, and when the last one was. Closing changes none of these accounts: the movements they share with it keep its name, because the closed account is recorded before its row is removed.",
   relatedAccountsLedeAdjustment: "Two of the columns belong to the other route on this screen, not to closing. New balance and net adjustment are what deleting this account WITH ADJUSTMENT would leave on each of these accounts. Closing changes none of them.",
   relatedAccountsNoneTitle: "No shared movements",
   relatedAccountsNoneMessage: "This account has not moved money with any other account.",
@@ -466,6 +472,9 @@ affectedAccountTypeColumn:'Tipo',
 currentBalanceColumn: 'Saldo Actual',
 netAdjustmentColumn: 'Ajuste Neto',
 newBalanceColumn: 'Nuevo Saldo',
+tableOfRelatedAccountsDetails: 'Cuentas con las que esta ha operado',
+interactionsColumn: 'Movimientos',
+lastInteractionColumn: 'Último Movimiento',
 totalNetAdjustment: 'Ajuste Neto Total:',
  unattributedAmount: 'No atribuible a ninguna cuenta:',
  unattributedNote:
@@ -512,7 +521,7 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   relatedAccountsNote: "El saldo nuevo y el ajuste neto muestran lo que le haría a cada una de estas cuentas eliminar esta con ajuste. El cierre no cambia ninguna de esas cifras.",
   relatedAccountsHeading: "Cuentas con las que esta ha movido dinero",
   relatedAccountsTitle: "Esta cuenta ha movido dinero con {count} cuentas",
-  relatedAccountsLede: "Cerrar esta cuenta deja los saldos de arriba exactamente como están. Los movimientos que comparten con ella conservan su nombre, porque la cuenta cerrada queda registrada antes de que se elimine su fila.",
+  relatedAccountsLede: "Cuántos movimientos comparte esta cuenta con cada una de ellas, y cuándo fue el último. Cerrar no cambia ninguna de estas cuentas: los movimientos que comparten con ella conservan su nombre, porque la cuenta cerrada queda registrada antes de que se elimine su fila.",
   relatedAccountsLedeAdjustment: "Dos de las columnas son de la otra vía de esta pantalla, no del cierre. El saldo nuevo y el ajuste neto son lo que dejaría en cada una de estas cuentas eliminar esta CON AJUSTE. El cierre no cambia ninguna de las dos.",
   relatedAccountsNoneTitle: "Sin movimientos compartidos",
   relatedAccountsNoneMessage: "Esta cuenta no ha movido dinero con ninguna otra cuenta.",
