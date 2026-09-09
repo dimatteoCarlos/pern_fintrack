@@ -100,8 +100,21 @@ proof the repoint happened.
   `010_create_budget_tables.sql` before commit `3b72371f` rewrote it. The
   `to_regclass` check at the top of 035 is what decides this, and it must be run
   first.
-- **Nothing blocks 031 through 034.** They have runtime counterparts, they are
-  independent of the registry, and no code waits on them.
+- **031 carries a precondition of its own, corrected 2026-09-09 by the deletion
+  session.** This bullet used to read "nothing blocks 031 through 034", and for
+  032 through 034 it still holds. 031 keys every guard and its backfill on the
+  exact literal `account_name = 'slack'` - the unexpected-type check at `:129`,
+  the retyping loop at `:152` and the `UPDATE` at `:166` - and the case-variant
+  check at `:141` raises a NOTICE and touches nothing. So a compensation account
+  the owner renamed, in any case or with a space, is silently skipped and the
+  migration still SUCCEEDS: zero rows retyped is also the correct outcome on a
+  database that has none, and the two cases are indistinguishable in the log.
+  There is no repair afterwards, because the same literal is what a later run
+  would look for. **The precondition is to confirm the compensation account is
+  still findable by that exact name in production, before the run.** The
+  measurement is in `PLAN_ACCOUNT_DELETION/DELETION_FINDINGS.md`, under the
+  retyping migration; 032 through 034 have runtime counterparts, are independent
+  of the registry, and no code waits on them.
 - **Code that runs without 031 fails in two different ways, and only one is
   audible.** `transactionController.js` raises *"Account type 'boundary' not
   found: the migration chain has not reached 031"*. The Overview reads instead
