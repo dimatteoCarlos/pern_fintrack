@@ -31,7 +31,10 @@ import {
   // requests this route any more. Commented and not deleted: the route and its
   // service still exist, and this line is the record of who used to call them.
   // url_monthly_TotalAmount_ByType,
-  dashboardMovementTransactions,
+  // The five per-domain movement requests were retired with the lists they
+  // fed. Same treatment as the line above: the route still exists and this is
+  // the record of who used to call it.
+  // dashboardMovementTransactions,
   url_get_accounts_by_type,
 } from '../../../urlConfig.ts';
 
@@ -45,7 +48,9 @@ import {
 // import { CurrencyType } from '../../types/types.ts';
 
 //FUNCTIONS
-import { overviewFetchAll } from './overviewFetchAll.ts';
+// Retired with the five requests it ran. The module itself stays: the level-2
+// screens are the next caller of a multi-endpoint fetch.
+// import { overviewFetchAll } from './overviewFetchAll.ts';
 import { useOverviewStore } from '../../stores/useOverviewStore.ts';
 // The browser-side average the widget used to run. The same four figures now
 // arrive computed in makeMonthlySnapshot.js, so nothing here calls it.
@@ -72,25 +77,37 @@ export type ApiRespDataType = {
   MovementPnLTransactions: LastMovementRespType | null;
 };
 //---ENDPOINT CONFIG------------
+/* Described the retired endpoint list. ApiRespDataType above it stays: it is
+   overviewFetchAll's own contract and the level-2 screens are its next caller.
+
 type KPIEndpointType = {
   key: keyof ApiRespDataType;
   url: string;
   type: FinancialDataRespType | LastMovementRespType;
 };
+*/
 
 //type of state data to render
+/* The shape of the retired state. Five lists, one per domain, which is the
+   arrangement the activity teaser replaced.
+
+     Both moved to useOverviewStore with the widget that read them.
+     MonthlyMovementKPI: ResultType | null;
+     YearlyTotals: YearlyTotalsType | null;
+
 type KPIDataStateType = {
-  // Both moved to useOverviewStore with the widget that read them.
-  // MonthlyMovementKPI: ResultType | null;
-  // YearlyTotals: YearlyTotalsType | null;
   LastExpenseMovements: LastMovementType[] | null;
   LastDebtMovements: LastMovementType[] | null;
   LastIncomeMovements: LastMovementType[] | null;
   LastInvestmentMovements: LastMovementType[] | null;
   LastPnLMovements: LastMovementType[] | null;
 };
+*/
 //-----------------------------------------
 //CONFIG of DATA TO BE FETCHED
+/* Retired with the requests that consumed it. Every URL here points at
+   /dashboard, and the five results fed the per-domain lists be08f507 replaced
+   with the activity teaser from the /overview payload.
 const overviewKPIendpoints: KPIEndpointType[] = [
   // One request fewer on first paint. The three monthly averages, their month
   // counts and the year to date are all in the /overview payload the layout
@@ -132,6 +149,7 @@ const overviewKPIendpoints: KPIEndpointType[] = [
     type: {} as LastMovementRespType,
   },
 ];
+*/
 
 //=======================
 //MAIN COMPONENT OVERVIEW
@@ -163,11 +181,9 @@ function Overview() {
     : null;
   // console.log({ originRoute });
   //-- STATES----
-  // The setter only. Nothing reads this state any more: the five per-domain
-  // lists it fed were replaced by the one activity teaser, which comes from the
-  // /overview payload. The five requests behind it are still fired and are
-  // retired in the commit that follows this one - they are a separate change
-  // and they touch the endpoint list, the mapping and the effect.
+  /* Retired with them. Nothing reads this state and nothing writes it: the
+     five lists it held are one list now, and that list is held in
+     useOverviewStore beside the rest of the payload.
   const [, setKpiData] = useState<KPIDataStateType>({
     // MonthlyMovementKPI: null,
     // YearlyTotals: null,
@@ -177,9 +193,16 @@ function Overview() {
     LastInvestmentMovements: null,
     LastPnLMovements: null,
   });
+  */
 
   const [isLoading, setIsLoading] = useState(true);
+  /* The only writer was the retired effect's catch, so this could no longer
+     become anything but null. The page's failure state belongs to the request
+     that can fail, and that one is the layout's: OverviewLayout renders the
+     message and the retry beside the figures it could not draw.
+
   const [error, setError] = useState<string | null>(null);
+  */
 
   // AUTHENTICATION STATE
   const { isAuthenticated, isCheckingAuth } = useAuth();
@@ -236,6 +259,14 @@ function Overview() {
     if (isCheckingAuth || !isAuthenticated) {
       return;
     }
+    /* Retired. The five /dashboard movement requests below fed the five
+       per-domain lists that be08f507 replaced with the one activity teaser,
+       and nothing has read their result since. Kept commented per the standing
+       rule on deletions.
+
+       What is NOT retired with them is the loading flag: the spinner at the
+       foot of this component is bound to it, so it has to be cleared by
+       whatever runs in this effect's place.
     const fetchOverviewData = async () => {
       try {
         const result = await overviewFetchAll(overviewKPIendpoints);
@@ -441,11 +472,20 @@ function Overview() {
     };
     //--------------------------------------
     fetchOverviewData();
+    */
+
+    // No request of this component's own any longer. Every figure on the page
+    // comes from the /overview payload the layout fetches, and the account
+    // panels have their own useFetch.
+    setIsLoading(false);
   }, [isAuthenticated, isCheckingAuth]);
 
   // console.log('data state kpi', kpiData);
   //--RENDER ----
+  /* Went with the state above.
+
   if (error) return <div className='error-message'>{error}</div>;
+  */
 
   //Rendering condition
   if (isCheckingAuth) {
