@@ -248,7 +248,10 @@ export function EditAccount(): JSX.Element {
         const key = field.fieldName as keyof typeof accountData;
         const val = accountData[key];
 
-        if (val !== undefined) {
+        // null is dropped with undefined: the field schemas are .optional(),
+        // so a NULL column seeded as null fails validation and aborts the
+        // whole submit, not just its own field.
+        if (val !== undefined && val !== null) {
           // No date field survives here. The deadline of a pocket was the only
           // one this editor ever parsed, and a pocket is edited on its own
           // screen now — this editor no longer reaches one.
