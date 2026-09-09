@@ -244,6 +244,42 @@ INSERT INTO transaction_types (transaction_type_id, transaction_type_name)
 VALUES (6, 'account-closure')
 ON CONFLICT (transaction_type_id) DO NOTHING;
 
+-- ON CONFLICT ON THE ID CANNOT FAIL WHEN THAT ID ALREADY HOLDS ANOTHER NAME.
+-- Both inserts above are idempotent by id, which is what makes them safe to
+-- re-run and also what makes them silent: on a database where 10 or 6
+-- already mean something else, the row is left as it is and this migration
+-- reports success. recordClosureSettlement.js stamps those two ids on every row it
+-- writes, so the whole operation would then be recorded under another type,
+-- and nothing downstream would notice. The name check above catches only a
+-- name outside its own list, and transaction_types carries no check at all.
+--
+-- Asserted rather than repaired: overwriting a catalog row that something else
+-- already refers to would move those rows to a type they were never written
+-- under.
+DO $$
+DECLARE
+ movement_name text;
+ transaction_name text;
+BEGIN
+ SELECT movement_type_name INTO movement_name
+ FROM movement_types WHERE movement_type_id = 10;
+
+ SELECT transaction_type_name INTO transaction_name
+ FROM transaction_types WHERE transaction_type_id = 6;
+
+ IF movement_name IS DISTINCT FROM 'account-closure' THEN
+  RAISE EXCEPTION
+   'movement_type_id 10 holds "%", not "account-closure". The insert above was swallowed by ON CONFLICT and nothing repairs it afterwards.',
+   coalesce(movement_name, 'no row');
+ END IF;
+
+ IF transaction_name IS DISTINCT FROM 'account-closure' THEN
+  RAISE EXCEPTION
+   'transaction_type_id 6 holds "%", not "account-closure". The insert above was swallowed by ON CONFLICT and nothing repairs it afterwards.',
+   coalesce(transaction_name, 'no row');
+ END IF;
+END $$;
+
 -- DOWN ----------------------------------------------------------------------
 --
 -- Run manually, and read this first, because the reverse is not symmetric.
