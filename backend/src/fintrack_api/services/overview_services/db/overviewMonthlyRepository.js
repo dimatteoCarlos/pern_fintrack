@@ -41,7 +41,7 @@ import {
  TRANSFER_MOVEMENT_TYPE_ID,
 } from './movementTypes.js';
 import { toAmount } from '../../budget_services/core/money.js';
-import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
+import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/annulmentRowIdentity.js';
 
 // Expense: the netting is SPENT_QUERY's, verbatim
 // (budgetTransactionRepository.js:181-197) and for D20's reason. movement_type_id

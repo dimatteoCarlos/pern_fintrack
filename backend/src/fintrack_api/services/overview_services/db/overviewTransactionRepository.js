@@ -38,7 +38,7 @@ import {
  TRANSFER_MOVEMENT_TYPE_ID,
 } from './movementTypes.js';
 import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
-import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
+import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/annulmentRowIdentity.js';
 import { transactionRowColumns, TRANSACTION_ROW_SOURCE } from './transactionRowShape.js';
 
 const EXPENSE_PAGE_QUERY = `

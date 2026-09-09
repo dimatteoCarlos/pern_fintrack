@@ -31,7 +31,7 @@ import {
 } from './movementTypes.js';
 import { toAmount } from '../../budget_services/core/money.js';
 import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
-import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
+import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/annulmentRowIdentity.js';
 
 // NUMERIC, not FLOAT: capitalContributed, realizedPnl and closureAdjustment are
 // NUMERIC sums of the same ledger, and the card publishes capitalContributed +
