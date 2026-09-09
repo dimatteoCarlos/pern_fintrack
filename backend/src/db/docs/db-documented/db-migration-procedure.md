@@ -203,11 +203,34 @@ So a hand-run data step calls `loadCurrencyCatalog()` before it writes, or it
 writes through SQL and avoids the dependency entirely. Pure SQL migrations are
 unaffected and this section does not apply to them.
 
-**A related failure is quieter and is not a migration problem.** `app.js:66`
-wraps that load in a `try` whose `catch` only logs, so a boot where the catalog
-fails produces a running server that answers requests and cannot write a
-transaction. Worth knowing when a production write fails for no visible reason
-after a restart.
+**The `catch` around that load is deliberate and must not be turned into an
+exit.** `src/index.js:12` imports `app.js`, whose top-level
+`await loadCurrencyCatalog()` therefore runs during module evaluation, before
+`startServer()` reaches `initializeDatabase()`. On an empty database it queries
+a `currencies` table that nothing has created yet, so it throws by design, and
+the `catch` at `app.js:67` is what lets the boot continue to the step that
+creates and seeds it. Making it exit would stop a new database booting at all.
+Measured and argued by the deletion session on 2026-09-08, correcting an earlier
+version of this paragraph that called the `catch` a defect and said the server
+would then be unable to write a transaction. Both were wrong: the `catch` is
+load-bearing, and `fxDBaccess.js` reloads the catalog on the first FX operation,
+so a process that boots without one usually repairs itself.
+
+**The defect is one file over, and it is why this section exists at all.**
+`utils/currencyLookup.js` says in its own second line that it provides "catalog
+fallback", and `getCurrencyId` at `:17` is that fallback — catalog first through
+`isCurrencyCatalogLoaded()`, then a query on the client it is handed, never
+throwing for an absent catalog. The same file then re-exports `getCurrencyIdSync`
+unchanged at its end, and that is the one all four writers import. So the writers
+reach past the fallback that was written for them.
+
+**If the writers move to `getCurrencyId(dbClient, ACCOUNTING_CURRENCY_CODE)`,
+this whole section stops applying** — a hand-run data step would need to load
+nothing, and it would work on a fresh database where no catalog can exist.
+Proposed by the deletion session and put to Carlos on 2026-09-08, undecided as
+of this writing, deliberately not half-applied: three of the four writers are
+that module's and `recordTransaction.js` is on every ordinary transaction path
+and belongs to none. Delete this section when the four move.
 
 ---
 
