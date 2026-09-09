@@ -67,6 +67,11 @@ export const makeExpenseCard = ({
  window,
  notices = [],
 }) => {
+ // budgetVariance needs the budget and the figure it is measured against, and
+ // that figure is now totalAmount. categorizedExpense stays in the condition
+ // because hasUncategorizedExpense below needs it and a card that could report
+ // one of the two and not the other would publish a variance whose universe the
+ // reader cannot check.
  const hasBudgetFigures = budgetAmount !== null && categorizedExpense !== null;
 
  // Compared through money rather than with >, so a cent of binary float error
@@ -95,8 +100,25 @@ export const makeExpenseCard = ({
   domainFields: {
    budgetAmount,
    categorizedExpense,
+   // AGAINST totalAmount, NOT categorizedExpense. Carlos, 2026-09-08: "el
+   // gasto total, es el total spent, corresponde a todas las categorias de
+   // gastos". The budget is the ceiling for the month's spending, so the
+   // question the card answers is whether the month's spending crossed it -
+   // and spending that has lost its category is still spending.
+   //
+   // The two figures differ for one measurable reason, and it is not a fault
+   // in every case. EXPENSE_ACCOUNT_IDS_QUERY
+   // (overviewAccountRepository.js:43-51) reads through account_identity, so it
+   // keeps a category account whose user_accounts row is gone; ACCOUNTS_QUERY
+   // (budgetTransactionRepository.js:130-131) is FROM user_accounts JOIN
+   // category_budget_accounts, both INNER, so that account leaves the budget
+   // side entirely and its spending never enters categorizedExpense. Closing a
+   // category is a supported operation and its past spending is real, so this
+   // gap is expected. The other way to open it - a live account with no
+   // category_budget_accounts row - is not, and hasUncategorizedExpense is what
+   // makes either visible.
    budgetVariance: hasBudgetFigures
-    ? toAmount(money(budgetAmount).minus(categorizedExpense))
+    ? toAmount(money(budgetAmount).minus(totalAmount))
     : null,
    hasUncategorizedExpense,
   },

@@ -131,7 +131,11 @@ type SquareClass = '' | 'neutral' | 'info' | 'warning' | 'alert' | 'unknown';
 const executionPercentage = (card: OverviewExpenseCard): number | null => {
  if (!card.budgetAmount) return null;
 
- return (card.categorizedExpense / card.budgetAmount) * 100;
+ // totalAmount and not categorizedExpense, the same universe budgetVariance is
+ // measured over since 2026-09-08. The share and the remainder beside it are
+ // two readings of one comparison, and reading them off different numerators
+ // would let the card print "$5 left (140% spent)".
+ return (card.totalAmount / card.budgetAmount) * 100;
 };
 
 // The three readings of a budget, on the app's own scale: at, near and over the
@@ -142,24 +146,25 @@ const executionPercentage = (card: OverviewExpenseCard): number | null => {
 // The amber level is what the card could not say before: it had two readings,
 // inside and over, so a month at 96% of its budget looked the same as one at 3%.
 //
-// budgetVariance is budgetAmount minus what was spent inside a LIVE CATEGORY, so
-// it is negative when the budget was exceeded. Null is a month with no budget in
-// force anywhere, which is an absent decision and not a breach.
+// budgetVariance is budgetAmount minus the month's WHOLE spending, so it is
+// negative when the budget was exceeded. Null is a month with no budget in force
+// anywhere, which is an absent decision and not a breach.
 const expenseSquare = (card: OverviewExpenseCard): SquareClass => {
+ // Ahead of the budget reading, and red rather than amber. Carlos, 2026-09-08:
+ // "si hay algo uncategorized, por supuesto seria aparte, y seria un alerta
+ // roja". Spending that resolves to no live category is either a category that
+ // was closed - whose spending now has no budget behind it - or an account that
+ // never had its category_budget_accounts row, which is a fault. Neither is a
+ // condition an amber square should carry, and neither is quieter than being
+ // over budget: the budget reading itself is incomplete while it holds.
+ if (card.hasUncategorizedExpense) return 'alert';
+
  if (card.budgetVariance === null) return 'unknown';
 
- const level = budgetSquareState(
+ return budgetSquareState(
   executionPercentage(card),
   card.budgetVariance < 0,
  ) as SquareClass;
-
- // Spending that lost its category is not counted against the budget, so the
- // card can be inside its budget and still not know where the month went. It
- // only raises a reading that is otherwise quiet: a budget already over or near
- // its limit keeps the louder of the two.
- if (level === '' && card.hasUncategorizedExpense) return 'warning';
-
- return level;
 };
 
 // The budget verdict in words, which is what the card was missing: it printed
@@ -184,9 +189,13 @@ const SHARE_DECIMALS = 1;
 // one card. That is the rule ListCategory.tsx:320-329 already follows for its
 // own row.
 const budgetClause = (card: OverviewExpenseCard) => {
+ // The middle argument is what the variance was measured against, so it is
+ // totalAmount: budgetRemainWord reads the pair to tell an unbudgeted card from
+ // one at zero, and handing it the other figure would answer for a comparison
+ // the card is no longer making.
  const word = budgetRemainWord(
   card.budgetAmount,
-  card.categorizedExpense,
+  card.totalAmount,
   card.budgetVariance,
  );
 
