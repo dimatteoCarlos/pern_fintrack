@@ -61,6 +61,18 @@ export const ACCOUNT_OPENING_MOVEMENT_TYPE_ID = 8;
 export const ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID = 10;
 export const ACCOUNT_CLOSURE_TRANSACTION_TYPE_ID = 6;
 
+// movement_types.movement_type_id and transaction_types.transaction_type_id,
+// both the 'balance-reversal' row (037_add_balance_reversal.sql). The operation
+// that brings an account's balance to zero so it can be closed, posted as two
+// legs against the compensation account.
+//
+// INSIDE THIS FILE'S SUM, exactly like the closure pair above and unlike the
+// opening row. A reversal moves money for real - that is the whole point, since
+// the close refuses a non-zero balance - so excluding it here would make the
+// derived balance disagree with the ledger it is derived from.
+export const BALANCE_REVERSAL_MOVEMENT_TYPE_ID = 11;
+export const BALANCE_REVERSAL_TRANSACTION_TYPE_ID = 7;
+
 /**
  * The amount each movement contributes to a balance.
  *
