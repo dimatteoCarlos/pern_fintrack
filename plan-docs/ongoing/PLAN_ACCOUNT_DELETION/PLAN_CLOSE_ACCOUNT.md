@@ -3497,3 +3497,139 @@ the Overview session on 2026-09-08 and checked here in their files.
   profit-and-loss type with a `NOT LIKE` on the annulment prefix, so a row of
   the closure type never enters it. The term the retirement moves is the one the
   reconciliation depends on.
+
+## 14. Reverse the balance and close — the closed architecture
+
+Settled by the owner on 2026-09-08, after two of this plan's own recommendations
+were overridden. Both are named below rather than dropped, because a reader who
+finds them in the earlier sections needs to know they were answered.
+
+### 14.1 The operation
+
+```
+balance != 0
+  |
+  +-- resolve manually --> Tracker
+  |
+  +-- reverse the balance
+         |
+         ACCOUNT_REVERSAL: target account <-> SLACK, amount = -currentBalance
+         |
+         balance = 0 --> CLOSE
+```
+
+- **One operation, two ledger legs.** This plan had written it as "a single
+  entry"; the owner corrected it, and the correction is not pedantic. The books
+  are double entry, so the reversal is one conceptual operation composed of the
+  leg on the target and the leg on the compensation account. The unit that gets
+  identified structurally is the operation, not either leg.
+- **The owner chooses nothing but whether to use it.** No destination, no
+  amount, no date, no currency, no method, no split. `amount = -currentBalance`
+  and the sign follows from the balance, which is why the label says "reverse
+  the balance" and never "withdraw" or "deposit".
+- **It runs before the close and inside the same transaction.** Two actions to
+  the owner, one atomic operation to the database. The state `reversed = yes,
+  closed = no` must not be reachable, which is the whole reason the two are not
+  two requests.
+
+### 14.2 The compensation account, and the recommendation that was overridden
+
+**THIS PLAN RECOMMENDED MAKING IT PER USER. THE OWNER RULED IT STAYS GLOBAL.**
+The recommendation was that a single account shared by every user mixes their
+positions; the ruling is that mixing positions is only a problem for balances
+that represent someone's money, and this one represents none.
+
+| Property | Ruling |
+|---|---|
+| Scope | Global, one account |
+| Part of net worth | **No** |
+| Part of aggregate user balances | **No** |
+| May hold a non-zero balance | Yes |
+| Its history means something | Yes |
+
+- **The exclusion is a domain rule, not a condition added to one screen.** It
+  has to hold in the queries that compute the aggregates, so that no future read
+  has to remember it. A screen-level exclusion is one query away from being
+  wrong.
+- **What this makes true**: the ledger still sums to zero after a reversal, and
+  the owner's net worth does not move, because the leg that received the balance
+  sits outside the set the aggregate is computed over.
+
+### 14.3 The identity of a reversal
+
+- **A column, never the description.** Settled earlier and unchanged; the reason
+  is section 12.4, where a substring rewrite can corrupt an identity carried in
+  text.
+- **`reversal_of_account_id`, not `reversal_of_transaction_id`.** The operation
+  does not say "this transaction was annulled", it says "this account's position
+  was neutralised so it could be removed". There is no original transaction to
+  point at.
+- **It must reference `account_registry`, not `user_accounts`.** The row it
+  names is deleted moments later in the same transaction. A key into the live
+  table would either refuse the delete or be nulled by it, and in both cases the
+  reversal stops saying which account it reversed.
+- **A new movement type, not the existing closure type.** Movement type 10
+  carries historical meaning - rows written before the settlement was retired -
+  and section 13.5 measures what reusing or retiring it costs.
+
+### 14.4 The related-accounts panel, and the second overridden recommendation
+
+**THIS PLAN PROPOSED KEEPING THE BALANCE COLUMNS AND THE OWNER REMOVED THEM,
+including one this plan had not questioned.** With the reversal posted against
+the compensation account, its effect on every account in this list is zero, so
+`New Balance` and `Net Adjustment` would be columns of zeroes reading as a claim
+that the reversal touches these accounts. `Current Balance` goes too, and that
+one is the owner's own catch: the current balance of an account this one once
+transacted with has no causal link to the reversal, and showing it beside a
+reversal implies one.
+
+| Column | Before | Now |
+|---|---|---|
+| Account | kept | kept |
+| Type | kept | kept |
+| Current balance | shown | **removed** |
+| New balance | shown | **removed** |
+| Net adjustment | shown | **removed** |
+| Interactions | — | **added** |
+| Last interaction | — | **added** |
+
+- **The panel's question changes from consequence to fact.** It stops saying
+  "these accounts will be adjusted" and says "this account has operated with
+  these accounts", which answers the question the owner actually asks of it:
+  why is this account in the list at all. A count answers that; a balance never
+  did.
+- **The total is removed rather than renamed.** `Total Net Adjustment` invites
+  reading as a change in net worth, and with the columns gone there is nothing
+  left to total.
+- **One level, by construction rather than by choice.** The shared CTE filters
+  `tr.account_id = $2`, so only the target's own rows are read. A second level
+  would be a different query.
+- **The compensation account is not injected into this list.** It appears only
+  if the target genuinely transacted with it, which a funded opening does.
+  Adding it because the reversal will be posted there would make one row mean
+  something different from every other row. The screen states the boundary
+  separately, above the panel.
+- **Transactions do not go in the panel.** Overview is where the owner opens the
+  movements themselves. The close screen summarises consequences; Overview holds
+  the history, and neither duplicates the other.
+
+### 14.5 What it is offered on
+
+**Only the types in `CLOSE_ZERO_BALANCE_TYPES`** - `bank`, `cash`, `investment`
+and `debtor`. The other three close at any balance, so they never need
+neutralising and the option is not shown to them.
+
+**That is a statement about the offer, not a prohibition in the architecture.**
+The owner made the distinction explicitly so that a later reader does not turn
+"the other three do not need it" into "the other three may not use it".
+
+### 14.6 Built for it so far
+
+- **`getRelatedAccounts.js`** — the panel's read. Account, type, interaction
+  count and last interaction, ordered by count with the name breaking ties so
+  the order is stable across renders. It shares
+  `TARGET_ACCOUNT_TRANSACTIONS_CTE` with the annulment report, which gained
+  `transaction_actual_date` and is now exported; both existing consumers name
+  their columns and group explicitly, so the extra column reaches neither.
+- **Not built, and blocked on nothing but sequence**: the reversal writer, its
+  movement type and column, the endpoint, and the screen's own copy.
