@@ -13,6 +13,24 @@ Where that name appears in the index below, it is a section of this file. Where
 it does not, it is still a memory, or was already gone when this file was
 written - the notation never guaranteed that the target exists.
 
+**Four entries are not about this module.** The two about the migration that
+retypes the compensation account, the catalog seed whose conflict clause is on
+the id, and the boot that swallows a currency-catalog failure are all about the
+migration chain and the boot path, which belong to the session working on
+`feat/backdating`. They are kept here because this module measured them and
+because the memory that held them is gone; they are not this module's to change.
+The Overview session recorded the same routing in `OVERVIEW_DECISIONS.md` on
+2026-09-09 after declining to copy them - that directory is read-only for it by
+standing rule.
+
+**Three more are Overview's and it points at them rather than holding a copy.**
+That no constraint ties a movement type to an account type, that the investment
+card reconciliation is a check rather than an identity, and that the
+deactivation stamp is never filtered in a balance or history query are cited
+from `OVERVIEW_DECISIONS.md`, which names this file as the record. Two copies of
+a finding become two versions the moment one is edited, so anything correcting
+those three is corrected here.
+
 **Where a finding disagrees with the plan.** `PLAN_CLOSE_ACCOUNT.md` is the
 specification and it wins. Two entries here record a decision and the decision
 that replaced it on the same day - that the close deletes the account row, and
