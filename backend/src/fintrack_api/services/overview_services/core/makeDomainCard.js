@@ -14,26 +14,75 @@
 
 import { money, toAmount } from '../../budget_services/core/money.js';
 
-// Said when the card has no complete prior period to compare against — the
-// guard the catalog states for I3/E3/D3/PL3 as "never compare against a period
-// that did not exist".
+// Said when the prior month did not exist for this owner at all: the oldest
+// account was opened during the reference month or later, so there is no earlier
+// month to measure against. This is the case the catalog's I3/E3/D3/PL3 guard is
+// actually about — "never compare against a period that did not exist" — and it
+// is the only one that still withholds the figure.
 export const NO_PRIOR_PERIOD_NOTICE =
- 'There is no complete prior period to compare against, so the change against it is not reported.';
+ 'There is no prior period to compare against, so no change is reported.';
+
+// Said when the prior month existed but the owner did not own an account for the
+// whole of it. Carlos, 2026-09-09: "lo que no hay es un mes previo completo (...)
+// de todas maneras que aparezca la comparacion, asi sea parcial". So the delta is
+// computed and this sentence travels with it, rather than the delta being
+// suppressed: a partial baseline is a weaker comparison, not an absent one, and
+// the reader is the one who decides how much weight it carries.
+export const PARTIAL_PRIOR_PERIOD_NOTICE =
+ 'The oldest account was opened during the prior month, so the change is measured against a partial month.';
 
 /**
- * Whether a full prior month existed to compare this one against.
+ * The notice the coverage earns, as the array every card's notices list splices
+ * in. One function and not a ternary at each call site, because five calculators
+ * choosing their own sentence is how the same rule ends up worded three ways.
+ *
+ * @param {'complete'|'partial'|'none'} coverage
+ * @returns {string[]} empty for a complete prior month
+ */
+export const priorPeriodNotices = (coverage) => {
+ if (coverage === 'complete') return [];
+ if (coverage === 'partial') return [PARTIAL_PRIOR_PERIOD_NOTICE];
+
+ return [NO_PRIOR_PERIOD_NOTICE];
+};
+
+/**
+ * How much of the prior month this owner actually existed for. Three answers and
+ * not two, which is the correction of 2026-09-09.
  *
  * The rule is the account's age, not the presence of transactions: a month in
- * which the user owned an account and recorded nothing IS a complete period
- * worth comparing against, and reporting no delta for it would hide a real drop
- * to zero. What must never happen is a comparison against a month the user did
- * not yet exist for, which would read as a rise from nothing.
+ * which the user owned an account and recorded nothing IS a period worth
+ * comparing against, and reporting no delta for it would hide a real drop to
+ * zero.
  *
- * A user with no accounts resolves to false for the same reason: there is no
- * prior period, not a prior period of zero.
+ * - 'complete' — an account already existed when the prior month opened, the
+ *                first day of it included: an account opened on the first was
+ *                held for every day of that month.
+ * - 'partial'  — the oldest account was opened DURING the prior month. The month
+ *                exists and holds real rows; what it does not hold is a full
+ *                month of them. Previously this returned false and the delta was
+ *                suppressed, which told the reader "there is no prior month"
+ *                while August sat on the screen with a figure in it.
+ * - 'none'     — the oldest account was opened during the reference month or
+ *                later, or there are no accounts. Comparing here would read as a
+ *                rise from nothing, so nothing is reported.
+ *
+ * The comparisons are string comparisons and that is deliberate: oldestAccountDate
+ * is 'YYYY-MM-DD' and both months are 'YYYY-MM-01', so lexical order is calendar
+ * order and no Date is constructed in a server timezone that is not the owner's.
+ *
+ * @param {string|null} oldestAccountDate - 'YYYY-MM-DD', or null with no accounts
+ * @param {string} priorMonth - 'YYYY-MM-01'
+ * @param {string} referenceMonth - 'YYYY-MM-01'
+ * @returns {'complete'|'partial'|'none'}
  */
-const hasCompletePriorPeriod = (oldestAccountDate, priorMonth) =>
- oldestAccountDate !== null && oldestAccountDate < priorMonth;
+const priorPeriodCoverageOf = (oldestAccountDate, priorMonth, referenceMonth) => {
+ if (oldestAccountDate === null) return 'none';
+ if (oldestAccountDate <= priorMonth) return 'complete';
+ if (oldestAccountDate < referenceMonth) return 'partial';
+
+ return 'none';
+};
 
 /**
  * The reference month read off the series, and its change against the month
@@ -49,22 +98,29 @@ const hasCompletePriorPeriod = (oldestAccountDate, priorMonth) =>
  * @param {string} input.referenceMonth - 'YYYY-MM-01', always present in months
  * @param {string} input.priorMonth - 'YYYY-MM-01'
  * @param {string|null} input.oldestAccountDate - 'YYYY-MM-DD', or null
- * @returns {{currentPoint: object, delta: number|null, canCompare: boolean}}
+ * @returns {{currentPoint: object, delta: number|null, priorPeriodCoverage: string}}
  */
 export const makePeriodDelta = ({ months, referenceMonth, priorMonth, oldestAccountDate }) => {
  const currentPoint = months.find((entry) => entry.month === referenceMonth);
  const priorPoint = months.find((entry) => entry.month === priorMonth);
- const canCompare = hasCompletePriorPeriod(oldestAccountDate, priorMonth);
+ const priorPeriodCoverage =
+  priorPeriodCoverageOf(oldestAccountDate, priorMonth, referenceMonth);
 
  // priorPoint is inside the window for every request, since the window spans
  // several months and the delta reaches back one. The guard is on the calendar,
  // not on the row: a missing row would be a bug in the series, not a young
  // account.
- const delta = canCompare && priorPoint
+ //
+ // 'partial' computes the difference like 'complete' does. The two are told
+ // apart by the coverage the card publishes and by the notice that travels with
+ // it, not by withholding the figure — which is the whole of the 2026-09-09
+ // correction. Only 'none' still resolves to null, and there the prior row is
+ // generate_series' zero for a month the owner did not exist in.
+ const delta = priorPeriodCoverage !== 'none' && priorPoint
   ? toAmount(money(currentPoint.totalAmount).minus(priorPoint.totalAmount))
   : null;
 
- return { currentPoint, delta, canCompare };
+ return { currentPoint, delta, priorPeriodCoverage };
 };
 
 /**
@@ -79,7 +135,11 @@ export const makePeriodDelta = ({ months, referenceMonth, priorMonth, oldestAcco
  * @param {string} input.domain - one of the six of §3
  * @param {number} input.totalAmount - never null: 0 is real activity at zero
  * @param {number} input.transactionCount - the rows totalAmount is made of (D21)
- * @param {number|null} input.delta - null when no complete prior period exists
+ * @param {number|null} input.delta - null only when no prior period exists at all
+ * @param {'complete'|'partial'|'none'} [input.priorPeriodCoverage] - how much of
+ *   the prior month the owner existed for. Defaults to 'complete', which is what
+ *   a card that does not measure a delta at all should say rather than claiming
+ *   a gap it never looked for.
  * @param {string} input.currency
  * @param {{periodStart: string, periodEnd: string}} input.window
  * @param {string[]} [input.notices]
@@ -91,6 +151,7 @@ export const makeDomainCard = ({
  totalAmount,
  transactionCount,
  delta,
+ priorPeriodCoverage = 'complete',
  currency,
  window,
  notices = [],
@@ -100,6 +161,11 @@ export const makeDomainCard = ({
  totalAmount,
  transactionCount,
  delta,
+ // Published beside the figure it qualifies, because the client cannot derive
+ // it: with 'partial' the delta is a number like any other, and reading the
+ // English of meta.notices to find out otherwise would tie the frontend to the
+ // wording of a sentence.
+ priorPeriodCoverage,
  ...domainFields,
  currency,
  window,

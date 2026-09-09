@@ -802,6 +802,18 @@ a.icon {
    the other card with no square, and up and down are a direction rather than a
    verdict. Only the arrow and the figure are painted - the words "vs prior
    month" stay in the running colour, so the clause still reads as a sentence. */
+/* The caveat on a delta measured against a partial prior month. Quieter than
+   the clause it qualifies, because it grades that clause rather than adding a
+   second reading of its own.
+
+   font-size: inherit is not decoration. index.css sets font-size on the
+   universal selector, so an inline element does not inherit the size of the line
+   it sits in and would come out at the root size beside a 12px sentence. */
+.overviewLayout .domainCard__caveat {
+ font-size: inherit;
+ color: var(--color-content-on-dark-subtle);
+}
+
 .overviewLayout .domainCard__delta--up {
  color: var(--color-amount-positive);
 }

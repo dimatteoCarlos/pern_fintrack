@@ -2331,3 +2331,62 @@ cannot be read as a part of the sum.
   not stall a block — add what the component needs and normalise later.
 - **There is no frontend test in this repository.** The row key, the accumulation
   and the viewport trigger are verified by hand until there is.
+
+
+---
+
+# La comparación contra un mes anterior parcial se publica — fallo de Carlos, 2026-09-09
+
+**Lo que se veía en pantalla.** La tarjeta de Income en septiembre decía *"no
+prior month to compare"* con agosto ahí, con una cifra dentro. Carlos:
+
+> *la regla se queda, la frase cambia. Hoy dice que no hay mes previo, y sí lo
+> hay: lo que no hay es un mes previo completo. Que diga por qué, ok, pero de
+> todas maneras que aparezca la comparacion, asi sea parcial, pudieras dejar la
+> acotacion.*
+
+**Por qué pasaba, y no era la frase.** El guard de
+`makeDomainCard.js` no miraba si el mes anterior tenía filas: miraba la edad de
+la cuenta más antigua contra el primer día de ese mes
+(`oldestAccountDate < priorMonth`). Una cuenta abierta a mitad de agosto hace que
+agosto tenga movimientos reales y aun así falle el guard, porque no fue un mes
+entero de tenencia. El booleano tenía dos valores para tres situaciones, así que
+"mes anterior parcial" y "no hay mes anterior" caían en el mismo lado y recibían
+la misma frase — la de la segunda.
+
+**Lo decidido.** Tres coberturas, no dos, y sólo una de ellas anula la cifra.
+
+| cobertura | cuándo | `delta` | qué se dice |
+|---|---|---|---|
+| `complete` | ya había una cuenta cuando abrió el mes anterior | la diferencia | nada, el aviso sobra |
+| `partial` | la cuenta más antigua se abrió **durante** el mes anterior | **la diferencia** | la cuenta se abrió durante ese mes, así que la comparación es contra un mes parcial |
+| `none` | la cuenta más antigua se abrió durante el mes de referencia o después, o no hay cuentas | `null` | no hay periodo anterior contra el cual comparar |
+
+**Un error de borde que salió con el mismo cambio.** La comparación era
+`oldestAccountDate < priorMonth`, así que una cuenta abierta el **primer día**
+del mes anterior caía del lado incompleto — y esa cuenta se tuvo el mes entero.
+Pasa a `<=`. Con el guard viejo eso anulaba la delta; con el nuevo sólo pegaba
+una acotación de más, pero sigue siendo una respuesta equivocada a la pregunta
+"¿tuvo cuenta todo el mes?".
+
+**Por qué un campo nuevo y no derivarlo.** Con `partial` la delta es un número
+como cualquier otro: el cliente no tiene de qué distinguirla. La alternativa era
+que el frontend leyera el texto de `meta.notices` para saberlo, lo que ata la
+página a la redacción exacta de una frase en inglés que el servidor puede
+reescribir. `priorPeriodCoverage` viaja al lado de la cifra que califica.
+
+**La regla que se mantiene intacta.** Nunca se compara contra un periodo que no
+existió. `none` sigue devolviendo `null`, y ahí la fila del mes anterior es el
+cero que `generate_series` fabrica para un mes en el que el dueño no existía —
+compararla leería como una subida desde nada.
+
+**Qué cambia en el contrato.** `DomainCardBase` gana `priorPeriodCoverage` y
+`delta` deja de ser null en el caso parcial. Es aditivo: un cliente que no lea el
+campo nuevo recibe una delta donde antes recibía `null`, que es exactamente lo
+que el fallo pide.
+
+**Dónde queda.** El cálculo en
+`makeDomainCard.js` (`priorPeriodCoverageOf`, y `priorPeriodNotices` que elige la
+frase una sola vez para los cinco calculadores). El render en `DomainCards.tsx`:
+la línea de la delta aparece siempre y la acotación es un `(partial)` atenuado a
+su lado, con la frase completa del servidor en su `title`.

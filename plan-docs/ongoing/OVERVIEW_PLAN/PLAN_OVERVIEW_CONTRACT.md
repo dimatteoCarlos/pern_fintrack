@@ -300,10 +300,17 @@ type DomainCardBase = {
  domain: OverviewDomain;
  totalAmount: number; // nunca null — 0 es actividad real en cero
  transactionCount: number;
- // null + notice cuando no existe un periodo anterior completo contra el
- // que comparar (cuenta más joven que un periodo) — nunca comparar contra
- // un periodo que no existió (I3/E3/D3/PL3 del catálogo).
+ // null SÓLO cuando no existe ningún periodo anterior: la cuenta más antigua
+ // se abrió durante el mes de referencia o después. Nunca comparar contra un
+ // periodo que no existió (I3/E3/D3/PL3 del catálogo) — pero un mes anterior
+ // incompleto SÍ existió, y desde el 2026-09-09 se compara igual.
  delta: number | null;
+ // Enmienda del 2026-09-09 (ver el registro de decisiones). Califica delta:
+ // 'complete' el mes anterior entero, 'partial' la cuenta más antigua se abrió
+ // durante él, 'none' no hay mes anterior y delta es null. El cliente no puede
+ // derivarlo: con 'partial' la delta es un número como cualquier otro, y leer
+ // el inglés de meta.notices ataría el frontend a la redacción de una frase.
+ priorPeriodCoverage: 'complete' | 'partial' | 'none';
  currency: CurrencyType;
  window: PeriodWindow;
  meta: SectionMeta;

@@ -25,7 +25,7 @@ import { getPnlTransactionsPage } from '../db/overviewTransactionRepository.js';
 import {
  makeDomainCard,
  makePeriodDelta,
- NO_PRIOR_PERIOD_NOTICE,
+ priorPeriodNotices,
 } from '../core/makeDomainCard.js';
 import { makePnlAnalysis } from '../core/makePnlAnalysis.js';
 import { wantsAnalysis } from '../core/analysisLevels.js';
@@ -93,7 +93,7 @@ export const overviewPnlService = {
    }),
   ]);
 
-  const { currentPoint, delta, canCompare } = makePeriodDelta({
+  const { currentPoint, delta, priorPeriodCoverage } = makePeriodDelta({
    months,
    referenceMonth,
    priorMonth,
@@ -107,12 +107,13 @@ export const overviewPnlService = {
    totalAmount: currentPoint.totalAmount,
    transactionCount: currentPoint.transactionCount,
    delta,
+   priorPeriodCoverage,
    currency: ACCOUNTING_CURRENCY_CODE,
    window: {
     periodStart,
     periodEnd,
    },
-   notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
+   notices: priorPeriodNotices(priorPeriodCoverage),
    domainFields: {
     // How much of the month's realised result landed on investment accounts.
     //

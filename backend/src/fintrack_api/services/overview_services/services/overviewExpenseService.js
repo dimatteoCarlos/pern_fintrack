@@ -24,7 +24,7 @@ import { getMonthlyExpense } from '../db/overviewMonthlyRepository.js';
 import { getExpenseTransactionsPage } from '../db/overviewTransactionRepository.js';
 import {
  makePeriodDelta,
- NO_PRIOR_PERIOD_NOTICE,
+ priorPeriodNotices,
 } from '../core/makeDomainCard.js';
 import { makeExpenseCard, NO_BUDGET_NOTICE } from '../core/makeExpenseCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
@@ -97,7 +97,7 @@ export const overviewExpenseService = {
   // The reference month is the last point of the same series the chart draws, so
   // the card and the chart cannot disagree about it (§4.2). generate_series
   // guarantees the row exists even when nothing happened in it.
-  const { currentPoint, delta, canCompare } = makePeriodDelta({
+  const { currentPoint, delta, priorPeriodCoverage } = makePeriodDelta({
    months,
    referenceMonth,
    priorMonth,
@@ -110,8 +110,7 @@ export const overviewExpenseService = {
   const hasBudgetInForce = budgetStatus.accounts.some((account) => account.budgetAmount > 0);
   const isMixedCurrency = budgetStatus.totals.budgetAmount === null;
 
-  const notices = [...budgetStatus.meta.notices];
-  if (!canCompare) notices.push(NO_PRIOR_PERIOD_NOTICE);
+  const notices = [...budgetStatus.meta.notices, ...priorPeriodNotices(priorPeriodCoverage)];
   // Not raised when the currencies are mixed: budgetCalculationService already
   // said so, and two notices for one absent figure would read as two problems.
   if (!isMixedCurrency && !hasBudgetInForce) notices.push(NO_BUDGET_NOTICE);
@@ -120,6 +119,7 @@ export const overviewExpenseService = {
    totalAmount: currentPoint.totalAmount,
    transactionCount: currentPoint.transactionCount,
    delta,
+   priorPeriodCoverage,
    budgetAmount: isMixedCurrency || !hasBudgetInForce ? null : budgetStatus.totals.budgetAmount,
    // Spending is reported whether or not a budget exists: the two answer
    // different questions, and blanking this one alongside budgetAmount would

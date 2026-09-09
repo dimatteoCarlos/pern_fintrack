@@ -27,6 +27,7 @@ import {
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import {
+ OverviewDomainCardBase,
  OverviewExpenseCard,
  OverviewPnlCard,
  OverviewPocketCard,
@@ -46,7 +47,31 @@ const NO_FIGURE = '—';
 // alone at the head of a sentence reads as a stray character rather than as a
 // missing value, and it has no neighbours to be read against - so the sentence
 // says why instead.
+//
+// It now says only what it means. Until 2026-09-09 this clause also stood in for
+// a prior month that existed and was incomplete, which is the case Carlos read
+// off the screen: September said "no prior month to compare" with August sitting
+// there holding a figure. That case is the caveat below, not this sentence.
 const NO_PRIOR_MONTH = 'no prior month to compare';
+
+// The caveat that qualifies a delta measured against a month the owner did not
+// hold an account for the whole of. The card shows the comparison anyway - a
+// partial baseline is a weaker comparison, not an absent one - and this says how
+// far to trust it.
+//
+// A span of its own and not a word inside the sentence, for two reasons:
+// .domainCard__sub is a wrapping flex row, so as a sibling it drops to the next
+// line intact instead of splitting "$120" away from "vs prior month"; and it
+// carries the server's full explanation in title, which the parenthetical alone
+// is too short to hold.
+const PARTIAL_PRIOR_MONTH_TITLE =
+ 'The oldest account was opened during the prior month, so the change is measured against a partial month.';
+
+const partialCaveat = (
+ <span className='domainCard__caveat' title={PARTIAL_PRIOR_MONTH_TITLE}>
+  (partial)
+ </span>
+);
 
 const money = (currency: string, value: number) =>
  currencyFormat(currency, value, formatNumberCountry);
@@ -69,11 +94,23 @@ const monthLabel = (month: string | null) => {
 // not published: deriving a percentage here would mean inventing the
 // denominator. The arrow carries the direction so the sign does not have to be
 // read off the digits.
-const deltaLine = (delta: number | null, currency: string) => {
+const deltaLine = (
+ delta: number | null,
+ currency: string,
+ coverage: OverviewDomainCardBase['priorPeriodCoverage'],
+) => {
  if (delta === null) return NO_PRIOR_MONTH;
- if (delta === 0) return `no change vs prior month`;
 
- return `${delta > 0 ? '▲' : '▼'} ${money(currency, Math.abs(delta))} vs prior month`;
+ const caveat = coverage === 'partial' ? <>{' '}{partialCaveat}</> : null;
+
+ if (delta === 0) return <>no change vs prior month{caveat}</>;
+
+ return (
+  <>
+   {delta > 0 ? '▲' : '▼'} {money(currency, Math.abs(delta))} vs prior month
+   {caveat}
+  </>
+ );
 };
 
 // The same clause with the arrow PAINTED, and it is used on Income alone.
@@ -85,9 +122,16 @@ const deltaLine = (delta: number | null, currency: string) => {
 // with no status square, and both halves of that matter - --color-amount-* and
 // the square's palette are the same teal and the same rose, so a card wearing
 // both would be asking the reader to tell two colour systems apart at 12px.
-const coloredDeltaLine = (delta: number | null, currency: string) => {
+const coloredDeltaLine = (
+ delta: number | null,
+ currency: string,
+ coverage: OverviewDomainCardBase['priorPeriodCoverage'],
+) => {
  if (delta === null) return NO_PRIOR_MONTH;
- if (delta === 0) return `no change vs prior month`;
+
+ const caveat = coverage === 'partial' ? <>{' '}{partialCaveat}</> : null;
+
+ if (delta === 0) return <>no change vs prior month{caveat}</>;
 
  const direction = delta > 0 ? 'up' : 'down';
 
@@ -97,6 +141,7 @@ const coloredDeltaLine = (delta: number | null, currency: string) => {
     {delta > 0 ? '▲' : '▼'} {money(currency, Math.abs(delta))}
    </span>{' '}
    vs prior month
+   {caveat}
   </>
  );
 };
@@ -373,7 +418,7 @@ function DomainCards() {
    <DomainCard
     label='Income'
     nature='flow'
-    sub={coloredDeltaLine(income.delta, income.currency)}
+    sub={coloredDeltaLine(income.delta, income.currency, income.priorPeriodCoverage)}
    >
     <div className='domainCard__figure'>
      {money(income.currency, income.totalAmount)}
@@ -398,7 +443,7 @@ function DomainCards() {
           still not know where the month went. */}
       {uncategorized}
       {uncategorized && ' · '}
-      {deltaLine(expense.delta, expense.currency)}
+      {deltaLine(expense.delta, expense.currency, expense.priorPeriodCoverage)}
      </>
     }
    >
@@ -410,7 +455,7 @@ function DomainCards() {
    <DomainCard
     label='Debt'
     nature='position'
-    sub={deltaLine(debt.delta, debt.currency)}
+    sub={deltaLine(debt.delta, debt.currency, debt.priorPeriodCoverage)}
    >
     {/* The net across every counterparty, in the headline the other five
         cards give totalAmount. It keeps its sign and takes no colour, the
@@ -492,7 +537,7 @@ function DomainCards() {
     square={pnlSquare(pnl)}
     sub={
      <>
-      {deltaLine(pnl.delta, pnl.currency)}
+      {deltaLine(pnl.delta, pnl.currency, pnl.priorPeriodCoverage)}
       {/* Where the result came from. The card is cut by MOVEMENT TYPE and not
           by account type - the account set is every account the owner holds
           except the system counterparty - so a realised result can land on any

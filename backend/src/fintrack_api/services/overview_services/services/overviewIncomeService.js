@@ -24,7 +24,7 @@ import { getIncomeTransactionsPage } from '../db/overviewTransactionRepository.j
 import {
  makeDomainCard,
  makePeriodDelta,
- NO_PRIOR_PERIOD_NOTICE,
+ priorPeriodNotices,
 } from '../core/makeDomainCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
 import { makeIncomeAnalysis } from '../core/makeIncomeAnalysis.js';
@@ -98,7 +98,7 @@ export const overviewIncomeService = {
     : undefined,
   ]);
 
-  const { currentPoint, delta, canCompare } = makePeriodDelta({
+  const { currentPoint, delta, priorPeriodCoverage } = makePeriodDelta({
    months,
    referenceMonth,
    priorMonth,
@@ -110,6 +110,7 @@ export const overviewIncomeService = {
    totalAmount: currentPoint.totalAmount,
    transactionCount: currentPoint.transactionCount,
    delta,
+   priorPeriodCoverage,
    // The installation's accounting currency, not a currency read off the
    // accounts. D7: every amount is already stored in it, so there is nothing to
    // convert and nothing to disagree about. The day users.currency_id can
@@ -120,7 +121,7 @@ export const overviewIncomeService = {
     periodStart,
     periodEnd,
    },
-   notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
+   notices: priorPeriodNotices(priorPeriodCoverage),
   });
 
   return {

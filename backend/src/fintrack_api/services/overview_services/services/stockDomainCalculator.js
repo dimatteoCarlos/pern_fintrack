@@ -36,7 +36,7 @@ import { getMonthlyBalance } from '../db/overviewBalanceRepository.js';
 import {
  makeDomainCard,
  makePeriodDelta,
- NO_PRIOR_PERIOD_NOTICE,
+ priorPeriodNotices,
 } from '../core/makeDomainCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
 import { isFullAnalysis, wantsAnalysis } from '../core/analysisLevels.js';
@@ -130,7 +130,7 @@ export async function readStockDomain(
  // The last point of the series is the balance right now, by construction: the
  // reference month's end subtracts nothing from today's balance. So the card's
  // total and the chart's last bar are the same read, not two that agree (§4.2).
- const { currentPoint, delta, canCompare } = makePeriodDelta({
+ const { currentPoint, delta, priorPeriodCoverage } = makePeriodDelta({
   months,
   referenceMonth,
   priorMonth,
@@ -145,13 +145,14 @@ export async function readStockDomain(
   totalAmount: currentPoint.totalAmount,
   transactionCount: transactions.totalRows,
   delta,
+  priorPeriodCoverage,
   domainFields,
   currency: ACCOUNTING_CURRENCY_CODE,
   window: {
    periodStart,
    periodEnd,
   },
-  notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
+  notices: priorPeriodNotices(priorPeriodCoverage),
  });
 
  return {

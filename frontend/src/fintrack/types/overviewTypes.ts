@@ -72,11 +72,18 @@ export type OverviewDomainCardBase = {
  // not arrive. Contract, §"Las cinco comparten la misma forma".
  totalAmount: number;
  transactionCount: number;
- // null when the prior month cannot be compared against — an owner whose oldest
- // account is newer than that month has no baseline, not a delta of zero. An
- // AMOUNT and not a rate: the prior month's own figure is not published, so a
- // percentage cannot be derived by any consumer without inventing it.
+ // null only when there is NO prior month for this owner at all — the oldest
+ // account was opened during the reference month or later, so there is no
+ // baseline rather than a baseline of zero. A prior month the owner existed for
+ // only part of still produces a figure; priorPeriodCoverage below is what says
+ // so. An AMOUNT and not a rate: the prior month's own figure is not published,
+ // so a percentage cannot be derived by any consumer without inventing it.
  delta: number | null;
+ // How much of the prior month the owner held an account for, and the only way
+ // to tell a full comparison from a partial one: with 'partial' the delta is a
+ // number like any other. Reading meta.notices to find out instead would tie
+ // this page to the wording of an English sentence the server owns.
+ priorPeriodCoverage: 'complete' | 'partial' | 'none';
  currency: string;
  window: OverviewCardWindow;
  meta: OverviewMeta;
