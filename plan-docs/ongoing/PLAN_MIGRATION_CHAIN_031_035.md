@@ -135,6 +135,24 @@ proof the repoint happened.
   four seeds will therefore insert rather than conflict. **Read both maxima on
   production before the run anyway** — this reads a dump taken 2026-08-21 plus
   an argument about what ran since, and the check costs one query.
+- **031's precondition holds on the production dump, measured rather than
+  assumed.** A full chain run on a clone of `fintrack_prod_data` on 2026-09-09
+  ended with exactly one account typed `boundary`: account 45, `account_name`
+  the exact literal `slack`, and it is also the only row matching
+  `lower(account_name) = 'slack'`, so there is no case variant for the NOTICE at
+  `031:141` to report. The subject the migration looks for exists and is named
+  what the migration looks for. This reads a dump taken 2026-08-21; the account
+  can be renamed by its owner at any time, so the precondition is still read on
+  production at the moment of the run.
+- **The chain runs clean end to end with the catalog assertions added on
+  2026-09-09.** Same clone: `db:align` to 17 ledger rows, then one `db:migrate`
+  through `037_add_balance_reversal.sql`, ending at 38 rows with every seed
+  bound as intended - `movement_type_id` 10 `account-closure` and 11
+  `balance-reversal`, `transaction_type_id` 6 `account-closure` and 7
+  `balance-reversal` - and eight foreign keys resolving to `account_registry`.
+  The clone was dropped. Production runs a shorter set: it is above the
+  alignment and above 030, so the same files run without the alignment in front
+  of them.
 - **Code that runs without 031 fails in two different ways, and only one is
   audible.** `transactionController.js` raises *"Account type 'boundary' not
   found: the migration chain has not reached 031"*. The Overview reads instead
