@@ -6,6 +6,9 @@ import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { currencyFormat } from '../../../helpers/functions.ts';
 import { AccountListType } from '../../../types/responseApiTypes.ts';
 import PanelState from './PanelState.tsx';
+import { PanelTotal } from '../../../general_components/panelTotal/PanelTotal.tsx';
+import { useOverviewStore } from '../../../stores/useOverviewStore.ts';
+import { monthLabel } from '../helpers/monthLabel.ts';
 
 import {
   //ACCOUNT_DEFAULT ,
@@ -46,6 +49,14 @@ function InvestmentAccountBalance({
   error,
   onRetry,
 }: AccountPropType) {
+  // THE TOTAL IS READ, NEVER SUMMED, for the reason AccountBalance.tsx states.
+  // domainCards.investment.ledgerBalance is the sum of the derived balances of
+  // the investment accounts at the close of the served month
+  // (overviewInvestmentRepository.js:219), and it is the same set this panel
+  // lists - the route filters on the account type and so does the statement.
+  const investment = useOverviewStore((state) => state.domainCards?.investment);
+  const referenceMonth = useOverviewStore((state) => state.referenceMonth);
+  const servedWindow = useOverviewStore((state) => state.window);
 
   //--STATES---------------------
   const [investmentAccountsToRender, setInvestmentAccountsToRender] = useState<
@@ -103,7 +114,15 @@ function InvestmentAccountBalance({
  // investment account is the third state and renders nothing, because it is a
  // real answer and not a failure.
   if (!accounts || !investmentAccountsToRender.length) return null;
-  
+
+  // Same two clocks as the bank panel: the tiles hold today's balance and the
+  // total holds the close of the served month, which are one figure for the
+  // month in course and two questions for an earlier one.
+  const totalNote =
+    servedWindow && !servedWindow.isCurrentMonth
+      ? `At the close of ${monthLabel(referenceMonth)} · the accounts below show today's balance`
+      : `At the close of ${monthLabel(referenceMonth)}`;
+
   return (
     <>
       {/*ACCOUNTS  */}
@@ -111,6 +130,16 @@ function InvestmentAccountBalance({
        <CardTitle>Investment Accounts</CardTitle>
         <Link className='flx-col-center icon ' to={'edit'}></Link>
       </div>
+
+      {/* Not "capital invested", which is the tile's own subtitle and a
+          different figure: capitalContributed is what went in, this is what the
+          accounts hold. */}
+      <PanelTotal
+        label='Accounts balance'
+        amount={investment?.ledgerBalance ?? null}
+        currency={investment?.currency ?? defaultCurrency}
+        note={investment ? totalNote : null}
+      />
 
       <article className='goals__investment'>
         {/* Account Factual Balance  */}

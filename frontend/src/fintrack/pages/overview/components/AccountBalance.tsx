@@ -8,6 +8,9 @@ import {
 } from '../../../helpers/constants.ts';
 import { AccountListType } from '../../../types/responseApiTypes.ts';
 import PanelState from './PanelState.tsx';
+import { PanelTotal } from '../../../general_components/panelTotal/PanelTotal.tsx';
+import { useOverviewStore } from '../../../stores/useOverviewStore.ts';
+import { monthLabel } from '../helpers/monthLabel.ts';
 import { useEffect, useState } from 'react';
 
 //----------------------------
@@ -39,6 +42,22 @@ function AccountBalance({
   error,
   onRetry,
 }: AccountPropType) {
+  // THE TOTAL IS READ, NEVER SUMMED. hero.cashPosition is what the owner can
+  // spend without selling a position or collecting a debt, computed by the page
+  // statement at the close of the served month. Adding the tiles up here would
+  // be a second answer to the same question, and the two part company the
+  // moment the panel shows a different set of accounts than the figure covers.
+  //
+  // WHICH IS ALREADY TRUE, and it is stated rather than hidden: cashPosition
+  // covers bank AND cash (makeHeroSection.js:207-211, D45), while this panel
+  // lists only the bank accounts - the route it is fed from answers
+  // bank_and_investment and cash is not in it (getAccountController.js:440).
+  // No cash account can be created today, because the new-account form offers
+  // bank, investment and income_source (ACCOUNT_TYPE_DEFAULT), so the two sets
+  // coincide for every owner there is. The label names the wider one.
+  const hero = useOverviewStore((state) => state.hero);
+  const referenceMonth = useOverviewStore((state) => state.referenceMonth);
+  const servedWindow = useOverviewStore((state) => state.window);
 
  //--STATES---------------------
   const [accountsToRender, setAccountsToRender] = useState<AccountListType[]>(
@@ -86,6 +105,16 @@ function AccountBalance({
   // An owner with no bank account is the third state and it is not an error, so
   // the panel renders nothing rather than a message about a failure.
   if (!accountsToRender.length) return null;
+
+  // The tiles carry today's balance and the total carries the close of the
+  // served month. For the month in course they are the same figure, because the
+  // statement's upper bound is the start of next month and nothing has happened
+  // past it. For an earlier month they are two different questions, so the
+  // second clause is added only then.
+  const totalNote =
+    servedWindow && !servedWindow.isCurrentMonth
+      ? `At the close of ${monthLabel(referenceMonth)} · the accounts below show today's balance`
+      : `At the close of ${monthLabel(referenceMonth)}`;
   //--------
   return (
     <>
@@ -94,6 +123,15 @@ function AccountBalance({
         <CardTitle>Account Balance</CardTitle>
         <Link className='flx-col-center icon ' to={'edit'}></Link>
       </div>
+
+      {/* Null until the page payload lands, which renders a dash: this panel
+          and the payload are two requests and either can be first. */}
+      <PanelTotal
+        label='Bank and cash'
+        amount={hero?.cashPosition ?? null}
+        currency={hero?.currency ?? defaultCurrency}
+        note={hero ? totalNote : null}
+      />
 
       <article className='goals__account'>
         {/* Account Balance  */}

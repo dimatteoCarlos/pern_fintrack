@@ -1,0 +1,38 @@
+/* frontend/src/fintrack/general_components/panelTotal/styles/panelTotal-styles.css
+   The figure over a list. Imported by PanelTotal.tsx and by nothing else.
+
+   Written for the app's dark ground, which is where the two account panels of
+   Overview put it. A panel that lands on cream gets a --light modifier here
+   rather than an override in its own sheet. */
+
+.panelTotal {
+ display: grid;
+ grid-template-columns: 1fr auto;
+ align-items: baseline;
+ gap: var(--space-1) var(--space-3);
+ padding: var(--space-2) 0 var(--space-3);
+}
+
+.panelTotal__label {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* tabular-nums so the figure keeps its column when the month changes it. */
+.panelTotal__amount {
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+ text-align: right;
+}
+
+/* Spans both columns: it qualifies the pair above it, not the amount alone. */
+.panelTotal__note {
+ grid-column: 1 / -1;
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark-muted);
+}
