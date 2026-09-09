@@ -17,6 +17,7 @@
 
 import {
  getPnlAccountIds,
+ getBankAccountIds,
  getInvestmentAccountIds,
  getOldestAccountDate,
 } from '../db/overviewAccountRepository.js';
@@ -71,9 +72,10 @@ export const overviewPnlService = {
   // Both sets before the fan-out, because the monthly statement needs both: the
   // wide one selects the rows and the investment one cuts the share of them the
   // card publishes as realised on a position.
-  const [accountIds, investmentAccountIds] = await Promise.all([
+  const [accountIds, investmentAccountIds, bankAccountIds] = await Promise.all([
    getPnlAccountIds(pool, userId),
    getInvestmentAccountIds(pool, userId),
+   getBankAccountIds(pool, userId),
   ]);
 
   const [months, oldestAccountDate, transactions] = await Promise.all([
@@ -84,6 +86,7 @@ export const overviewPnlService = {
     referenceMonth,
     timeZone,
     investmentAccountIds,
+    bankAccountIds,
    ),
    getOldestAccountDate(pool, userId, timeZone),
    getPnlTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
@@ -140,6 +143,17 @@ export const overviewPnlService = {
     // both terms are already on the card, and a figure a client obtains by
     // subtracting two published numbers is not a figure the server owes it.
     realizedFromInvestment: currentPoint.investmentAmount,
+    // The other leg, and it is READ rather than subtracted. totalAmount spans
+    // every account type but boundary, so total minus the investment share is
+    // "everything that is not an investment account" - a set that includes the
+    // owner's debtor and pocket accounts. Publishing that difference as "bank"
+    // would put a name on a subtraction.
+    //
+    // The two legs are not required to sum to totalAmount and the card must not
+    // present them as if they were. On today's data they do, because no debtor
+    // or pocket account carries a profit-and-loss row; the day one does, the gap
+    // is a fact worth seeing rather than one absorbed by a label.
+    realizedFromBank: currentPoint.bankAmount,
    },
   });
 

@@ -414,12 +414,45 @@ type PocketCard = DomainCardBase & {
 type PnlCard = DomainCardBase & {
  domain: 'pnl';
  // Added 2026-09-07. How much of this month's realised result landed on
- // investment accounts. A SPLIT of `totalAmount`, never a second total: the
- // remainder is what came from bank and debtor accounts. Never null; 0 is a real
- // answer meaning the month's result came from somewhere else.
+ // investment accounts. A SPLIT of `totalAmount`, never a second total. Never
+ // null; 0 is a real answer meaning the month's result came from somewhere else.
  realizedFromInvestment: number;
+ // Added 2026-09-09. La otra pata, sobre las cuentas de gasto corriente
+ // ('bank' y 'cash', el mismo par sobre el que se lee cashPosition).
+ //
+ // MEDIDA con su propio FILTER, no derivada. El comentario de arriba decía que
+ // el remanente "es lo que vino de cuentas de banco y de deudores" — y eso es
+ // exactamente por qué el remanente no sirve como cifra de banco: mete dos cosas
+ // en una. El conjunto de la tarjeta es todo tipo salvo boundary, así que
+ // totalAmount menos la pata de inversión incluye deudores y bolsillos.
+ //
+ // Las dos patas NO están obligadas a sumar totalAmount y la tarjeta no las
+ // presenta como si lo estuvieran. Hoy suman, y eso es una propiedad del dato.
+ realizedFromBank: number;
 };
 ```
+
+### Type change — 2026-09-09
+
+`PnlCard` gains a second measured leg, `realizedFromBank`.
+
+**Lo que corrige.** La propuesta era enunciar la pata de banco como
+`totalAmount − realizedFromInvestment`. Carlos preguntó por qué esa resta sería
+"bank accounts", y la respuesta es que no lo es: `PNL_ACCOUNT_IDS_QUERY` devuelve
+toda cuenta de todo tipo salvo `boundary`, así que el remanente es "todo lo que no
+es cuenta de inversión" — bancos, deudores y bolsillos juntos. Ponerle el nombre
+de uno de ellos a una resta sobre varios es la clase de etiqueta que no se puede
+auditar: el día que una cuenta de deudor lleve una fila de resultado, la resta la
+absorbe en silencio bajo "bank".
+
+**Un FILTER más, sobre las mismas filas.** `$6` son las cuentas `('bank','cash')`.
+Igual que `$5`, corta exactamente las filas que el total ya sumó, así que ninguna
+pata puede exceder al total ni medirse sobre otro corte.
+
+**Las dos patas pueden no sumar el total, y eso es información.** La brecha es lo
+que cayó en deudores o bolsillos. Hoy es cero porque ninguna de esas cuentas lleva
+filas de este tipo de movimiento; si algún día la hay, se ve, que es lo contrario
+de lo que hacía la resta.
 
 ### Type change — 2026-09-07
 

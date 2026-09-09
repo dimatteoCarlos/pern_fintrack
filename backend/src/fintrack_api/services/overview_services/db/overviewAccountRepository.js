@@ -222,7 +222,7 @@ const ACCOUNT_IDS_BY_TYPE_QUERY = `
   SELECT ai.account_id
   FROM account_identity ai
   JOIN account_types act ON act.account_type_id = ai.account_type_id
-  WHERE act.account_type_name = $2
+  WHERE act.account_type_name = ANY($2::text[])
   ORDER BY ai.account_id
 `;
 
@@ -315,15 +315,17 @@ export async function getPnlAccountIds(pool, userId) {
  *
  * @param {object} pool - Database pool
  * @param {string} userId - UUID from the token, never from the client body
- * @param {string} accountTypeName - a name from the account_types catalog
+ * @param {string[]} accountTypeNames - names from the account_types catalog
  * @returns {Promise<number[]>} account ids, ascending
  */
-async function getAccountIdsByType(pool, userId, accountTypeName) {
+async function getAccountIdsByType(pool, userId, accountTypeNames) {
+ const label = accountTypeNames.join('/');
+
  if (!userId) {
-  throw createError(400, `A user id is required to read ${accountTypeName} accounts.`);
+  throw createError(400, `A user id is required to read ${label} accounts.`);
  }
 
- const { rows } = await pool.query(ACCOUNT_IDS_BY_TYPE_QUERY, [userId, accountTypeName]);
+ const { rows } = await pool.query(ACCOUNT_IDS_BY_TYPE_QUERY, [userId, accountTypeNames]);
  return rows.map((row) => row.account_id);
 }
 
@@ -335,7 +337,27 @@ async function getAccountIdsByType(pool, userId, accountTypeName) {
  * @returns {Promise<number[]>} account ids, ascending
  */
 export async function getDebtAccountIds(pool, userId) {
- return getAccountIdsByType(pool, userId, 'debtor');
+ return getAccountIdsByType(pool, userId, ['debtor']);
+}
+
+/**
+ * The accounts money can be spent from — the pair every other statement in this
+ * module means when it says "bank".
+ *
+ * 'cash' travels with 'bank' here for the same reason it does in
+ * overviewPageRepository.js:136, which is where the hero's cash position is read:
+ * the two are one set everywhere in this codebase, and a set assembled
+ * differently in one file is a set that disagrees with the figure beside it. It
+ * contributes nothing today - no cash account exists and there is no path that
+ * creates one (pocketBoardService.js:210) - so this is alignment, not a second
+ * behaviour.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} userId - UUID from the token
+ * @returns {Promise<number[]>} account ids, ascending
+ */
+export async function getBankAccountIds(pool, userId) {
+ return getAccountIdsByType(pool, userId, ['bank', 'cash']);
 }
 
 /**
@@ -346,7 +368,7 @@ export async function getDebtAccountIds(pool, userId) {
  * @returns {Promise<number[]>} account ids, ascending
  */
 export async function getInvestmentAccountIds(pool, userId) {
- return getAccountIdsByType(pool, userId, 'investment');
+ return getAccountIdsByType(pool, userId, ['investment']);
 }
 
 /**

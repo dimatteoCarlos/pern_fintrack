@@ -117,6 +117,15 @@ export type OverviewPnlCard = OverviewDomainCardBase & {
  // The share of the month's realised result that fell on investment accounts.
  // A subordinate line under the total, never a figure of the same weight.
  realizedFromInvestment: number;
+ // The share that fell on the spendable accounts. MEASURED by its own filter
+ // and not totalAmount minus the line above: the card's account set is every
+ // type but boundary, so that subtraction is "everything that is not an
+ // investment account" and includes debtor and pocket accounts.
+ //
+ // The two are therefore NOT required to sum to totalAmount, and the card does
+ // not present them as if they were. They do on today's data, and that is a
+ // property of the data rather than of the model.
+ realizedFromBank: number;
 };
 
 export type OverviewDebtCard = OverviewDomainCardBase & {

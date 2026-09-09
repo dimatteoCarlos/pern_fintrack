@@ -369,6 +369,12 @@ const uncategorizedClause = (card: OverviewExpenseCard) => {
  )} outside a category`;
 };
 
+// One leg of the month's realised result, named by where it landed. Signed, and
+// the sign is printed: a leg can be a loss while the headline is a gain, and an
+// absolute value under a positive total would hide exactly that.
+const realizedLine = (currency: string, amount: number, where: string) =>
+ `Realised on ${where}: ${amount > 0 ? '+' : ''}${money(currency, amount)}`;
+
 // A losing month is the one health statement this card can make out of what it
 // publishes, and it is the only card where the sign of the figure and the
 // reading are the same thing.
@@ -619,16 +625,38 @@ function DomainCards() {
     nature='flow'
     square={pnlSquare(pnl)}
     sub={
-     <>
-      {deltaLine(pnl)}
-      {/* Where the result came from. The card is cut by MOVEMENT TYPE and not
-          by account type - the account set is every account the owner holds
-          except the system counterparty - so a realised result can land on any
-          of them, and the split says how much of it was investment. It is a
-          subordinate clause and never a second figure of equal weight. */}
-      {pnl.realizedFromInvestment !== 0 &&
-       ` · ${money(pnl.currency, pnl.realizedFromInvestment)} from investment`}
-     </>
+     /* Where the result came from, as two rows under the change. The card is
+        cut by MOVEMENT TYPE and not by account type - the account set is every
+        account the owner holds except the system counterparty - so a realised
+        result can land on any of them, and these two say where it landed.
+
+        BOTH ARE MEASURED. Until 2026-09-09 only the investment leg was served
+        and the other was going to be stated as the remainder; the remainder is
+        "every account that is not an investment account", which includes the
+        owner's debtor and pocket accounts, so naming it "bank" would have put a
+        label on a subtraction. The second filter costs one line of SQL and
+        makes the figure auditable.
+
+        They are not shown as parts of a sum and no total is drawn under them,
+        because they are not required to add up to the headline. */
+     <div className='domainCard__lines'>
+      <span>{deltaLine(pnl)}</span>
+
+      {/* Zero is omitted rather than printed: a leg at zero is a leg that
+          received nothing this month, and a row of zeroes under a headline
+          reads as a breakdown that failed rather than as an empty leg. */}
+      {pnl.realizedFromInvestment !== 0 && (
+       <span className='domainCard__aside'>
+        {realizedLine(pnl.currency, pnl.realizedFromInvestment, 'investment accounts')}
+       </span>
+      )}
+
+      {pnl.realizedFromBank !== 0 && (
+       <span className='domainCard__aside'>
+        {realizedLine(pnl.currency, pnl.realizedFromBank, 'bank accounts')}
+       </span>
+      )}
+     </div>
     }
    >
     {/* Signed, and a negative is a real answer here in a way it is not on an

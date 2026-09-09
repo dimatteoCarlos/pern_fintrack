@@ -238,7 +238,7 @@ type DomainCardBase = {
 | **expense** | `budgetAmount`, `categorizedExpense`, `budgetVariance` (los tres `number \| null`), `hasUncategorizedExpense: boolean` |
 | **debt** | `payable: number`, `receivable: number` (**ambos ≥ 0**), `settledCount: number` |
 | **pocket** | `target`, `remaining`, `progress` (`number \| null`), `fundedCount`, `overdueCount`, `uncoveredCount` |
-| **pnl** | `realizedFromInvestment: number` — **línea subordinada bajo el total, nunca una cifra del mismo peso**: es una parte del número de arriba, y cuando lo iguala la etiqueta honesta es que todo el resultado del mes vino de inversión, no que hay dos resultados |
+| **pnl** | `realizedFromInvestment: number` y `realizedFromBank: number` — **dos líneas subordinadas bajo el total, nunca cifras del mismo peso**. Las dos están medidas por su propio `FILTER` (2026-09-09): la de banco no es el total menos la de inversión, porque ese remanente incluye deudores y bolsillos. No están obligadas a sumar el total y no se dibuja un total debajo de ellas; una pata en cero se omite en vez de imprimirse |
 
 **`delta` es `null` cuando no existe un período anterior completo** — ése es el
 caso de skeleton o guion, no un cero.

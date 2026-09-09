@@ -154,7 +154,19 @@ const MONTHLY_PNL_QUERY = `
     COUNT(t.transaction_id) AS transaction_count,
     COALESCE(SUM(t.amount) FILTER (
       WHERE t.account_id = ANY($5::int[])
-    ), 0) AS investment_amount
+    ), 0) AS investment_amount,
+    -- The second leg, MEASURED and not derived. The remainder after the
+    -- investment share is "every account that is not an investment account",
+    -- and $1 is every type but boundary - banks, investments, debtors and
+    -- pockets - so calling that remainder "bank accounts" would put a name on a
+    -- subtraction over several things. A filter of its own is one line, and it
+    -- is the only version of this figure that can be audited: if a debtor
+    -- account ever carries a profit-and-loss row, the two legs stop summing to
+    -- the total, which is visible, rather than being absorbed in silence under
+    -- the wrong label.
+    COALESCE(SUM(t.amount) FILTER (
+      WHERE t.account_id = ANY($6::int[])
+    ), 0) AS bank_amount
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   LEFT JOIN transactions t
     ON t.account_id = ANY($1::int[])
@@ -243,10 +255,10 @@ const INCOME_BY_SOURCE_QUERY = `
  */
 const readMonthlyRows = async (pool, sql, accountIds, from, to, timeZone, extraParams = []) => {
  // extraParams continues the numbering from $5 and is empty for every statement
- // but the profit-and-loss one, which binds the investment set its split is cut
- // by. Appended rather than given a reader of its own: the four leading binds
- // and the row mapping are identical, and a second copy of both is a second
- // place for them to drift.
+ // but the profit-and-loss one, which binds the two account sets its legs are
+ // cut by - investment on $5, bank on $6. Appended rather than given a reader of
+ // its own: the four leading binds and the row mapping are identical, and a
+ // second copy of both is a second place for them to drift.
  const { rows } = await pool.query(sql, [accountIds ?? [], from, to, timeZone, ...extraParams]);
 
  return rows.map((row) => ({
@@ -263,6 +275,9 @@ const readMonthlyRows = async (pool, sql, accountIds, from, to, timeZone, extraP
   ...(row.investment_amount === undefined
    ? {}
    : { investmentAmount: toAmount(row.investment_amount ?? 0) }),
+  ...(row.bank_amount === undefined
+   ? {}
+   : { bankAmount: toAmount(row.bank_amount ?? 0) }),
  }));
 };
 
@@ -310,9 +325,18 @@ export async function getMonthlyIncome(pool, accountIds, from, to, timeZone = 'U
  *   which is the true answer for an owner with no investment account.
  * @returns {Promise<Array<{month: string, totalAmount: number, transactionCount: number}>>}
  */
-export async function getMonthlyPnl(pool, accountIds, from, to, timeZone = 'UTC', investmentAccountIds = []) {
+export async function getMonthlyPnl(
+ pool,
+ accountIds,
+ from,
+ to,
+ timeZone = 'UTC',
+ investmentAccountIds = [],
+ bankAccountIds = [],
+) {
  return readMonthlyRows(pool, MONTHLY_PNL_QUERY, accountIds, from, to, timeZone, [
   investmentAccountIds ?? [],
+  bankAccountIds ?? [],
  ]);
 }
 
