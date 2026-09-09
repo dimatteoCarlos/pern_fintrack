@@ -3,6 +3,7 @@
 //functions: getCookieOptions, setRefreshTokenCookie,clearRefreshTokenCookie
 
 import pc from 'picocolors';
+import { REFRESH_TOKEN_MS } from './authFn.js';
 
 // === DEFINE AND GET COOKIE OPTIONS ===
 export const getCookieOptions = (type = 'set') => {
@@ -16,10 +17,14 @@ export const getCookieOptions = (type = 'set') => {
 
   if (type === 'clear') {
 // Para clearCookie no necesitas httpOnly ni sameSite? En realidad sí, deben coincidir.
+// maxAge is left out on purpose: clearCookie expires the cookie, never renews it.
     return { ...baseOptions };
   }
 
-  return baseOptions;
+  // Without maxAge the browser treats this as a session cookie and drops it when
+  // it closes, even though the token inside stays valid for days. Same lifetime
+  // the signature and the refresh_tokens row carry.
+  return { ...baseOptions, maxAge: REFRESH_TOKEN_MS };
 };
 
 //=== SET REFRESH TOKEN =======

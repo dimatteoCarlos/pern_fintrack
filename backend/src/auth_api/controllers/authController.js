@@ -10,6 +10,7 @@ import {
   hashed,
   isRight,
   getDecoyHash,
+  refreshTokenExpiryFrom,
 } from '../../utils/authUtils/authFn.js';
 
 import { sendSuccessResponse } from '../../utils/authUtils/sendSuccessResponse.js';
@@ -145,8 +146,7 @@ export const signUpUser = async (req, res, next) => {
 
     // ✅ STORE REFRESH TOKEN IN DB
     //Calculate refresh token expiration date
-    const refreshTokenExpiry = new Date();
-    refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7);
+    const refreshTokenExpiry = refreshTokenExpiryFrom();
 
     //Store refresh token in refresh_tokens db table
     // const insertedRefreshTokenResult = await client.query(
@@ -189,7 +189,7 @@ export const signUpUser = async (req, res, next) => {
       message: 'User successfully registered',
       accessToken: accessToken,
       user: userResponseData,
-      expiresIn: 3600 * 1 * 1, // 60 minutos
+      expiresIn: 3600, // 1 hour in seconds, matching createToken
     });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -280,12 +280,8 @@ export const signInUser = async (req, res, next) => {
     const refreshToken = createRefreshToken(user.user_id);
 
     // ✅ STORE REFRESH TOKEN IN DB
-    // Calculate the expiration date for the refresh token (e.g., 7 days from now)
-    // expiration date deben coincidir con los que se crearon
-    const refreshTokenExpirationDate = new Date();
-    refreshTokenExpirationDate.setDate(
-      refreshTokenExpirationDate.getDate() + 7,
-    );
+    // The row and the signature must declare the same lifetime: one constant.
+    const refreshTokenExpirationDate = refreshTokenExpiryFrom();
 
     // Store the refresh token in the database
     await pool.query(
@@ -332,7 +328,7 @@ export const signInUser = async (req, res, next) => {
       message: 'Login successful',
       accessToken: accessToken,
       user: userResponseData,
-      expiresIn: 3600, // 15 minutos 15 m, 3600 1h
+      expiresIn: 3600, // 1 hour in seconds, matching createToken
     });
 
     console.log(

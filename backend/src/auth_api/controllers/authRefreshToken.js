@@ -83,7 +83,11 @@ export const authRefreshToken = async (req, res, next) => {
     // console.log('total life time', totalLifetime/1000/60)
 
     //rotation threshold or remnant life limit
-    const limitRemLife = (totalLifetime * 1000) / 10; //threshold of 10% remanent life was arbitrarily set
+    // totalLifetime is already in milliseconds. Multiplying it by a thousand
+    // again put the threshold a thousand lifetimes ahead of a remainder that
+    // never exceeds one, so the test below was always true and the token rotated
+    // on every refresh, inserting a row per call.
+    const limitRemLife = totalLifetime / 10; //threshold of 10% remanent life was arbitrarily set
 
     let newRefreshToken = refreshTokenFromClient;
     let shouldSetNewCookie = false;
@@ -109,7 +113,7 @@ export const authRefreshToken = async (req, res, next) => {
     res.json({
       message: 'Access token refreshed successfully',
       accessToken: newAccessToken,
-      expiresIn: 3600, // 15 minutes in seconds
+      expiresIn: 3600, // 1 hour in seconds, matching createToken
     });
     // console.log(pc.green(`✅ Tokens refreshed for user: ${user.username}`));
   } catch (error) {

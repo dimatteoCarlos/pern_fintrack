@@ -10,6 +10,17 @@ import { pool } from '../../db/config/configDB.js';
 //------------------------------
 const salt = Number(process.env.SALT_ROUNDS);
 
+// The single lifetime of a refresh token. Three things have to agree on it: the
+// signature, the row the refresh endpoint checks against, and the cookie the
+// browser keeps. They used to disagree — the JWT said 8.9 days, the row said 7,
+// the cookie said nothing — and the shortest one silently won.
+export const REFRESH_TOKEN_DAYS = 7;
+export const REFRESH_TOKEN_MS = REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000;
+
+// Adds the lifetime to a date, without mutating the one passed in.
+export const refreshTokenExpiryFrom = (from = new Date()) =>
+  new Date(from.getTime() + REFRESH_TOKEN_MS);
+
 export const hashed = async (word) => {
   const salted = await bcrypt.genSalt(salt);
   const hashedWord = await bcrypt.hash(word, salted);
@@ -91,11 +102,10 @@ export const createRefreshToken = (id) => {
       'JWT_REFRESH_TOKEN_SECRET is not configured on environment variables.La clave secreta JWT no está configurada en las variables de entorno.',
     );
   }
-  //refresh token expiration time
-  const expiresIn =
-    process.env.NODE_ENV === 'development'
-      ? '8.9d' // ✅ 8 days
-      : '8.9d'; // ✅ 8 days effective at start, considering a limit life remaining o 10%.(see remainingTime in authRefreshToken.)
+  // Same lifetime the row and the cookie carry. It was 8.9d here against a row
+  // that expired at 7, so the extra 1.9 days were never reachable: the refresh
+  // endpoint filters on the row, not on the signature.
+  const expiresIn = `${REFRESH_TOKEN_DAYS}d`;
 
   return jwt.sign(
     { userId: id, type: 'refresh_token', iat: Math.floor(Date.now() / 1000) },
@@ -176,8 +186,7 @@ export const rotateRefreshToken = async (oldToken, userId, req) => {
     const newRefreshToken = createRefreshToken(userId);
 
     // ✅ 3.EXPIRATION DATE / CALCULAR FECHA DE EXPIRACIÓN (consistent with expiresIn)
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + 7); // 7 días
+    const expirationDate = refreshTokenExpiryFrom();
 
     // 3. 💾 SAVE NEW TOKEN TO DB
     await client.query(
