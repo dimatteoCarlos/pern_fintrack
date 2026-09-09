@@ -27,7 +27,7 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'FLOAT');
 // where the money goes and the total says how much of it has nowhere to go, and
 // a drift between two copies of this would make those two answers describe
 // different sets of rows while still looking consistent.
-const TARGET_ACCOUNT_TRANSACTIONS_CTE = `
+export const TARGET_ACCOUNT_TRANSACTIONS_CTE = `
  WITH TargetAccountTransactions AS
  (
   SELECT
@@ -38,7 +38,11 @@ const TARGET_ACCOUNT_TRANSACTIONS_CTE = `
      THEN tr.source_account_id
      ELSE tr.destination_account_id
    END AS affected_account_id,
-   tr.amount --target account signed amount
+   tr.amount, --target account signed amount
+   -- Carried for getRelatedAccounts.js, which counts interactions and reads
+   -- the most recent one. The two consumers above name their columns
+   -- explicitly and group explicitly, so an extra column reaches neither.
+   tr.transaction_actual_date
 
   FROM transactions tr
 
