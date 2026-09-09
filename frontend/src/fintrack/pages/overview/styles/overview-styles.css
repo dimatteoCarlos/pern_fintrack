@@ -506,15 +506,26 @@ a.icon {
 
 /* The square and the sentence it grades are one statement, so they share a
    row, the same way the monthly snapshot puts its mark on the variance line. */
+/* flex-start and not center, because the subtitle is a COLUMN on three of the
+   six cards. Centred, the square was pulled to the middle of a three-line block
+   and - on the PnL card, whose column is the widest - pushed onto a line of its
+   own above it, a 12px mark grading nothing. It grades the first reading, so it
+   sits on the first reading's line. */
 .overviewLayout .domainCard__sub {
  display: flex;
- align-items: center;
+ align-items: flex-start;
  flex-wrap: wrap;
  gap: var(--space-2);
  font-size: var(--font-size-xs);
  line-height: 1.4;
  color: var(--color-content-on-dark-muted);
  font-variant-numeric: tabular-nums;
+}
+
+/* The column takes the rest of the row rather than its own content width, which
+   is what kept it beside the square instead of under it. */
+.overviewLayout .domainCard__sub > .domainCard__lines {
+ flex: 1 1 0;
 }
 
 /*------------*/
@@ -624,10 +635,25 @@ a.icon {
  gap: var(--space-2);
 }
 
+/* ONE RULE DECIDES EVERY LINE OF THESE CARDS, and Carlos asked for it on
+   2026-09-09: "hace falta algo para diferenciar visiblemente los kpi, entre los
+   diferentes texto". A FIGURE is bright and heavy; a WORD is subtle and light.
+   Before it, the card's name and its headline amount were both weight 600 and
+   one size apart, and the baseline figures were the same muted ink as the labels
+   above them - so nothing on the card told a reader which of eight lines was the
+   measurement.
+
+   Weight and ink and not a new hue. The card already carries two colour systems
+   that must not be confused - the status square's three levels and the amount
+   signs - and a third would be a hue that means "this is a number", which weight
+   states without competing with either.
+
+   The name drops from 600 to medium: it labels the card, and a label at the same
+   weight as the figure under it reads as a second figure. */
 .overviewLayout .snapshot__domain {
  font-size: var(--font-size-sm);
- font-weight: 600;
- letter-spacing: 0.2px;
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
  color: var(--color-content-on-dark-muted);
 }
 
@@ -640,9 +666,13 @@ a.icon {
  font-variant-numeric: tabular-nums;
 }
 
+/* The one measurement the card exists to state. Bold and not semibold, which is
+   what puts two steps between it and everything around it now that the name
+   above it is medium - one step of size and one of weight, rather than one of
+   size alone. */
 .overviewLayout .snapshot__actual {
  font-size: var(--font-size-lg);
- font-weight: 600;
+ font-weight: var(--font-weight-bold);
  line-height: 1.2;
  color: var(--color-content-on-dark);
  font-variant-numeric: tabular-nums;
@@ -656,9 +686,12 @@ a.icon {
  gap: var(--space-2);
 }
 
+/* A figure, so it keeps the heavier weight - but it takes its ink from the
+   status level below rather than from the figure/word rule, because it is the
+   one number on the card that is also a verdict. */
 .overviewLayout .snapshot__delta {
  font-size: var(--font-size-sm);
- font-weight: 600;
+ font-weight: var(--font-weight-semibold);
  font-variant-numeric: tabular-nums;
 }
 
@@ -680,7 +713,7 @@ a.icon {
 
 .overviewLayout .snapshot__against {
  font-size: var(--font-size-xs);
- letter-spacing: 0.2px;
+ letter-spacing: var(--letter-spacing-wide);
  color: var(--color-content-on-dark-subtle);
 }
 
@@ -703,15 +736,20 @@ a.icon {
 
 .overviewLayout .snapshot__label {
  font-size: var(--font-size-xs);
- letter-spacing: 0.65px;
+ letter-spacing: var(--letter-spacing-wider);
  text-transform: uppercase;
  color: var(--color-content-on-dark-subtle);
 }
 
+/* THE LINE CARLOS WAS READING PAST. A baseline figure was weight 500 in the
+   muted ink, between a label and a caption that are both subtle - three lines
+   inside one step of each other, so the figure did not read as the figure. It
+   now takes the full ink and the semibold weight: one step under the headline
+   above it and two clear of the words on either side. */
 .overviewLayout .snapshot__figure {
  font-size: var(--font-size-base);
- font-weight: 500;
- color: var(--color-content-on-dark-muted);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
  font-variant-numeric: tabular-nums;
 }
 
@@ -827,11 +865,17 @@ a.icon {
  min-width: 0;
 }
 
-/* The budget block: a heading row, the bar, and the verdict row under it. A
-   column of three and not three loose lines, because the bar has to span the
-   same width the two figures are measured across - a bar narrower than its own
-   labels reads as a fourth figure rather than as the proportion of them. */
-.overviewLayout .domainCard__budget {
+/* The card's second reading: a heading row, the bar, and the verdict row under
+   it. A column of three and not three loose lines, because the bar has to span
+   the same width the two figures are measured across - a bar narrower than its
+   own labels reads as a fourth figure rather than as the proportion of them.
+
+   NAMED FOR THE SHAPE AND NO LONGER FOR THE BUDGET. Until 2026-09-09 these were
+   .domainCard__budget*, when the expense card was the only card that drew them.
+   Pocket draws the same three rows against its target and PnL draws the row
+   without the bar, so a class calling itself a budget on three cards would be a
+   name that lies on two of them. */
+.overviewLayout .domainCard__block {
  display: flex;
  flex-direction: column;
  gap: var(--space-1);
@@ -839,12 +883,23 @@ a.icon {
 
 /* The two ends of a reading: what it is on the left, how much of it on the
    right. space-between and not a gap, so the figures of the head and the foot
-   land on the same two edges and the bar between them reads as spanning both. */
-.overviewLayout .domainCard__budgetHead,
-.overviewLayout .domainCard__budgetFoot {
+   land on the same two edges and the bar between them reads as spanning both.
+
+   There is no --foot rule and that is deliberate: the foot is the row as the
+   card's subtitle already sets it, and the modifier exists so the markup names
+   which of the two a row is rather than leaving the reader to infer it from
+   position.
+
+   IT WRAPS AS TWO HALVES AND NEVER INSIDE THEM. The pocket foot is longer than
+   the expense one - "$1,707.24 still to allocate" beside "9.4% overall
+   progress" - and on a narrow card the two were each breaking mid-phrase into
+   four ragged lines. Wrapping the ROW drops the share whole onto the next line
+   instead, which is one clean break rather than two broken phrases. */
+.overviewLayout .domainCard__blockRow {
  display: flex;
  align-items: baseline;
  justify-content: space-between;
+ flex-wrap: wrap;
  gap: var(--space-2);
 }
 
@@ -856,28 +911,28 @@ a.icon {
    No letter-spacing, though .domainCard__label carries 0.2px: that is a
    hardcoded pixel the style rules forbid, it has no token, and at 0.2px it is
    below the threshold at which the two lines could look unlike each other. */
-.overviewLayout .domainCard__budgetHead {
+.overviewLayout .domainCard__blockRow--head {
  font-size: var(--font-size-sm);
 }
 
-.overviewLayout .domainCard__budgetLabel {
+.overviewLayout .domainCard__blockLabel {
  font-size: inherit;
  font-weight: var(--font-weight-semibold);
  text-transform: capitalize;
  color: var(--color-content-on-dark-muted);
 }
 
-.overviewLayout .domainCard__budgetAmount {
+.overviewLayout .domainCard__blockAmount {
  font-size: inherit;
  font-weight: var(--font-weight-semibold);
  color: var(--color-content-on-dark);
 }
 
-/* The square rides WITH the remainder, so the two cannot wrap apart: a mark on
-   one line and the sentence it grades on the next is a mark with no subject.
-   align-items over baseline, because the square is an empty box and has no
-   baseline of its own to sit on. */
-.overviewLayout .domainCard__budgetRemainder {
+/* The square rides WITH the words it grades, so the two cannot wrap apart: a
+   mark on one line and the sentence it grades on the next is a mark with no
+   subject. align-items over baseline, because the square is an empty box and
+   has no baseline of its own to sit on. */
+.overviewLayout .domainCard__blockLead {
  display: flex;
  align-items: center;
  gap: var(--space-2);
@@ -997,8 +1052,12 @@ a.icon {
    'ok' is teal HERE and the bare square in the square's own map, and that is
    not a contradiction: a number has no shape to fall back on, so the quiet
    reading still needs a hue to be a reading at all. */
+/* nowrap because it is one figure and one phrase: a percentage on one line with
+   its subject on the next is a number without a subject. The row above it wraps
+   instead, dropping this half whole onto its own line. */
 .overviewLayout .domainCard__share {
  font-size: inherit;
+ white-space: nowrap;
  color: var(--color-content-on-dark-subtle);
 }
 

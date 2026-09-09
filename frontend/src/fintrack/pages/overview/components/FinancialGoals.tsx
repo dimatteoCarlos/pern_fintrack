@@ -76,22 +76,45 @@ const squareOf = (goals: OverviewFinancialGoals): SquareClass => {
  return 'neutral';
 };
 
-// The sentence beside the square, in money and never as a rate. The share the
-// tier is read from stays internal: the server publishes no percentage for this
-// block, and one divided in the browser would be a figure the page states and
-// nothing else can reproduce.
+// The two labels the pocket module already prints for this figure, measured off
+// the screens that print it: PocketCard.tsx:241 labels the remainder 'Still to
+// allocate' when there is one and 'Over target' when the goal was passed.
+//
+// Carlos, 2026-09-09: "hay toda una convencion de mensajes usados en el modulo
+// pocket". This card had three wordings of one figure - 'still to set aside',
+// 'past the target' and 'target less saved' - and none of them was the module's.
+//
+// The sign lives in the LABEL and the figure is absolute, which is the module's
+// own rule (PocketCard.tsx:249): a negative amount printed beside 'Over target'
+// is the same negation twice.
+const remainderLabel = (goalsTotalRemaining: number | null) => {
+ if (goalsTotalRemaining === null) return 'Remaining';
+
+ return goalsTotalRemaining <= 0 ? 'Over target' : 'Still to allocate';
+};
+
+// The sentence beside the square: the READING and no longer the amount. The
+// amount lives once, in the baseline row under the rule, where it is labelled.
+//
+// It carried the amount until the two were aligned to one vocabulary on
+// 2026-09-09, and the alignment is what made the duplication visible: the card
+// printed "$1,581.00 still to allocate" twice, three lines apart. A square
+// grades a reading, so this states the reading; the figures below state the
+// figures.
+//
+// No rate here either. The server publishes no percentage for this block, and
+// one divided in the browser would be a figure the page states and nothing else
+// can reproduce.
 const coverageLine = (goals: OverviewFinancialGoals) => {
- const { goalsTotalTarget, goalsTotalRemaining, currency } = goals;
+ const { goalsTotalTarget, goalsTotalRemaining } = goals;
 
  if (!goalsTotalTarget || goalsTotalRemaining === null) {
   return 'no pocket carries a target yet';
  }
 
- if (goalsTotalRemaining <= 0) {
-  return `${money(currency, Math.abs(goalsTotalRemaining))} past the target`;
- }
-
- return `${money(currency, goalsTotalRemaining)} still to set aside`;
+ return goalsTotalRemaining <= 0
+  ? 'every target is covered'
+  : 'some targets are still short';
 };
 
 function FinancialGoals() {
@@ -149,13 +172,30 @@ function FinancialGoals() {
        </span>
       </div>
 
+      {/* THE LABEL IS THE READING and the caption says what the figure is a
+          part of. It was 'Remaining' over the caption 'target less saved',
+          which Carlos read on 2026-09-09 and could not decode: the phrase was
+          invented here, it described the arithmetic rather than the figure, and
+          it carried 'saved' - the word this card's headline retired, because a
+          pocket holds nothing and the balance never leaves the bank account it
+          was promised from.
+
+          Not floored, but the sign is spent on the word rather than printed on
+          the figure, the way the pocket card states the same pair
+          (PocketCard.tsx:241-249): an owner past the goal reads 'Over target'
+          and a positive amount, which is the true answer stated once. */}
       <div className='snapshot__baseline'>
-       <span className='snapshot__label'>Remaining</span>
-       <span className='snapshot__figure'>{amount(goalsTotalRemaining)}</span>
-       {/* Not floored at zero. It is a plain subtraction, so an owner who saved
-           past the goal reads a negative remainder, which is the true answer;
-           clamping it would report the goal as exactly met. */}
-       <span className='snapshot__weight'>target less saved</span>
+       <span className='snapshot__label'>
+        {remainderLabel(goalsTotalRemaining)}
+       </span>
+       <span className='snapshot__figure'>
+        {goalsTotalRemaining === null
+         ? amount(null)
+         : amount(Math.abs(goalsTotalRemaining))}
+       </span>
+       <span className='snapshot__weight'>
+        {goalsTotalTarget === null ? 'no target set' : 'of that target'}
+       </span>
       </div>
      </div>
     </article>

@@ -25,7 +25,8 @@ import {
  budgetStatusLevel,
  BudgetStatusLevel,
 } from '../../../helpers/budgetStatus';
-import { ProgressBar, ProgressTone } from '../../../general_components/progressBar/ProgressBar';
+import { ProgressTone } from '../../../general_components/progressBar/ProgressBar';
+import { CardMetricBlock, CardMetricRow } from './CardMetricBlock';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import { monthLabel } from '../helpers/monthLabel';
@@ -102,10 +103,20 @@ const money = (currency: string, value: number) =>
 // null when the prior month was 0, and the line then shows the amount alone:
 // there is no share of nothing, and both 'Infinity%' and '100%' would be
 // inventions. null also when the card published no baseline at all.
+// Past this, the share is dropped and the amount stands alone. Carlos read
+// "766533.1% ($100,032.57)" off the investment card on 2026-09-09: the baseline
+// was $13.05 and the month closed at $100,044.62, so the percentage is arithmetic
+// that is true and tells the reader nothing the amount does not tell them
+// better. Ten times over is where a rate stops being a comparison and starts
+// being a magnitude.
+const SHARE_CEILING = 1000;
+
 const deltaShare = (delta: number, priorTotalAmount: number | null) => {
  if (priorTotalAmount === null || priorTotalAmount === 0) return null;
 
- return (delta / Math.abs(priorTotalAmount)) * 100;
+ const share = (delta / Math.abs(priorTotalAmount)) * 100;
+
+ return Math.abs(share) >= SHARE_CEILING ? null : share;
 };
 
 // The change, as the card states it: the share first because it is the reading,
@@ -140,15 +151,31 @@ const deltaLine = ({ delta, priorTotalAmount, priorPeriodCoverage, currency }: D
  );
 };
 
-// The same clause with the arrow PAINTED, and it is used on Income alone.
+// The same clause with the arrow PAINTED. THREE CARDS, not one, since 2026-09-09.
 //
 // The colour says direction and not health, which is the debts module's rule
-// (ListOfDebtors.tsx:239): the words "vs prior month" already carry the
-// reading, and the hue is the second carrier for the eye that scans the column.
-// Income is the only card where a direction is unambiguous and the only card
-// with no status square, and both halves of that matter - --color-amount-* and
-// the square's palette are the same teal and the same rose, so a card wearing
-// both would be asking the reader to tell two colour systems apart at 12px.
+// (ListOfDebtors.tsx:239): the words "vs prior month" already carry the reading,
+// and the hue is the second carrier for the eye that scans the column.
+//
+// TWO TESTS DECIDE IT, and Income was simply the first card to pass both.
+//
+//  - The card must carry no status square. --color-amount-* and the square's
+//    palette are the same teal and the same rose, so a card wearing both asks
+//    the reader to tell two colour systems apart at 12px.
+//  - Up must mean one thing on that card's figure and only one.
+//
+// Income, Debt and Investment pass. Debt carries no square and its headline is
+// the NET (receivable - payable), so up is unambiguously better - either more is
+// owed to the owner or the owner owes less. Investment carries no square and its
+// change is measured on ledgerBalance, so up is a larger position.
+//
+// Expense, Pocket and PnL fail: each carries a square, and on Expense up is also
+// worse rather than better.
+//
+// CARLOS READ THE DEBT ARROW THE OTHER WAY on 2026-09-09 - "aumento deberia ser
+// rojo" - and the reading is the natural one for a card called Debt. It is the
+// SIGNED NET that rose, not what is owed, which is why the card names both legs
+// under the headline. The colour follows the figure the arrow is on.
 const coloredDeltaLine = (
  { delta, priorTotalAmount, priorPeriodCoverage, currency }: DeltaFields,
 ) => {
@@ -297,41 +324,24 @@ const BudgetBlock = ({ card }: { card: OverviewExpenseCard }) => {
  const level = budgetStatusLevel(execution, isOver);
 
  return (
-  <div className='domainCard__budget'>
-   <div className='domainCard__budgetHead'>
-    <span className='domainCard__budgetLabel'>Budget</span>
-    <span className='domainCard__budgetAmount'>
-     {money(card.currency, card.budgetAmount)}
-    </span>
-   </div>
-
-   {/* Withheld and not drawn empty when the share is unmeasurable, which is a
-       zero budget: an empty track states that nothing has been spent, and the
-       remainder beside it says otherwise. */}
-   {execution !== null && (
-    <ProgressBar
-     value={execution}
-     tone={BAR_TONE[level]}
-     label='Share of this budget spent this month'
-    />
-   )}
-
-   <div className='domainCard__budgetFoot'>
-    <span className='domainCard__budgetRemainder'>
-     <StatusSquare alert={budgetSquareState(execution, isOver)} />
-     {money(card.currency, Math.abs(card.budgetVariance ?? 0))} {word}
-    </span>
-
-    {/* The share is SPENT and it says so. The amount to its left is the
-        remainder, and a bare percentage beside a remainder reads as the share
-        LEFT, which is the opposite figure. */}
-    {execution !== null && (
-     <span className={`domainCard__share domainCard__share--${level}`}>
-      {execution.toFixed(SHARE_DECIMALS)}% spent
-     </span>
-    )}
-   </div>
-  </div>
+  <CardMetricBlock
+   label='Budget'
+   amount={money(card.currency, card.budgetAmount)}
+   progress={execution}
+   progressLabel='Share of this budget spent this month'
+   tone={BAR_TONE[level]}
+   square={budgetSquareState(execution, isOver)}
+   remainder={`${money(
+    card.currency,
+    Math.abs(card.budgetVariance ?? 0),
+   )} ${word}`}
+   // The share is SPENT and it says so. The amount to its left is the
+   // remainder, and a bare percentage beside a remainder reads as the share
+   // LEFT, which is the opposite figure. Empty when there is no share, which
+   // the block then does not draw.
+   share={execution === null ? '' : `${execution.toFixed(SHARE_DECIMALS)}% spent`}
+   shareLevel={level}
+  />
  );
 };
 
@@ -360,11 +370,35 @@ const uncategorizedClause = (card: OverviewExpenseCard) => {
  )} outside a category`;
 };
 
-// One leg of the month's realised result, named by where it landed. Signed, and
-// the sign is printed: a leg can be a loss while the headline is a gain, and an
-// absolute value under a positive total would hide exactly that.
-const realizedLine = (currency: string, amount: number, where: string) =>
- `Realised on ${where}: ${amount > 0 ? '+' : ''}${money(currency, amount)}`;
+// One leg of the month's realised result, named by where it landed, as the same
+// two-column row the block above uses for its head and its foot: what it is on
+// the left, how much of it on the right.
+//
+// A ROW AND NOT THE BLOCK, because there is no proportion here. The two legs are
+// not required to sum to the headline - the card says so where it renders them -
+// so a bar over them would state a share of a whole they do not make up.
+//
+// Signed, and the sign is printed: a leg can be a loss while the headline is a
+// gain, and an absolute value under a positive total would hide exactly that.
+const RealizedRow = ({
+ currency,
+ amount,
+ where,
+}: {
+ currency: string;
+ amount: number;
+ where: string;
+}) => (
+ <CardMetricRow
+  subject={<span className='domainCard__aside'>Realised on {where}</span>}
+  figure={
+   <span className='domainCard__aside'>
+    {amount > 0 ? '+' : ''}
+    {money(currency, amount)}
+   </span>
+  }
+ />
+);
 
 // A losing month is the one health statement this card can make out of what it
 // publishes, and it is the only card where the sign of the figure and the
@@ -396,6 +430,71 @@ const pocketSquare = (card: OverviewPocketCard): SquareClass => {
  // A pocket with nothing funding it is short of the plan without being late,
  // which is what the amber level says on the board.
  return card.uncoveredCount > 0 ? 'warning' : 'neutral';
+};
+
+// The bar takes the SAME reading the square takes, so the two marks on the
+// pocket block cannot light differently for one card. Every class pocketSquare
+// hands out is already a tone by name except 'unknown', which means no target
+// was set on any pocket - and with no target there is no denominator, no bar and
+// nothing for this to answer.
+const pocketBarTone = (square: SquareClass): ProgressTone =>
+ square === 'unknown' || square === '' ? 'neutral' : square;
+
+// The pocket goals, in the shape the expense card states its budget in. Carlos,
+// 2026-09-09: "se puede usar el mismo layout de la zona de Budget que usaste en
+// Expense".
+//
+//   Target                          $3,500.00
+//   ▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░
+//   ■ $465.40 still to allocate     63.4% committed
+//
+// EVERY WORD IS THE POCKET MODULE'S, measured off the screens that already print
+// these figures. 'Target' is the label PocketCard.tsx:232 gives the whole, and it
+// is NAMED rather than joined by "of". 'Still to allocate' is the phrase
+// PocketCard.tsx:241 gives the remainder, and 'committed' is the verb
+// PocketBigBoxResult.tsx:988 gives the share. A fourth wording of the same three
+// figures is what this page had until today.
+//
+// NO OVER-TARGET BRANCH, and it is measured rather than assumed: the server
+// clamps remaining per pocket before summing it and reports the excess apart, and
+// progress is coverage that never exceeds 100 by construction
+// (overviewPocketService.js:136-139). The aggregate therefore cannot be over its
+// target the way one pocket can.
+//
+// Absent when no pocket carries a target: there is no whole to measure a part
+// against, so there is no reading, no bar and no square. The card falls back to
+// the sentence that says so.
+const PocketBlock = ({ card }: { card: OverviewPocketCard }) => {
+ if (!card.target) return null;
+
+ const square = pocketSquare(card);
+
+ return (
+  <CardMetricBlock
+   // 'of every pocket' and not a bare 'Target', because the card sits under a
+   // heading that says September 2026 and Carlos read the figure as the month's
+   // - "1885.27 es el target del mes o el total?". It is neither read at a month
+   // nor summed over one: target_amount is a column on the pocket row
+   // (pocketRepository.js:89) and has no time bound at all, and the two figures
+   // measured against it are cumulative to the close of the reference month.
+   label='Target of every pocket'
+   amount={money(card.currency, card.target)}
+   progress={card.progress}
+   progressLabel='Share of the pocket targets committed'
+   tone={pocketBarTone(square)}
+   square={square}
+   remainder={`${money(card.currency, card.remaining)} still to allocate`}
+   // 'overall progress' and NOT 'committed', which is the word the headline
+   // above already spends on a different figure. progress is coverage -
+   // SUM(MIN(allocated, target)) / SUM(target) - so on this board it reads 9.4%
+   // while the headline reports $304.27 of a $1,885.27 target, which is 16.1%.
+   // Two numbers under one word is a card contradicting itself. The phrase is
+   // the served field's own name, the way the board hero states it
+   // (PocketBigBoxResult.tsx:681).
+   share={`${card.progress.toFixed(SHARE_DECIMALS)}% overall progress`}
+   shareLevel={square === '' ? 'ok' : square}
+  />
+ );
 };
 
 // "(2 lenders)" beside the leg, which is what the card could not say: an amount
@@ -535,7 +634,7 @@ function DomainCards() {
    <DomainCard
     label='Debt'
     nature='position'
-    sub={deltaLine(debt)}
+    sub={coloredDeltaLine(debt)}
    >
     {/* The net across every counterparty, in the headline the other five
         cards give totalAmount. It keeps its sign and takes no colour, the
@@ -579,22 +678,61 @@ function DomainCards() {
     </div>
    </DomainCard>
 
+   {/* No square prop when the block draws one. The mark grades the reading
+       against the target, so it belongs on that reading's line and not in
+       front of the whole subtitle - the same correction the expense card took
+       on 2026-09-09. With no target there is no reading, and the square comes
+       back to the subtitle as the 'unknown' it is: no answer, said once. */}
+   {/* No square prop when the block draws one. The mark grades the reading
+       against the target, so it belongs on that reading's line and not in
+       front of the whole subtitle - the same correction the expense card took
+       on 2026-09-09. With no target there is no reading, and the square comes
+       back to the subtitle as the 'unknown' it is: no answer, said once. */}
    <DomainCard
     label='Pocket · committed'
     nature='position'
-    square={pocketSquare(pocket)}
+    square={pocket.target ? undefined : pocketSquare(pocket)}
     sub={
-     pocket.target
-      ? `${money(pocket.currency, pocket.target)} target · ${money(
-         pocket.currency,
-         pocket.remaining,
-        )} remaining`
-      : 'no target set on any pocket'
+     pocket.target ? (
+      /* THE MONTH FIRST AND THE POSITION UNDER IT. Every figure in the block is
+         cumulative - allocated to date, the whole target, what is still to
+         allocate against it - and the card carried none of the month's own
+         movement, which is what left Carlos asking whether 1885.27 was the
+         month's target or the total. delta is summary.totalMovedInMonth, the
+         net committed inside the reference month, and it is the only September
+         figure this card has. */
+      <div className='domainCard__lines'>
+       <span>{deltaLine(pocket)}</span>
+
+       <PocketBlock card={pocket} />
+      </div>
+     ) : (
+      'no target set on any pocket'
+     )
     }
    >
     <div className='domainCard__figure'>
      {money(pocket.currency, pocket.totalAmount)}
     </div>
+
+    {/* THE TERM THAT MAKES THE CARD ADD UP. Without it a reader sums the
+        headline and the remainder below and gets a third total: remaining is
+        clamped per pocket before the server sums it, so a goal funded past its
+        target contributes 0 to the gap rather than a negative. The identity is
+        allocated - excess + remaining = target.
+
+        It hangs off the HEADLINE and not off the remainder, which is where the
+        board puts it and for the same reason: it is a part of this figure -
+        money committed, past the goal it was committed to - and not a
+        correction applied to the gap (PocketBigBoxResult.tsx:363-365).
+
+        Drawn only when there is one. A line reading "$0.00 of it above goal"
+        would be a correction to arithmetic that needs none. */}
+    {pocket.excess !== null && pocket.excess > 0 && (
+     <span className='domainCard__aside'>
+      {money(pocket.currency, pocket.excess)} of it committed above goal
+     </span>
+    )}
    </DomainCard>
 
    <DomainCard
@@ -613,7 +751,7 @@ function DomainCards() {
         than a second wording of the same idea. */
      <div className='domainCard__lines'>
       <span>
-       {deltaLine({
+       {coloredDeltaLine({
         delta: investment.ledgerBalanceDelta,
         priorTotalAmount: investment.priorLedgerBalance,
         priorPeriodCoverage: investment.priorPeriodCoverage,
@@ -656,19 +794,40 @@ function DomainCards() {
      <div className='domainCard__lines'>
       <span>{deltaLine(pnl)}</span>
 
+      {/* THE MONTH WITH NO RESULT SAYS SO. Carlos, 2026-09-09: "no se que
+          significa ese monto mostrado". A headline of $0.00 over two legs that
+          are both absent is a card that looks broken, and the two legs below
+          cannot say "there were none" by staying away.
+
+          transactionCount and not the total: a month CAN net to zero over real
+          rows, and that is a different statement from a month with no row at
+          all. Measured on fintrack_dev for September 2026 - the only movements
+          of type 9 that month are the two the account-deletion path writes,
+          worth -$60.00, and R212 excludes them, so the count is 0 and the
+          figure is not a netting. */}
+      {pnl.transactionCount === 0 && (
+       <span className='domainCard__aside'>
+        no realised result was recorded this month
+       </span>
+      )}
+
       {/* Zero is omitted rather than printed: a leg at zero is a leg that
           received nothing this month, and a row of zeroes under a headline
           reads as a breakdown that failed rather than as an empty leg. */}
       {pnl.realizedFromInvestment !== 0 && (
-       <span className='domainCard__aside'>
-        {realizedLine(pnl.currency, pnl.realizedFromInvestment, 'investment accounts')}
-       </span>
+       <RealizedRow
+        currency={pnl.currency}
+        amount={pnl.realizedFromInvestment}
+        where='investment accounts'
+       />
       )}
 
       {pnl.realizedFromBank !== 0 && (
-       <span className='domainCard__aside'>
-        {realizedLine(pnl.currency, pnl.realizedFromBank, 'bank accounts')}
-       </span>
+       <RealizedRow
+        currency={pnl.currency}
+        amount={pnl.realizedFromBank}
+        where='bank accounts'
+       />
       )}
      </div>
     }
