@@ -793,7 +793,17 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTypeName === 'income_source' ? 'Income Reversal. ' : '';
 
     // Use numericAmount (USD) and accountingCurrencyCode in description
-    const transactionDescription = `${expenseReversalNotePrefix}${incomeReversalNotePrefix}${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount.toFixed(3)} ${accountingCurrencyCode} from account "${sourceAccountInfo.account_name} #${sourceAccountInfo.account_id}" (${sourceAccountTypeName}) credited to "${destinationAccountInfo.account_name} # ${destinationAccountInfo.account_id}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
+    // TWO DECIMALS, matching the Received leg at :851 rather than the header it
+    // was reported against. Both legs narrate the SAME numericAmount, and this
+    // one printed toFixed(3) while its counterpart printed toFixed(2), so one
+    // transfer wrote "Transfered 5.000" and "Received 5.00" about itself.
+    // Nothing parses the digits back out: extractNoteFromDescription splits on
+    // 'Transaction: ' and the only LIKE predicates over this column are the RTA
+    // prefix and the owner's own search.
+    // The 2 is hardcoded here as it is everywhere else in the app. A currency
+    // without a subunit needs 0, which is the per-currency precision decision,
+    // not this line's to take.
+    const transactionDescription = `${expenseReversalNotePrefix}${incomeReversalNotePrefix}${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount.toFixed(2)} ${accountingCurrencyCode} from account "${sourceAccountInfo.account_name} #${sourceAccountInfo.account_id}" (${sourceAccountTypeName}) credited to "${destinationAccountInfo.account_name} # ${destinationAccountInfo.account_id}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
 
     //------DEBUG-----
     // console.log(
