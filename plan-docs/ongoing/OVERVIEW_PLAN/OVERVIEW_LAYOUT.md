@@ -649,9 +649,48 @@ buscar `50%` devolvería todas las filas.
 
 ## 5. Tabla maestra de tasks de render
 
-Una fila por bloque que el frontend tiene que construir. `estado` no dice si el
-componente existe —**ninguno existe todavía**—, dice **si el dato que necesita
-está publicado hoy**.
+Una fila por bloque que el frontend tiene que construir. **`estado` no dice si
+el componente existe**, dice si el dato que necesita está publicado hoy. Las dos
+preguntas se separaron a propósito: un bloque puede estar servido y sin dibujar,
+y dibujado contra un campo que después cambia de forma.
+
+La frase que abría esta sección —«ninguno existe todavía»— era cierta el
+2026-09-07 y dejó de serlo. Lo construido se mide abajo, en 5.0, y no se anota
+fila por fila acá para que esta tabla siga respondiendo una sola pregunta.
+
+### 5.0 Qué está construido, medido el 2026-09-11
+
+Medido leyendo los montajes, no la lista de archivos: un componente que existe y
+que nadie monta no está construido.
+
+| filas | bloque | componente | dónde se monta |
+|---|---|---|---|
+| 1, 2 | héroe, posición y flujo | `HeroIndicators.tsx`, `BigBoxResult.tsx` | `OverviewLayout.tsx:174-182` |
+| — | saldo de cuentas, lee `hero` | `AccountBalance.tsx` | `Overview.tsx:551` |
+| 9 | tarjeta de inversión | `InvestmentAccBalance.tsx` | `Overview.tsx:561` |
+| 4-8 | las seis tarjetas de dominio | `DomainCards.tsx` | `Overview.tsx:574` |
+| 10 | snapshot mensual | `MonthlySnapshot.tsx` | `Overview.tsx:580` |
+| 11 | metas financieras | `FinancialGoals.tsx` | `Overview.tsx:585` |
+| 15 | líneas de tendencia | `TrendCharts.tsx` | `Overview.tsx:588` |
+| 13 | Pareto del gasto | `ParetoBar.tsx` vía `ExpenseByCategory.tsx` | `Overview.tsx:595` |
+| 34 | dona de la participación del mes | `DonutChart.tsx` vía `ExpenseByCategory.tsx` | `Overview.tsx:595` |
+| 12 | actividad reciente | `RecentActivity.tsx` | `Overview.tsx:611` |
+| 17, 35 | listado por dominio y su filtro | `OverviewDomain.tsx` | ruta `:domain` de `App.tsx:310` |
+
+**Lo que la medición encontró sin construir, y no es lo que la tabla decía.**
+
+- **La fila 3, la tarjeta consolidada, no tiene lector y el store no la guarda.**
+  Ningún componente lee `all`, y `useOverviewStore.ts` no declara el campo, así
+  que no es que falte el componente: falta el tramo entero, del store a la
+  pantalla. Sigue **SERVIDA** por el endpoint, que es lo que su fila afirma.
+- **La fila 14, las dos curvas del plan en el Pareto, sigue sin dibujar.**
+  `ParetoBar.tsx` no menciona `cumulativeBudget` en ninguna línea. El hueco que
+  5.1 describe está abierto tal cual lo describe.
+- **La fila 29, la etiqueta condicional del selector de mes, tampoco.**
+  `isCurrentMonth` se lee en exactamente dos lugares —`AccountBalance.tsx:115` e
+  `InvestmentAccBalance.tsx:122`— y en los dos decide el pie de una tarjeta, no
+  la etiqueta del selector. El campo está servido y leído; la etiqueta que la
+  fila 29 pide no existe.
 
 | # | task de render | de qué campo sale | endpoint · profundidad | estado |
 |---|---|---|---|---|
@@ -688,6 +727,8 @@ está publicado hoy**.
 | 31 | Sparkline de la tarjeta de resultado realizado | — | — | **NO SERVIDO** — esa tarjeta no tiene `trend` de 6 puntos |
 | 32 | Línea de deuda en el tiempo, un solo campo | — | — | **NO EXISTE POR DECISIÓN** — se dibuja la fila 28 |
 | 33 | Línea de cartera de inversión en el tiempo | — | — | **NO EXISTE** — inversión no tiene serie a ninguna profundidad |
+| 34 | Dona de participación del gasto en el mes | `charts.expenseCategories` — **las mismas filas del Pareto leídas como partes de un todo**, sin campo nuevo | `GET /` · nivel 1 | **SERVIDO** — el gasto sin categorizar queda fuera del anillo por la decisión D48: está fuera del conjunto ranqueado, así que una porción lo contaría dos veces |
+| 35 | Filtro por categoría del listado de nivel 2 | `category` en el query de `GET /:domain`; la pertenencia sale de las filas de `getBudgetAccountsStatus` | `GET /:domain` · nivel 1 | **SERVIDO desde 2026-09-11** — estrecha **sólo la lista**: tarjeta, curva y ranking siguen siendo los del mes entero |
 
 ### 5.1 Los cuatro huecos, dichos como huecos
 
