@@ -184,11 +184,33 @@ const resolveAllocationDay = (requested, timeZone) => {
  * a 400: every field parses, and what fails is a domain rule about the account
  * behind the id.
  *
+ * THREE OF THE FOUR CHECKS ARE PRECONDITIONS OF ALLOCATING AND OF NOTHING ELSE.
+ * Deleted, internal, wrong type - each one answers "may this account TAKE ON a
+ * commitment", and a release takes none on. A release reduces a pair that
+ * already exists, bounded below by getHeldByPocketFromAccount, and can never
+ * push the running sum past zero. Applied to a release these three do not
+ * protect the ledger; they strand it.
+ *
+ * THE CASE THIS WAS MEASURED ON, 2026-09-11. A soft delete stamps deleted_at
+ * and leaves the allocations standing - assessAccountDeletion.js publishes
+ * removesPocketAllocations: false for SOFT, which is the honest answer. The
+ * release form then OFFERS that account: getPocketSourceHoldings reads
+ * pocket_allocations with no join to user_accounts, and isAccountOpenOn admits
+ * a null opening day (useTransactionDate.ts:28). The owner picks it, the server
+ * locks it, and this function refused it. The pocket went on counting money
+ * from an account its owner could never release, with no way out through any
+ * screen in the app.
+ *
+ * THE OPENING-DAY CHECK STAYS ON BOTH DIRECTIONS. It is a statement about the
+ * DATE, not about the account's fitness to back a goal: a release dated before
+ * the account existed would stamp a decision that could not have been taken.
+ *
  * @param {object} account - the locked row
  * @param {string} chosenDay - YYYY-MM-DD, or '' when the decision is undated
  * @param {string} timeZone - the owner's IANA zone
+ * @param {'allocate'|'release'} direction - which decision is being written
  */
-const assertEligibleSource = (account, chosenDay, timeZone) => {
+const assertEligibleSource = (account, chosenDay, timeZone, direction) => {
  // The account's opening day is the fourth check of the window, and it is here
  // rather than beside the other three because only this point holds the row.
  // Calendar days on both sides, never instants: account_start_date keeps an
@@ -203,6 +225,11 @@ const assertEligibleSource = (account, chosenDay, timeZone) => {
    );
   }
  }
+
+ // Everything below asks whether this account may TAKE ON a commitment, so a
+ // release does not ask it. Giving a commitment back is always allowed, to the
+ // extent the pair holds one.
+ if (direction === 'release') return;
 
  if (account.deletedAt !== null) {
   throw unprocessable(
@@ -335,7 +362,7 @@ const writeLedgerRowOnClient = async (
   throw forbidden('Account not found or not owned by the authenticated user.');
  }
 
- assertEligibleSource(account, requestedDay, timeZone);
+ assertEligibleSource(account, requestedDay, timeZone, direction);
 
  const converted = await convertTypedAmount(
   client,

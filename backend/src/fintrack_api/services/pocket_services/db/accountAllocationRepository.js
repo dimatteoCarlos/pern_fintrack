@@ -76,6 +76,52 @@ export async function getAccountAllocations(db, userId, accountIds = null) {
 }
 
 /**
+ * Name the accounts the ledger points at that getAccountAllocations cannot.
+ *
+ * A SEPARATE READ, DELIBERATELY, AND NOT A LOOSENED FILTER ON THE ONE ABOVE.
+ * getAccountAllocations serves four call sites, two of which build the ALLOCATE
+ * picker (accountAllocationService.js:48 and :101) and one of which builds the
+ * board (pocketBoardService.js:411). Dropping `deleted_at IS NULL` there to
+ * rescue a name would put a deleted account on a list of accounts the owner may
+ * commit money FROM, which is the opposite of what that filter is for.
+ *
+ * So this answers one narrow question: of the ids the allocation ledger already
+ * names, what were they called. It never widens a list - the caller passes the
+ * exact ids it could not resolve, and gets back nothing it did not ask for.
+ *
+ * Ownership is still proven by user_id. An account belonging to someone else is
+ * absent from the result rather than refused, because the caller reached these
+ * ids through this owner's own allocation rows in the first place.
+ *
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} userId - UUID from the token
+ * @param {number[]} accountIds - the unresolved ids, never null
+ * @returns {Promise<object[]>} { accountId, accountName, accountType,
+ *  accountStartDate, isDeleted }
+ */
+export async function getAccountIdentitiesById(db, userId, accountIds) {
+ if (!accountIds.length) return [];
+
+ const { rows } = await db.query(
+  `
+  SELECT
+   ua.account_id                        AS "accountId",
+   ua.account_name                      AS "accountName",
+   act.account_type_name                AS "accountType",
+   ua.account_start_date                AS "accountStartDate",
+   (ua.deleted_at IS NOT NULL)          AS "isDeleted"
+  FROM user_accounts ua
+  JOIN account_types act ON act.account_type_id = ua.account_type_id
+  WHERE ua.user_id = $1
+   AND ua.account_id = ANY($2::int[])
+  `,
+  [userId, accountIds],
+ );
+
+ return rows;
+}
+
+/**
  * Which accounts each pocket draws on.
  *
  * The pair (pocket, source account) is the level a release is measured at, and

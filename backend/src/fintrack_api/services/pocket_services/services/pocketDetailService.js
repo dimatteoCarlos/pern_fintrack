@@ -18,6 +18,7 @@ import {
 } from '../db/pocketRepository.js';
 import {
  getAccountAllocations,
+ getAccountIdentitiesById,
  getPocketSourceHoldings,
 } from '../db/accountAllocationRepository.js';
 import { makePocketStatus } from '../core/makePocketStatus.js';
@@ -42,7 +43,7 @@ const forbidden = (message) =>
  * draw on it, because any split would need a policy the app would have to
  * invent.
  */
-const buildSources = (holdings, accountRows) => {
+const buildSources = (holdings, accountRows, identities = new Map()) => {
  const accounts = new Map(
   accountRows.map((row) => [row.accountId, makeAccountAllocation(row)]),
  );
@@ -55,12 +56,28 @@ const buildSources = (holdings, accountRows) => {
    // was soft-deleted, or it is the internal 'slack' account that read filters
    // out. Its held amount is real and the pocket still counts it, so the row is
    // served with the account figures it has no answer for left null.
+   //
+   // THE NAME IS NO LONGER AMONG THEM. It used to be null here, which put
+   // "Account no longer available" on the row - and two soft-deleted accounts
+   // backing the same pocket then showed as two identical rows the owner had to
+   // tell apart by their amounts before releasing from one. The identity read
+   // answers for exactly these ids and nothing else, so the row can be named
+   // while every FIGURE it has no answer for stays null.
    if (!account) {
+    const identity = identities.get(holding.accountId);
+
     return {
      accountId: holding.accountId,
-     accountName: null,
-     accountType: null,
-     accountStartDate: null,
+     accountName: identity?.accountName ?? null,
+     accountType: identity?.accountType ?? null,
+     // Carried so the release form can date a decision against it, the same as
+     // any other source. Without it the form admits every day, and the server
+     // is the first thing to say no.
+     accountStartDate: identity?.accountStartDate ?? null,
+     // The row is still offered and the release still runs: the three
+     // eligibility refusals in pocketAllocationService are preconditions of
+     // ALLOCATING, and giving a commitment back is always allowed.
+     accountIsDeleted: identity?.isDeleted ?? null,
      heldByThisPocket: toAmount(holding.heldByThisPocket),
      accountAllocated: null,
      accountBalance: null,
@@ -74,6 +91,9 @@ const buildSources = (holdings, accountRows) => {
     accountName: account.accountName,
     accountType: account.accountType,
     accountStartDate: account.accountStartDate,
+    // false and not null: this account answered the main read, which filters
+    // deleted_at IS NULL, so it is known not to be deleted.
+    accountIsDeleted: false,
     heldByThisPocket: toAmount(holding.heldByThisPocket),
     accountAllocated: account.accountAllocated,
     accountBalance: account.accountBalance,
@@ -111,7 +131,24 @@ export const pocketDetailService = {
    getPocketHistory(pool, userId, pocketId, timeZone),
   ]);
 
-  const sources = buildSources(holdings, accountRows);
+  // Only the ids the main read could not answer for, and only when there are
+  // any: a pocket funded entirely by live accounts issues no second query.
+  const knownAccountIds = new Set(accountRows.map((row) => row.accountId));
+  const unresolvedIds = holdings
+   .map((holding) => holding.accountId)
+   .filter((accountId) => !knownAccountIds.has(accountId));
+
+  const identityRows = await getAccountIdentitiesById(
+   pool,
+   userId,
+   unresolvedIds,
+  );
+
+  const sources = buildSources(
+   holdings,
+   accountRows,
+   new Map(identityRows.map((row) => [row.accountId, row])),
+  );
 
   const status = makePocketStatus(row, today);
   const pocket = {

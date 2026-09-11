@@ -4364,3 +4364,75 @@ constrains its row."* That is precisely the reasoning the repeal removes, so
 leaving it would have left the module arguing against its own rule.
 
 **Verified:** `tsc -p tsconfig.app.json` clean, `npm run build` clean.
+
+
+### 14.20 A soft-deleted account could never give its commitment back, 2026-09-11
+
+Carlos, on the deletion checklist: *"SI UNA CUENTA TIENE UNA SOBRE ASIGNACION A
+UN POCKET, IGUALMENTE, DEBERIA APARECE ENTRE LAS OPCIONES DEL MODULO DE POCKET,
+PARA PODER HACER UN RELEASE DE LA CANTIDAD SOBRE ASIGNADA."*
+
+**CLOSE was never the problem.** `deleteAccountService.js:1231` enumerates every
+pocket the account backs and releases each pair through the pocket module's own
+`release`, inside the close's transaction. That half works.
+
+**SOFT is the problem, and it was silent.** `assessAccountDeletion.js` publishes
+`removesPocketAllocations: false` for SOFT, which is honest: the allocations
+stand. So a soft-deleted account goes on backing a pocket. What nothing stated
+is that it can never stop.
+
+**THE TRAP, MEASURED END TO END.**
+
+| step | what happens | where |
+|---|---|---|
+| the row is offered | `getPocketSourceHoldings` reads `pocket_allocations` with NO join to `user_accounts`, so a deleted account's pair is still listed | `accountAllocationRepository.js` |
+| the form admits it | `isAccountOpenOn` returns `true` on a null opening day, so the release picker does not hide it | `useTransactionDate.ts:28` |
+| the owner picks it | the modal offers it under the words "Account no longer available" | `PocketAllocationModal.tsx:250` |
+| the server locks it | `lockOwnedSourceAccount` has no `deleted_at` filter, so the row comes back | `accountAllocationRepository.js` |
+| **and then refuses it** | *"Account X has been deleted and cannot back a pocket."* | `pocketAllocationService.js:207` |
+
+The pocket went on counting money from an account its owner could never
+release, with no way out through any screen in the app.
+
+**THE FIX IS ONE EARLY RETURN, AND THE REASONING IS THE POINT.** Three of the
+four checks in `assertEligibleSource` - deleted, internal, ineligible type -
+each answer the question *may this account TAKE ON a commitment*. A release
+takes none on: it reduces a pair that already exists, bounded below by
+`getHeldByPocketFromAccount`, and can never push the running sum past zero.
+Applied to a release they do not protect the ledger, they strand it. They are
+now allocate-only.
+
+**The opening-day check stays on BOTH directions.** It is a statement about the
+DATE, not about the account's fitness to back a goal: a release dated before the
+account existed would stamp a decision that could not have been taken.
+
+**The name came back too, and NOT by loosening a filter.**
+`getAccountAllocations` serves four call sites, two of which build the ALLOCATE
+picker and one the board. Dropping its `deleted_at IS NULL` to rescue a name
+would put a deleted account on a list of accounts the owner may commit money
+FROM - the opposite of what that filter is for. A new reader,
+`getAccountIdentitiesById`, answers one narrow question instead: of the ids the
+allocation ledger ALREADY names, what were they called. The caller passes the
+exact ids the main read could not resolve, and a pocket funded entirely by live
+accounts issues no second query at all.
+
+**Why the name is part of the ask and not a decoration.** Two soft-deleted
+accounts backing one pocket showed as two identical rows reading "Account no
+longer available", told apart only by their amounts. An owner cannot release
+from a row they cannot identify, so *"poder hacer un release"* was not satisfied
+by making the write succeed alone.
+
+**Every FIGURE stays null on such a row.** Balance, allocated and unassigned
+cash are still unanswerable for an account outside the main read, and they
+render as dashes. Only the identity is filled in. `accountIsDeleted` is
+published beside it - `false` on an account the main read answered for, since
+that read already proves it is not deleted.
+
+**Verified:** `node --check` on the three backend files,
+`tsc -p tsconfig.app.json` clean and `npm run build` clean with the new
+`PocketSource` field. Not boot-verified, for the reason standing since 14.15.
+
+**Still open, and Carlos's to settle.** Whether a soft-deleted account should be
+allowed to keep backing a pocket at all, or whether SOFT should release like
+CLOSE does. This change makes the stranded case recoverable; it does not decide
+that the case should exist.

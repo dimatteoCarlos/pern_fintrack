@@ -323,6 +323,12 @@ export type PocketSource = {
  // The instant the account was opened, which is the floor of what may be dated
  // onto it. null on an account the allocation read cannot resolve.
  accountStartDate: string | null;
+ // Whether the account behind this row has been soft-deleted. Such a row is
+ // still OFFERED for a release and the release still runs: the eligibility
+ // refusals on the server are preconditions of allocating, and giving a
+ // commitment back is always allowed to the extent the pair holds one.
+ // null when the identity read could not answer for the id either.
+ accountIsDeleted: boolean | null;
  // What THIS account has committed to THIS pocket.
  heldByThisPocket: number;
  // What the account has committed across every pocket it funds.
