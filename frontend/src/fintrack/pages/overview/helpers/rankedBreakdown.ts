@@ -6,7 +6,7 @@
 // Pareto's rows read as parts of a whole - and a row that is one thing in two
 // drawings has to be one type and one colour.
 //
-// THE RAMP IS THE REASON THIS FILE EXISTS. A copy of rampPosition in each
+// THE COLOUR IS THE REASON THIS FILE EXISTS. A copy of categoryInk in each
 // component is two rules for one colour, and the first edit to either one paints
 // the same category two colours on one screen, which is the single defect a
 // shared legend cannot survive.
@@ -41,31 +41,33 @@ export const percent = (share: number) => `${(share * 100).toFixed(1)}%`;
 // "there is no number here" and not two.
 export const NO_SHARE = '—';
 
-// Where this row sits on the colour ramp, 0-1, and the only ratio these
-// components compute.
-//
-// BY RANK AND NOT BY AMOUNT. It was amount / largest amount until Carlos read
-// the first render on 2026-09-10: "no distingo los colores entre las
-// categorias". He is right, and the arithmetic says why. A month's spending is
-// skewed by nature, so with a leader at 118 and the next four at 41, 27, 19 and
-// 8, the ramp positions come out 1.00, 0.35, 0.23, 0.16 and 0.07 - four of the
-// five crushed into the bottom seventh of the scale, indistinguishable at the
-// twelve pixels the track is tall. A ramp that cannot separate its own rows
-// encodes nothing.
-//
-// EVENLY SPACED, so N rows get N distinct steps whatever the figures are, and
-// the brightest is always rank 1. What the hue gives up is magnitude - and the
-// hue was never what carried it: the WIDTH of a bar segment and the ANGLE of a
-// donut arc are the share, exactly, and both are read off the screen with no
-// legend at all. Colour does the job neither can, which is telling one part
-// from the next and tying it to its name in the legend.
-//
-// A STRING AND NOT A NUMBER. React sets a custom property with setProperty and
-// appends no unit, but that is the one rule with a version-dependent exception,
-// and a '0.42px' landing inside calc() would fail silently and paint every part
-// the same colour.
-export const rampPosition = (index: number, count: number) => {
- if (count <= 1) return '1';
+// How many hues the categorical scale declares before it repeats.
+const CATEGORY_INKS = 8;
 
- return (1 - index / (count - 1)).toFixed(3);
-};
+// The colour this row wears, in both drawings of the block.
+//
+// A CATEGORICAL SCALE AND NO LONGER A RAMP. It was one ochre mixed between two
+// ends - first by amount, then evenly by rank - and Carlos read both renders.
+// The second, on 2026-09-11: "para donuts vamos a escoger un arco iris, porque
+// no es facil distinguir la variacion entre una y otro %". The measurement
+// agrees with him. Eight evenly spaced steps of ONE hue differ from their
+// neighbours by about an eighth of that hue's lightness range, which is a
+// smaller perceptual step than any two of the eight hues now declared: the
+// tightest adjacent pair of those measures 38 in CIE Lab, where two adjacent
+// steps of the old ramp measured under 10.
+//
+// THE HUE ANSWERS WHICH AND NEVER HOW MUCH. The width of a bar segment and the
+// angle of a donut arc are the share, exactly, and both are read off the screen
+// with no legend at all. Colour does the job neither can, which is telling one
+// part from the next and tying it to its name in the legend.
+//
+// BY RANK, so the colour is stable inside one screen and the same category is
+// one colour in the bar and in the ring. It is NOT stable across months: a
+// category that changes places changes hue, and its legend square changes with
+// it on the same render, which is the only place the two are ever compared.
+//
+// RETURNS A var() REFERENCE AND NOT A HEX. The component writes it into a
+// custom property and the stylesheet consumes it, so the eight values stay in
+// tokens.css and a change to any of them reaches both drawings.
+export const categoryInk = (index: number) =>
+ `var(--color-scale-category-${(index % CATEGORY_INKS) + 1})`;

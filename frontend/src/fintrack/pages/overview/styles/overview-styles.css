@@ -1179,10 +1179,9 @@ a.icon {
  background: var(--color-surface-app);
 }
 
-/* THE RAMP. --paretoBar-ramp is the row's position between the smallest and the
-   largest amount, 0 to 1, set inline by the component. The mixing is here and
-   not in JavaScript because both ends are tokens, and a colour computed in the
-   component would not follow them.
+/* THE INK. --rankedRow-ink is the row's own colour off the categorical scale,
+   written inline by the component as a var() reference into tokens.css, so the
+   eight values live there and neither drawing holds a colour of its own.
 
    The minimum width is a border token used as a length, which is a borrowing
    and is deliberate: a category at half a percent measures under two pixels on
@@ -1191,11 +1190,7 @@ a.icon {
 .overviewLayout .paretoBar__segment {
  flex: 0 0 auto;
  min-width: var(--border-width-thick);
- background: color-mix(
-  in oklab,
-  var(--color-scale-magnitude-high) calc(var(--paretoBar-ramp) * 100%),
-  var(--color-scale-magnitude-low)
- );
+ background: var(--rankedRow-ink);
  /* The cut between two segments, drawn in the track's own colour so the
     boundary reads as a gap rather than as a third mark. */
  box-shadow: inset calc(-1 * var(--border-width-thin)) 0 0
@@ -1244,8 +1239,8 @@ a.icon {
   var(--color-content-on-dark-subtle);
 }
 
-/* The same square the bar draws, at the same size and off the same ramp, so
-   the row identifies a segment. A category that spent nothing keeps an empty
+/* The same square the bar draws, at the same size and off the same ink, so the
+   row identifies a segment. A category that spent nothing keeps an empty
    square: the row is in the list and absent from the bar, and the empty square
    is what says so. */
 .overviewLayout .paretoBar__swatch {
@@ -1253,15 +1248,15 @@ a.icon {
  width: var(--size-status-square);
  height: var(--size-status-square);
  border-radius: var(--radius-sm);
- background: color-mix(
-  in oklab,
-  var(--color-scale-magnitude-high) calc(var(--paretoBar-ramp) * 100%),
-  var(--color-scale-magnitude-low)
- );
+ background: var(--rankedRow-ink);
 }
 
+/* Hugs its text and no longer absorbs the row. It grew to fill the card, which
+   put a hand's width of nothing between "verduras" and what was spent on it -
+   two figures that are read together. It still shrinks, so a long category name
+   ellipses rather than pushing the amount off the row. */
 .overviewLayout .paretoBar__name {
- flex: 1 1 auto;
+ flex: 0 1 auto;
  min-width: 0;
  overflow: hidden;
  text-overflow: ellipsis;
@@ -1271,9 +1266,9 @@ a.icon {
  font-size: inherit;
 }
 
-/* A word and not a colour alone: the ramp already spends the ochre family on
-   magnitude, so a second meaning carried only in hue would put two colour
-   systems on one row. */
+/* A word and not a colour alone: the row's hue already means WHICH category
+   this is, so a second meaning carried only in hue would put two colour systems
+   on one row. */
 .overviewLayout .paretoBar__flag {
  flex: 0 0 auto;
  font-size: var(--font-size-xs);
@@ -1289,8 +1284,14 @@ a.icon {
  color: var(--color-content-on-dark);
 }
 
+/* THE ONLY CELL PUSHED RIGHT. The running share is the one figure of the row
+   that is read DOWN the list - it is what says where the reading is taken - so
+   it keeps its own column at the edge while the swatch, the name and the amount
+   pack together on the left. margin-left is what takes the leftover width that
+   the name used to take. */
 .overviewLayout .paretoBar__cumulative {
  flex: 0 0 auto;
+ margin-left: auto;
  /* A fixed column so the running share reads down the list as a column of
     figures rather than as a ragged edge. */
  min-width: 3.5rem;
@@ -1415,8 +1416,8 @@ a.icon {
 }
 
 /*------------*/
-/* The same ranking read as parts of a whole. It shares the bar's ramp tokens on
-   purpose - a category carries one colour across both drawings - and declares
+/* The same ranking read as parts of a whole. It shares the bar's ink on purpose
+   - a category carries one colour across both drawings - and declares
    nothing the bar already declares, because the two are separate folds and
    either one can be the only thing on screen. */
 
@@ -1458,19 +1459,14 @@ a.icon {
  stroke: var(--color-surface-app);
 }
 
-/* THE RAMP, the bar's own, read off --donutChart-ramp. The mixing is here and
-   not in JavaScript because both ends are tokens, and a colour computed in the
-   component would not follow a change to either one.
+/* THE INK, the bar's own and off the same call, which is what keeps a category
+   one colour across both drawings of the block.
 
    butt and not round: a rounded cap adds half the ring's width to each end of
    every arc, which on a part under two per cent is more cap than arc and draws
    a lozenge where the figure asked for a sliver. */
 .overviewLayout .donutChart__arc {
- stroke: color-mix(
-  in oklab,
-  var(--color-scale-magnitude-high) calc(var(--donutChart-ramp) * 100%),
-  var(--color-scale-magnitude-low)
- );
+ stroke: var(--rankedRow-ink);
  stroke-linecap: butt;
 }
 
@@ -1535,11 +1531,7 @@ a.icon {
  width: var(--size-status-square);
  height: var(--size-status-square);
  border-radius: var(--radius-sm);
- background: color-mix(
-  in oklab,
-  var(--color-scale-magnitude-high) calc(var(--donutChart-ramp) * 100%),
-  var(--color-scale-magnitude-low)
- );
+ background: var(--rankedRow-ink);
 }
 
 .overviewLayout .donutChart__name {

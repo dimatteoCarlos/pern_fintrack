@@ -1,8 +1,8 @@
 // frontend/src/fintrack/pages/overview/components/ParetoBar.tsx
 // The second half of block 07: one ranked total, drawn as a single stacked bar
 // with the legend that reads it. TrendCharts.tsx:16-18 recorded this half as
-// waiting on a colour ramp the design system did not have; the ramp now exists
-// as --color-scale-magnitude-high / -low and the wait is over.
+// waiting on a colour scale the design system did not have; the scale now
+// exists as --color-scale-category-1..8 and the wait is over.
 //
 // GENERIC ON PURPOSE, because the server ranks five of the six domains and not
 // one. makeCategoryBreakdown ranks expense by category, makeDistribution ranks
@@ -19,16 +19,16 @@
 // THE SHARES ARE THE SERVER'S. Nothing here divides one amount by another to
 // get a percentage. The caller hands over the shares the server published, so
 // the width of a segment and the figure printed beside it come from the same
-// arithmetic and cannot disagree. The only ratio computed here is the colour
-// ramp's position, which is a drawing rule and never a figure on screen.
+// arithmetic and cannot disagree. No ratio is computed here at all: the colour
+// of a row comes off a categorical scale by rank, never off its amount.
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import {
  NO_SHARE,
  RankedRow,
+ categoryInk,
  percent,
- rampPosition,
 } from '../helpers/rankedBreakdown';
 
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
@@ -43,7 +43,7 @@ const CONCENTRATION_MARK = 0.8;
 // THE SHARED PART IS SHARED AND NOT COPIED. DonutChart.tsx draws the same array
 // as parts of a whole (OVERVIEW_LAYOUT.md:500), so the row it takes and the row
 // this takes are the same row, and the colour each gives a category comes from
-// one rampPosition rather than two copies of it.
+// one categoryInk rather than two copies of it.
 export type ParetoRow = RankedRow & {
  // 0-1, this row plus every row above it. The running total is what makes the
  // reading a Pareto rather than a ranking, and it is what the donut has no use
@@ -112,10 +112,10 @@ function ParetoBar({
        key={row.key}
        style={{
         width: percent(row.share),
-        // Read by the ramp in the stylesheet. A position and not a colour:
-        // both ends of the ramp are tokens, and mixing them belongs in CSS
-        // where a change to either one reaches this.
-        ['--paretoBar-ramp' as string]: rampPosition(index, rows.length),
+        // The row's own ink, written as a var() reference the stylesheet
+        // consumes: the eight values stay in tokens.css and a change to any
+        // one of them reaches this without passing through the component.
+        ['--rankedRow-ink' as string]: categoryInk(index),
        }}
       />
      ) : null,
@@ -141,17 +141,15 @@ function ParetoBar({
       }
       key={row.key}
      >
-      {/* The same square the bar draws, at the same size and from the same
-          ramp, so the legend identifies a segment instead of repeating one
-          colour down the column. A zero row keeps its empty square: the row
+      {/* The same square the bar draws, at the same size and off the same
+          categoryInk call, so the legend identifies a segment rather than
+          repeating one colour down the column. A zero row keeps its square: it
           is in the list and absent from the bar, and the empty square is what
           says so. */}
       <span
        className='paretoBar__swatch'
        aria-hidden='true'
-       style={{
-        ['--paretoBar-ramp' as string]: rampPosition(index, rows.length),
-       }}
+       style={{ ['--rankedRow-ink' as string]: categoryInk(index) }}
       />
 
       <span className='paretoBar__name'>{row.label}</span>

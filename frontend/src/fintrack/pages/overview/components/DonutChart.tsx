@@ -17,12 +17,12 @@
 // THE SHARES ARE THE SERVER'S. Nothing here divides one amount by another. The
 // caller hands over the shares the server published, so the angle of an arc and
 // the figure printed beside it come from the same arithmetic and cannot
-// disagree. The only ratio computed here is the ramp position, which is a
-// drawing rule and never a figure on screen.
+// disagree. No ratio is computed here at all: the colour of a part comes off a
+// categorical scale by rank, which is a drawing rule and never a figure.
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
-import { RankedRow, percent, rampPosition } from '../helpers/rankedBreakdown';
+import { RankedRow, categoryInk, percent } from '../helpers/rankedBreakdown';
 
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
@@ -135,10 +135,10 @@ function DonutChart({
          // above it stopped.
          strokeDashoffset={-start}
          style={{
-          // Read by the ramp in the stylesheet. A position and not a colour:
-          // both ends of the ramp are tokens, and mixing them belongs in CSS
-          // where a change to either one reaches this.
-          ['--donutChart-ramp' as string]: rampPosition(index, rows.length),
+          // The part's own ink, written as a var() reference the stylesheet
+          // consumes, and the SAME call the bar makes for this row - which is
+          // what keeps a category one colour across both drawings.
+          ['--rankedRow-ink' as string]: categoryInk(index),
          }}
         />
        );
@@ -158,16 +158,14 @@ function DonutChart({
    <ul className='donutChart__legend'>
     {rows.map((row, index) => (
      <li className='donutChart__row' key={row.key}>
-      {/* The same square the bar's legend draws, off the same ramp function,
-          so a category carries one colour across both drawings of the block.
+      {/* The same square the bar's legend draws, off the same categoryInk
+          call, so a category is one colour across both drawings of the block.
           A row that spent nothing keeps its square: the row is in the ranking
           and absent from the ring, and the square is what says so. */}
       <span
        className='donutChart__swatch'
        aria-hidden='true'
-       style={{
-        ['--donutChart-ramp' as string]: rampPosition(index, rows.length),
-       }}
+       style={{ ['--rankedRow-ink' as string]: categoryInk(index) }}
       />
 
       <span className='donutChart__name'>{row.label}</span>

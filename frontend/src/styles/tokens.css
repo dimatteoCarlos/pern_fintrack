@@ -317,6 +317,43 @@
  --color-scale-magnitude-high: #f6bb55;
  --color-scale-magnitude-low: #8a6026;
 
+ /* COLOR - CATEGORY SCALE: eight hues that mean nothing but "not the one
+    beside me". A ranked breakdown asks WHICH and never HOW MUCH of its colour
+    - the width of a bar segment and the angle of a donut arc already carry how
+    much, exactly - so identity is the only job left, and a sequential ramp is
+    the wrong instrument for it. Carlos, 2026-09-11: "para donuts vamos a
+    escoger un arco iris, porque no es facil distinguir la variacion entre una
+    y otro %".
+
+    THE MAGNITUDE RAMP ABOVE IS NOT REPLACED AND STAYS DECLARED. It is the
+    right scale for a mark whose colour IS the figure - a heat map, a calendar
+    of intensities - and the day one of those is built it is already measured.
+
+    THE OKABE-ITO SET, which is designed for colour vision deficiency, with its
+    black member replaced by the subtle ink so all eight stand on a dark
+    ground. Measured on 2026-09-11 against --color-surface-app, -raised and
+    -sunken: the weakest is blue at 3.70:1, 3.36:1 and 3.77:1, over the 3:1
+    floor for a graphical object, and the brightest is yellow at 14.51:1.
+
+    THE ORDER IS PART OF THE SCALE. A ranking takes these in sequence, so
+    consecutive numbers land on adjacent segments and adjacent arcs. The two
+    closest members in CIE Lab are sky and blue at 26.4, then orange and
+    vermillion at 33.4; both pairs are three or more steps apart here, so the
+    tightest ADJACENT pair is purple and stone at 38.3. Reordering these
+    without re-measuring puts two near-identical colours side by side.
+
+    PAST EIGHT THEY CYCLE, and the ninth category wears the first one's hue.
+    The legend beside each swatch is what separates them, which is why the
+    legend is never optional in either drawing. */
+ --color-scale-category-1: #e69f00;
+ --color-scale-category-2: #56b4e9;
+ --color-scale-category-3: #009e73;
+ --color-scale-category-4: #f0e442;
+ --color-scale-category-5: #0072b2;
+ --color-scale-category-6: #d55e00;
+ --color-scale-category-7: #cc79a7;
+ --color-scale-category-8: #bdb1b1;
+
  /* COLOR - BADGE: the pill that states the direction of a movement.
     Semi-transparent grounds, so the pill belongs to the surface under it
     rather than sitting on top as a solid block. Distinct from the semaphore
