@@ -3960,12 +3960,18 @@ still holds a balance, in both languages, and asked one question beside it:
 whether the effect on net worth could be shown before and after, on that same
 screen.
 
-**The text, replaced verbatim.** `closeOnlyBlockedNotice` carried a four-clause
-sentence in English and its Spanish counterpart. Both were replaced with the
-text he wrote (`languages.ts:400` and `:587`). The Spanish one addresses the
-owner as `tu`, while every other string in this dictionary uses `usted`. His
-text was taken as written rather than adapted; the register mismatch is
-recorded here and is a sweep of the whole module, not of one line.
+**The text, replaced.** `closeOnlyBlockedNotice` carried a four-clause sentence
+in English and its Spanish counterpart. Both were replaced with the text he
+wrote (`languages.ts:400` and `:587`).
+
+**The Spanish one was put into the formal register, and that is a rule rather
+than an edit.** His text addressed the owner as `tu`; every other string in this
+dictionary uses `usted`. The mismatch was reported to him on 2026-09-11 and he
+answered `manten el sentido formal usando: usted`, so the string now reads
+`Puede transferir` / `Tenga en cuenta` / `su patrimonio`. THE RULE IS THE
+DICTIONARY'S, not this string's: every Spanish string in this module addresses
+the owner as `usted`, and a supplied text is adapted to it rather than taken as
+written.
 
 **Both figures are served, not computed on the screen.** `getClosePreview.js`
 gained one aggregate read beside the residual it already served:
@@ -4066,10 +4072,14 @@ already has its own client in scope, so each hands over that one.
 where it was. A currency code that genuinely does not exist still throws from
 there - what changed is that an unloaded catalog no longer does.
 
-**Verified:** `node --check` on all four, and a grep for `getCurrencyIdSync`
-across `backend/src` now returns only its definition in
-`loadCurrencyCatalog.js:58` and the re-export at `currencyLookup.js:71`. No
-caller remains. Not boot-verified; the no-local-boot restriction stands.
+**Verified:** `node --check` on all four, and `git grep getCurrencyIdSync --
+backend/src` now returns four code hits, every one of them inside the fallback's
+own module: the definition at `loadCurrencyCatalog.js:58`, the import at
+`currencyLookup.js:6`, the use at `:21` inside `getCurrencyId`'s
+catalog-loaded branch, and the re-export at `:71`. No caller outside it remains.
+An earlier count of two was written here; it came from a grep that excluded
+`currencyLookup.js` by filename, which hid the two hits inside the very function
+the four writers now call. Not boot-verified; the no-local-boot restriction stands.
 
 **Two consequences recorded elsewhere.** The currency-catalog section of
 `db-migration-procedure.md` describes the hazard this removes and is the
@@ -4078,3 +4088,81 @@ migration session's to delete. And the net worth membership list of section
 `overviewPageRepository.js:136` (as `('bank', 'cash')` beside the other two
 terms) and `overviewAccountRepository.js:92` (as the four names literally). No
 test binds any of them to the others.
+
+
+### 14.15 The closed-account registry gets a screen, 2026-09-11
+
+Carlos, on the deletion checklist: *"HAY QUE CREAR EL MODULO DE GESTION O DE
+CONSULTAS DE CUENTAS BORRADAS"*, reached from the profile menu, and *"deberian
+tener la barra de buscador, orden y filtro. Ademas de paginacion. Y mostrar la
+informacion pertinente de cada cuenta cerrada."*
+
+**THE ENDPOINT THAT EXISTED COULD NOT SEE A SINGLE CLOSURE.**
+`GET /api/fintrack/account/closed` was already routed at
+`accountRoutes.js:84`, and `getClosedAccounts` read `user_accounts` with
+`AND ua.closed_at IS NOT NULL`. The close operation DELETES that row inside the
+same transaction that stamps the closure, so no account this module closes can
+ever satisfy that predicate. The list answered empty for every closure ever
+made, and no frontend consumed it, so nothing reported the emptiness.
+
+**Repointed at `account_registry`, not replaced.** The old statement is kept
+commented in `getAccountController.js` rather than deleted: it is still the
+right query for an account marked closed WITHOUT being removed, which is what a
+recorded deactivation would be. Nothing produces one today.
+
+**The new service.** `getClosedAccountRegistry.js` serves one page: search,
+type filter, sort, order, page and limit, all from the query string, all
+validated in the service.
+
+| decision | what it is | why |
+|---|---|---|
+| sort | whitelist of four keys mapped to SQL | the key reaches `ORDER BY` as an identifier, which no placeholder can carry |
+| tie-break | `, ar.account_id DESC` after every sort | two closures stamped in the same transaction would otherwise swap places between pages, showing one row twice and skipping another |
+| total | `COUNT(*) OVER()` on the same statement | a separate count query can disagree with the page it describes |
+| catalog joins | all LEFT | `account_type_id` is `ON DELETE SET NULL`, and 035 documents that a row for an account erased before the registry existed carries a null name and nothing else; INNER would drop the oldest closures |
+| bad input | falls back, never raises | a stray `?page=abc` in a shared link should show page 1, not an error screen |
+| limit | default 20, ceiling 100 | a crafted limit cannot ask for the whole registry |
+| shape | camelCase, field by field | every other service in this module publishes camelCase; `total_rows` is dropped so no row carries the list's own length |
+
+**The compensation account is not filtered out, deliberately.** It has a
+registry row like every account and can never carry a `closed_at`:
+`deleteAccountService.js` refuses it with a 403 before it branches on the
+deletion type. A predicate that can never match is noise in a statement a reader
+has to trust.
+
+**The screen.** `ClosedAccountsPage.tsx`, reached from the profile menu at
+`/fintrack/account/closed` - two segments, so the three-segment
+`account/:accountId/edit` and `account/:accountId/delete` cannot swallow it, and
+no bare `account/:accountId` route exists. `useClosedAccounts.ts` holds search,
+type, sort, order, page and limit as ONE query object and derives the url from
+it, so every control is a one-line setter and the three that change which rows
+match all reset the page to 1 in one place.
+
+**Four fetch states, not three.** Loading is skeleton rows; error is a message
+with a retry beside it; and empty splits in two - an owner who has closed
+nothing is told what the page is for, while a filter that matched nothing is
+offered a way back. Only the second has anything to undo.
+
+**One closure is an article, not a table row.** The same markup is a card on a
+phone and a row from 768px up. A table cannot stack without losing the headers
+that make its cells mean anything, so every fact carries its own label.
+
+**A missing token, recorded rather than invented.** The `:active` nudge on the
+buttons uses `var(--border-width-thin)` as a length because the system has no
+motion-offset token. Hardcoding `1px` is what the style rule forbids and
+inventing a token name is what it forbids next, so the existing hairline token
+carries it and this line is the note.
+
+**Verified:** `node --check` on the service and the controller,
+`tsc -p tsconfig.app.json` clean, and `npm run build` clean with the page
+emitted as its own chunk. Not boot-verified: Carlos lifted the no-local-boot
+restriction for this session on 2026-09-11, but the boot applies the schema DDL
+to whatever `DATABASE_URI` names with no destination guard, and this session
+does not read `.env`, so nothing is booted until an explicitly local
+`DATABASE_URI` can be passed on the command line.
+
+**Still open on this screen.** It reads; it does not act. A closed account
+cannot be reopened by design, so there is nothing to undo - but the mockup
+Carlos asked for also implies a row that can be opened for detail, and the
+registry carries no closing balance to show there, because the close runs only
+on an account at zero.

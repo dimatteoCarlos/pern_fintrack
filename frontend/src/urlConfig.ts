@@ -255,6 +255,23 @@ export const url_account_close_preview = (targetAccountId: string | number) =>
   `${BASE_URL_APP}account/delete/close_preview/${targetAccountId}`;
 
 // ===================================
+// 🗂 GET THE CLOSED-ACCOUNT REGISTRY (one page)
+// Endpoint: GET /fintrack/account/closed
+//
+// Registered BEFORE '/:accountId' in accountRoutes.js, which matches one
+// segment: after it, 'closed' would be read as an account id.
+//
+// The search, type, sort, order, page and limit all travel in the query string,
+// and the server validates every one of them - an unknown sort key or an
+// unparseable page falls back rather than raising, so a stray value in a shared
+// link shows the first page instead of an error screen.
+// ===================================
+export const url_closed_accounts = (queryString: string = '') =>
+  queryString
+    ? `${BASE_URL_APP}account/closed?${queryString}`
+    : `${BASE_URL_APP}account/closed`;
+
+// ===================================
 // 🌐 GET FX CURRENCY RATES 
 // ===================================
 export const url_currency_rates = BASE_URL_APP + 'currency/rates';

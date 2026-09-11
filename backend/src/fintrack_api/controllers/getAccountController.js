@@ -20,6 +20,7 @@ import {
   withDerivedBalance,
 } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 import { NOT_BOUNDARY_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
+import { getClosedAccountRegistry } from '../services/delete_account/getClosedAccountRegistry.js';
 
 const backendColor = 'greenBright';
 const errorColor = 'red';
@@ -629,33 +630,51 @@ export const getClosedAccounts = async (req, res, next) => {
     const userId = requireUserId(req, res);
     if (!userId) return;
 
-    const closedAccountsQuery = {
-      text: `SELECT ua.*, ct.currency_code, act.account_type_name,
-        ${DERIVED_BALANCE} AS account_balance,
-        CAST(ua.account_starting_amount AS FLOAT)
-      FROM user_accounts ua
-      JOIN account_types act ON ua.account_type_id = act.account_type_id
-      JOIN currencies ct ON ua.currency_id = ct.currency_id
-      WHERE ua.user_id = $1
-      AND ua.account_name != $2
-      ${NOT_BOUNDARY_ACCOUNT}
-      AND ua.closed_at IS NOT NULL
-      -- Most recently closed first: the account the owner is looking for is
-      -- almost always the one they just closed.
-      ORDER BY ua.closed_at DESC, ua.account_id DESC
-      `,
-      values: [userId, 'slack'],
-    };
+    // REPOINTED 2026-09-11, and the statement it replaces is kept below rather
+    // than deleted because it is still the right query for a DIFFERENT thing:
+    // an account marked closed WITHOUT being removed. Nothing produces one
+    // today. If deactivation is ever recorded as a closure, this is the shape
+    // that reads it.
+    //
+    // WHY IT HAD TO MOVE. It reads user_accounts, and the close operation
+    // deletes that row inside the same transaction that stamps the closure. So
+    // an account closed by the engine leaves nothing behind for this statement
+    // to find, and the list answered empty for every closure the module has
+    // ever made. The closure record is on account_registry.
+    //
+    // const closedAccountsQuery = {
+    //   text: `SELECT ua.*, ct.currency_code, act.account_type_name,
+    //     ${DERIVED_BALANCE} AS account_balance,
+    //     CAST(ua.account_starting_amount AS FLOAT)
+    //   FROM user_accounts ua
+    //   JOIN account_types act ON ua.account_type_id = act.account_type_id
+    //   JOIN currencies ct ON ua.currency_id = ct.currency_id
+    //   WHERE ua.user_id = $1
+    //   AND ua.account_name != $2
+    //   ${NOT_BOUNDARY_ACCOUNT}
+    //   AND ua.closed_at IS NOT NULL
+    //   -- Most recently closed first: the account the owner is looking for is
+    //   -- almost always the one they just closed.
+    //   ORDER BY ua.closed_at DESC, ua.account_id DESC
+    //   `,
+    //   values: [userId, 'slack'],
+    // };
+    //
+    // const closedAccountsResult = await pool.query(closedAccountsQuery);
+    // const accountList = closedAccountsResult.rows;
 
-    const closedAccountsResult = await pool.query(closedAccountsQuery);
-    const accountList = closedAccountsResult.rows;
+    // The search, filter, sort and page all travel in the query string, and the
+    // service is what validates them: a sort key is chosen from a whitelist
+    // because it reaches ORDER BY as an identifier, where no placeholder can
+    // carry it.
+    const data = await getClosedAccountRegistry(pool, userId, req.query);
 
     // 200 with an empty list, not the 400 the live list answers with. An owner
     // who has closed nothing is the normal case, and a screen cannot tell a
     // 400 meaning 'you have none' from a 400 meaning 'your request was wrong'.
-    const data = { rows: accountList.length, accountList };
-
-    const message = accountList.length
+    // It is also the right answer to a search that matched nothing, which is a
+    // second reason the two cannot be distinguished by status.
+    const message = data.total
       ? 'Closed account list successfully completed'
       : 'No closed accounts';
     console.log('success:', pc[backendColor](message));

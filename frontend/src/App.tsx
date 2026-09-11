@@ -113,6 +113,15 @@ const AccountDeletionPage = lazy(
     import('./fintrack/editionAndDeletion/pages/deletionAccount/AccountDeletionPage'),
 );
 
+// The record a closed account leaves behind. Reached from the profile menu
+// rather than from the accounting dashboard: the dashboard lists accounts that
+// exist, and a closed account does not - its row is removed and only its
+// registry stamp survives.
+const ClosedAccountsPage = lazy(
+  () =>
+    import('./fintrack/editionAndDeletion/pages/closedAccounts/ClosedAccountsPage'),
+);
+
 // ❌ ERROR HANDLING
 import ErrorPage from './fintrack/pages/error/ErrorPage';
 // import TestAuthStorage from './tests/Tests';
@@ -452,6 +461,18 @@ function App() {
           element: (
             <LazyRoute>
               <AccountDeletionPage />
+            </LazyRoute>
+          ),
+        },
+
+        // 🗂 THE CLOSED-ACCOUNT REGISTRY
+        // Two segments, so the single-segment 'account/:accountId' patterns
+        // above cannot swallow it - the same reason the delete route works.
+        {
+          path: 'account/closed',
+          element: (
+            <LazyRoute>
+              <ClosedAccountsPage />
             </LazyRoute>
           ),
         },

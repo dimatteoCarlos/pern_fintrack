@@ -168,6 +168,43 @@ reportTitleWithImpact:string;
  closeNetWorthBeforeLabel: string;
  closeNetWorthAfterLabel: string;
  closeNetWorthUnchangedNote: string;
+ closedAccountsMenuItem: string;
+ closedAccountsPageTitle: string;
+ closedAccountsLede: string;
+ closedAccountsSearchLabel: string;
+ closedAccountsSearchPlaceholder: string;
+ closedAccountsTypeLabel: string;
+ closedAccountsTypeAll: string;
+ closedAccountsSortLabel: string;
+ closedAccountsSortClosedAt: string;
+ closedAccountsSortName: string;
+ closedAccountsSortType: string;
+ closedAccountsSortCreatedAt: string;
+ closedAccountsOrderToggle: string;
+ closedAccountsOrderAsc: string;
+ closedAccountsOrderDesc: string;
+ closedAccountsColumnName: string;
+ closedAccountsColumnType: string;
+ closedAccountsColumnClosedAt: string;
+ closedAccountsColumnReason: string;
+ closedAccountsColumnOpened: string;
+ closedAccountsColumnStartingAmount: string;
+ closedAccountsColumnCategory: string;
+ closedAccountsNameUnknown: string;
+ closedAccountsTypeUnknown: string;
+ closedAccountsTotal: string;
+ closedAccountsPageStatus: string;
+ closedAccountsPreviousPage: string;
+ closedAccountsNextPage: string;
+ closedAccountsPerPage: string;
+ closedAccountsEmptyTitle: string;
+ closedAccountsEmptyMessage: string;
+ closedAccountsNoMatchTitle: string;
+ closedAccountsNoMatchMessage: string;
+ closedAccountsClearFilters: string;
+ closedAccountsErrorMessage: string;
+ closedAccountsRetry: string;
+ closedAccountsBackButton: string;
  relatedAccountsSummary: string;
  relatedAccountsNote: string;
  relatedAccountsHeading: string;
@@ -437,6 +474,46 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   closeNetWorthBeforeLabel: "Net worth now",
   closeNetWorthAfterLabel: "After closing this account",
   closeNetWorthUnchangedNote: "This account is not one of the holdings net worth adds up, so closing it leaves that figure exactly where it is.",
+
+// 🗂 CLOSED-ACCOUNT REGISTRY - ENGLISH
+  closedAccountsMenuItem: "Closed Accounts",
+  closedAccountsPageTitle: "Closed Accounts",
+  closedAccountsLede: "Every account you have closed, under the name it had. Closing removes the account and keeps its record, so this list is what a closed account leaves behind: when it was closed, why, and what it was.",
+  closedAccountsSearchLabel: "Search",
+  closedAccountsSearchPlaceholder: "Name, reason or category",
+  closedAccountsTypeLabel: "Type",
+  closedAccountsTypeAll: "All types",
+  closedAccountsSortLabel: "Sort by",
+  closedAccountsSortClosedAt: "Date closed",
+  closedAccountsSortName: "Name",
+  closedAccountsSortType: "Type",
+  closedAccountsSortCreatedAt: "Date opened",
+  closedAccountsOrderToggle: "Reverse the order",
+  closedAccountsOrderAsc: "Oldest first",
+  closedAccountsOrderDesc: "Newest first",
+  closedAccountsColumnName: "Account",
+  closedAccountsColumnType: "Type",
+  closedAccountsColumnClosedAt: "Closed",
+  closedAccountsColumnReason: "Reason",
+  closedAccountsColumnOpened: "Opened",
+  closedAccountsColumnStartingAmount: "Started with",
+  closedAccountsColumnCategory: "Category",
+  closedAccountsNameUnknown: "Name not recorded",
+  closedAccountsTypeUnknown: "Type not recorded",
+  closedAccountsTotal: "{total} closed accounts",
+  closedAccountsPageStatus: "Page {page} of {pageCount}",
+  closedAccountsPreviousPage: "Previous page",
+  closedAccountsNextPage: "Next page",
+  closedAccountsPerPage: "Per page",
+  closedAccountsEmptyTitle: "Nothing closed yet",
+  closedAccountsEmptyMessage: "When you close an account, its record appears here and stays readable under the name it had.",
+  closedAccountsNoMatchTitle: "No closed account matches",
+  closedAccountsNoMatchMessage: "Nothing here matches the search and filter you have set. Clearing them brings the whole list back.",
+  closedAccountsClearFilters: "Clear search and filters",
+  closedAccountsErrorMessage: "The closed-account list could not be read.",
+  closedAccountsRetry: "Try again",
+  closedAccountsBackButton: "Back to Accounting Dashboard",
+
   closeAccountReversalNotice: "{residual} will be moved out of this account, bringing it to zero, and then the account will be closed. Whatever this balance was counting towards stops counting it: the compensation account that receives it sits outside every balance the app adds up, so a balance that was part of your net worth leaves it. Nothing is destroyed - the movement is recorded and the history stays readable.",
   closeReversalBoundaryStatement: "The balance is reversed against the compensation account the system keeps for this. It is not one of your accounts: it sits outside your net worth and outside every aggregate balance, so moving a balance into it takes that balance out of your figures without destroying the record that it existed. It appears in the list below only if this account has already moved money with it before today, and that row is history like every other one there - it is not the reversal about to be made.",
   closeAccountPreviewError: "The balance could not be read, so the close cannot be offered yet.",
@@ -592,7 +669,7 @@ totalNetAdjustment: 'Ajuste Neto Total:',
 
   closeOnlyPageTitle: "Eliminar Cuenta",
   closeOnlyDetailsTitle: "Cuenta a Eliminar",
-  closeOnlyBlockedNotice: "Esta cuenta no se puede cerrar porque todavía tiene dinero. Puedes transferir el saldo a otra cuenta y luego cerrarla, o tocar el botón de abajo para vaciarla y cerrarla en un solo paso. (Ten en cuenta que si eliges cerrarla ahora, este dinero dejará de sumarse a tu patrimonio total en la app).",
+  closeOnlyBlockedNotice: "Esta cuenta no se puede cerrar porque todavía tiene dinero. Puede transferir el saldo a otra cuenta y luego cerrarla, o usar el botón de abajo para vaciarla y cerrarla en un solo paso. (Tenga en cuenta que si elige cerrarla ahora, este dinero dejará de sumarse a su patrimonio total en la aplicación).",
   relatedAccountsSummary: "Cuentas relacionadas",
   relatedAccountsNote: "El saldo nuevo y el ajuste neto muestran lo que le haría a cada una de estas cuentas eliminar esta con ajuste. El cierre no cambia ninguna de esas cifras.",
   relatedAccountsHeading: "Cuentas con las que esta ha movido dinero",
@@ -624,10 +701,50 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   closeAccountReverseTitle: "Revertir el Saldo y Cerrar",
   closeAccountReverseDescription: "Esta cuenta tiene saldo, así que no puede cerrarse tal como está. FinTrack sacará ese saldo y cerrará la cuenta, ambas cosas en una sola operación: si una parte falla, no ocurre ninguna. Usted no elige nada más, el monto es exactamente lo que la cuenta tiene y el destino es la cuenta de compensación que el sistema mantiene para esto.",
   closeAccountReverseConfirmButton: "Revertir y Cerrar",
-  closeNetWorthSectionLabel: "Lo que esto le hace a tu patrimonio",
+  closeNetWorthSectionLabel: "Lo que esto le hace a su patrimonio",
   closeNetWorthBeforeLabel: "Patrimonio ahora",
   closeNetWorthAfterLabel: "Después de cerrar esta cuenta",
   closeNetWorthUnchangedNote: "Esta cuenta no es una de las tenencias que el patrimonio suma, así que cerrarla deja esa cifra exactamente donde está.",
+
+// 🗂 CLOSED-ACCOUNT REGISTRY - SPANISH
+  closedAccountsMenuItem: "Cuentas cerradas",
+  closedAccountsPageTitle: "Cuentas cerradas",
+  closedAccountsLede: "Todas las cuentas que usted ha cerrado, bajo el nombre que tenían. Cerrar elimina la cuenta y conserva su registro, así que esta lista es lo que una cuenta cerrada deja: cuándo se cerró, por qué y qué era.",
+  closedAccountsSearchLabel: "Buscar",
+  closedAccountsSearchPlaceholder: "Nombre, motivo o categoría",
+  closedAccountsTypeLabel: "Tipo",
+  closedAccountsTypeAll: "Todos los tipos",
+  closedAccountsSortLabel: "Ordenar por",
+  closedAccountsSortClosedAt: "Fecha de cierre",
+  closedAccountsSortName: "Nombre",
+  closedAccountsSortType: "Tipo",
+  closedAccountsSortCreatedAt: "Fecha de apertura",
+  closedAccountsOrderToggle: "Invertir el orden",
+  closedAccountsOrderAsc: "Más antiguas primero",
+  closedAccountsOrderDesc: "Más recientes primero",
+  closedAccountsColumnName: "Cuenta",
+  closedAccountsColumnType: "Tipo",
+  closedAccountsColumnClosedAt: "Cerrada",
+  closedAccountsColumnReason: "Motivo",
+  closedAccountsColumnOpened: "Abierta",
+  closedAccountsColumnStartingAmount: "Monto inicial",
+  closedAccountsColumnCategory: "Categoría",
+  closedAccountsNameUnknown: "Nombre no registrado",
+  closedAccountsTypeUnknown: "Tipo no registrado",
+  closedAccountsTotal: "{total} cuentas cerradas",
+  closedAccountsPageStatus: "Página {page} de {pageCount}",
+  closedAccountsPreviousPage: "Página anterior",
+  closedAccountsNextPage: "Página siguiente",
+  closedAccountsPerPage: "Por página",
+  closedAccountsEmptyTitle: "Todavía no ha cerrado nada",
+  closedAccountsEmptyMessage: "Cuando usted cierre una cuenta, su registro aparece aquí y sigue siendo legible bajo el nombre que tenía.",
+  closedAccountsNoMatchTitle: "Ninguna cuenta cerrada coincide",
+  closedAccountsNoMatchMessage: "Nada de aquí coincide con la búsqueda y el filtro que usted fijó. Al limpiarlos vuelve la lista completa.",
+  closedAccountsClearFilters: "Limpiar búsqueda y filtros",
+  closedAccountsErrorMessage: "No se pudo leer la lista de cuentas cerradas.",
+  closedAccountsRetry: "Reintentar",
+  closedAccountsBackButton: "Volver al panel de contabilidad",
+
   closeAccountReversalNotice: "Se sacarán {residual} de esta cuenta, dejándola en cero, y después se cerrará. Lo que ese saldo estuviera sumando deja de sumarlo: la cuenta de compensación que lo recibe queda fuera de todos los saldos que la aplicación suma, así que un saldo que formaba parte de su patrimonio sale de él. No se destruye nada: el movimiento queda registrado y la historia sigue siendo legible.",
   closeReversalBoundaryStatement: "El saldo se revierte contra la cuenta de compensación que el sistema mantiene para esto. No es una de sus cuentas: queda fuera de su patrimonio y fuera de todo saldo agregado, así que mover un saldo hacia ella lo retira de sus cifras sin destruir el registro de que existió. Aparece en la lista de abajo solo si esta cuenta ya movió dinero con ella antes de hoy, y esa fila es historia como todas las demás: no es la reversión que está por hacerse.",
   closeAccountPreviewError: "No se pudo leer el saldo, as\u00ed que el cierre a\u00fan no puede ofrecerse.",
