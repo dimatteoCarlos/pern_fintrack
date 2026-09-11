@@ -1,0 +1,88 @@
+Production after the 031-038 run, measured 2026-09-11.
+
+Destination
+  Not recorded here as an address. The connection that produced every figure
+  below is the one reporting 99 user_accounts and 782 transactions, which is
+  production and no local copy: fintrack_dev holds 161 transactions, and a
+  capture that read fintrack_dev while claiming to read production is the
+  mistake this line exists to prevent. Both routes reach the same database -
+  the direct IPv6 address in the before file and the session pooler.
+
+Ledger
+  39 rows, 39 files on disk
+  last executed: 038_constrain_transaction_status.sql on 2026-09-11T21:13:14.720644Z
+  pending: none
+
+Objects created by 031-038
+  m031_boundary        1    account type 'boundary' exists
+  m032_movement        1    movement type 10, account-closure
+  m033_nullable        NO   user_accounts.account_type_id is required
+  m034_closed_at       1    user_accounts.closed_at exists
+  m035_registry        account_registry
+  m036_cap             1    chk_close_reason_length
+  m037_movement        1    movement type 11, balance-reversal
+  m038_status          1    chk_transaction_status
+
+  m031_boundary was 0 before the run and is the only one of the eight whose
+  effect was absent from the boot-built schema. Everything else on this list
+  already existed in some form, because an accidental boot had applied the
+  ensure* path against production.
+
+Account registry (035)
+  user_accounts        99
+  account_registry     99
+  stamped, no account  0
+  transactions         782
+  every live account has a registry row
+
+  Foreign keys into the account identity
+    account_registry         <- budget_monthly_allocations.budget_monthly_allocations_account_id_fkey  [RESTRICT]
+    account_registry         <- debtor_accounts.debtor_accounts_selected_account_id_fkey  [RESTRICT]
+    account_registry         <- pocket_allocations.pocket_allocations_source_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_destination_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_opening_for_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_reversal_of_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_source_account_id_fkey  [RESTRICT]
+    user_accounts            <- account_name_case_backup_013.account_name_case_backup_013_account_id_fkey  [CASCADE]
+    user_accounts            <- category_budget_accounts.category_budget_accounts_account_id_fkey  [CASCADE]
+    user_accounts            <- debtor_accounts.debtor_accounts_account_id_fkey  [CASCADE]
+    user_accounts            <- income_source_accounts.income_source_accounts_account_id_fkey  [CASCADE]
+    user_accounts            <- pocket_saving_accounts.pocket_saving_accounts_account_id_fkey  [CASCADE]
+
+  8 of 8 keys into account_registry, unchanged from the before file except for
+  transactions_reversal_of_account_id_fkey, which 037 adds.
+
+What the run needed that the plan did not foresee
+  032 refused on first attempt. It installs a ten-value CHECK on
+  movement_types.movement_type_name that does not list 'balance-reversal', and
+  ADD CONSTRAINT validates every existing row. Production already held
+  movement_types id 11 and transaction_types id 7, put there by an accidental
+  boot that ran ensureBalanceReversal() - the boot counterpart of 037, the last
+  file in the chain. Both rows were measured unreferenced (0 usages each) and
+  deleted under NOT EXISTS guards, DELETE 1 and DELETE 1, and 037 reinserted
+  them at the end of the chain. The migration was not edited: changing its value
+  list would desynchronise it from 037 and from populateDB.js, and db:parity
+  compares constraint definitions as text.
+
+  036, 037 and 038 were applied in a second command because the first run
+  stopped after 035. 036 and 038 open with DROP CONSTRAINT IF EXISTS and 037
+  uses a drop loop, ON CONFLICT DO NOTHING, ADD COLUMN IF NOT EXISTS and
+  CREATE INDEX IF NOT EXISTS, so all three were re-runnable against the state
+  the boot had left.
+
+  Preconditions read before 038: one status group, 'complete'; zero rows with
+  movement_type_id 11 and a null reversal_of_account_id; zero close_reason
+  values over 255 characters.
+
+Two capture failures, both the same class
+  A verification capture ran twice against localhost while reporting on
+  production, because PROD_URI was unset in the shell and psql reads an empty
+  connection string as "use every default". A third capture read fintrack_dev
+  because PROD_URI had been re-read from a .env that already named the local
+  database. Print the masked destination before every command that names the
+  variable, and check the row counts against a figure only production carries.
+
+  The boot path got the destination interlock db:migrate has carried since
+  2026-09-08 in commits feeee7cd and 297d2211, so the accidental boot that
+  caused the 032 refusal cannot happen again without DB_REMOTE_OK.

@@ -1,0 +1,41 @@
+⚠ Off-machine destination, allowed by DB_REMOTE_OK: postgres at 2600:1f16:111a:af01:1334:c79a:d2e2:a29e:5432
+✅ Destination confirmed: postgres at 2600:1f16:111a:af01:1334:c79a:d2e2:a29e:5432
+
+Ledger
+  31 rows, 38 files on disk
+  last executed: 030_add_jpy_currency.sql on 2026-09-06T21:52:57.646Z
+  pending: 031_add_boundary_account_type.sql, 032_add_account_closure_movement_type.sql, 033_require_account_type.sql, 034_add_account_closed_at.sql, 035_create_account_registry.sql, 036_cap_close_reason_length.sql, 037_add_balance_reversal.sql
+
+Objects created by 031-035
+  m031_boundary        0
+  m032_movement        1
+  m033_nullable        NO
+  m034_closed_at       1
+  m035_registry        account_registry
+  m035_precondition    budget_monthly_allocations
+
+  m035_precondition is not a migration. It decides the seventh key of 035:
+  absent means budget_monthly_allocations was never created and that ALTER is skipped.
+
+Account registry (035)
+  user_accounts        99
+  account_registry     99
+  stamped, no account  0
+  every live account has a registry row
+
+  Foreign keys into the account identity
+    account_registry         <- budget_monthly_allocations.budget_monthly_allocations_account_id_fkey  [RESTRICT]
+    account_registry         <- debtor_accounts.debtor_accounts_selected_account_id_fkey  [RESTRICT]
+    account_registry         <- pocket_allocations.pocket_allocations_source_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_destination_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_opening_for_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_reversal_of_account_id_fkey  [RESTRICT]
+    account_registry         <- transactions.transactions_source_account_id_fkey  [RESTRICT]
+    user_accounts            <- account_name_case_backup_013.account_name_case_backup_013_account_id_fkey  [CASCADE]
+    user_accounts            <- category_budget_accounts.category_budget_accounts_account_id_fkey  [CASCADE]
+    user_accounts            <- debtor_accounts.debtor_accounts_account_id_fkey  [CASCADE]
+    user_accounts            <- income_source_accounts.income_source_accounts_account_id_fkey  [CASCADE]
+    user_accounts            <- pocket_saving_accounts.pocket_saving_accounts_account_id_fkey  [CASCADE]
+
+  7 of 7 repointed keys reach account_registry
