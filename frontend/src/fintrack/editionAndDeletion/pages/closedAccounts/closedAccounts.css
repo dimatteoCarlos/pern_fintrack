@@ -1,117 +1,75 @@
-/* frontend/src/fintrack/editionAndDeletion/pages/closedAccounts/closedAccounts.css
-
-   THE CLOSED-ACCOUNT REGISTRY.
-
-   Mobile-first from 360px. The list is one column of cards on a phone and one
-   row per closure from 768px up, and the same markup carries both: a real table
-   cannot stack without losing the headers that make its cells mean anything,
-   so each closure is an article whose facts carry their own labels.
-
-   The page sits on the dark body surface, so every text colour here is an
-   on-dark token. */
+/* frontend/src/fintrack/editionAndDeletion/pages/closedAccounts/closedAccounts.css */
 
 .closed-accounts {
  display: flex;
  flex-direction: column;
- gap: var(--space-4);
- padding-block: var(--space-4);
- padding-inline: var(--space-3);
- max-inline-size: var(--layout-content-width);
+ gap: var(--space-5, 1.5rem);
+ padding-block: var(--space-5, 1.5rem);
+ padding-inline: var(--space-4, 1rem);
+ max-inline-size: 1120px;
  margin-inline: auto;
 }
 
+/* ===========================
+    HEADER & HERO SECTION
+   =========================== */
 .closed-accounts__header {
  display: flex;
  flex-direction: column;
- gap: var(--space-2);
+ gap: var(--space-1, 0.25rem);
 }
 
 .closed-accounts__title {
  margin: 0;
- color: var(--color-content-on-dark);
- font-size: var(--font-size-lg);
- font-weight: var(--font-weight-semibold);
+ color: #ffffff;
+ font-size: 1.75rem;
+ font-weight: 700;
+ letter-spacing: -0.02em;
 }
 
 .closed-accounts__lede {
  margin: 0;
- color: var(--color-content-on-dark-muted);
- font-size: var(--font-size-sm);
+ color: #94a3b8;
+ font-size: 0.9375rem;
+ line-height: 1.5;
 }
 
 /* ===========================
-   🔎 TOOLBAR
-   A two-column grid on a phone, never a scroller: a horizontally scrolling
-   toolbar hides the control nobody thought to look for.
-
-   Four controls in four full-width rows cost about 320px before the first
-   closure, which is most of a phone screen spent on filters for a list the
-   owner came to read. Paired, the same four controls cost three rows: the
-   search box earns its full width because it is the one control typed into,
-   the two narrow selects share a row, and the sort key keeps its direction
-   button beside it because they are one decision.
-
-   Nothing is hidden behind a disclosure. Compacting is worth doing; putting a
-   filter where it has to be discovered is not.
+   🎛️ FINTECH TOOLBAR
    =========================== */
 .closed-accounts__toolbar {
  display: grid;
- grid-template-columns: repeat(2, minmax(0, 1fr));
+ grid-template-columns: repeat(12, minmax(0, 1fr));
  align-items: end;
- gap: var(--space-2) var(--space-3);
- padding: var(--space-3);
- background-color: var(--color-surface-sunken);
- border-radius: var(--radius-sm);
+ gap: var(--space-3, 0.75rem);
+ padding: var(--space-4, 1rem);
+ background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%);
+ backdrop-filter: blur(12px);
+ border: 1px solid rgba(255, 255, 255, 0.08);
+ border-radius: 16px;
+ box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
 }
 
 .closed-accounts__field {
  display: flex;
  flex-direction: column;
- gap: var(--space-1);
+ gap: 0.375rem;
  min-inline-size: 0;
 }
 
-/* The two that span the row. Search is typed into and needs the width; the
-   sort group carries a select and a button on one line. */
-.closed-accounts__field--search,
-.closed-accounts__field--sort {
- grid-column: 1 / -1;
-}
+.closed-accounts__field--search { grid-column: span 12; }
+.closed-accounts__field--type { grid-column: span 6; }
+.closed-accounts__field--limit { grid-column: span 6; }
+.closed-accounts__field--sort { grid-column: span 12; }
 
-/* The sort key and its direction, on one line. The select takes what is left
-   after the button, which is sized by its own text. */
-.closed-accounts__sort-row {
- display: flex;
- align-items: stretch;
- gap: var(--space-2);
- min-inline-size: 0;
-}
-
-.closed-accounts__sort-row .closed-accounts__select {
- flex: 1 1 auto;
- min-inline-size: 0;
-}
-
-/* Smaller here than the row labels below. A toolbar label names a control the
-   reader is looking straight at; it does not have to compete with the list. */
 .closed-accounts__label {
- color: var(--color-content-on-dark-muted);
- font-size: var(--font-size-xs);
+ color: #64748b;
+ font-size: 0.75rem;
+ font-weight: 600;
+ text-transform: uppercase;
+ letter-spacing: 0.05em;
 }
 
-.closed-accounts__input,
-.closed-accounts__select {
- inline-size: 100%;
- padding: var(--space-2);
- color: var(--color-content-on-dark);
- background-color: var(--color-surface-deep);
- border: var(--border-width-thin) solid var(--color-border-subtle);
- border-radius: var(--radius-sm);
- font-size: var(--font-size-base);
-}
-
-/* The magnifier inside the field. The wrapper is the positioning context and
-   nothing else; the field keeps its own full width inside it. */
 .closed-accounts__input-wrap {
  position: relative;
  display: block;
@@ -121,517 +79,336 @@
 .closed-accounts__input-icon {
  position: absolute;
  inset-block-start: 50%;
- inset-inline-start: var(--space-2);
+ inset-inline-start: 0.875rem;
  transform: translateY(-50%);
- inline-size: var(--size-glyph-inline);
- block-size: var(--size-glyph-inline);
- color: var(--color-content-on-dark-placeholder);
+ inline-size: 1.125rem;
+ block-size: 1.125rem;
+ color: #64748b;
  pointer-events: none;
+ transition: color 0.2s ease;
 }
 
-/* Room for the icon, on the leading edge only. The trailing edge keeps its
-   normal padding so the browser's own search-clear control is not crowded. */
+.closed-accounts__input,
+.closed-accounts__select {
+ inline-size: 100%;
+ block-size: 2.625rem;
+ padding-inline: 0.875rem;
+ color: #f8fafc;
+ background-color: rgba(15, 23, 42, 0.6);
+ border: 1px solid rgba(255, 255, 255, 0.1);
+ border-radius: 10px;
+ font-size: 0.875rem;
+ transition: all 0.2s ease;
+}
+
 .closed-accounts__input--with-icon {
- padding-inline-start: calc(var(--space-2) + var(--size-glyph-inline) + var(--space-2));
+ padding-inline-start: 2.5rem;
 }
 
-/* The hint text inside the search field. Without this rule the field falls to
-   the user agent's own placeholder colour, which is derived for a white input
-   and lands near-invisible on --color-surface-deep. --color-content-on-dark-
-   placeholder is the token declared for exactly this case and measures 7.19:1
-   here; the content ink would make a hint read as a filled value. */
 .closed-accounts__input::placeholder {
- color: var(--color-content-on-dark-placeholder);
+ color: #475569;
 }
 
 .closed-accounts__input:hover,
 .closed-accounts__select:hover {
- border-color: var(--color-border-strong);
+ border-color: rgba(255, 255, 255, 0.2);
+ background-color: rgba(15, 23, 42, 0.8);
 }
 
 .closed-accounts__input:focus-visible,
 .closed-accounts__select:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
- outline-offset: var(--border-width-thick);
+ outline: none;
+ border-color: #38bdf8;
+ box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
 }
 
-.closed-accounts__input:disabled,
-.closed-accounts__select:disabled {
- opacity: 0.5;
- pointer-events: none;
-}
-
-/* The direction toggle. It states the order it is currently in, so its label
-   changes and its meaning does not. */
-.closed-accounts__order {
- align-self: flex-end;
- padding: var(--space-2) var(--space-3);
- color: var(--color-content-on-dark);
- background-color: var(--color-surface-deep);
- border: var(--border-width-thin) solid var(--color-border-subtle);
- border-radius: var(--radius-sm);
- font-size: var(--font-size-sm);
- cursor: pointer;
+.closed-accounts__sort-row {
+ display: flex;
+ gap: 0.5rem;
 }
 
 .closed-accounts__order {
  display: inline-flex;
- flex: 0 0 auto;
  align-items: center;
  justify-content: center;
- gap: var(--space-2);
- white-space: nowrap;
+ gap: 0.5rem;
+ block-size: 2.625rem;
+ padding-inline: 0.875rem;
+ color: #cbd5e1;
+ background-color: rgba(15, 23, 42, 0.6);
+ border: 1px solid rgba(255, 255, 255, 0.1);
+ border-radius: 10px;
+ font-size: 0.875rem;
+ font-weight: 500;
+ cursor: pointer;
+ transition: all 0.2s ease;
 }
 
-/* The direction's words. Dropped below 480px, where the chevron already states
-   the order and the select needs the room more than the sentence does - the
-   button keeps its aria-label, so nothing is lost to a screen reader. */
-@media (max-width: 479px) {
- .closed-accounts__order-text {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
- }
-
- /* No width floor. Carlos repealed the mandatory 44px on pressable controls
-    on 2026-09-11 - "se usara el tamanio de la linea donde se encuentran" - so
-    the button is the chevron plus its own padding, which is what the select
-    beside it is too. */
- .closed-accounts__order {
-  padding-inline: var(--space-3);
- }
+.closed-accounts__order:hover {
+ color: #ffffff;
+ border-color: rgba(255, 255, 255, 0.25);
+ background-color: rgba(30, 41, 59, 0.8);
 }
 
-/* One chevron for both directions. It points down for a descending list and
-   is turned to point up for an ascending one, so the control states the order
-   rather than naming it twice. */
 .closed-accounts__order-icon {
- inline-size: var(--size-glyph-inline);
- block-size: var(--size-glyph-inline);
- transition: transform var(--motion-fast);
+ inline-size: 1rem;
+ block-size: 1rem;
+ transition: transform 0.2s ease;
 }
 
 .closed-accounts__order-icon.is-ascending {
  transform: rotate(180deg);
 }
 
-.closed-accounts__order:hover {
- border-color: var(--color-border-strong);
- color: var(--color-interactive-hover);
-}
-
-.closed-accounts__order:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
- outline-offset: var(--border-width-thick);
-}
-
-.closed-accounts__order:active {
- /* A one-hairline nudge. --border-width-thin is used as a length here because
-    the system has no motion-offset token; hardcoding 1px is what the rule
-    forbids, and inventing a token name is what it forbids next. */
- transform: translateY(var(--border-width-thin));
-}
-
-.closed-accounts__order:disabled {
- opacity: 0.5;
- pointer-events: none;
-}
-
 /* ===========================
-   🗂 THE LIST
+   💳 LIST & CARD TILES
    =========================== */
-/* ONE SURFACE, RULED - not a stack of separate cards.
-   Twenty free-floating cards make the reader find the edges of each before
-   reading it; one panel with a rule between entries makes the boundary explicit
-   and costs one hairline. The rule is the separator, and the last row does not
-   get one because there is nothing below it to separate from. */
 .closed-accounts__list {
  display: flex;
  flex-direction: column;
+ gap: 0.75rem;
  margin: 0;
  padding: 0;
  list-style: none;
- background-color: var(--color-surface-sunken);
- border: var(--border-width-thin) solid var(--color-border-subtle);
- border-radius: var(--radius-sm);
- overflow: hidden;
 }
 
 .closed-accounts__row {
  position: relative;
  display: flex;
  flex-direction: column;
- gap: var(--space-2);
- padding: var(--space-3);
- padding-inline-start: var(--space-4);
- transition: background-color var(--motion-fast);
+ gap: 1rem;
+ padding: 1.25rem;
+ background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+ border: 1px solid rgba(255, 255, 255, 0.07);
+ border-radius: 14px;
+ transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+ overflow: hidden;
 }
 
-/* THE SEPARATOR. */
-.closed-accounts__row + .closed-accounts__row {
- border-block-start: var(--border-width-thin) solid var(--color-border-subtle);
-}
-
-/* The accent bar, drawn on the leading edge and transparent at rest so the row
-   does not shift when it appears. A hover on a row that cannot be clicked is
-   still worth having: it tells the reader which entry their eye is on in a
-   list where every row looks alike. */
 .closed-accounts__row::before {
  content: '';
  position: absolute;
  inset-block: 0;
  inset-inline-start: 0;
- inline-size: var(--border-width-thick);
- background-color: transparent;
- transition: background-color var(--motion-fast);
+ inline-size: 3px;
+ background: transparent;
+ transition: background-color 0.25s ease;
 }
 
 .closed-accounts__row:hover {
- background-color: var(--color-surface-raised);
+ transform: translateY(-2px);
+ border-color: rgba(255, 255, 255, 0.15);
+ background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+ box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
 }
 
 .closed-accounts__row:hover::before {
- background-color: var(--color-status-info);
+ background: #38bdf8;
 }
 
+/* Identidad de la cuenta */
 .closed-accounts__identity {
  display: flex;
- flex-wrap: nowrap;
  align-items: center;
- gap: var(--space-3);
+ gap: 0.875rem;
 }
 
-.closed-accounts__identity-text {
- display: flex;
- flex-direction: column;
- gap: var(--space-1);
- min-inline-size: 0;
-}
-
-/* THE TYPE MARK. A square chip rather than a bare icon: the icons in this set
-   differ in how much of their box they fill, and a shared ground is what makes
-   a column of them line up. The neutral financial ramp is the right one here -
-   a closed account is neither a gain nor a loss, and painting it in either
-   would state a fact the registry does not hold. */
 .closed-accounts__badge {
  display: flex;
  flex: 0 0 auto;
  align-items: center;
  justify-content: center;
- inline-size: var(--size-badge);
- block-size: var(--size-badge);
- color: var(--color-financial-neutral-content);
- background-color: var(--color-financial-neutral-surface);
- border: var(--border-width-thin) solid var(--color-financial-neutral-border);
- border-radius: var(--radius-sm);
- transition:
-  color var(--motion-fast),
-  border-color var(--motion-fast);
+ inline-size: 2.75rem;
+ block-size: 2.75rem;
+ color: #38bdf8;
+ background: rgba(56, 189, 248, 0.1);
+ border: 1px solid rgba(56, 189, 248, 0.2);
+ border-radius: 12px;
 }
 
 .closed-accounts__badge-icon {
- inline-size: var(--size-glyph-inline);
- block-size: var(--size-glyph-inline);
+ inline-size: 1.375rem;
+ block-size: 1.375rem;
 }
 
-.closed-accounts__row:hover .closed-accounts__badge {
- color: var(--color-content-on-dark);
- border-color: var(--color-border-inverse);
+.closed-accounts__identity-text {
+ display: flex;
+ flex-direction: column;
+ gap: 0.25rem;
+ min-inline-size: 0;
 }
 
 .closed-accounts__name {
- color: var(--color-content-on-dark);
- font-size: var(--font-size-base);
- font-weight: var(--font-weight-semibold);
-}
-
-/* A name the registry never stamped. Muted and italic so it reads as an
-   absence rather than as an account actually called that. */
-.closed-accounts__name--unknown {
- color: var(--color-content-on-dark-muted);
- font-style: italic;
- font-weight: var(--font-weight-regular);
+ color: #f8fafc;
+ font-size: 1rem;
+ font-weight: 600;
+ letter-spacing: -0.01em;
 }
 
 .closed-accounts__type {
  align-self: flex-start;
- padding: var(--space-1) var(--space-2);
- color: var(--color-financial-neutral-content);
- background-color: var(--color-financial-neutral-surface);
- border-radius: var(--radius-full);
- font-size: var(--font-size-xs);
+ padding: 0.125rem 0.5rem;
+ color: #94a3b8;
+ background: rgba(255, 255, 255, 0.05);
+ border: 1px solid rgba(255, 255, 255, 0.08);
+ border-radius: 6px;
+ font-size: 0.75rem;
+ font-weight: 500;
  text-transform: capitalize;
- white-space: nowrap;
 }
 
+/* Grid de métricas/datos */
 .closed-accounts__facts {
- display: flex;
- flex-wrap: wrap;
- gap: var(--space-3);
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+ gap: 0.75rem;
  margin: 0;
+ padding: 0.875rem;
+ background-color: rgba(15, 23, 42, 0.5);
+ border: 1px solid rgba(255, 255, 255, 0.04);
+ border-radius: 10px;
 }
 
 .closed-accounts__fact {
  display: flex;
  flex-direction: column;
- gap: var(--space-1);
- min-inline-size: 0;
+ gap: 0.25rem;
 }
 
 .closed-accounts__fact-label {
- color: var(--color-content-on-dark-muted);
- font-size: var(--font-size-sm);
+ color: #64748b;
+ font-size: 0.6875rem;
+ font-weight: 600;
+ text-transform: uppercase;
+ letter-spacing: 0.05em;
 }
 
 .closed-accounts__fact-value {
  margin: 0;
- color: var(--color-content-on-dark);
- font-size: var(--font-size-sm);
+ color: #cbd5e1;
+ font-size: 0.875rem;
+ font-weight: 500;
 }
 
-/* The closing date. It is the reason the row exists, so it is the one figure
-   given weight - and weight, not colour: every other status colour in this
-   system already means gain, loss or alarm, and a closure is none of them. */
 .closed-accounts__fact-value--key {
- font-weight: var(--font-weight-semibold);
+ color: #f8fafc;
+ font-weight: 600;
 }
 
-/* The reason is the one field with no ceiling on its length, so it gets its own
-   line under the facts rather than a column that would set the row's height. */
+/* Motivo de cierre */
 .closed-accounts__reason {
  display: flex;
  flex-direction: column;
- gap: var(--space-1);
+ gap: 0.25rem;
  margin: 0;
- color: var(--color-content-on-dark);
- font-size: var(--font-size-sm);
- overflow-wrap: anywhere;
+ padding: 0.75rem 0.875rem;
+ color: #94a3b8;
+ background: rgba(15, 23, 42, 0.3);
+ border-left: 2px solid #ef4444;
+ border-radius: 4px 8px 8px 4px;
+ font-size: 0.8125rem;
+ line-height: 1.4;
 }
 
 /* ===========================
-   ⏳ LOADING
-   =========================== */
-.closed-accounts__row--skeleton {
- gap: var(--space-2);
-}
-
-.closed-accounts__skeleton-bar {
- display: block;
- inline-size: 100%;
- block-size: var(--size-glyph-inline);
- border-radius: var(--radius-sm);
- background-color: var(--color-surface-deep);
- animation: closed-accounts-skeleton var(--motion-normal) ease-in-out infinite
-  alternate;
-}
-
-.closed-accounts__skeleton-bar--short {
- max-inline-size: 40%;
-}
-
-@keyframes closed-accounts-skeleton {
- from {
-  opacity: 0.4;
- }
- to {
-  opacity: 0.9;
- }
-}
-
-/* ===========================
-   ⚠️ ERROR AND 📭 EMPTY
-   One block for both: they differ in what they say and in whether they offer an
-   action, not in how they sit on the page.
-   =========================== */
-.closed-accounts__notice {
- display: flex;
- flex-direction: column;
- align-items: flex-start;
- gap: var(--space-2);
- padding: var(--space-4);
- background-color: var(--color-surface-sunken);
- border-radius: var(--radius-sm);
-}
-
-.closed-accounts__notice-title {
- margin: 0;
- color: var(--color-content-on-dark);
- font-size: var(--font-size-base);
- font-weight: var(--font-weight-semibold);
-}
-
-.closed-accounts__notice-message {
- margin: 0;
- color: var(--color-content-on-dark-muted);
- font-size: var(--font-size-sm);
-}
-
-.closed-accounts__notice-action {
- padding: var(--space-2) var(--space-3);
- color: var(--color-content-on-dark);
- background-color: var(--color-surface-deep);
- border: var(--border-width-thin) solid var(--color-border-subtle);
- border-radius: var(--radius-sm);
- font-size: var(--font-size-sm);
- cursor: pointer;
-}
-
-.closed-accounts__notice-action:hover {
- border-color: var(--color-border-strong);
-}
-
-.closed-accounts__notice-action:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
- outline-offset: var(--border-width-thick);
-}
-
-.closed-accounts__notice-action:active {
- /* A one-hairline nudge. --border-width-thin is used as a length here because
-    the system has no motion-offset token; hardcoding 1px is what the rule
-    forbids, and inventing a token name is what it forbids next. */
- transform: translateY(var(--border-width-thin));
-}
-
-.closed-accounts__notice-action:disabled {
- opacity: 0.5;
- pointer-events: none;
-}
-
-/* ===========================
-   📄 PAGER
+   📄 PAGER & FOOTER
    =========================== */
 .closed-accounts__pager {
  display: flex;
  flex-wrap: wrap;
  align-items: center;
  justify-content: space-between;
- gap: var(--space-3);
+ gap: 1rem;
+ padding-block-start: 0.5rem;
 }
 
 .closed-accounts__count {
- color: var(--color-content-on-dark-muted);
- font-size: var(--font-size-sm);
+ color: #64748b;
+ font-size: 0.875rem;
+ font-weight: 500;
 }
 
 .closed-accounts__pager-controls {
  display: flex;
  align-items: center;
- gap: var(--space-2);
+ gap: 0.5rem;
 }
 
 .closed-accounts__page-status {
- color: var(--color-content-on-dark-muted);
- font-size: var(--font-size-sm);
+ color: #cbd5e1;
+ font-size: 0.875rem;
+ padding-inline: 0.5rem;
 }
 
 .closed-accounts__page-button,
 .closed-accounts__back {
- padding: var(--space-2) var(--space-3);
- color: var(--color-content-on-dark);
- background-color: var(--color-surface-deep);
- border: var(--border-width-thin) solid var(--color-border-subtle);
- border-radius: var(--radius-sm);
- font-size: var(--font-size-sm);
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ padding: 0.5rem 1rem;
+ color: #f8fafc;
+ background-color: rgba(30, 41, 59, 0.6);
+ border: 1px solid rgba(255, 255, 255, 0.1);
+ border-radius: 8px;
+ font-size: 0.875rem;
+ font-weight: 500;
  cursor: pointer;
+ transition: all 0.2s ease;
 }
 
-.closed-accounts__page-button:hover,
+.closed-accounts__page-button:hover:not(:disabled),
 .closed-accounts__back:hover {
- border-color: var(--color-border-strong);
+ background-color: rgba(51, 65, 85, 0.8);
+ border-color: rgba(255, 255, 255, 0.2);
 }
 
-.closed-accounts__page-button:focus-visible,
-.closed-accounts__back:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
- outline-offset: var(--border-width-thick);
-}
-
-.closed-accounts__page-button:active,
-.closed-accounts__back:active {
- /* A one-hairline nudge. --border-width-thin is used as a length here because
-    the system has no motion-offset token; hardcoding 1px is what the rule
-    forbids, and inventing a token name is what it forbids next. */
- transform: translateY(var(--border-width-thin));
-}
-
-.closed-accounts__page-button:disabled,
-.closed-accounts__back:disabled {
- opacity: 0.5;
- pointer-events: none;
+.closed-accounts__page-button:disabled {
+ opacity: 0.4;
+ cursor: not-allowed;
 }
 
 .closed-accounts__back {
  align-self: flex-start;
- /* Height from the line it sits in. The 44px floor this carried for one commit
-    was repealed by Carlos on 2026-09-11; the padding above already sets it. */
- font-weight: var(--font-weight-medium);
- transition:
-  color var(--motion-fast),
-  background-color var(--motion-fast),
-  border-color var(--motion-fast);
+ color: #38bdf8;
+ background: rgba(56, 189, 248, 0.08);
+ border-color: rgba(56, 189, 248, 0.2);
 }
 
-/* THE ONE WAY OFF THIS SCREEN, so it answers a hover with more than a border.
-   It inverts: the accent ground with its own content ink, which is the pairing
-   tokens.css declares for exactly this and measures 14.51:1. The three buttons
-   above it only change their border, because they stay on the screen they act
-   on and this one leaves it. */
 .closed-accounts__back:hover {
- color: var(--color-accent-content);
- background-color: var(--color-accent);
- border-color: var(--color-accent);
+ color: #ffffff;
+ background: #0284c7;
+ border-color: #0284c7;
 }
 
 /* ===========================
-   📐 WIDE SCREENS
-   From 768px each closure reads as a row: the identity on the left, the facts
-   spread across the middle, the reason underneath. Nothing is hidden at any
-   width - a figure that only exists on a wide screen is a figure a phone owner
-   is told they have when they do not.
+   📐 DESKTOP RESPONSIVE
    =========================== */
 @media (min-width: 768px) {
- .closed-accounts {
-  padding-inline: var(--space-4);
- }
-
- /* One row from here up: there is width for all four, and a toolbar that fits
-    on one line stops being a block the reader scrolls past. */
- .closed-accounts__toolbar {
-  grid-template-columns:
-   minmax(0, 2fr) minmax(0, 1fr)
-   minmax(0, 1fr) minmax(0, 1.4fr);
- }
-
- .closed-accounts__field--search,
- .closed-accounts__field--sort {
-  grid-column: auto;
- }
+ .closed-accounts__field--search { grid-column: span 4; }
+ .closed-accounts__field--type { grid-column: span 3; }
+ .closed-accounts__field--limit { grid-column: span 2; }
+ .closed-accounts__field--sort { grid-column: span 3; }
 
  .closed-accounts__row {
   display: grid;
-  grid-template-columns: minmax(10rem, 1fr) minmax(0, 2fr);
-  grid-template-areas:
-   'identity facts'
-   'reason   reason';
-  align-items: start;
-  column-gap: var(--space-4);
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: auto auto;
+  gap: 1rem 1.5rem;
  }
 
  .closed-accounts__identity {
-  grid-area: identity;
-  align-items: flex-start;
- }
-
- .closed-accounts__facts {
-  grid-area: facts;
+  grid-column: 1;
+  grid-row: 1;
  }
 
  .closed-accounts__reason {
-  grid-area: reason;
+  grid-column: 1;
+  grid-row: 2;
+ }
+
+ .closed-accounts__facts {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-content: center;
  }
 }

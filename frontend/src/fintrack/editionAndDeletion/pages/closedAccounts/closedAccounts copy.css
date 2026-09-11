@@ -1,0 +1,516 @@
+/* frontend/src/fintrack/editionAndDeletion/pages/closedAccounts/closedAccounts.css
+
+   THE CLOSED-ACCOUNT REGISTRY.
+   Mobile-first design. Accessible dark layout aligned with WCAG 2.1 AA standards. */
+
+.closed-accounts {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+ padding-block: var(--space-4);
+ padding-inline: var(--space-3);
+ max-inline-size: var(--layout-content-width);
+ margin-inline: auto;
+}
+
+.closed-accounts__header {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+}
+
+.closed-accounts__title {
+ margin: 0;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: -0.01em;
+}
+
+.closed-accounts__lede {
+ margin: 0;
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+ line-height: 1.5;
+}
+
+/* ===========================
+   🔎 TOOLBAR
+   =========================== */
+.closed-accounts__toolbar {
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ align-items: end;
+ gap: var(--space-3);
+ padding: var(--space-3);
+ background-color: var(--color-surface-sunken);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+}
+
+.closed-accounts__field {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-inline-size: 0;
+}
+
+.closed-accounts__field--search,
+.closed-accounts__field--sort {
+ grid-column: 1 / -1;
+}
+
+.closed-accounts__sort-row {
+ display: flex;
+ align-items: stretch;
+ gap: var(--space-2);
+ min-inline-size: 0;
+}
+
+.closed-accounts__sort-row .closed-accounts__select {
+ flex: 1 1 auto;
+ min-inline-size: 0;
+}
+
+.closed-accounts__label {
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-medium);
+}
+
+.closed-accounts__input,
+.closed-accounts__select {
+ inline-size: 100%;
+ padding: var(--space-2) var(--space-3);
+ color: var(--color-content-on-dark);
+ background-color: var(--color-surface-deep);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ font-size: var(--font-size-base);
+ transition: border-color var(--motion-fast);
+}
+
+.closed-accounts__input-wrap {
+ position: relative;
+ display: block;
+ inline-size: 100%;
+}
+
+.closed-accounts__input-icon {
+ position: absolute;
+ inset-block-start: 50%;
+ inset-inline-start: var(--space-3);
+ transform: translateY(-50%);
+ inline-size: var(--size-glyph-inline);
+ block-size: var(--size-glyph-inline);
+ color: var(--color-content-on-dark-placeholder);
+ pointer-events: none;
+}
+
+.closed-accounts__input--with-icon {
+ padding-inline-start: calc(var(--space-3) + var(--size-glyph-inline) + var(--space-2));
+}
+
+.closed-accounts__input::placeholder {
+ color: var(--color-content-on-dark-placeholder);
+}
+
+.closed-accounts__input:hover,
+.closed-accounts__select:hover {
+ border-color: var(--color-border-strong);
+}
+
+.closed-accounts__input:focus-visible,
+.closed-accounts__select:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thin);
+}
+
+.closed-accounts__order {
+ display: inline-flex;
+ flex: 0 0 auto;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-2);
+ padding: var(--space-2) var(--space-3);
+ color: var(--color-content-on-dark);
+ background-color: var(--color-surface-deep);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ font-size: var(--font-size-sm);
+ white-space: nowrap;
+ cursor: pointer;
+ transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+@media (max-width: 479px) {
+ .closed-accounts__order-text {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+ }
+
+ .closed-accounts__order {
+  padding-inline: var(--space-3);
+ }
+}
+
+.closed-accounts__order-icon {
+ inline-size: var(--size-glyph-inline);
+ block-size: var(--size-glyph-inline);
+ transition: transform var(--motion-fast);
+}
+
+.closed-accounts__order-icon.is-ascending {
+ transform: rotate(180deg);
+}
+
+.closed-accounts__order:hover {
+ border-color: var(--color-border-strong);
+ color: var(--color-interactive-hover);
+}
+
+.closed-accounts__order:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thin);
+}
+
+.closed-accounts__order:active {
+ transform: translateY(var(--border-width-thin));
+}
+
+/* ===========================
+   🗂 THE LIST
+   =========================== */
+.closed-accounts__list {
+ display: flex;
+ flex-direction: column;
+ margin: 0;
+ padding: 0;
+ list-style: none;
+ background-color: var(--color-surface-sunken);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ overflow: hidden;
+}
+
+.closed-accounts__row {
+ position: relative;
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ padding: var(--space-3) var(--space-4);
+ transition: background-color var(--motion-fast);
+}
+
+.closed-accounts__row + .closed-accounts__row {
+ border-block-start: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+.closed-accounts__row::before {
+ content: '';
+ position: absolute;
+ inset-block: 0;
+ inset-inline-start: 0;
+ inline-size: var(--border-width-thick);
+ background-color: transparent;
+ transition: background-color var(--motion-fast);
+}
+
+.closed-accounts__row:hover {
+ background-color: var(--color-surface-raised);
+}
+
+.closed-accounts__row:hover::before {
+ background-color: var(--color-status-info);
+}
+
+.closed-accounts__identity {
+ display: flex;
+ flex-wrap: nowrap;
+ align-items: center;
+ gap: var(--space-3);
+}
+
+.closed-accounts__identity-text {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-inline-size: 0;
+}
+
+.closed-accounts__badge {
+ display: flex;
+ flex: 0 0 auto;
+ align-items: center;
+ justify-content: center;
+ inline-size: var(--size-badge);
+ block-size: var(--size-badge);
+ color: var(--color-financial-neutral-content);
+ background-color: var(--color-financial-neutral-surface);
+ border: var(--border-width-thin) solid var(--color-financial-neutral-border);
+ border-radius: var(--radius-sm);
+ transition: color var(--motion-fast), border-color var(--motion-fast);
+}
+
+.closed-accounts__badge-icon {
+ inline-size: var(--size-glyph-inline);
+ block-size: var(--size-glyph-inline);
+}
+
+.closed-accounts__row:hover .closed-accounts__badge {
+ color: var(--color-content-on-dark);
+ border-color: var(--color-border-inverse);
+}
+
+.closed-accounts__name {
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+}
+
+.closed-accounts__name--unknown {
+ color: var(--color-content-on-dark-muted);
+ font-style: italic;
+ font-weight: var(--font-weight-regular);
+}
+
+.closed-accounts__type {
+ align-self: flex-start;
+ padding: 2px var(--space-2);
+ color: var(--color-financial-neutral-content);
+ background-color: var(--color-financial-neutral-surface);
+ border-radius: var(--radius-full);
+ font-size: var(--font-size-xs);
+ text-transform: capitalize;
+ white-space: nowrap;
+}
+
+.closed-accounts__facts {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-4);
+ margin: 0;
+ padding: var(--space-2) var(--space-3);
+ background-color: var(--color-surface-deep);
+ border-radius: var(--radius-sm);
+}
+
+.closed-accounts__fact {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-inline-size: 0;
+}
+
+.closed-accounts__fact-label {
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-xs);
+ text-transform: uppercase;
+ letter-spacing: 0.05em;
+}
+
+.closed-accounts__fact-value {
+ margin: 0;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+}
+
+.closed-accounts__fact-value--key {
+ font-weight: var(--font-weight-semibold);
+}
+
+.closed-accounts__reason {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ margin: 0;
+ padding: var(--space-2) var(--space-3);
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ background-color: var(--color-surface-deep);
+ border-radius: var(--radius-sm);
+ font-family: monospace;
+ line-height: 1.4;
+ overflow-wrap: anywhere;
+}
+
+/* ===========================
+   ⏳ LOADING & NOTICES
+   =========================== */
+.closed-accounts__row--skeleton {
+ gap: var(--space-2);
+}
+
+.closed-accounts__skeleton-bar {
+ display: block;
+ inline-size: 100%;
+ block-size: var(--size-glyph-inline);
+ border-radius: var(--radius-sm);
+ background-color: var(--color-surface-deep);
+ animation: closed-accounts-skeleton var(--motion-normal) ease-in-out infinite alternate;
+}
+
+.closed-accounts__skeleton-bar--short {
+ max-inline-size: 40%;
+}
+
+@keyframes closed-accounts-skeleton {
+ from { opacity: 0.4; }
+ to { opacity: 0.9; }
+}
+
+.closed-accounts__notice {
+ display: flex;
+ flex-direction: column;
+ align-items: flex-start;
+ gap: var(--space-2);
+ padding: var(--space-4);
+ background-color: var(--color-surface-sunken);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+}
+
+.closed-accounts__notice-title {
+ margin: 0;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+}
+
+.closed-accounts__notice-message {
+ margin: 0;
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+}
+
+.closed-accounts__notice-action {
+ padding: var(--space-2) var(--space-3);
+ color: var(--color-content-on-dark);
+ background-color: var(--color-surface-deep);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ font-size: var(--font-size-sm);
+ cursor: pointer;
+}
+
+.closed-accounts__notice-action:hover {
+ border-color: var(--color-border-strong);
+}
+
+.closed-accounts__notice-action:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thin);
+}
+
+/* ===========================
+   📄 PAGER & BACK BUTTON
+   =========================== */
+.closed-accounts__pager {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: center;
+ justify-content: space-between;
+ gap: var(--space-3);
+ padding-block-end: var(--space-2);
+}
+
+.closed-accounts__count {
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+}
+
+.closed-accounts__pager-controls {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+}
+
+.closed-accounts__page-status {
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+}
+
+.closed-accounts__page-button,
+.closed-accounts__back {
+ padding: var(--space-2) var(--space-3);
+ color: var(--color-content-on-dark);
+ background-color: var(--color-surface-deep);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ font-size: var(--font-size-sm);
+ cursor: pointer;
+ transition: color var(--motion-fast), background-color var(--motion-fast), border-color var(--motion-fast);
+}
+
+.closed-accounts__page-button:hover {
+ border-color: var(--color-border-strong);
+}
+
+.closed-accounts__page-button:focus-visible,
+.closed-accounts__back:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thin);
+}
+
+.closed-accounts__page-button:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.closed-accounts__back {
+ align-self: flex-start;
+ font-weight: var(--font-weight-medium);
+}
+
+.closed-accounts__back:hover {
+ color: var(--color-accent-content);
+ background-color: var(--color-accent);
+ border-color: var(--color-accent);
+}
+
+/* ===========================
+   📐 WIDE SCREENS
+   =========================== */
+@media (min-width: 768px) {
+ .closed-accounts {
+  padding-inline: var(--space-4);
+ }
+
+ .closed-accounts__toolbar {
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr);
+ }
+
+ .closed-accounts__field--search,
+ .closed-accounts__field--sort {
+  grid-column: auto;
+ }
+
+ .closed-accounts__row {
+  display: grid;
+  grid-template-columns: minmax(11rem, 1fr) minmax(0, 2fr);
+  grid-template-areas:
+   'identity facts'
+   'reason   facts';
+  align-items: start;
+  column-gap: var(--space-4);
+ }
+
+ .closed-accounts__identity {
+  grid-area: identity;
+  align-items: flex-start;
+ }
+
+ .closed-accounts__facts {
+  grid-area: facts;
+ }
+
+ .closed-accounts__reason {
+  grid-area: reason;
+ }
+}

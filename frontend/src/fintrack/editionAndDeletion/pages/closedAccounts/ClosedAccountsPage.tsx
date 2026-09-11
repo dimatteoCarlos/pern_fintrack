@@ -37,6 +37,7 @@ import SearchSvg from '../../../../assets/pocketSvg/SearchSvg.svg?react';
 import SortDirectionSvg from '../../../../assets/pocketSvg/SortDirectionSvg.svg?react';
 
 import './closedAccounts.css';
+import ClosedAccountsCountBadge from './ClosedAccountsCountBadge.tsx';
 
 // The same constant AccountDeletionPage.tsx:43 carries, restated rather than
 // imported: a page does not depend on a sibling page for a route.
@@ -69,12 +70,12 @@ const ACCOUNTING_DASHBOARD_ROUTE = '/fintrack/tracker/accounting';
 // come back empty.
 const FILTERABLE_ACCOUNT_TYPES = [
  'bank',
- 'cash',
+ // 'cash',
  'investment',
  'debtor',
  'category_budget',
  'income_source',
- 'pocket_saving',
+ // 'pocket_saving',
 ] as const;
 
 const SORT_OPTIONS: {
@@ -354,6 +355,14 @@ export const ClosedAccountsPage = () => {
       </button>
      )}
     </div>
+   )}
+
+   {/* Dynamic close count indicator */}
+   {!isLoading && !error && accountList.length > 0 && (
+     <ClosedAccountsCountBadge
+       total={total}
+       label={t('closedAccountsTotal')}
+     />
    )}
 
    {/* 🗂 THE LIST. One article per closure rather than a table row: the same
