@@ -4436,3 +4436,87 @@ that read already proves it is not deleted.
 allowed to keep backing a pocket at all, or whether SOFT should release like
 CLOSE does. This change makes the stranded case recoverable; it does not decide
 that the case should exist.
+
+
+### 14.21 No deletion of any kind leaves a pocket backed, 2026-09-11
+
+Carlos, settling the decision left open in 14.20: *"1. el unico metodo de
+borrado es close, no hemos implantado soft. 2. cualquier borrado del tipo que
+sea, no debe seguir respaldando un pocket."*
+
+**THE SECOND RULE IS APPLIED. THE FIRST STATEMENT DOES NOT MATCH THE CODE, AND
+THAT IS RECORDED RATHER THAN ACTED ON.**
+
+**SOFT is wired end to end, measured before anything was changed.**
+
+| layer | where | what it does |
+|---|---|---|
+| the button | `AccountDeletionPage.tsx:565` | `deletion-method-button--soft`, rendered beside close and hard |
+| the panel | `AccountDeletionPage.tsx:631` | mounts `SoftDeactivateAccountUI` |
+| the request | `SoftDeactivateAccountUI.tsx:38` | `useStandardAccountDeletion(DELETION_TYPE_SOFT, targetAccountId)` |
+| the branch | `deleteAccountService.js:599` | stamps `deleted_at` through its own UPDATE |
+| the offer | `assessAccountDeletion.js:191` | publishes SOFT with `available: true` |
+
+So a deactivation is reachable today from the deletion screen. Whether it SHOULD
+be is Carlos's call and nothing here removes it - the code stays, per the
+standing rule that nothing is deleted, only commented. What could not wait is
+that the path existed and broke rule 2 every time it ran.
+
+**WHAT SOFT DID BEFORE.** It stamped `deleted_at` and left every pocket
+commitment standing. Combined with the guard measured in 14.20, the account
+could then never give them back: the release form offered it, the server locked
+it, and `assertEligibleSource` refused it **by the very column this branch had
+just written**. The two halves of the trap were written in different files and
+neither was wrong on its own.
+
+**ONE HELPER, CALLED BY BOTH PATHS.**
+`accountDeletionUtils/releasePocketCommitments.js` holds the loop CLOSE carried
+inline. A rule about every deletion path enforced by a block of code living
+inside one branch is a rule the next branch does not get - which is exactly how
+SOFT came to have none.
+
+**RELEASED, NOT DELETED.** `pocket_allocations` is append-only by the design of
+`020_create_pocket_tables.sql`: *"+300 becomes +250 by writing -50. No repository
+gets an UPDATE or a DELETE path on this table."* So SOFT writes the compensating
+negative row through the module's own `release`, which leaves the history
+readable and shows the giving-back in the pocket's own ledger. A `DELETE` would
+satisfy the rule silently and destroy the trace.
+
+**BEFORE the UPDATE, not after, and the ordering is the point.** The release runs
+against an account that is still whole, in the same transaction, so a failure
+anywhere rolls back both the releases and the deactivation rather than leaving an
+account deleted with its pockets still claiming it.
+
+**HARD and RTA already complied, by a different means, and are left alone.**
+`eraseAccountTail.js:97` runs `DELETE FROM pocket_allocations WHERE
+source_account_id = $1 AND user_id = $2`. The account stops backing anything,
+which is what rule 2 requires. That it deletes rather than releases is a settled
+decision - `POCKET_MODULE_SPEC.md` §11.1 Q8b, quoted in that file's own comment:
+*"the service deletes the allocation rows and the account in the same
+transaction"* - and overturning a settled decision was not what this rule asked
+for. The difference is deliberate: HARD erases the account's existence, CLOSE and
+SOFT keep it.
+
+**The assessment stops publishing a claim that is no longer true.**
+`removesPocketAllocations` was `false` for SOFT, honest when written. It is
+`true` now. An owner reading the old value was told their pockets keep their
+backing across a deactivation.
+
+**14.20's change is still needed and is not made redundant by this.** It
+recovers accounts ALREADY stranded by the old behaviour, whose allocations are
+standing against a `deleted_at` that is already written. Rule 2 governs what
+happens from now on; the guard change is what lets the existing rows out.
+
+**Two imports in `deleteAccountService.js` went dead** when the loop moved -
+`pocketAllocationService` at `:52` and `ACCOUNTING_CURRENCY_CODE` at `:59`, each
+with exactly one use, both of them in that loop. Commented with the reason, not
+removed.
+
+**Verified:** `node --check` on the new helper, `deleteAccountService.js` and
+`assessAccountDeletion.js`; both import specifiers in the helper resolved
+against the filesystem from its own directory. Not boot-verified, for the reason
+standing since 14.15.
+
+**Open, and Carlos's alone:** whether the SOFT button and the HARD button should
+stay on the deletion screen at all, given *"el unico metodo de borrado es
+close"*. Removing a reachable path is a product decision, not a defect fix.

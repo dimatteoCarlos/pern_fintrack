@@ -195,7 +195,13 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
     // difference from CLOSE, and the reason the residual is worth showing
     // beside this option rather than only beside the close.
     leavesResidualUnsettled: !isSettled,
-    removesPocketAllocations: false,
+    // WAS false, and it was true when written: SOFT stamped deleted_at and left
+    // every commitment standing. Carlos ruled on 2026-09-11 that "cualquier
+    // borrado del tipo que sea, no debe seguir respaldando un pocket", so SOFT
+    // now releases through the same helper CLOSE uses, before it writes the
+    // column. An owner reading false here would be told their pockets keep
+    // their backing across a deactivation, which is no longer what happens.
+    removesPocketAllocations: true,
     keepsHistory: true,
     // Was true, and that was a promise the creation guard refuses (found by
     // pern-fintrack-e4, 2026-09-07). Soft delete keeps the row and
