@@ -13,15 +13,24 @@
  display: flex;
  flex-direction: column;
  gap: var(--space-3);
+ /* The block above ends at its own border and the controls row started
+    immediately under it - close enough on Carlos's screen that the search field
+    read as the last line of the card above rather than as the head of this one.
+    The separation belongs on the block that arrives, not as bottom space on
+    whichever block happens to precede it. */
+ margin-top: var(--space-5);
 }
 
 /* One surface for the three controls, so they read as one act of narrowing and
    not as three unrelated fields. */
+/* 44px and no longer 32px. --size-control-sm is for a control inside a row of
+   its own kind; these three are the only controls on the block and each is a
+   separate target, so the row takes the touch minimum. */
 .recentActivity__controls {
  display: flex;
  flex-wrap: wrap;
  align-items: stretch;
- min-height: var(--size-control-sm);
+ min-height: var(--size-touch-target);
  background-color: var(--color-surface-sunken);
  border: var(--border-width-thin) solid var(--color-border-subtle);
  border-radius: var(--radius-xl);
@@ -73,8 +82,15 @@
  padding-left: var(--space-8);
 }
 
+/* THE WRONG SIBLING OF THE RIGHT TOKEN. --color-content-placeholder is #5b5b5b
+   and is calibrated against the cream panel, where it measures 5.35:1; on this
+   sunken dark surface the same value is 2.83:1, which is the grey-on-black
+   Carlos could not read. tokens.css:68 already declares the sibling for exactly
+   this case - a field standing on a dark surface, at 6.57:1 - and says why it
+   is a step below the subtle ink rather than equal to it: a placeholder is hint
+   text and must not read as something already typed. */
 .recentActivity__search::placeholder {
- color: var(--color-content-placeholder);
+ color: var(--color-content-on-dark-placeholder);
 }
 
 /* The browser's own clear glyph, which would sit beside the one this block

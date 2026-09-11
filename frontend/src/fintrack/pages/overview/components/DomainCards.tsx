@@ -18,6 +18,7 @@
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
+import CollapsibleBlock from './CollapsibleBlock';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import {
  budgetRemainWord,
@@ -541,13 +542,26 @@ type CardProps = {
 // width they needed, which is what forced every caption down to a size that
 // could not be read. The month is stated once above the grid and the card keeps
 // the half that differs between cards: the nature.
+// FOLDING LIVES IN THE SHELL AND NOWHERE ELSE. Carlos asked for the six cards
+// to fold one at a time; putting the control here rather than at each call site
+// is what keeps that from becoming six copies of the same three lines - and it
+// is why a seventh card would fold without anyone remembering to make it.
+//
+// The head is what stays visible when a card is closed, so the reader still has
+// the domain's name and its nature. The figure and the reading fold away
+// together: a headline with its own reading removed would be a figure nobody
+// can qualify.
 const DomainCard = ({ label, nature, square, children, sub }: CardProps) => (
- <article className='domainCard'>
-  <div className='domainCard__head'>
-   <span className='domainCard__label'>{label}</span>
-   <span className='domainCard__scope'>{nature}</span>
-  </div>
-
+ <CollapsibleBlock
+  variant='card'
+  className='domainCard'
+  head={
+   <div className='domainCard__head'>
+    <span className='domainCard__label'>{label}</span>
+    <span className='domainCard__scope'>{nature}</span>
+   </div>
+  }
+ >
   <div className='domainCard__figures'>{children}</div>
 
   {/* The square sits ON the subordinate line and not beside the card's name.
@@ -558,7 +572,7 @@ const DomainCard = ({ label, nature, square, children, sub }: CardProps) => (
    {square !== undefined && <StatusSquare alert={square} />}
    <span>{sub}</span>
   </div>
- </article>
+ </CollapsibleBlock>
 );
 
 function DomainCards() {

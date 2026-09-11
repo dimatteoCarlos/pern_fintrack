@@ -35,10 +35,28 @@ type PanelTotalProps = {
  // When the figure was measured, or anything else the reader needs to reconcile
  // it with the rows. Omitted when there is nothing to say.
  note?: string | null;
+ // 'stacked' is the block over the list: label and amount on one line, the note
+ // spanning both columns under them.
+ //
+ // 'inline' is the same three values on ONE line, for a caller that puts the
+ // total beside a heading instead of above a list. Carlos asked for the two
+ // account panels to carry their sum next to the panel's name, 2026-09-10, and
+ // the figure was already here - one row below where he wanted to read it.
+ //
+ // A VARIANT AND NOT A SECOND COMPONENT, because the rule that matters is the
+ // one both forms share: the amount arrives as a prop and a null renders as a
+ // dash. Copying the markup would copy the formatting and eventually lose that.
+ variant?: 'stacked' | 'inline';
 };
 
-export const PanelTotal = ({ label, amount, currency, note }: PanelTotalProps) => (
- <div className='panelTotal'>
+export const PanelTotal = ({
+ label,
+ amount,
+ currency,
+ note,
+ variant = 'stacked',
+}: PanelTotalProps) => (
+ <div className={`panelTotal panelTotal--${variant}`}>
   <span className='panelTotal__label'>{label}</span>
 
   <span className='panelTotal__amount'>

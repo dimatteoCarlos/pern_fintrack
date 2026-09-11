@@ -36,3 +36,27 @@
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark-muted);
 }
+
+/* THE ROW FORM. The same three values beside a heading instead of over a list.
+   The grid above is overridden rather than made conditional, so the stacked
+   form - which eleven other figures on the page are aligned to - is untouched
+   by callers that never ask for this one. */
+.panelTotal--inline {
+ display: flex;
+ align-items: baseline;
+ flex-wrap: wrap;
+ gap: var(--space-1) var(--space-2);
+ padding: 0;
+}
+
+/* The note is a third item on the line here and no longer a row of its own, so
+   it drops the column span the grid gave it. */
+.panelTotal--inline .panelTotal__note {
+ grid-column: auto;
+}
+
+/* Left in the flow of the line rather than pushed to a column edge: in the
+   stacked form the amount ends a grid column, here it follows its label. */
+.panelTotal--inline .panelTotal__amount {
+ text-align: left;
+}

@@ -17,6 +17,7 @@ import FinancialGoals from './components/FinancialGoals.tsx';
 // import MonthlyAverage from './components/MonthlyAverage.tsx';
 import MonthlySnapshot from './components/MonthlySnapshot.tsx';
 import TrendCharts from './components/TrendCharts.tsx';
+import ExpenseByCategory from './components/ExpenseByCategory.tsx';
 // Imported by RecentActivity.tsx now, which is what renders the list here.
 // import LastMovements, {
 //   LastMovementType,
@@ -536,27 +537,16 @@ function Overview() {
           <div className='open__btn__label'>Add Account</div>
         </OpenAddEditBtn>
 
-        {/* First, per the level-1 sketch: the six domain cards answer what the
-            month did, and everything below them is detail on one part of that
-            answer. Like MonthlyAverage it takes no props and reads the store
-            the layout above has already filled. */}
-        <DomainCards />
+        {/* THE TWO ACCOUNT PANELS COME FIRST, directly under the button that
+            creates an account. Carlos's order, 2026-09-10, and the reason is
+            in the adjacency: the button opens the account form, and the two
+            panels are the list of what that button has already produced. They
+            sat eight blocks down, after every aggregate on the page, so the
+            one action the screen offers and the result of that action were
+            separated by everything else.
 
-        {/* No props: the widget subscribes to useOverviewStore, which the
-            layout above it has already filled for the month on screen. Passing
-            them from here would have made this page fetch a month of its own,
-            and the two months would drift the moment the picker moved. */}
-        <MonthlySnapshot />
-
-        {/* Block 05, in the sketch's own order: the goals read at the close of
-            the same month the cards above are cut to. Store-backed like the two
-            above it, so the page still makes one request for all three. */}
-        <FinancialGoals />
-
-        {/* Block 07, first half. The distribution bar beside it in the sketch
-            waits on a categorical ramp the design system does not have. */}
-        <TrendCharts />
-
+            The blocks below keep the order they had relative to each other;
+            only these two moved. */}
         {
           <AccountBalance
             previousRoute={originRoute}
@@ -576,6 +566,33 @@ function Overview() {
             onRetry={refetchAccounts}
           />
         }
+
+        {/* The six domain cards answer what the month did, and everything below
+            them is detail on one part of that answer. Like MonthlyAverage it
+            takes no props and reads the store the layout above has filled.
+            Each card folds on its own, inside the component. */}
+        <DomainCards />
+
+        {/* No props: the widget subscribes to useOverviewStore, which the
+            layout above it has already filled for the month on screen. Passing
+            them from here would have made this page fetch a month of its own,
+            and the two months would drift the moment the picker moved. */}
+        <MonthlySnapshot />
+
+        {/* Block 05, in the sketch's own order: the goals read at the close of
+            the same month the cards above are cut to. Store-backed like the two
+            above it, so the page still makes one request for all three. */}
+        <FinancialGoals />
+
+        {/* Block 07, first half. */}
+        <TrendCharts />
+
+        {/* Block 07, second half, which the line above used to record as
+            waiting on a ramp the design system did not carry. The ramp is
+            declared (tokens.css, --color-scale-magnitude-*) and the bar is
+            mounted. Store-backed like every block above it: the ranking is
+            already in the level-1 answer, so no request is added. */}
+        <ExpenseByCategory />
 {/* ------------------ */}
         {/* One list, not five. The five that stood here came from /dashboard,
             one request per domain, and carried no row cap: on this data they

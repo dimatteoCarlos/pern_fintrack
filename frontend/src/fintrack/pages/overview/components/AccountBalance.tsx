@@ -120,18 +120,30 @@ function AccountBalance({
     <>
       {/*BANK ACCOUNTS  */}
       <div className='presentation__card__title__container flx-row-sb'>
-        <CardTitle>Account Balance</CardTitle>
+        {/* THE SUM SITS BESIDE THE NAME. Carlos, 2026-09-10. It was a block of
+            its own directly under this row; the figure did not change and the
+            component that renders it did not change, only where the row puts
+            it. CardTitle's legend slot is documented as "pinned to the right of
+            the title", which is the position asked for, and its subtitle row
+            takes the note - so this panel grew no markup of its own.
+
+            Null until the page payload lands, which renders a dash: this panel
+            and the payload are two requests and either can be first. */}
+        <CardTitle
+          legend={
+            <PanelTotal
+              variant='inline'
+              label='Bank and cash'
+              amount={hero?.cashPosition ?? null}
+              currency={hero?.currency ?? defaultCurrency}
+            />
+          }
+          subtitle={hero ? totalNote : null}
+        >
+          Account Balance
+        </CardTitle>
         <Link className='flx-col-center icon ' to={'edit'}></Link>
       </div>
-
-      {/* Null until the page payload lands, which renders a dash: this panel
-          and the payload are two requests and either can be first. */}
-      <PanelTotal
-        label='Bank and cash'
-        amount={hero?.cashPosition ?? null}
-        currency={hero?.currency ?? defaultCurrency}
-        note={hero ? totalNote : null}
-      />
 
       <article className='goals__account'>
         {/* Account Balance  */}

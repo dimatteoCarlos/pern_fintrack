@@ -13,12 +13,14 @@
 // is six numbers long. A library earns its place when there is a coordinate
 // system to draw; there is none here.
 //
-// The distribution bar the sketch draws beside this is NOT here. It needs a
-// five-step categorical ramp, and the design system has no ramp token — the
-// rule is to ask rather than invent one, so that half waits on the answer.
+// The distribution bar the sketch draws beside this is ParetoBar.tsx, mounted
+// under this block by ExpenseByCategory.tsx. It waited on a colour ramp the
+// design system did not carry; --color-scale-magnitude-high / -low now declare
+// one as its own layer, so the ramp is a token pair and not an invented hex.
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
+import CollapsibleBlock from './CollapsibleBlock';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import { OverviewTrendPoint } from '../../../types/overviewTypes';
@@ -195,12 +197,12 @@ function TrendCharts() {
 
  if (drawn.length === 0) return null;
 
+ // The block folds WHOLE and the three charts inside it do not fold one by
+ // one, which is the difference Carlos drew between this and the domain cards:
+ // three curves are read against each other, and a reader who closed one of
+ // them would be comparing two things while looking at a block that says three.
  return (
-  <>
-   <div className='presentation__card__title__container flx-row-sb'>
-    <CardTitle>Trend</CardTitle>
-   </div>
-
+  <CollapsibleBlock head={<CardTitle>Trend</CardTitle>}>
    <section className='domainCards'>
     {drawn.map(({ key, label, nature }) => (
      <TrendChart
@@ -212,7 +214,7 @@ function TrendCharts() {
      />
     ))}
    </section>
-  </>
+  </CollapsibleBlock>
  );
 }
 

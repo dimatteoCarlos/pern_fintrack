@@ -127,19 +127,26 @@ function InvestmentAccountBalance({
     <>
       {/*ACCOUNTS  */}
       <div className='presentation__card__title__container flx-row-sb'>
-       <CardTitle>Investment Accounts</CardTitle>
+       {/* Beside the name, the same move the bank panel made and for the same
+           instruction. The label stays "Accounts balance" and not "capital
+           invested", which is the tile's own subtitle and a different figure:
+           capitalContributed is what went in, this is what the accounts
+           hold. */}
+       <CardTitle
+        legend={
+         <PanelTotal
+          variant='inline'
+          label='Accounts balance'
+          amount={investment?.ledgerBalance ?? null}
+          currency={investment?.currency ?? defaultCurrency}
+         />
+        }
+        subtitle={investment ? totalNote : null}
+       >
+        Investment Accounts
+       </CardTitle>
         <Link className='flx-col-center icon ' to={'edit'}></Link>
       </div>
-
-      {/* Not "capital invested", which is the tile's own subtitle and a
-          different figure: capitalContributed is what went in, this is what the
-          accounts hold. */}
-      <PanelTotal
-        label='Accounts balance'
-        amount={investment?.ledgerBalance ?? null}
-        currency={investment?.currency ?? defaultCurrency}
-        note={investment ? totalNote : null}
-      />
 
       <article className='goals__investment'>
         {/* Account Factual Balance  */}

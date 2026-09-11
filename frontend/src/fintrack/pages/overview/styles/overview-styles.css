@@ -1121,3 +1121,289 @@ a.icon {
 .home__layout:has(.overviewLayout) .scrollJump {
  bottom: calc(var(--navbar-bottom-height) + var(--space-4));
 }
+
+/*------------*/
+/* The ranked breakdown of one total: the half of block 07 that TrendCharts
+   above records as waiting on a colour ramp. The wait ended when
+   --color-scale-magnitude-* was declared; nothing here is hardcoded.
+
+   Segments and squares are elements with a width, not a canvas, for the same
+   reason the trend is: var(--token) resolves on an element and does not reach
+   into a drawing context. */
+
+.overviewLayout .paretoBar {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ /* figure carries a browser margin of its own, which would break the grid gap
+    the block above it sets. */
+ margin: 0;
+ padding: var(--space-3) var(--space-4);
+ border: 1px solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+}
+
+.overviewLayout .paretoBar__head {
+ display: flex;
+ align-items: baseline;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+
+.overviewLayout .paretoBar__total {
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .paretoBar__totalLabel {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The track sits on the app surface and not on a panel, so every segment gains
+   contrast against it instead of losing it. It is not a data panel and the
+   cream rule does not reach it. */
+.overviewLayout .paretoBar__track {
+ position: relative;
+ display: flex;
+ overflow: hidden;
+ width: 100%;
+ height: var(--size-status-square);
+ border-radius: var(--radius-full);
+ background: var(--color-surface-app);
+}
+
+/* THE RAMP. --paretoBar-ramp is the row's position between the smallest and the
+   largest amount, 0 to 1, set inline by the component. The mixing is here and
+   not in JavaScript because both ends are tokens, and a colour computed in the
+   component would not follow them.
+
+   The minimum width is a border token used as a length, which is a borrowing
+   and is deliberate: a category at half a percent measures under two pixels on
+   a phone, less than the separator beside it, and a figure that is not zero must
+   never be drawn as nothing. It has no size token of its own yet. */
+.overviewLayout .paretoBar__segment {
+ flex: 0 0 auto;
+ min-width: var(--border-width-thick);
+ background: color-mix(
+  in oklab,
+  var(--color-scale-magnitude-high) calc(var(--paretoBar-ramp) * 100%),
+  var(--color-scale-magnitude-low)
+ );
+ /* The cut between two segments, drawn in the track's own colour so the
+    boundary reads as a gap rather than as a third mark. */
+ box-shadow: inset calc(-1 * var(--border-width-thin)) 0 0
+  var(--color-surface-app);
+}
+
+/* Where the reading is taken. Drawn over the segments, because the share it
+   marks falls INSIDE a category rather than between two of them.
+
+   TWO PIXELS AND NOT ONE. At one pixel it was the same width as the cut between
+   two segments and sat on the same row, so the one mark that turns the bar into
+   an instrument read as another gap. The cuts stay at one pixel, and the
+   difference in weight is what tells them apart. */
+.overviewLayout .paretoBar__mark {
+ position: absolute;
+ top: 0;
+ bottom: 0;
+ width: var(--border-width-thick);
+ background: var(--color-content-on-dark);
+}
+
+/* THE LEGEND IS THE CHART'S ACCESSIBLE FORM, which is why the track above is
+   aria-hidden: every figure the bar encodes is printed here, and exposing both
+   would recite each amount twice. */
+.overviewLayout .paretoBar__legend {
+ display: flex;
+ flex-direction: column;
+ margin: 0;
+ padding: 0;
+ list-style: none;
+}
+
+.overviewLayout .paretoBar__row {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ padding: var(--space-1) 0;
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-muted);
+}
+
+/* The same cut the vertical mark makes on the bar, for a reader who reads the
+   list and not the drawing. Dotted so it is not mistaken for a table rule. */
+.overviewLayout .paretoBar__row--concentration {
+ border-bottom: var(--border-width-thin) dotted
+  var(--color-content-on-dark-subtle);
+}
+
+/* The same square the bar draws, at the same size and off the same ramp, so
+   the row identifies a segment. A category that spent nothing keeps an empty
+   square: the row is in the list and absent from the bar, and the empty square
+   is what says so. */
+.overviewLayout .paretoBar__swatch {
+ flex: 0 0 auto;
+ width: var(--size-status-square);
+ height: var(--size-status-square);
+ border-radius: var(--radius-sm);
+ background: color-mix(
+  in oklab,
+  var(--color-scale-magnitude-high) calc(var(--paretoBar-ramp) * 100%),
+  var(--color-scale-magnitude-low)
+ );
+}
+
+.overviewLayout .paretoBar__name {
+ flex: 1 1 auto;
+ min-width: 0;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+ /* index.css sets font-size on the universal selector, so an inline element
+    takes 16px from there instead of inheriting the row it sits in. */
+ font-size: inherit;
+}
+
+/* A word and not a colour alone: the ramp already spends the ochre family on
+   magnitude, so a second meaning carried only in hue would put two colour
+   systems on one row. */
+.overviewLayout .paretoBar__flag {
+ flex: 0 0 auto;
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-financial-negative);
+}
+
+.overviewLayout .paretoBar__amount {
+ flex: 0 0 auto;
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .paretoBar__cumulative {
+ flex: 0 0 auto;
+ /* A fixed column so the running share reads down the list as a column of
+    figures rather than as a ragged edge. */
+ min-width: 3.5rem;
+ font-size: var(--font-size-xs);
+ font-variant-numeric: tabular-nums;
+ text-align: right;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .paretoBar__foot {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* What the bar cannot draw, stated in words. Today that is the spending that
+   carries no category, which sits outside the set the server ranked. */
+.overviewLayout .paretoBar__caption {
+ font-style: italic;
+}
+
+/*------------*/
+/* THE FOLD. One block the reader can close, built on details and summary so the
+   open state, the keyboard and the announced expanded state come from the
+   element rather than from this sheet. */
+
+.overviewLayout .collapsible {
+ width: 100%;
+}
+
+.overviewLayout .collapsible__head {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: var(--space-2);
+ /* 44px is the smallest thing a finger hits reliably, and the head is the only
+    control this block has. */
+ min-height: var(--size-touch-target);
+ cursor: pointer;
+ /* The default disclosure triangle is replaced by the chevron below. Two
+    markers on one row would be the same state said twice. */
+ list-style: none;
+}
+
+/* Safari draws the marker through a pseudo-element the property above does not
+   reach, so it is removed a second way. */
+.overviewLayout .collapsible__head::-webkit-details-marker {
+ display: none;
+}
+
+.overviewLayout .collapsible__head:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+ border-radius: var(--radius-md);
+}
+
+/* The head takes the width so the chevron is pushed to the far edge and lands
+   in the same column on every block down the page. */
+.overviewLayout .collapsible__headContent {
+ flex: 1 1 auto;
+ min-width: 0;
+}
+
+/* Two sides of a square with a border, turned 45 degrees: pointing down when
+   the block is closed and up when it is open. No glyph and no icon file, so it
+   takes the ink colour of the row it sits on. */
+.overviewLayout .collapsible__chevron {
+ flex: 0 0 auto;
+ width: var(--size-status-square);
+ height: var(--size-status-square);
+ border-right: var(--border-width-thick) solid
+  var(--color-content-on-dark-muted);
+ border-bottom: var(--border-width-thick) solid
+  var(--color-content-on-dark-muted);
+ /* Rotated about its own centre, and lifted by a quarter of its height so the
+    turned square reads as centred on the row rather than sitting low. */
+ transform: translateY(-25%) rotate(45deg);
+ transition: transform 150ms ease;
+}
+
+.overviewLayout .collapsible[open] > .collapsible__head .collapsible__chevron {
+ transform: translateY(25%) rotate(-135deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .overviewLayout .collapsible__chevron {
+  transition: none;
+ }
+}
+
+/* A PAGE BLOCK, whose head is the same title row every block on the page
+   carries. The title container supplies its own spacing, so the head adds
+   none of its own. */
+.overviewLayout .collapsible--block > .collapsible__head {
+ padding: var(--space-2) 0;
+}
+
+/* ONE DOMAIN CARD. The box - border, radius, padding - is NOT declared here.
+   The fold carries .domainCard as well, so the rule that already draws the card
+   keeps drawing it and this variant only adjusts the head and the body. Two
+   rules restating one border is the defect this avoids. */
+.overviewLayout .collapsible--card > .collapsible__head {
+ min-height: 0;
+ padding: 0;
+}
+
+/* The gap the card used to get from its own column layout. It is on the body
+   and not on the card, so a closed card collapses to its head with no empty
+   strip under it.
+
+   The card's own rule sets gap on the flex column, and that gap now applies
+   between the head and the body rather than between the three rows inside it -
+   which is why the body restates it for its own children. */
+.overviewLayout .collapsible--card > .collapsible__body {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+}

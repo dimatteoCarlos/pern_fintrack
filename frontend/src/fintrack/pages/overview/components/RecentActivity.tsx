@@ -135,8 +135,23 @@ function RecentActivity() {
  const isFirstLoad = isLoading && data === null;
  const showPanel = isFirstLoad || error !== null;
 
- return (
-  <article className='recentActivity'>
+ // THE CONTROLS ARE PART OF THE LIST, not a bar floating above it. Carlos,
+ // 2026-09-11: "mete el buscador dentro de recent activity". They stood as the
+ // article's first child, ABOVE the block's own heading, so on screen the
+ // search field sat between the previous card and the words Recent activity -
+ // and read as the bottom of whatever block happened to be above it. He read it
+ // that way twice before saying so.
+ //
+ // Bound to a name and passed to the list's header slot, beside the pager,
+ // because that slot renders INSIDE the list component, under the title it
+ // draws. Three things narrow this list - a term, a kind and a period - and a
+ // fourth chooses how many rows; all four now sit together under one heading.
+ //
+ // THE COST, and it is deliberate: during the first load and on an error the
+ // panel takes over and the controls are not drawn. Narrowing a list that has
+ // not arrived narrows nothing, and the error state offers a retry, which is
+ // the action that applies there.
+ const controls = (
    <div className='recentActivity__controls'>
     <div className='recentActivity__query'>
      <SearchSvg className='recentActivity__icon' />
@@ -206,7 +221,10 @@ function RecentActivity() {
      <ChevronDownSvg className='recentActivity__icon recentActivity__icon--trailing' />
     </div>
    </div>
+ );
 
+ return (
+  <article className='recentActivity'>
    {/* The three fetch states are the panel's, not this block's: the skeleton
        and the error with its retry are PanelState's, and empty is ListContent's
        own - an owner with no movement in the period is a real answer.
@@ -228,22 +246,26 @@ function RecentActivity() {
      data={rows}
      title='Recent activity'
      subtitle={subtitle}
-     /* Above the rows and not below them. The count frames the list before it
-        is read, and the page-size control belongs with the search and the
+     /* Above the rows and not below them. The narrowing frames the list before
+        it is read, and the page-size control belongs with the search and the
         filter rather than fifty rows under them. It goes through the list
         component because the heading is drawn in there. */
      listHeader={
-      data && (
-       <Pagination
-        page={data.transactions.page}
-        pageSize={data.transactions.pageSize}
-        totalRows={data.transactions.totalRows}
-        onPageChange={goToPage}
-        onPageSizeChange={(pageSize) => narrow({ pageSize })}
-        itemLabel='movements'
-        isBusy={isLoading}
-       />
-      )
+      <>
+       {controls}
+
+       {data && (
+        <Pagination
+         page={data.transactions.page}
+         pageSize={data.transactions.pageSize}
+         totalRows={data.transactions.totalRows}
+         onPageChange={goToPage}
+         onPageSizeChange={(pageSize) => narrow({ pageSize })}
+         itemLabel='movements'
+         isBusy={isLoading}
+        />
+       )}
+      </>
      }
     />
    )}

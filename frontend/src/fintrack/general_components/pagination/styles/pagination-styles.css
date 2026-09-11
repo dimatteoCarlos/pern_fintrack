@@ -18,18 +18,30 @@
 }
 
 /* The count is the only line that says the list moved, so it reads before the
-   controls rather than after them. */
+   controls rather than after them.
+
+   It does not break and it does not shrink. "1-5 of 128 movements" is one
+   statement, and a flex item with no floor is squeezed by its neighbours before
+   the row is allowed to wrap - which is how it ended up overlapping the
+   controls beside it. */
 .pagination__count {
  margin: 0;
+ flex: 0 1 auto;
+ min-width: 0;
  font-size: var(--font-size-xs);
  color: var(--color-content-on-dark-muted);
  font-variant-numeric: tabular-nums;
 }
 
+/* WRAPS. The row holds two groups - the size chooser and the pager - and
+   without this they stayed on one line at any width and drove the collision
+   Carlos saw at 360px: "7/26" sitting on top of the step beside it. Wrapped,
+   the pager drops under the size chooser, which is a row taller and legible. */
 .pagination__controls {
  display: flex;
+ flex-wrap: wrap;
  align-items: center;
- gap: var(--space-4);
+ gap: var(--space-2) var(--space-4);
 }
 
 .pagination__size {
@@ -69,24 +81,35 @@
 
 .pagination__pager {
  display: flex;
+ flex: 0 0 auto;
  align-items: center;
  gap: var(--space-2);
 }
 
+/* nowrap, and this is the element that was overlapping. "1/26" broken across
+   two lines inside a 24px-tall row has nowhere to go and renders over the
+   button next to it. */
 .pagination__page {
+ flex: 0 0 auto;
+ white-space: nowrap;
  font-size: var(--font-size-xs);
  color: var(--color-content-on-dark-muted);
  font-variant-numeric: tabular-nums;
 }
 
-/* Square, so the two steps are the same size whichever glyph they carry, and
-   large enough to be a tap target rather than a chevron. */
+/* Square, so the two steps are the same size whichever glyph they carry.
+
+   44px and no longer 24px. The comment above claimed it was "large enough to be
+   a tap target"; --space-6 is 1.5rem, which is 24px and a little over half the
+   floor. These two are the smallest controls on the page and the ones a reader
+   hits most often, and Carlos flagged them by name. */
 .pagination__step {
  display: flex;
+ flex: 0 0 auto;
  align-items: center;
  justify-content: center;
- width: var(--space-6);
- height: var(--space-6);
+ width: var(--size-touch-target);
+ height: var(--size-touch-target);
  padding: 0;
  border: var(--border-width-thin) solid var(--color-border-subtle);
  border-radius: var(--radius-md);

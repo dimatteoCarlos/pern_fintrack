@@ -293,6 +293,30 @@
  --color-financial-attention-border: #c48e31;
  --color-financial-attention-content: #f6bb55;
 
+ /* COLOR - MAGNITUDE SCALE: the two ends of a sequential ramp, for a chart
+    where the colour of a mark encodes HOW BIG a figure is. Nothing else on the
+    page carries that meaning: the semaphore above qualifies a figure as good
+    or bad, and the badge names a direction. A ramp says neither - the darkest
+    segment of a spending bar is not worse than the lightest, it is larger.
+
+    ITS OWN LAYER AND NOT THE ATTENTION FAMILY RENAMED, although the high end
+    is that family's content value. The family has three light steps close
+    together and then drops to #473515, which is designed as a ground and sits
+    at 1.63:1 on --color-surface-app; between the middle and that ground there
+    is nothing, and a sequential scale is exactly the run that is missing. The
+    low end is the one value this ramp adds, at 3.46:1 on --color-surface-app,
+    over the 3:1 floor for a graphical object.
+
+    Named for the function and never the hue, so a palette that changes its
+    tint later does not reach the component that mixes these two.
+
+    ON DARK THE RAMP RUNS THE OTHER WAY than it would on the cream panel: more
+    is brighter here, more would be darker there. Same reading - the largest
+    figure carries the most ink against its ground - stated from the opposite
+    side because the ground changed sides. */
+ --color-scale-magnitude-high: #f6bb55;
+ --color-scale-magnitude-low: #8a6026;
+
  /* COLOR - BADGE: the pill that states the direction of a movement.
     Semi-transparent grounds, so the pill belongs to the surface under it
     rather than sitting on top as a solid block. Distinct from the semaphore

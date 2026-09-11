@@ -32,6 +32,7 @@
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
+import CollapsibleBlock from './CollapsibleBlock';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
@@ -249,20 +250,24 @@ function MonthlySnapshot() {
  // loading state rather than a second spinner beside that one.
  if (!monthlySnapshot || monthlySnapshot.length === 0) return null;
 
+ // Folds WHOLE and not row by row. The block's own subtitle says each month is
+ // read "against the months that had activity", which is a comparison across
+ // the six rows - a reader who closed three of them would be comparing against
+ // a set the block no longer shows.
  return (
-  <>
-   <div className='presentation__card__title__container flx-row-sb'>
+  <CollapsibleBlock
+   head={
     <CardTitle subtitle='Each month against the months that had activity, its own year to date beside it'>
      Monthly snapshot
     </CardTitle>
-   </div>
-
+   }
+  >
    <section className='domainCards'>
     {monthlySnapshot.map((row) => (
      <SnapshotCard key={row.domain} row={row} month={referenceMonth} />
     ))}
    </section>
-  </>
+  </CollapsibleBlock>
  );
 }
 
