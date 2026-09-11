@@ -185,7 +185,7 @@ export const ClosedAccountsPage = () => {
        owner reaches for them. Each control resets the page to 1 in the hook,
        because page 4 of the old result is not a page of the new one. */}
    <section className='closed-accounts__toolbar' aria-label={t('closedAccountsSearchLabel')}>
-    <div className='closed-accounts__field'>
+    <div className='closed-accounts__field closed-accounts__field--search'>
      <label className='closed-accounts__label' htmlFor={searchFieldId}>
       {t('closedAccountsSearchLabel')}
      </label>
@@ -205,7 +205,7 @@ export const ClosedAccountsPage = () => {
      </span>
     </div>
 
-    <div className='closed-accounts__field'>
+    <div className='closed-accounts__field closed-accounts__field--type'>
      <label className='closed-accounts__label' htmlFor={typeFieldId}>
       {t('closedAccountsTypeLabel')}
      </label>
@@ -224,50 +224,11 @@ export const ClosedAccountsPage = () => {
      </select>
     </div>
 
-    <div className='closed-accounts__field'>
-     <label className='closed-accounts__label' htmlFor={sortFieldId}>
-      {t('closedAccountsSortLabel')}
-     </label>
-     <select
-      id={sortFieldId}
-      className='closed-accounts__select'
-      value={query.sort}
-      onChange={(event) =>
-       setSort(event.target.value as ClosedAccountSortKeyType)
-      }
-     >
-      {SORT_OPTIONS.map((option) => (
-       <option key={option.key} value={option.key}>
-        {t(option.labelKey)}
-       </option>
-      ))}
-     </select>
-    </div>
-
-    {/* The direction is a button rather than a second select: it has exactly
-        two states and it says which one it is in, which a two-option dropdown
-        does with one more click. */}
-    <button
-     type='button'
-     className='closed-accounts__order'
-     onClick={() => setOrder(query.order === 'desc' ? 'asc' : 'desc')}
-     aria-label={t('closedAccountsOrderToggle')}
-    >
-     {/* One chevron, turned. Two icons for one axis would make the reader
-         compare shapes to learn which way the list runs; turning the same one
-         states it. */}
-     <SortDirectionSvg
-      className={`closed-accounts__order-icon${
-       query.order === 'asc' ? ' is-ascending' : ''
-      }`}
-      aria-hidden='true'
-     />
-     {query.order === 'desc'
-      ? t('closedAccountsOrderDesc')
-      : t('closedAccountsOrderAsc')}
-    </button>
-
-    <div className='closed-accounts__field closed-accounts__field--narrow'>
+    {/* Per page sits beside the type filter rather than after the sort group.
+        Both are narrow, so on a phone they share one row instead of taking a
+        full-width row each, and the reader reaches the sort key next to the
+        direction that modifies it. */}
+    <div className='closed-accounts__field closed-accounts__field--limit'>
      <label className='closed-accounts__label' htmlFor={limitFieldId}>
       {t('closedAccountsPerPage')}
      </label>
@@ -283,6 +244,57 @@ export const ClosedAccountsPage = () => {
        </option>
       ))}
      </select>
+    </div>
+
+    {/* The sort key and its direction are ONE decision, so they are one group.
+        The button used to be a sibling of the three fields, which made the
+        layout treat a modifier of the sort key as a fourth control and gave it
+        a row of its own on a phone. */}
+    <div className='closed-accounts__field closed-accounts__field--sort'>
+     <label className='closed-accounts__label' htmlFor={sortFieldId}>
+      {t('closedAccountsSortLabel')}
+     </label>
+     <div className='closed-accounts__sort-row'>
+      <select
+       id={sortFieldId}
+       className='closed-accounts__select'
+       value={query.sort}
+       onChange={(event) =>
+        setSort(event.target.value as ClosedAccountSortKeyType)
+       }
+      >
+       {SORT_OPTIONS.map((option) => (
+        <option key={option.key} value={option.key}>
+         {t(option.labelKey)}
+        </option>
+       ))}
+      </select>
+
+      {/* The direction is a button rather than a second select: it has exactly
+          two states and it says which one it is in, which a two-option
+          dropdown does with one more click. */}
+      <button
+       type='button'
+       className='closed-accounts__order'
+       onClick={() => setOrder(query.order === 'desc' ? 'asc' : 'desc')}
+       aria-label={t('closedAccountsOrderToggle')}
+      >
+       {/* One chevron, turned. Two icons for one axis would make the reader
+           compare shapes to learn which way the list runs; turning the same
+           one states it. */}
+       <SortDirectionSvg
+        className={`closed-accounts__order-icon${
+         query.order === 'asc' ? ' is-ascending' : ''
+        }`}
+        aria-hidden='true'
+       />
+       <span className='closed-accounts__order-text'>
+        {query.order === 'desc'
+         ? t('closedAccountsOrderDesc')
+         : t('closedAccountsOrderAsc')}
+       </span>
+      </button>
+     </div>
     </div>
    </section>
 
