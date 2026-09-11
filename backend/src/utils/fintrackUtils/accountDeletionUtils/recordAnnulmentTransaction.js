@@ -2,7 +2,7 @@
 
 import pc from 'picocolors';
 import { createError, handlePostgresError } from '../../errorHandling.js';
-import { getCurrencyIdSync } from '../../currencyLookup.js';
+import { getCurrencyId } from '../../currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../fintrack_api/config/fintrackConfig.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from './annulmentRowIdentity.js';
 import {
@@ -124,7 +124,14 @@ export const recordAnnulmentTransaction = async (client, annulmentData) => {
   // original_amount 0 and original_currency_id 1, which is false whenever the
   // adjustment is not zero or the account is not in currency 1. Same fallback
   // semantics as recordTransaction.js, the general writer (pern-fintrack-02).
-  const accountingCurrencyId = getCurrencyIdSync(ACCOUNTING_CURRENCY_CODE);
+  // Resolved through the reader that falls back, not the catalog-only one that
+  // throws: getCurrencyId returns the catalog's answer when it is loaded and
+  // queries this transaction's own client when it is not, so a hand-run script
+  // with no boot behind it reaches the same id instead of throwing here.
+  const accountingCurrencyId = await getCurrencyId(
+    client,
+    ACCOUNTING_CURRENCY_CODE,
+  );
   const exchangeRateTimestamp = new Date();
 
   // Source/Destination/Types Determination (Double Entry Logic)
