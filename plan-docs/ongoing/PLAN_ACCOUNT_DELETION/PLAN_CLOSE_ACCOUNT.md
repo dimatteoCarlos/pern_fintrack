@@ -3118,19 +3118,37 @@ so far"). The erasure has no such filter:
   declares `status TEXT NOT NULL` with no default and no CHECK, and
   `createTables.js:188` declares the same column the same way, so a boot-built
   database is identical here and the sweep closes on both build paths. The
-  writers are seven, not the five first relayed: `transactionController.js:827`
-  and `:868`, `recordAnnulmentTransaction.js:151` and `:187`,
-  `recordClosureSettlement.js:187` and `:216`, and
-  `prepareTransactionOption.js:23`. All seven write `'complete'`, so the count
-  changes and the conclusion does not.
-- **The seven literals are option builders, not the insert.** An earlier version
+  writers are NINE, measured on `main` at `03350e0b` by grepping the literal
+  rather than reading a relayed list:
+
+  | file | lines |
+  |---|---|
+  | `transactionController.js` | `:837`, `:878` |
+  | `recordAnnulmentTransaction.js` | `:158`, `:194` |
+  | `recordBalanceReversal.js` | `:185`, `:218` |
+  | `recordClosureSettlement.js` | `:194`, `:223` |
+  | `prepareTransactionOption.js` | `:23` |
+
+  All nine write `'complete'`, so the count changes and the conclusion does not.
+  The count has now been wrong three ways: five when first relayed, seven in an
+  earlier version of this bullet, and nine when actually grepped. Two separate
+  errors produced the seven - `recordBalanceReversal.js` was absent from the
+  list altogether, and every remaining anchor was a pre-`de81e7ad` line number,
+  seven lines short because the comment and call that commit added to each
+  writer sit above them. A third error attached the six deletion-path numbers to
+  the wrong files, shifted by one file down the list, so that
+  `recordTransaction.js` appeared to carry two literals when it carries none.
+  The pairing above is the grep's own output, not a reconstruction.
+- **The nine literals are option builders, not the insert.** An earlier version
   of this bullet read them as sealing the column and concluded a second status
   could only arrive through a file edit. That is wrong, withdrawn twice by the
   session that supplied it and checked here in the writers.
-- **THE COLUMN IS A BIND, AND ITS VALUE COMES FROM THE CALLER.** Three
-  statements insert into `transactions`: `recordAnnulmentTransaction.js:207`,
-  `recordClosureSettlement.js:235`, and `recordTransaction.js:100`. The third is
-  the general writer - the other two say so in their own comments - and its
+- **THE COLUMN IS A BIND, AND ITS VALUE COMES FROM THE CALLER.** Four
+  statements insert into `transactions`, not the three an earlier version of
+  this bullet named:
+  `recordAnnulmentTransaction.js:214`, `recordBalanceReversal.js:238`,
+  `recordClosureSettlement.js:242`, and `recordTransaction.js:107`. The last is
+  the general writer - the other three say so in their own comments - and its
   column list names `status` fourth against `VALUES($1,$2,$3,$4,...)`, taken
   from the caller's `values` array. It hardcodes nothing. So a second status
   arrives the moment any caller passes one, with no file edited and no new
@@ -4166,3 +4184,46 @@ cannot be reopened by design, so there is nothing to undo - but the mockup
 Carlos asked for also implies a row that can be opened for detail, and the
 registry carries no closing balance to show there, because the close runs only
 on an account at zero.
+
+
+### 14.16 One transfer, two decimal counts, 2026-09-11
+
+An external review of the transaction ticket reported that the generated
+description printed `Transfered 5.000 USD` while the header showed `$5.00` on
+the same ticket.
+
+**The defect is sharper than the report.** `transactionController.js` writes
+BOTH legs of a transfer from the SAME variable, `numericAmount`, and the two
+disagreed with each other: the source leg printed `.toFixed(3)`, its own
+destination leg printed `.toFixed(2)`. A single transfer therefore wrote
+`Transfered 5.000` about itself on one side and `Received 5.00` on the other.
+The mismatch against the header is a symptom; the transaction contradicting its
+own counterpart is the finding.
+
+**Checked before changing, because a description can be a data channel.**
+Nothing parses the digits back out of `transactions.description`. The only seam
+ever split is `'Transaction: '` in `extractNoteFromDescription`, and the only
+LIKE predicates over that column are the RTA annulment prefix at
+`overviewInvestmentRepository.js:206` and the owner's own search box at
+`dashboardController.js:998`. Neither reads a number.
+
+**The hardcoded 2 stays hardcoded here.** It is what every other amount in the
+app prints. A currency with no subunit needs 0, and that belongs to the
+per-currency precision work queued after the transaction UI mapper, not to one
+line inside a transfer writer. Fixing it a line at a time would scatter the
+decision across the files that would then have to be found again.
+
+**Two placeholders in this module were wrong, found while verifying a peer's
+WCAG measurement.** Neither was reported by any review.
+
+| field | was | is | why |
+|---|---|---|---|
+| the search box, `closedAccounts.css` | no `::placeholder` rule at all | `--color-content-on-dark-placeholder`, 7.19:1 on `--color-surface-deep` | with no rule the field takes the user agent's own placeholder colour, derived for a white input and near-invisible on this ground |
+| the close reason, `closeAccountUI.css` | `--color-content-on-dark-subtle`, 9.40:1 | `--color-content-on-dark-placeholder`, 6.70:1 | it passed contrast and still read wrong: hint text wearing the secondary-content ink makes an empty box look filled. `tokens.css:66-69` declares the placeholder token for exactly this and says a placeholder stays a step below content |
+
+**The measurement was reproduced, not accepted.** A peer session reported
+`--color-content-placeholder` at #5b5b5b measuring 2.83:1 on
+`--color-surface-app`. Recomputed here from the token values: 2.83:1 on app,
+2.88:1 on sunken, 3.09:1 on deep, 2.57:1 on raised. The token is not used
+anywhere in `editionAndDeletion/`, so the failure it names is not in this
+module - but checking for it is what surfaced the two above.
