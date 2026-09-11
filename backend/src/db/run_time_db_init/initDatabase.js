@@ -110,7 +110,8 @@ export async function initializeDatabase() {
     // refused an off-machine destination since 2026-09-08 and this path did
     // not, so the two DDL paths now ask the same question. DB_REMOTE_OK is the
     // way through when a remote destination is meant.
-    await assertLocalDestination(client, 'initializeDatabase');
+    const destination = await assertLocalDestination(client, 'initializeDatabase');
+    console.log(pc.green(`Destination confirmed: ${destination}`));
 
     console.log(pc.cyanBright('Verificando existencia de datos en tablas ...'));
 
