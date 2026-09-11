@@ -177,11 +177,18 @@ function ParetoBar({
     {/* THE LINE IS NAMED IN WORDS. Carlos, 2026-09-10: "que significa la barra
         vertical blanco en la barra de progreso?". A mark whose meaning is
         written nowhere on the block is a mark the reader has to guess, and the
-        sentence that explains it was already here, missing only its subject. */}
+        sentence that explains it was already here, missing only its subject.
+
+        "the top N carry it" and not "N reach it", which is what it said until
+        Carlos's screen printed "3 of 3 categories reach it" over three rows
+        whose running shares were 35%, 69% and 100%. Only the third one reaches
+        80%; the other two are below it and are counted because the reading is
+        about the group, not about each row. The old wording claimed of every
+        row what is only true of the set. */}
     {concentrationIndex !== -1 && (
      <span>
-      the white line marks {percent(concentrationMark)}:{' '}
-      {concentrationIndex + 1} of {spendingCount} {unitLabel} reach it
+      the white line marks {percent(concentrationMark)}: the top{' '}
+      {concentrationIndex + 1} of {spendingCount} {unitLabel} carry it
      </span>
     )}
 
