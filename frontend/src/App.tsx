@@ -45,6 +45,11 @@ import OverviewLayout from './fintrack/pages/overview/OverviewLayout'; //(Load i
 // ✅ Overview page - loads when user navigates to /fintrack/overview
 const Overview = lazy(() => import('./fintrack/pages/overview/Overview'));
 
+// ✅ Overview level 2 - one domain, loaded when a card is opened
+const OverviewDomain = lazy(
+  () => import('./fintrack/pages/overview/OverviewDomain')
+);
+
 // ✅ Accounting Dashboard - loads when user navigates to /fintrack/tracker/accounting
 const AccountingDashboard = lazy(
   () => import('./fintrack/pages/accountingDashboard/AccountingDashboard'),
@@ -288,6 +293,24 @@ function App() {
                   element: (
                     <LazyRoute>
                       <Overview />
+                    </LazyRoute>
+                  ),
+                },
+                // A SIBLING OF THE INDEX AND NOT A ROUTE OF ITS OWN, so the
+                // month picker, the hero and the ?month= parameter above it are
+                // the same ones. Declared beside this layout instead, the
+                // screen would have to own the month a second time and the two
+                // could disagree about which one is being read.
+                //
+                // :domain is validated in the page and not here: a router
+                // cannot say which six names the controller has a calculator
+                // for, and a segment that is not one of them gets a screen
+                // naming the six rather than the server's 400.
+                {
+                  path: ':domain',
+                  element: (
+                    <LazyRoute>
+                      <OverviewDomain />
                     </LazyRoute>
                   ),
                 },

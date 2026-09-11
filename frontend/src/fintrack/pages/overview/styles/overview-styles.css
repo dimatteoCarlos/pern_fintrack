@@ -1560,3 +1560,75 @@ a.icon {
  font-style: italic;
  color: var(--color-content-on-dark-subtle);
 }
+
+/*------------*/
+/* LEVEL 2 - one domain. The blocks inside carry their own rules; these four are
+   the page frame, and they are scoped to .overviewDomain rather than to
+   .overviewLayout because this screen is rendered INSIDE that layout and would
+   otherwise have to fight it for the same selectors. */
+
+.overviewLayout .overviewDomain {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+ padding-block: var(--space-4);
+}
+
+/* The headline figure, beside the domain's name in the title's legend slot. The
+   same weight the domain cards give their own figure, so a reader arriving from
+   one recognises the number. */
+.overviewLayout .overviewDomain__amount {
+ font-weight: var(--font-weight-bold);
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-on-dark);
+}
+
+/* The way back, and it is a link and not a history step: a reader who opened
+   this screen from its url has no history to go back to, and a button calling
+   back() would do nothing for them. */
+.overviewLayout .overviewDomain__back {
+ align-self: flex-start;
+ padding: var(--space-1) 0;
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-subtle);
+ text-decoration: underline;
+}
+
+.overviewLayout .overviewDomain__back:hover {
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .overviewDomain__back:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+ border-radius: var(--radius-sm);
+}
+
+.overviewLayout .overviewDomain__note {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-muted);
+}
+
+/* The way into level 2, the last line a card opens to. Quiet by default: six of
+   these down the page at full ink would compete with the figures they sit
+   under, and the reader who wants one is looking for it. */
+.overviewLayout .domainCard__drill {
+ align-self: flex-start;
+ margin-top: var(--space-2);
+ padding: var(--space-1) 0;
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+ text-decoration: underline;
+}
+
+.overviewLayout .domainCard__drill:hover {
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .domainCard__drill:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+ border-radius: var(--radius-sm);
+}

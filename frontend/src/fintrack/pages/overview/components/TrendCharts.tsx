@@ -14,9 +14,10 @@
 // system to draw; there is none here.
 //
 // The distribution bar the sketch draws beside this is ParetoBar.tsx, mounted
-// under this block by ExpenseByCategory.tsx. It waited on a colour ramp the
-// design system did not carry; --color-scale-magnitude-high / -low now declare
-// one as its own layer, so the ramp is a token pair and not an invented hex.
+// under this block by ExpenseByCategory.tsx, with DonutChart.tsx beside it. Both
+// waited on a colour scale the design system did not carry;
+// --color-scale-category-1..8 now declares one, so the hues are tokens and not
+// invented hexes.
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
@@ -86,7 +87,11 @@ const ratioOf = (value: number, peak: number) => {
 const positionX = (index: number, count: number) =>
  ((index + 0.5) / count) * 100;
 
-const TrendChart = ({
+// Exported for the level-2 screen, which draws one domain's curve where this
+// block draws three against each other. It was prop-driven already, so the
+// export is the whole of the change: a second implementation of the same
+// polyline is how two screens end up disagreeing about the same six numbers.
+export const TrendChart = ({
  label,
  nature,
  points,

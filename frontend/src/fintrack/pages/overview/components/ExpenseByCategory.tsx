@@ -17,7 +17,10 @@ import { CardTitle } from '../../../general_components/CardTitle';
 import { currencyFormat } from '../../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
-import { OverviewExpenseCategory } from '../../../types/overviewTypes';
+import {
+ OverviewExpenseCard,
+ OverviewExpenseCategory,
+} from '../../../types/overviewTypes';
 
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
@@ -47,21 +50,39 @@ const toParetoRows = (categories: OverviewExpenseCategory[]): ParetoRow[] =>
   isFlagged: category.isOverBudget,
  }));
 
+// THE DRAWING TAKES ITS ROWS AND NOT A STORE, so the level-2 expense screen
+// mounts the same two readings from the domain answer. Level 1 reads
+// charts.expenseCategories off the page payload; level 2 reads categories off
+// GET /overview/expense. Same array, two routes to it, one component.
+type ExpenseByCategoryProps = {
+ categories: OverviewExpenseCategory[];
+ card: OverviewExpenseCard;
+};
+
+// The store-backed level-1 mount. A wrapper and not a copy: the store read is
+// the only thing that belongs to level 1, and the drawing below belongs to both.
 function ExpenseByCategory() {
  const charts = useOverviewStore((state) => state.charts);
  const domainCards = useOverviewStore((state) => state.domainCards);
 
  if (!charts || !domainCards) return null;
 
- const categories = charts.expenseCategories;
+ return (
+  <ExpenseBreakdown
+   categories={charts.expenseCategories}
+   card={domainCards.expense}
+  />
+ );
+}
 
+export function ExpenseBreakdown({ categories, card }: ExpenseByCategoryProps) {
  // EMPTY IS A REAL ANSWER AND IT IS NOT AN ERROR. An owner who spent nothing
  // with a category this month has no ranking to draw, and a bar of one empty
  // track would say the figures failed to arrive. The block renders nothing and
  // the expense card above it already states the month's total.
  if (categories.length === 0) return null;
 
- const expense = domainCards.expense;
+ const expense = card;
 
  // The last row's running total IS the denominator the server divided by
  // (makeCategoryBreakdown.js:70), so the figure above the bar and the

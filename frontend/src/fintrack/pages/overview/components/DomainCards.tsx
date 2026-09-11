@@ -16,6 +16,8 @@
 // owed, what is committed, what is held - and the realised result is a
 // conclusion drawn over them rather than a sixth of the same kind.
 
+import { Link, useLocation } from 'react-router-dom';
+
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
 import CollapsibleBlock from './CollapsibleBlock';
@@ -32,6 +34,7 @@ import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import { monthLabel } from '../helpers/monthLabel';
 import {
+ OverviewDomain,
  OverviewDomainCardBase,
  OverviewExpenseCard,
  OverviewPnlCard,
@@ -529,6 +532,12 @@ type CardProps = {
  // natures have no token of their own and inventing one would put an
  // unreviewed value in the palette.
  nature: 'flow' | 'position';
+ // Which of the six this card is, and the only thing the shell needs in order
+ // to address its level-2 screen. The label cannot stand in for it: 'Pocket ·
+ // committed' and 'PnL' are words for a reader and the route takes the wire
+ // name, and a reverse map between the two is a second place to keep them
+ // agreeing.
+ domain: OverviewDomain;
  // Absent on the three cards that publish no health statement, and absent is
  // not 'unknown': one says the domain has no such reading, the other says this
  // month's could not be taken.
@@ -551,29 +560,61 @@ type CardProps = {
 // the domain's name and its nature. The figure and the reading fold away
 // together: a headline with its own reading removed would be a figure nobody
 // can qualify.
-const DomainCard = ({ label, nature, square, children, sub }: CardProps) => (
- <CollapsibleBlock
-  variant='card'
-  className='domainCard'
-  head={
-   <div className='domainCard__head'>
-    <span className='domainCard__label'>{label}</span>
-    <span className='domainCard__scope'>{nature}</span>
-   </div>
-  }
- >
-  <div className='domainCard__figures'>{children}</div>
+// THE WAY INTO LEVEL 2 IS IN THE BODY AND NOT IN THE HEAD, and that is a
+// constraint rather than a preference: the head is a summary element, and a link
+// inside one is nested interactive content - the browser would fire the link AND
+// toggle the fold on the same click. So the card's name stays a name, and the
+// link is the last line of what the card opens to.
+//
+// It carries the CURRENT SEARCH STRING verbatim. The month lives there
+// (OverviewLayout.tsx:47-54) and is absent when the reader never stepped, which
+// is not the same as the current month spelled out: absent means the server
+// resolves it on the owner's calendar. Forwarding the string preserves both
+// cases without this file knowing which one it is in.
+const DomainCard = ({
+ label,
+ nature,
+ domain,
+ square,
+ children,
+ sub,
+}: CardProps) => {
+ const { search } = useLocation();
 
-  {/* The square sits ON the subordinate line and not beside the card's name.
-      It qualifies a reading, so it belongs next to the sentence that states
-      the reading - against the name it would look like part of the title and
-      say nothing about which figure it grades. */}
-  <div className='domainCard__sub'>
-   {square !== undefined && <StatusSquare alert={square} />}
-   <span>{sub}</span>
-  </div>
- </CollapsibleBlock>
-);
+ return (
+  <CollapsibleBlock
+   variant='card'
+   className='domainCard'
+   head={
+    <div className='domainCard__head'>
+     <span className='domainCard__label'>{label}</span>
+     <span className='domainCard__scope'>{nature}</span>
+    </div>
+   }
+  >
+   <div className='domainCard__figures'>{children}</div>
+
+   {/* The square sits ON the subordinate line and not beside the card's name.
+       It qualifies a reading, so it belongs next to the sentence that states
+       the reading - against the name it would look like part of the title and
+       say nothing about which figure it grades. */}
+   <div className='domainCard__sub'>
+    {square !== undefined && <StatusSquare alert={square} />}
+    <span>{sub}</span>
+   </div>
+
+   {/* Named for what is on the other side rather than "see more": the level-2
+       screen is every movement of this domain in the month, and the label says
+       so on all six cards. */}
+   <Link
+    className='domainCard__drill'
+    to={{ pathname: `/fintrack/overview/${domain}`, search }}
+   >
+    Every {label.toLowerCase()} movement
+   </Link>
+  </CollapsibleBlock>
+ );
+};
 
 function DomainCards() {
  const domainCards = useOverviewStore((state) => state.domainCards);
@@ -602,6 +643,7 @@ function DomainCards() {
    <section className='domainCards'>
    <DomainCard
     label='Income'
+    domain='income'
     nature='flow'
     sub={coloredDeltaLine(income)}
    >
@@ -616,6 +658,7 @@ function DomainCards() {
        which is why it read as a stray dash before the word Budget. */}
    <DomainCard
     label='Expense'
+    domain='expense'
     nature='flow'
     sub={
      /* ROWS and not one wrapping sentence, which is the shape Carlos drew on
@@ -647,6 +690,7 @@ function DomainCards() {
 
    <DomainCard
     label='Debt'
+    domain='debt'
     nature='position'
     sub={coloredDeltaLine(debt)}
    >
@@ -704,6 +748,7 @@ function DomainCards() {
        back to the subtitle as the 'unknown' it is: no answer, said once. */}
    <DomainCard
     label='Pocket · committed'
+    domain='pocket'
     nature='position'
     square={pocket.target ? undefined : pocketSquare(pocket)}
     sub={
@@ -751,6 +796,7 @@ function DomainCards() {
 
    <DomainCard
     label='Investment'
+    domain='investment'
     nature='position'
     sub={
      /* Two rows, the change over the account count, which is the order the PnL
@@ -788,6 +834,7 @@ function DomainCards() {
 
    <DomainCard
     label='PnL'
+    domain='pnl'
     nature='flow'
     square={pnlSquare(pnl)}
     sub={

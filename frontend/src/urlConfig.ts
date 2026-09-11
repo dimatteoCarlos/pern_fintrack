@@ -148,6 +148,15 @@ export const url_get_overview: string = BASE_URL_APP + 'overview';
 export const url_get_overview_activity: string =
   BASE_URL_APP + 'overview/activity';
 
+//GET http://localhost:5078/api/fintrack/overview/:domain?month=YYYY-MM
+// A function and not a constant, because the domain is a PATH SEGMENT. The
+// route comments say why it is one: a domain SELECTS which of the six
+// calculators answers, where a query parameter narrows an answer already
+// chosen. /overview/activity above is not a domain and deliberately does not
+// go through here even though the two urls look alike.
+export const url_get_overview_domain = (domain: string): string =>
+  BASE_URL_APP + 'overview/' + domain;
+
 //=======================================
 //endpoints for OVERVIEWLAYOUT page
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
