@@ -63,6 +63,11 @@ export const useCloseAccount = (targetAccountId: number | string) => {
 
  const targetAccount = previewResponse?.data?.targetAccount ?? null;
 
+ // Null on two different grounds and the screen treats them alike: the preview
+ // has not answered yet, or it was answered by a backend released before this
+ // key existed. Either way there is no impact to state.
+ const netWorth = previewResponse?.data?.netWorth ?? null;
+
  // Text all the way through, never a number. The server sends the balance as
  // the driver handed it over precisely so nothing rounds it in transit; the
  // only place it is parsed is the zero test below, and that result is a
@@ -157,6 +162,7 @@ export const useCloseAccount = (targetAccountId: number | string) => {
   // preview
   targetAccount,
   residual,
+  netWorth,
   canClose,
   isLoadingPreview,
   previewError,

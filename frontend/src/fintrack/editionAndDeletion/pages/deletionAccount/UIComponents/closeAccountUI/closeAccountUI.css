@@ -37,6 +37,29 @@
  font-weight: var(--font-weight-semibold);
 }
 
+/* The before-and-after pair, grouped so the two rows read as one statement
+   rather than as two unrelated figures stacked. */
+.close-account__net-worth {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+}
+
+.close-account__net-worth-title {
+ margin: 0;
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+}
+
+/* Why the two figures are the same, said in words. Without it an unchanged
+   pair reads as a figure that failed to update. */
+.close-account__net-worth-note {
+ margin: 0;
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+}
+
 /* The balance that refuses the close, coloured as the blocking figure it is
    rather than as a plain amount. */
 .close-account__balance-value--blocking {

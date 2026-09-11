@@ -3951,3 +3951,81 @@ Measured on `fintrack_dev` for account 109: `slack` now reads
 `account-opening`, the two category accounts read `expense`, the investment
 account reads `transfer` and the debtor reads `debt`.
 
+
+
+### 14.13 The reversal states its effect on net worth, 2026-09-11
+
+Carlos supplied the refusal text the close screen shows on an account that
+still holds a balance, in both languages, and asked one question beside it:
+whether the effect on net worth could be shown before and after, on that same
+screen.
+
+**The text, replaced verbatim.** `closeOnlyBlockedNotice` carried a four-clause
+sentence in English and its Spanish counterpart. Both were replaced with the
+text he wrote (`languages.ts:400` and `:587`). The Spanish one addresses the
+owner as `tu`, while every other string in this dictionary uses `usted`. His
+text was taken as written rather than adapted; the register mismatch is
+recorded here and is a sweep of the whole module, not of one line.
+
+**Both figures are served, not computed on the screen.** `getClosePreview.js`
+gained one aggregate read beside the residual it already served:
+
+```sql
+WITH counted AS (
+  SELECT ua.account_id, <derived balance> AS balance
+  FROM user_accounts ua
+  JOIN account_types act ON act.account_type_id = ua.account_type_id
+  WHERE ua.user_id = $1
+    AND ua.deleted_at IS NULL
+    AND ua.closed_at IS NULL
+    AND act.account_type_name IN ('bank', 'cash', 'investment', 'debtor')
+)
+SELECT
+  COALESCE(SUM(balance), 0)::text AS net_worth_before,
+  COALESCE(SUM(balance) FILTER (WHERE account_id <> $2), 0)::text AS net_worth_after,
+  EXISTS (SELECT 1 FROM counted WHERE account_id = $2) AS counts_toward_net_worth
+FROM counted
+```
+
+**Why the after figure is a FILTER and not `before - residual`.** The two
+spellings agree on an account whose type counts, and only one of them is right
+on an account whose type does not. A category budget, an income source and a
+pocket are not holdings: net worth never counted their balance, so closing one
+changes nothing, and the subtraction would publish a drop that does not happen.
+The filter removes nothing in that case and the two figures come back equal,
+which is the answer rather than a missing one.
+
+**The membership rule is the hero's, restated rather than invented.**
+`makeHeroSection.js:197` composes `netWorth` as `bankBalance +
+investmentBalance + debtPosition`, and those three inputs read exactly these
+four types: bank and cash together (D45), investment, and the debtor legs.
+
+**It is not the hero's figure, and the difference is the time coordinate.** The
+hero answers at the close of its reference month; this answers now, because the
+close happens now. On the current month the two agree; on a past one they do
+not, and the figure that belongs beside a live residual is this one. There was
+therefore no existing "net worth now" to reuse.
+
+**Shown on the reversal path only.** The plain close refuses any balance that
+is not zero, so its before and after would be the same figure written twice.
+`CloseAccountUI.tsx` renders the block when `isBalanceReversed` is set, the
+preview has answered, and the key is present at all - `netWorth` is optional on
+`ClosePreviewResponseType` because the two halves deploy separately, so a
+frontend released ahead of this backend renders nothing rather than two empty
+figures. Four dictionary keys carry the labels and the unchanged-account note,
+in both languages.
+
+**Not verified by boot.** The no-local-boot restriction of 2026-09-11 stands,
+so `APP LOADED OK` was not produced for this change. What was run:
+`node --check` on the service, and `npx tsc --noEmit -p tsconfig.app.json`
+clean across the frontend.
+
+**A correction to the record on the compensation account.** The checklist of
+2026-09-11 states that the compensation account is now global. It is not.
+`checkAndInsertAccount.js:71` still reads `WHERE ua.user_id = $1`, and the
+insert below it writes the same `userId`, so there is one compensation account
+per owner. Nothing was changed on that basis: every figure the owner sees is
+already correct under the per-owner row, because the `boundary` type is
+excluded from every aggregate on the owner's own side, and converting to a
+single global row needs a system user to own it, a migration against production
+and a sweep of the read filters - work that moves no figure.

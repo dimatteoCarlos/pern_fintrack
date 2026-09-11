@@ -77,6 +77,7 @@ const CLOSE_REASON_MAX_LENGTH = 255;
 
  const {
   residual,
+  netWorth,
   canClose,
   isLoadingPreview,
   previewError,
@@ -203,6 +204,44 @@ const CLOSE_REASON_MAX_LENGTH = 255;
       </span>
      )}
     </p>
+
+    {/* WHAT THE CLOSE DOES TO NET WORTH, on the reversal path only. The plain
+        close refuses any balance that is not zero, so its before and after are
+        the same figure written twice. Guarded on the same three states as the
+        balance above, and on the key being present at all: a frontend released
+        ahead of the backend that serves it renders nothing here. */}
+    {isBalanceReversed &&
+     netWorth &&
+     !isLoadingPreview &&
+     !previewError && (
+      <div className="close-account__net-worth" role="note">
+       <p className="close-account__net-worth-title">
+        {t('closeNetWorthSectionLabel')}
+       </p>
+
+       <p className="close-account__balance-row">
+        <span className="close-account__balance-label">
+         {t('closeNetWorthBeforeLabel')}
+        </span>
+        <span className="close-account__balance-value">{netWorth.before}</span>
+       </p>
+
+       <p className="close-account__balance-row">
+        <span className="close-account__balance-label">
+         {t('closeNetWorthAfterLabel')}
+        </span>
+        <span className="close-account__balance-value">{netWorth.after}</span>
+       </p>
+
+       {/* The two figures are equal here, and without this line that reads as
+           a bug rather than as the answer. */}
+       {!netWorth.countsTowardNetWorth && (
+        <p className="close-account__net-worth-note">
+         {t('closeNetWorthUnchangedNote')}
+        </p>
+       )}
+      </div>
+     )}
 
     {/* THE BUDGET GOES WITH THE ACCOUNT. The owner ruled on 2026-09-07 that a
         category budget's budget is deleted with its account; he ruled on

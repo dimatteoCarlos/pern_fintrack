@@ -219,6 +219,20 @@ export type ClosePreviewAccountType = {
   residual: string;
 };
 
+// What the reverse-and-close does to net worth, both figures as the server
+// derived them and both TEXT for the same reason the residual is.
+//
+// countsTowardNetWorth says whether the closing account is one of the holdings
+// that figure adds up - bank, cash, investment and debtor accounts are, a
+// category budget, an income source, a pocket and the compensation account are
+// not. When it is false the two figures come back equal, which is the answer
+// rather than a missing one: closing that account leaves net worth where it is.
+export type ClosePreviewNetWorthType = {
+  before: string;
+  after: string;
+  countsTowardNetWorth: boolean;
+};
+
 // The full preview response. destinations and destinationCount are still in
 // the payload and always answer empty: they belonged to the TRANSFER
 // settlement, retired 2026-09-08, and the keys were kept rather than removed
@@ -232,6 +246,10 @@ export type ClosePreviewResponseType = {
     targetAccount: ClosePreviewAccountType;
     destinations: never[];
     destinationCount: number;
+    // OPTIONAL BECAUSE THE TWO HALVES DEPLOY SEPARATELY. A frontend released
+    // ahead of the backend that serves this key reads undefined, and the screen
+    // renders no impact block rather than rendering two empty figures.
+    netWorth?: ClosePreviewNetWorthType;
   };
 };
 
