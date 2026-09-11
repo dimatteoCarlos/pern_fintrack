@@ -68,7 +68,11 @@
  align-items: center;
  gap: var(--space-3);
  width: 100%;
- min-height: var(--size-touch-target);
+ /* The height comes from the line this control sits in, not from a floor.
+    Carlos repealed the mandatory 44px on pressable controls on 2026-09-11:
+    "desde ahora queda derogada usar como obligatorio 44 px en pulsadores,
+    se usara el tamanio de la linea donde se encuentran". The padding below
+    already sets it. */
  padding: var(--space-3) var(--space-4);
  border: none;
  border-radius: var(--radius-sm);
