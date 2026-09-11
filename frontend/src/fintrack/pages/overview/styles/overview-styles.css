@@ -1407,3 +1407,158 @@ a.icon {
  flex-direction: column;
  gap: var(--space-2);
 }
+
+/*------------*/
+/* The same ranking read as parts of a whole. It shares the bar's ramp tokens on
+   purpose - a category carries one colour across both drawings - and declares
+   nothing the bar already declares, because the two are separate folds and
+   either one can be the only thing on screen. */
+
+.overviewLayout .donutChart {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ /* figure carries a browser margin of its own, which would break the gap the
+    block above it sets. */
+ margin: 0;
+ padding: var(--space-3) var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+}
+
+/* The square the ring is drawn in, and the positioning context of the hole. The
+   width ceiling is what keeps a ring from filling a desktop card edge to edge;
+   it is a length with no token, and the ring is the only element that needs
+   one. */
+.overviewLayout .donutChart__ring {
+ position: relative;
+ align-self: center;
+ width: 100%;
+ max-width: 15rem;
+ aspect-ratio: 1;
+}
+
+.overviewLayout .donutChart__svg {
+ display: block;
+ width: 100%;
+ height: 100%;
+}
+
+/* What the gaps show through, and what an owner whose parts do not close the
+   circle sees instead of a hole in the drawing. The app surface and not a
+   panel: the ring sits on the dark ground, so every arc gains contrast against
+   it rather than losing it. */
+.overviewLayout .donutChart__track {
+ stroke: var(--color-surface-app);
+}
+
+/* THE RAMP, the bar's own, read off --donutChart-ramp. The mixing is here and
+   not in JavaScript because both ends are tokens, and a colour computed in the
+   component would not follow a change to either one.
+
+   butt and not round: a rounded cap adds half the ring's width to each end of
+   every arc, which on a part under two per cent is more cap than arc and draws
+   a lozenge where the figure asked for a sliver. */
+.overviewLayout .donutChart__arc {
+ stroke: color-mix(
+  in oklab,
+  var(--color-scale-magnitude-high) calc(var(--donutChart-ramp) * 100%),
+  var(--color-scale-magnitude-low)
+ );
+ stroke-linecap: butt;
+}
+
+/* The denominator, in the hole. pointer-events stays off so the text never
+   takes a press meant for an arc on a level-2 screen. */
+.overviewLayout .donutChart__hole {
+ position: absolute;
+ inset: 0;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-1);
+ padding: 0 var(--space-4);
+ text-align: center;
+ pointer-events: none;
+}
+
+.overviewLayout .donutChart__total {
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .donutChart__totalLabel {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* THE LEGEND IS THE RING'S ACCESSIBLE FORM, which is why the svg above is
+   aria-hidden: every figure the ring encodes is printed here, and exposing both
+   would recite each share twice.
+
+   It wraps into columns rather than running down one, because a ring's legend
+   is names and percentages and not a table of amounts. */
+.overviewLayout .donutChart__legend {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-1) var(--space-4);
+ margin: 0;
+ padding: 0;
+ list-style: none;
+}
+
+/* The basis is the width a category name plus its percentage needs before the
+   row is worth putting beside another; below it the legend falls to one column.
+   A length with no token, like the ring's ceiling above and the bar's running
+   share column - the three are the only ones in this sheet. */
+.overviewLayout .donutChart__row {
+ display: flex;
+ flex: 1 1 12rem;
+ align-items: center;
+ gap: var(--space-2);
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .donutChart__swatch {
+ flex: 0 0 auto;
+ width: var(--size-status-square);
+ height: var(--size-status-square);
+ border-radius: var(--radius-sm);
+ background: color-mix(
+  in oklab,
+  var(--color-scale-magnitude-high) calc(var(--donutChart-ramp) * 100%),
+  var(--color-scale-magnitude-low)
+ );
+}
+
+.overviewLayout .donutChart__name {
+ flex: 1 1 auto;
+ min-width: 0;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+ /* index.css sets font-size on the universal selector, so an inline element
+    takes 16px from there instead of inheriting the row it sits in. */
+ font-size: inherit;
+}
+
+.overviewLayout .donutChart__share {
+ flex: 0 0 auto;
+ font-size: var(--font-size-xs);
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* What the ring cannot draw, stated in words. Today that is the spending which
+   carries no category and which decision D48 keeps out of the ring: it sits
+   outside the set the server ranked, so a slice for it would double-count. */
+.overviewLayout .donutChart__foot {
+ font-size: var(--font-size-xs);
+ font-style: italic;
+ color: var(--color-content-on-dark-subtle);
+}

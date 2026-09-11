@@ -24,6 +24,12 @@
 
 import { currencyFormat } from '../../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
+import {
+ NO_SHARE,
+ RankedRow,
+ percent,
+ rampPosition,
+} from '../helpers/rankedBreakdown';
 
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
@@ -32,26 +38,17 @@ const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 // a different convention still passes its own.
 const CONCENTRATION_MARK = 0.8;
 
-// One row of a ranked breakdown, in the two figures every ranking publishes.
-// The domain's own field names are NOT here: five domains name the same figure
-// five ways, and a component that read categoryName would only ever serve one
-// of them. The adapter that owns the domain does the renaming, once.
-export type ParetoRow = {
- // Stable across renders and never the array index: the ranking reorders when
- // the month changes, and an index key would carry one row's state onto
- // another's. The adapter supplies the domain's own identifier.
- key: string;
- label: string;
- amount: number;
- // 0-1, this row's own share of the total.
- share: number;
+// A ranked row plus the one figure only this reading needs.
+//
+// THE SHARED PART IS SHARED AND NOT COPIED. DonutChart.tsx draws the same array
+// as parts of a whole (OVERVIEW_LAYOUT.md:500), so the row it takes and the row
+// this takes are the same row, and the colour each gives a category comes from
+// one rampPosition rather than two copies of it.
+export type ParetoRow = RankedRow & {
  // 0-1, this row plus every row above it. The running total is what makes the
- // reading a Pareto rather than a ranking.
+ // reading a Pareto rather than a ranking, and it is what the donut has no use
+ // for - a part of a whole has no running total.
  cumulativeShare: number;
- // Drawn as a word beside the amount and never as a colour alone. The bar's
- // own ramp already spends the ochre family on magnitude, so a second meaning
- // carried only in colour would be two colour systems on one row.
- isFlagged?: boolean;
 };
 
 type ParetoBarProps = {
@@ -68,48 +65,6 @@ type ParetoBarProps = {
  // today, the expense that carries no category.
  caption?: string;
  concentrationMark?: number;
-};
-
-// 0-1 to '12.3%'. One decimal because the server rounds the ratio to four
-// places (makeCategoryBreakdown.js:30), so a second decimal here would print
-// resolution the figure does not carry.
-const percent = (share: number) => `${(share * 100).toFixed(1)}%`;
-
-// The running share of a row that contributes none. The same dash PanelTotal
-// prints for a figure that did not arrive, because a reader learns one mark for
-// "there is no number here" and not two.
-const NO_SHARE = '—';
-
-// Where this row sits on the colour ramp, 0-1, and the only ratio this file
-// computes.
-//
-// BY RANK AND NO LONGER BY AMOUNT. It was amount / largest amount until Carlos
-// read the first render on 2026-09-10: "no distingo los colores entre las
-// categorias". He is right, and the arithmetic says why. A month's spending is
-// skewed by nature, so with a leader at 118 and the next four at 41, 27, 19 and
-// 8, the ramp positions come out 1.00, 0.35, 0.23, 0.16 and 0.07 - four of the
-// five crushed into the bottom seventh of the scale, indistinguishable at the
-// twelve pixels the track is tall. A ramp that cannot separate its own rows
-// encodes nothing.
-//
-// EVENLY SPACED, so N rows get N distinct steps whatever the figures are, and
-// the brightest is always rank 1. What the hue gives up is magnitude - and the
-// hue was never what carried it: the WIDTH of a segment is the share, exactly,
-// and a width is read off the screen with no legend at all. Colour now does the
-// job a width cannot, which is telling one segment from the next.
-//
-// The defect the old rule avoided does not come back. A category that changes
-// places does repaint - but its square in the legend repaints on the same
-// render, and a colour here is only ever compared inside one screen.
-//
-// A STRING AND NOT A NUMBER. React sets a custom property with setProperty and
-// appends no unit, but that is the one rule with a version-dependent exception,
-// and a '0.42px' landing inside calc() would fail silently and paint every
-// segment the same colour.
-const rampPosition = (index: number, count: number) => {
- if (count <= 1) return '1';
-
- return (1 - index / (count - 1)).toFixed(3);
 };
 
 function ParetoBar({

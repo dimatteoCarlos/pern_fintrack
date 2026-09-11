@@ -11,6 +11,7 @@
 // request is added here and no field was asked of the backend.
 
 import ParetoBar, { ParetoRow } from './ParetoBar';
+import DonutChart from './DonutChart';
 import CollapsibleBlock from './CollapsibleBlock';
 import { CardTitle } from '../../../general_components/CardTitle';
 import { currencyFormat } from '../../../helpers/functions';
@@ -83,29 +84,57 @@ function ExpenseByCategory() {
     )
   : null;
 
- // Folds on its own, and the donut that will read the same ranking will fold
- // on its own beside it. Two readings of one array, and a reader who wants the
- // shares without the ranking closes one and keeps the other.
+ const rows = toParetoRows(categories);
+
+ // Stated once and handed to both drawings, so the advisory line cannot say one
+ // thing under the bar and another under the ring.
+ const caption = uncategorized
+  ? `${uncategorized} more was spent without a category and is not ranked here`
+  : undefined;
+
+ // TWO FOLDS AND NOT ONE, on Carlos's instruction of 2026-09-11: "el Pareto y el
+ // futuro donut serian desplegables cada uno". They are two readings of ONE
+ // array and answer different questions - the bar says how few categories carry
+ // the month, the ring says what share each one is of it - so a reader who wants
+ // one closes the other and the colour of a category is the same in both.
+ //
+ // The ring opens CLOSED. The ranking is the primary reading and the one the
+ // block is titled for; the shares are the same figures seen a second way, and
+ // a block that opens with two drawings of one array on screen reads as the page
+ // saying the same thing twice.
  return (
-  <CollapsibleBlock head={<CardTitle>Expense by category</CardTitle>}>
-   {/* The single-column modifier, which the sheet already carries for a block
-       that is one card wide (overview-styles.css:397): the bar is one figure
-       across the row and not one of a pair. */}
-   <section className='domainCards domainCards--single'>
-    <ParetoBar
-     rows={toParetoRows(categories)}
-     currency={expense.currency}
-     total={total}
-     totalLabel='categorised spending'
-     unitLabel='categories'
-     caption={
-      uncategorized
-       ? `${uncategorized} more was spent without a category and is not ranked here`
-       : undefined
-     }
-    />
-   </section>
-  </CollapsibleBlock>
+  <>
+   <CollapsibleBlock head={<CardTitle>Expense by category</CardTitle>}>
+    {/* The single-column modifier, which the sheet already carries for a block
+        that is one card wide (overview-styles.css:397): the bar is one figure
+        across the row and not one of a pair. */}
+    <section className='domainCards domainCards--single'>
+     <ParetoBar
+      rows={rows}
+      currency={expense.currency}
+      total={total}
+      totalLabel='categorised spending'
+      unitLabel='categories'
+      caption={caption}
+     />
+    </section>
+   </CollapsibleBlock>
+
+   <CollapsibleBlock
+    head={<CardTitle>Share of the month</CardTitle>}
+    defaultOpen={false}
+   >
+    <section className='domainCards domainCards--single'>
+     <DonutChart
+      rows={rows}
+      currency={expense.currency}
+      total={total}
+      totalLabel='categorised spending'
+      caption={caption}
+     />
+    </section>
+   </CollapsibleBlock>
+  </>
  );
 }
 
