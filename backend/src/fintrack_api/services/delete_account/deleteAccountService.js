@@ -49,13 +49,17 @@ import { recordBalanceReversal } from '../../../utils/fintrackUtils/accountDelet
 // Block 3 step 1. Both are reused rather than reimplemented, on the owner's
 // ruling of 2026-09-08: the close does not write its own version of a release
 // or of a budget decision, it calls the ones the modules already own.
-import { pocketAllocationService } from '../pocket_services/services/pocketAllocationService.js';
+// Both of these had exactly one use, the pocket release loop that moved into
+// releasePocketCommitments.js on 2026-09-11. Commented rather than removed,
+// per the owner's standing rule; the helper below imports them itself now.
+// import { pocketAllocationService } from '../pocket_services/services/pocketAllocationService.js';
+import { releasePocketCommitments } from '../../../utils/fintrackUtils/accountDeletionUtils/releasePocketCommitments.js';
 import {
  resolveCurrentMonth,
  writeAllocation,
 } from '../budget_services/db/budgetAllocationRepository.js';
 import { getUserTimeZone } from '../../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
-import { ACCOUNTING_CURRENCY_CODE } from '../../config/fintrackConfig.js';
+// import { ACCOUNTING_CURRENCY_CODE } from '../../config/fintrackConfig.js';
 
 // The name the system reserves for the compensation counterpart. Belongs in
 // accountUtils.js beside NOT_BOUNDARY_ACCOUNT; declared here because that file
@@ -609,6 +613,24 @@ const processStandardDelete = async (
       throw createError(400, 'Account already soft deleted');
     }
     actionType = USER_ACTION;
+
+    // NO DELETION OF ANY KIND LEAVES A POCKET BACKED. Carlos, 2026-09-11:
+    // "cualquier borrado del tipo que sea, no debe seguir respaldando un
+    // pocket." Before this, SOFT stamped deleted_at and left every commitment
+    // standing, and the account could then never give them back: the release
+    // form offered it, the server locked it, and the eligibility guard refused
+    // it by the very column this branch had just written.
+    //
+    // BEFORE the UPDATE below, not after, and that ordering is the point. The
+    // release runs against an account that is still whole, in the same
+    // transaction, so a failure anywhere rolls back both the releases and the
+    // deletion rather than leaving an account deleted with its pockets still
+    // claiming it.
+    //
+    // The same helper CLOSE calls, so the two paths cannot drift into two
+    // answers for one rule.
+    await releasePocketCommitments(dbClient, userId, targetAccountId);
+
     console.log(
       pc.yellow(`User SOFT DELETE for account ${targetAccountId} by user ${userId}`),
     );
@@ -1222,48 +1244,16 @@ export const processCloseAccount = async (
   // and still be backing a pocket, because the balance fell after the
   // commitment was made and allocating never checked it again.
   //
-  // Enumerated per pocket rather than in one statement, because a release is
-  // per (pocket, source account) pair - the running sum of that pair is the
-  // figure the pocket module refuses to push below zero, and one total across
-  // pockets could not be checked against it. HAVING SUM > 0 leaves out pairs
-  // already settled: a zero pair has nothing to give back, and asking the
-  // module to release zero would be refused by the amount <> 0 CHECK.
-  const pocketHoldings = await dbClient.query(
-    `SELECT pa.pocket_id AS "pocketId", SUM(pa.amount)::text AS held
-       FROM pocket_allocations pa
-      WHERE pa.user_id = $1 AND pa.source_account_id = $2
-      GROUP BY pa.pocket_id
-     HAVING SUM(pa.amount) > 0`,
-    [userId, targetAccountId],
+  // MOVED OUT OF THIS BRANCH 2026-09-11, unchanged in behaviour. Carlos:
+  // "cualquier borrado del tipo que sea, no debe seguir respaldando un pocket."
+  // The loop used to live here, which made the rule CLOSE's alone - SOFT
+  // stamped deleted_at over allocations that stayed standing. It is one file
+  // now, releasePocketCommitments.js, called by both.
+  const releasedPockets = await releasePocketCommitments(
+    dbClient,
+    userId,
+    targetAccountId,
   );
-
-  const releasedPockets = [];
-
-  for (const holding of pocketHoldings.rows) {
-    // The module's own release, on this transaction's client. It writes the
-    // compensating row through the same statement the release form does, and
-    // applies the same guards - the pair may not go below zero, the account
-    // must still be undeleted, the pocket must be the owner's.
-    //
-    // ACCOUNTING_CURRENCY_CODE, not a lookup: the module refuses any source
-    // account not kept in it, so an account that can hold a commitment is
-    // already in that unit and the conversion is an identity.
-    const released = await pocketAllocationService.release(
-      userId,
-      holding.pocketId,
-      {
-        sourceAccountId: targetAccountId,
-        amount: Number(holding.held),
-        currency: ACCOUNTING_CURRENCY_CODE,
-      },
-      dbClient,
-    );
-
-    releasedPockets.push({
-      pocketId: holding.pocketId,
-      amount: released.amount,
-    });
-  }
 
   // THE BUDGET SERIES STOPS AT THIS MONTH.
   //
