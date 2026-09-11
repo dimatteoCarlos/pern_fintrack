@@ -8,7 +8,7 @@
 import pc from 'picocolors';
 import { pool } from '../../../db/config/configDB.js';
 import { createError, handlePostgresError } from '../../errorHandling.js';
-import { getCurrencyIdSync } from '../../../utils/currencyLookup.js';
+import { getCurrencyId } from '../../../utils/currencyLookup.js';
 
 import { ACCOUNTING_CURRENCY_CODE } from '../../../fintrack_api/config/fintrackConfig.js';
 import {
@@ -22,7 +22,14 @@ import {
 // ===================================
 export async function recordTransaction(clientOrPool = null, option) {
   const dbClient = clientOrPool || pool;
-  const accountingCurrencyId = getCurrencyIdSync(ACCOUNTING_CURRENCY_CODE);
+  // Resolved through the reader that falls back, not the catalog-only one that
+  // throws: getCurrencyId returns the catalog's answer when it is loaded and
+  // queries this transaction's own client when it is not, so a hand-run script
+  // with no boot behind it reaches the same id instead of throwing here.
+  const accountingCurrencyId = await getCurrencyId(
+    dbClient,
+    ACCOUNTING_CURRENCY_CODE,
+  );
 
   try {
     const {

@@ -4022,10 +4022,59 @@ clean across the frontend.
 
 **A correction to the record on the compensation account.** The checklist of
 2026-09-11 states that the compensation account is now global. It is not.
-`checkAndInsertAccount.js:71` still reads `WHERE ua.user_id = $1`, and the
+`checkAndInsertAccount.js:69` still reads `WHERE ua.user_id =$1`, and the
 insert below it writes the same `userId`, so there is one compensation account
 per owner. Nothing was changed on that basis: every figure the owner sees is
 already correct under the per-owner row, because the `boundary` type is
 excluded from every aggregate on the owner's own side, and converting to a
 single global row needs a system user to own it, a migration against production
 and a sweep of the read filters - work that moves no figure.
+
+
+### 14.14 The four transaction writers stop throwing on an unloaded catalog, 2026-09-11
+
+**What was wrong.** Four writers resolved the accounting currency through
+`getCurrencyIdSync`, the catalog-only reader, and each called it ABOVE its own
+`try`. The catalog is filled at boot, so under the running server the call
+always answered - but anything that reaches these writers without a boot behind
+it, a hand-run script most of all, threw before the transaction's own error
+handling could see it.
+
+**What they call now.** `getCurrencyId(client, ACCOUNTING_CURRENCY_CODE)`, the
+reader at `currencyLookup.js:17`, which returns the catalog's answer when it is
+loaded and queries the client it was handed when it is not. It is a superset of
+the old behaviour, not an alternative to it: same answer, same cost, one fewer
+way to fail.
+
+| file | line | client it now reads through |
+|---|---|---|
+| `recordTransaction.js` | 25 | `dbClient` |
+| `recordAnnulmentTransaction.js` | 127 | `client` |
+| `recordBalanceReversal.js` | 148 | `client` |
+| `recordClosureSettlement.js` | 153 | `client` |
+
+**All four or none, and `recordTransaction.js` is why.** Three of them belong to
+this module; the fourth is on every ordinary transaction path. Moving three
+would leave the hazard exactly where it does the most work.
+
+**The client is passed rather than left to default.** `getCurrencyId` falls back
+to the shared pool when given nothing, and a pool read taken in the middle of a
+transaction is a second connection held while the first one waits. Each writer
+already has its own client in scope, so each hands over that one.
+
+**Placement unchanged.** The call still sits above each writer's `try`, exactly
+where it was. A currency code that genuinely does not exist still throws from
+there - what changed is that an unloaded catalog no longer does.
+
+**Verified:** `node --check` on all four, and a grep for `getCurrencyIdSync`
+across `backend/src` now returns only its definition in
+`loadCurrencyCatalog.js:58` and the re-export at `currencyLookup.js:71`. No
+caller remains. Not boot-verified; the no-local-boot restriction stands.
+
+**Two consequences recorded elsewhere.** The currency-catalog section of
+`db-migration-procedure.md` describes the hazard this removes and is the
+migration session's to delete. And the net worth membership list of section
+14.13 is written out in THREE files, not two: `getClosePreview.js`,
+`overviewPageRepository.js:136` (as `('bank', 'cash')` beside the other two
+terms) and `overviewAccountRepository.js:92` (as the four names literally). No
+test binds any of them to the others.
