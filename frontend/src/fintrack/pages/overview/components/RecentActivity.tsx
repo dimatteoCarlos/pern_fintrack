@@ -52,10 +52,14 @@ const MOVEMENT_LABELS: Record<OverviewActivityMovementType, string> = {
  'balance-reversal': 'Balance reversals',
 };
 
-// The four periods, and 'all' is the default because this section answers what
-// happened LAST rather than what happened in the month on screen. A reader
-// studying last August still wants to know what moved yesterday.
+// The four periods. 'month' is the default, on Carlos's instruction of
+// 2026-09-11: the block is part of a page that is cut by month, and a list that
+// opened on the whole history put movements from three years ago under figures
+// that answer for thirty days. The other three periods stay one select away, so
+// nothing is lost - only the first answer changed.
 type PeriodKey = 'all' | 'month' | 'quarter' | 'year';
+
+const DEFAULT_PERIOD: PeriodKey = 'month';
 
 const PERIOD_LABELS: Record<PeriodKey, string> = {
  all: 'All time',
@@ -81,9 +85,10 @@ const monthsBefore = (month: string, count: number) => {
 // currentMonth is the ceiling the server published, not a month computed here:
 // the owner's calendar is what every figure of this page is cut against, and a
 // month built from the browser clock would disagree with it for readers whose
-// timezone has already turned over.
-const periodBounds = (period: PeriodKey, currentMonth: string | null) => {
- if (period === 'all' || !currentMonth) return { from: null, to: null };
+// timezone has already turned over. It is a string and never null, because the
+// block below does not render this list until the month has arrived.
+const periodBounds = (period: PeriodKey, currentMonth: string) => {
+ if (period === 'all') return { from: null, to: null };
 
  const to = currentMonth.slice(0, 7);
  const back = period === 'month' ? 0 : period === 'quarter' ? 2 : 11;
@@ -91,11 +96,43 @@ const periodBounds = (period: PeriodKey, currentMonth: string | null) => {
  return { from: monthsBefore(currentMonth, back), to };
 };
 
+// THE MONTH IS A PRECONDITION OF THE LIST and not a value it can open without.
+// The list now opens on the month on screen, and that month arrives with the
+// page payload, one render after this block mounts.
+//
+// Mounting the list only once the month is known is what keeps the block to ONE
+// request. The alternative - open unbounded and narrow when the month lands -
+// fetches twice and paints the whole history for a moment before replacing it
+// with thirty days, which reads as the list correcting itself.
+//
+// While it is missing the block shows the same two states every other block of
+// the page shows for the same payload: the skeleton, or the page's own error
+// with the page's own retry.
 function RecentActivity() {
  const currentMonth = useOverviewStore((state) => state.currentMonth);
+ const pageError = useOverviewStore((state) => state.error);
+ const refreshOverview = useOverviewStore((state) => state.refreshOverview);
 
+ if (!currentMonth) {
+  return (
+   <article className='recentActivity'>
+    <PanelState
+     title='Recent activity'
+     subject='The activity list'
+     isLoading={pageError === null}
+     error={pageError}
+     onRetry={refreshOverview}
+    />
+   </article>
+  );
+ }
+
+ return <ActivityList currentMonth={currentMonth} />;
+}
+
+function ActivityList({ currentMonth }: { currentMonth: string }) {
  const { query, data, isLoading, error, narrow, goToPage, refetch } =
-  useOverviewActivity();
+  useOverviewActivity(periodBounds(DEFAULT_PERIOD, currentMonth));
 
  // Read back off the bounds rather than held as a second piece of state. Two
  // states for one choice is two places for the select and the request to
@@ -104,7 +141,9 @@ function RecentActivity() {
   if (!query.from) return 'all';
   if (query.from === query.to) return 'month';
 
-  return query.from === periodBounds('quarter', currentMonth).from ? 'quarter' : 'year';
+  return query.from === periodBounds('quarter', currentMonth).from
+   ? 'quarter'
+   : 'year';
  }, [query.from, query.to, currentMonth]);
 
  const rows: LastMovementType[] | null = useMemo(

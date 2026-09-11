@@ -36,25 +36,41 @@ const SEARCH_DEBOUNCE_MS = 350;
 export type ActivityQueryState = {
  search: string;
  movementType: OverviewActivityMovementType | 'all';
- // 'YYYY-MM' both, or null for an unbounded end. Unbounded is the default: the
- // section answers what happened last, not what happened in the month on screen.
+ // 'YYYY-MM' both, or null for an unbounded end.
  from: string | null;
  to: string | null;
  page: number;
  pageSize: number;
 };
 
-const INITIAL_STATE: ActivityQueryState = {
+// The period the list opens on, already resolved to two months.
+//
+// THE CALLER RESOLVES IT AND NOT THIS HOOK. The default is the month on screen
+// (Carlos, 2026-09-11: "scoped by the month"), and that month is the one the
+// server published in window.currentMonth rather than one built from the browser
+// clock - a reader whose timezone has already turned over would otherwise ask
+// for a month the rest of the page is not showing. The hook has no access to
+// that value, so it takes the bounds already computed.
+export type ActivityBounds = { from: string | null; to: string | null };
+
+const initialState = (bounds: ActivityBounds): ActivityQueryState => ({
  search: '',
  movementType: 'all',
- from: null,
- to: null,
+ from: bounds.from,
+ to: bounds.to,
  page: 1,
  pageSize: DEFAULT_ACTIVITY_PAGE_SIZE,
-};
+});
 
-export const useOverviewActivity = () => {
- const [query, setQuery] = useState<ActivityQueryState>(INITIAL_STATE);
+export const useOverviewActivity = (initialBounds: ActivityBounds) => {
+ const { from: initialFrom, to: initialTo } = initialBounds;
+
+ // A lazy initialiser, so the bounds are read on the first render only. The
+ // caller builds the object inline and a fresh one each render would otherwise
+ // be a new initial value every time.
+ const [query, setQuery] = useState<ActivityQueryState>(() =>
+  initialState(initialBounds),
+ );
  // The term the REQUEST uses, which trails the one the input shows by the
  // debounce above. Two values and not one, so the field never lags the keyboard.
  const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -135,7 +151,10 @@ export const useOverviewActivity = () => {
   [],
  );
 
- const reset = useCallback(() => setQuery(INITIAL_STATE), []);
+ const reset = useCallback(
+  () => setQuery(initialState({ from: initialFrom, to: initialTo })),
+  [initialFrom, initialTo],
+ );
 
  return { query, data, isLoading, error, narrow, goToPage, reset, refetch: load };
 };
