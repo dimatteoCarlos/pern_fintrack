@@ -991,9 +991,13 @@ a.icon {
 }
 
 /* Retry, which is what separates an error from an empty panel: the reader can
-   do something about it. */
+   do something about it.
+
+   The height is the padding below and nothing else. The floor it carried was
+   over a box that already measured --space-2 on each side of the label, so the
+   figure was raising the button above the line it prints on rather than
+   guaranteeing anything the padding had not. */
 .overviewLayout .panelState__retry {
- min-height: var(--size-touch-target);
  padding: var(--space-2) var(--space-6);
  border: var(--border-width-thin) solid var(--color-border-inverse);
  border-radius: var(--radius-full);
@@ -1324,9 +1328,11 @@ a.icon {
  align-items: center;
  justify-content: space-between;
  gap: var(--space-2);
- /* 44px is the smallest thing a finger hits reliably, and the head is the only
-    control this block has. */
- min-height: var(--size-touch-target);
+ /* Its own line and no longer a 44px floor. The head holds a CardTitle and a
+    chevron, so its height is that title plus --space-2 above and below - the
+    padding the pagination row beside it carries, which is what makes the two
+    read as rows of one page rather than one row and one slab. */
+ padding: var(--space-2) 0;
  cursor: pointer;
  /* The default disclosure triangle is replaced by the chevron below. Two
     markers on one row would be the same state said twice. */
