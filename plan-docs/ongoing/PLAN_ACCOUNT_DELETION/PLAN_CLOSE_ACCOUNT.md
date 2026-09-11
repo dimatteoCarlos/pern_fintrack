@@ -4284,3 +4284,45 @@ floor; `--color-content-on-dark-subtle` on raised 8.37:1;
 
 **Verified:** `tsc -p tsconfig.app.json` clean, `npm run build` clean. Not
 confirmed live - the visual is Carlos's to confirm on screen.
+
+
+### 14.18 The toolbar halves itself on a phone, 2026-09-11
+
+Carlos, on the screenshot of 14.17: *"creo que para mobile, podemos compactar la
+barra de busqueda y filtrado, no?"* and *"hacer mas visible el boton de back con
+el hover."*
+
+**What it cost before.** Four controls in four full-width rows, about 320px
+before the first closure - most of a phone screen spent on filters for a list
+the owner came to read. The direction button was a SIBLING of the three fields,
+so the layout treated a modifier of the sort key as a fourth control and gave it
+a row of its own.
+
+**Three rows instead of four, and nothing hidden.**
+
+| row | what is on it | why |
+|---|---|---|
+| 1 | search, full width | the only control typed into, so it is the only one that earns the width |
+| 2 | type, per page | both are narrow selects; neither needs a row |
+| 3 | sort key + direction | one decision, so one group - the button now lives inside the sort field |
+
+**No disclosure.** Compacting is worth doing; putting a filter where it has to
+be discovered is not, and that is the same objection the original toolbar
+comment raised against a horizontal scroller.
+
+**Below 480px the direction button drops its words, not its meaning.** The
+chevron already states the order and the select needs the room more than the
+sentence does. The text is moved out of view by `clip-path` rather than by
+`display: none`, and the button keeps its `aria-label`, so a screen reader still
+hears it.
+
+**The back button answers a hover with more than a border.** It is the one way
+off this screen, so it inverts on hover - `--color-accent` ground with
+`--color-accent-content` ink, 14.51:1 measured. The three buttons above it only
+change their border, because they act on the screen they stay on and this one
+leaves it. It also gains `--size-touch-target` as a minimum height, which it
+did not have.
+
+**Verified:** `tsc -p tsconfig.app.json` clean, `npm run build` clean. The
+figure in the stylesheet comment was written as 14.94:1 from memory and
+corrected to the computed 14.51:1 before committing.

@@ -41,14 +41,24 @@
 
 /* ===========================
    🔎 TOOLBAR
-   Wraps rather than scrolls: on a phone the four controls stack, and a
-   horizontally scrolling toolbar hides the control nobody thought to look for.
+   A two-column grid on a phone, never a scroller: a horizontally scrolling
+   toolbar hides the control nobody thought to look for.
+
+   Four controls in four full-width rows cost about 320px before the first
+   closure, which is most of a phone screen spent on filters for a list the
+   owner came to read. Paired, the same four controls cost three rows: the
+   search box earns its full width because it is the one control typed into,
+   the two narrow selects share a row, and the sort key keeps its direction
+   button beside it because they are one decision.
+
+   Nothing is hidden behind a disclosure. Compacting is worth doing; putting a
+   filter where it has to be discovered is not.
    =========================== */
 .closed-accounts__toolbar {
- display: flex;
- flex-wrap: wrap;
- align-items: flex-end;
- gap: var(--space-3);
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ align-items: end;
+ gap: var(--space-2) var(--space-3);
  padding: var(--space-3);
  background-color: var(--color-surface-sunken);
  border-radius: var(--radius-sm);
@@ -58,17 +68,35 @@
  display: flex;
  flex-direction: column;
  gap: var(--space-1);
- flex: 1 1 12rem;
  min-inline-size: 0;
 }
 
-.closed-accounts__field--narrow {
- flex: 0 1 6rem;
+/* The two that span the row. Search is typed into and needs the width; the
+   sort group carries a select and a button on one line. */
+.closed-accounts__field--search,
+.closed-accounts__field--sort {
+ grid-column: 1 / -1;
 }
 
+/* The sort key and its direction, on one line. The select takes what is left
+   after the button, which is sized by its own text. */
+.closed-accounts__sort-row {
+ display: flex;
+ align-items: stretch;
+ gap: var(--space-2);
+ min-inline-size: 0;
+}
+
+.closed-accounts__sort-row .closed-accounts__select {
+ flex: 1 1 auto;
+ min-inline-size: 0;
+}
+
+/* Smaller here than the row labels below. A toolbar label names a control the
+   reader is looking straight at; it does not have to compete with the list. */
 .closed-accounts__label {
  color: var(--color-content-on-dark-muted);
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-xs);
 }
 
 .closed-accounts__input,
@@ -148,8 +176,31 @@
 
 .closed-accounts__order {
  display: inline-flex;
+ flex: 0 0 auto;
  align-items: center;
+ justify-content: center;
  gap: var(--space-2);
+ white-space: nowrap;
+}
+
+/* The direction's words. Dropped below 480px, where the chevron already states
+   the order and the select needs the room more than the sentence does - the
+   button keeps its aria-label, so nothing is lost to a screen reader. */
+@media (max-width: 479px) {
+ .closed-accounts__order-text {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+ }
+
+ .closed-accounts__order {
+  min-inline-size: var(--size-touch-target);
+ }
 }
 
 /* One chevron for both directions. It points down for a descending list and
@@ -512,6 +563,23 @@
 
 .closed-accounts__back {
  align-self: flex-start;
+ min-block-size: var(--size-touch-target);
+ font-weight: var(--font-weight-medium);
+ transition:
+  color var(--motion-fast),
+  background-color var(--motion-fast),
+  border-color var(--motion-fast);
+}
+
+/* THE ONE WAY OFF THIS SCREEN, so it answers a hover with more than a border.
+   It inverts: the accent ground with its own content ink, which is the pairing
+   tokens.css declares for exactly this and measures 14.51:1. The three buttons
+   above it only change their border, because they stay on the screen they act
+   on and this one leaves it. */
+.closed-accounts__back:hover {
+ color: var(--color-accent-content);
+ background-color: var(--color-accent);
+ border-color: var(--color-accent);
 }
 
 /* ===========================
@@ -524,6 +592,19 @@
 @media (min-width: 768px) {
  .closed-accounts {
   padding-inline: var(--space-4);
+ }
+
+ /* One row from here up: there is width for all four, and a toolbar that fits
+    on one line stops being a block the reader scrolls past. */
+ .closed-accounts__toolbar {
+  grid-template-columns:
+   minmax(0, 2fr) minmax(0, 1fr)
+   minmax(0, 1fr) minmax(0, 1.4fr);
+ }
+
+ .closed-accounts__field--search,
+ .closed-accounts__field--sort {
+  grid-column: auto;
  }
 
  .closed-accounts__row {
