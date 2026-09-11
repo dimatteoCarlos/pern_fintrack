@@ -134,8 +134,13 @@
  transition: border-color var(--motion-fast) ease;
 }
 
+/* The hint ink, not the secondary-content ink. --color-content-on-dark-subtle
+   measures 9.40:1 on this field and reads as loud as a typed reason, so an
+   empty box looked filled. --color-content-on-dark-placeholder is the token
+   tokens.css:69 declares for a placeholder and measures 6.70:1 here - a step
+   quieter than content and still well over the 4.5:1 floor. */
 .close-account__reason::placeholder {
- color: var(--color-content-on-dark-subtle);
+ color: var(--color-content-on-dark-placeholder);
 }
 
 .close-account__reason:hover {

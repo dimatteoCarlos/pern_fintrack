@@ -82,6 +82,15 @@
  font-size: var(--font-size-base);
 }
 
+/* The hint text inside the search field. Without this rule the field falls to
+   the user agent's own placeholder colour, which is derived for a white input
+   and lands near-invisible on --color-surface-deep. --color-content-on-dark-
+   placeholder is the token declared for exactly this case and measures 7.19:1
+   here; the content ink would make a hint read as a filled value. */
+.closed-accounts__input::placeholder {
+ color: var(--color-content-on-dark-placeholder);
+}
+
 .closed-accounts__input:hover,
 .closed-accounts__select:hover {
  border-color: var(--color-border-strong);
