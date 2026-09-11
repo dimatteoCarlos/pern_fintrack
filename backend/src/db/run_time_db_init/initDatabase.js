@@ -21,6 +21,8 @@ import {
 
 import { MONTHS_PER_PERIOD } from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
 
+import { assertLocalDestination } from '../migrations/dbMigrationConfig.js';
+
 import {
   mainTables,
   createTables,
@@ -103,6 +105,13 @@ export async function initializeDatabase() {
   const client = await pool.connect();
 
   try {
+    // Every ensure* below applies DDL to whatever DATABASE_URI names, and .env
+    // has named production during a migration more than once. db:migrate has
+    // refused an off-machine destination since 2026-09-08 and this path did
+    // not, so the two DDL paths now ask the same question. DB_REMOTE_OK is the
+    // way through when a remote destination is meant.
+    await assertLocalDestination(client, 'initializeDatabase');
+
     console.log(pc.cyanBright('Verificando existencia de datos en tablas ...'));
 
     //Verify app_initialization table

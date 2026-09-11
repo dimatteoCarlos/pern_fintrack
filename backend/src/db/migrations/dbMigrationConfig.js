@@ -147,36 +147,56 @@ export async function assertExpectedDatabase(client, script) {
   process.exit(1);
  }
 
- // A NAME THE OPERATOR TYPES IS NOT PROOF OF WHERE THE DATABASE IS. The check
- // above pairs DB_EXPECTED against current_database(), and both sides are
- // satisfied by a remote database that happens to carry the expected name. The
- // case the whole interlock exists for - NODE_ENV unset and DATABASE_URI
- // pointing at production - survives it whenever the operator types the
- // production database's own name.
- //
- // So the destination is also classified by address, and a run that leaves this
- // machine has to say so. Production runs are no longer suspended - Carlos
- // lifted that on 2026-09-08 - and they are authorized one at a time, so an
- // off-machine destination is still the exact thing that must not happen by
- // accident. The refusal is what makes it deliberate rather than what makes it
- // impossible.
- //
- // AN ALLOWLIST OF ADDRESSES, NOT A DENYLIST OF NAMES. schemaParity.js tests
- // the connection string against /prod|supabase/i, which matches a spelling
- // rather than a database; a managed database can be called anything. NULL is
- // included because inet_server_addr() returns it for a Unix-socket connection,
- // which cannot leave the machine.
- //
- // It refuses rather than warns, and DB_REMOTE_OK is the way through, because
- // one day a migration does have to reach production and a guard with no door
- // gets deleted rather than satisfied.
+ // A NAME THE OPERATOR TYPES IS NOT PROOF OF WHERE THE DATABASE IS, so the
+ // address decides as well. The rule lives in assertOffMachineAllowed below,
+ // because the boot path applies DDL too and reads the same DATABASE_URI.
+ assertOffMachineAllowed(server, where, script);
+
+ console.log(pc.green(`✅ Destination confirmed: ${where}`));
+ return server.db;
+}
+
+// ============================================
+// 6. Classify the destination by address
+// ============================================
+/**
+ * Refuse a destination that is not this machine, unless DB_REMOTE_OK says so.
+ *
+ * DB_EXPECTED pairs a typed name against current_database(), and both sides are
+ * satisfied by a remote database that happens to carry the expected name. The
+ * case the whole interlock exists for - NODE_ENV unset and DATABASE_URI
+ * pointing at production - survives it whenever the operator types the
+ * production database's own name.
+ *
+ * So a run that leaves this machine has to say so. Production runs are no
+ * longer suspended - Carlos lifted that on 2026-09-08 - and they are authorized
+ * one at a time, so an off-machine destination is still the exact thing that
+ * must not happen by accident. The refusal is what makes it deliberate rather
+ * than what makes it impossible.
+ *
+ * AN ALLOWLIST OF ADDRESSES, NOT A DENYLIST OF NAMES. schemaParity.js tests the
+ * connection string against /prod|supabase/i, which matches a spelling rather
+ * than a database; a managed database can be called anything. NULL is included
+ * because inet_server_addr() returns it for a Unix-socket connection, which
+ * cannot leave the machine.
+ *
+ * It refuses rather than warns, and DB_REMOTE_OK is the way through, because
+ * one day a script does have to reach production and a guard with no door gets
+ * deleted rather than satisfied.
+ *
+ * @param {{db: string, host: string|null, port: number|null}} server - what the
+ *  destination reports about itself
+ * @param {string} where - the destination, already spelled for a message
+ * @param {string} script - the caller's name, printed in the refusal
+ */
+function assertOffMachineAllowed(server, where, script) {
  const local = server.host === null || LOOPBACK.has(server.host);
 
  if (!local && !process.env.DB_REMOTE_OK) {
   console.error(
    pc.red(`\n❌ ${script} refuses to run: the destination is not this machine.\n`) +
     pc.gray(`   This connection reached ${where}.\n`) +
-    pc.gray('   DB_EXPECTED confirms a name, and a remote database can carry any name.\n') +
+    pc.gray('   A name confirms a database, and a remote database can carry any name.\n') +
     pc.gray('   A production run is authorized one at a time, by Carlos, for named files.\n') +
     pc.gray('   Set DB_REMOTE_OK=1 to state that an off-machine destination is meant.\n'),
   );
@@ -188,7 +208,30 @@ export async function assertExpectedDatabase(client, script) {
    pc.yellow(`⚠ Off-machine destination, allowed by DB_REMOTE_OK: ${where}`),
   );
  }
+}
 
- console.log(pc.green(`✅ Destination confirmed: ${where}`));
- return server.db;
+/**
+ * The destination interlock for callers that have no DB_EXPECTED to offer.
+ *
+ * initializeDatabase() applies the boot DDL - every ensure* in createTables.js -
+ * against whatever DATABASE_URI names, and it runs on every local boot, so
+ * demanding a name the way db:migrate does would train the developer to type
+ * one. It asks the weaker question instead: is this database on this machine?
+ *
+ * @param {object} client - a connected client
+ * @param {string} script - the caller's name, printed in the refusal
+ * @returns {Promise<string>} the destination, as "database at host:port"
+ */
+export async function assertLocalDestination(client, script) {
+ const {
+  rows: [server],
+ } = await client.query(
+  'SELECT current_database() AS db, inet_server_addr() AS host, inet_server_port() AS port',
+ );
+
+ const where = `${server.db} at ${server.host || 'local socket'}:${server.port || '-'}`;
+
+ assertOffMachineAllowed(server, where, script);
+
+ return where;
 }
