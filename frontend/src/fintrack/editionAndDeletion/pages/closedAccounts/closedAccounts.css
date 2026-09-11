@@ -82,6 +82,31 @@
  font-size: var(--font-size-base);
 }
 
+/* The magnifier inside the field. The wrapper is the positioning context and
+   nothing else; the field keeps its own full width inside it. */
+.closed-accounts__input-wrap {
+ position: relative;
+ display: block;
+ inline-size: 100%;
+}
+
+.closed-accounts__input-icon {
+ position: absolute;
+ inset-block-start: 50%;
+ inset-inline-start: var(--space-2);
+ transform: translateY(-50%);
+ inline-size: var(--size-glyph-inline);
+ block-size: var(--size-glyph-inline);
+ color: var(--color-content-on-dark-placeholder);
+ pointer-events: none;
+}
+
+/* Room for the icon, on the leading edge only. The trailing edge keeps its
+   normal padding so the browser's own search-clear control is not crowded. */
+.closed-accounts__input--with-icon {
+ padding-inline-start: calc(var(--space-2) + var(--size-glyph-inline) + var(--space-2));
+}
+
 /* The hint text inside the search field. Without this rule the field falls to
    the user agent's own placeholder colour, which is derived for a white input
    and lands near-invisible on --color-surface-deep. --color-content-on-dark-
@@ -121,8 +146,28 @@
  cursor: pointer;
 }
 
+.closed-accounts__order {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+}
+
+/* One chevron for both directions. It points down for a descending list and
+   is turned to point up for an ascending one, so the control states the order
+   rather than naming it twice. */
+.closed-accounts__order-icon {
+ inline-size: var(--size-glyph-inline);
+ block-size: var(--size-glyph-inline);
+ transition: transform var(--motion-fast);
+}
+
+.closed-accounts__order-icon.is-ascending {
+ transform: rotate(180deg);
+}
+
 .closed-accounts__order:hover {
  border-color: var(--color-border-strong);
+ color: var(--color-interactive-hover);
 }
 
 .closed-accounts__order:focus-visible {
@@ -145,30 +190,103 @@
 /* ===========================
    🗂 THE LIST
    =========================== */
+/* ONE SURFACE, RULED - not a stack of separate cards.
+   Twenty free-floating cards make the reader find the edges of each before
+   reading it; one panel with a rule between entries makes the boundary explicit
+   and costs one hairline. The rule is the separator, and the last row does not
+   get one because there is nothing below it to separate from. */
 .closed-accounts__list {
  display: flex;
  flex-direction: column;
- gap: var(--space-3);
  margin: 0;
  padding: 0;
  list-style: none;
+ background-color: var(--color-surface-sunken);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ overflow: hidden;
 }
 
 .closed-accounts__row {
+ position: relative;
  display: flex;
  flex-direction: column;
  gap: var(--space-2);
  padding: var(--space-3);
- background-color: var(--color-surface-sunken);
- border-radius: var(--radius-sm);
+ padding-inline-start: var(--space-4);
+ transition: background-color var(--motion-fast);
+}
+
+/* THE SEPARATOR. */
+.closed-accounts__row + .closed-accounts__row {
+ border-block-start: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+/* The accent bar, drawn on the leading edge and transparent at rest so the row
+   does not shift when it appears. A hover on a row that cannot be clicked is
+   still worth having: it tells the reader which entry their eye is on in a
+   list where every row looks alike. */
+.closed-accounts__row::before {
+ content: '';
+ position: absolute;
+ inset-block: 0;
+ inset-inline-start: 0;
+ inline-size: var(--border-width-thick);
+ background-color: transparent;
+ transition: background-color var(--motion-fast);
+}
+
+.closed-accounts__row:hover {
+ background-color: var(--color-surface-raised);
+}
+
+.closed-accounts__row:hover::before {
+ background-color: var(--color-status-info);
 }
 
 .closed-accounts__identity {
  display: flex;
- flex-wrap: wrap;
- align-items: baseline;
- justify-content: space-between;
- gap: var(--space-2);
+ flex-wrap: nowrap;
+ align-items: center;
+ gap: var(--space-3);
+}
+
+.closed-accounts__identity-text {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-inline-size: 0;
+}
+
+/* THE TYPE MARK. A square chip rather than a bare icon: the icons in this set
+   differ in how much of their box they fill, and a shared ground is what makes
+   a column of them line up. The neutral financial ramp is the right one here -
+   a closed account is neither a gain nor a loss, and painting it in either
+   would state a fact the registry does not hold. */
+.closed-accounts__badge {
+ display: flex;
+ flex: 0 0 auto;
+ align-items: center;
+ justify-content: center;
+ inline-size: var(--size-badge);
+ block-size: var(--size-badge);
+ color: var(--color-financial-neutral-content);
+ background-color: var(--color-financial-neutral-surface);
+ border: var(--border-width-thin) solid var(--color-financial-neutral-border);
+ border-radius: var(--radius-sm);
+ transition:
+  color var(--motion-fast),
+  border-color var(--motion-fast);
+}
+
+.closed-accounts__badge-icon {
+ inline-size: var(--size-glyph-inline);
+ block-size: var(--size-glyph-inline);
+}
+
+.closed-accounts__row:hover .closed-accounts__badge {
+ color: var(--color-content-on-dark);
+ border-color: var(--color-border-inverse);
 }
 
 .closed-accounts__name {
@@ -186,9 +304,14 @@
 }
 
 .closed-accounts__type {
- color: var(--color-content-on-dark-muted);
- font-size: var(--font-size-sm);
+ align-self: flex-start;
+ padding: var(--space-1) var(--space-2);
+ color: var(--color-financial-neutral-content);
+ background-color: var(--color-financial-neutral-surface);
+ border-radius: var(--radius-full);
+ font-size: var(--font-size-xs);
  text-transform: capitalize;
+ white-space: nowrap;
 }
 
 .closed-accounts__facts {
@@ -214,6 +337,13 @@
  margin: 0;
  color: var(--color-content-on-dark);
  font-size: var(--font-size-sm);
+}
+
+/* The closing date. It is the reason the row exists, so it is the one figure
+   given weight - and weight, not colour: every other status colour in this
+   system already means gain, loss or alarm, and a closure is none of them. */
+.closed-accounts__fact-value--key {
+ font-weight: var(--font-weight-semibold);
 }
 
 /* The reason is the one field with no ceiling on its length, so it gets its own
@@ -408,9 +538,7 @@
 
  .closed-accounts__identity {
   grid-area: identity;
-  flex-direction: column;
   align-items: flex-start;
-  justify-content: flex-start;
  }
 
  .closed-accounts__facts {
