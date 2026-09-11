@@ -4,6 +4,7 @@
 // 🏷️ Pattern: Container Component (Smart Component)
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // 🏪 Global State Management
 import { useAuthStore } from '../../stores/useAuthStore';
@@ -17,6 +18,7 @@ import styles from './styles/userProfileMenu.module.css';
 
 // '?react' suffix: a bare .svg import is typed `string` and cannot take a
 // className, so the glyph could not inherit the row's colour.
+import ArchiveSvg from '../../../assets/userProfileMenuSvg/archiveSvg.svg?react';
 import CloseSvg from '../../../assets/userProfileMenuSvg/closeSvg.svg?react';
 import CoinsSvg from '../../../assets/userProfileMenuSvg/coinsSvg.svg?react';
 import EditSvg from '../../../assets/userProfileMenuSvg/editSvg.svg?react';
@@ -66,7 +68,14 @@ type UserInfoType = {
  *
  * @returns The complete user profile interaction system
  */
+// Where the closed-account registry lives. A closed account is REMOVED from
+// user_accounts, so it appears in no list the accounting dashboard serves; the
+// profile menu is where a record about the owner's own history belongs.
+const CLOSED_ACCOUNTS_ROUTE = '/fintrack/account/closed';
+
 const UserProfileMenu = () => {
+  const navigate = useNavigate();
+
   /* 🌟 ====================
 🏪 GLOBAL STATE CONNECTION
 ==================== 🌟 */
@@ -160,6 +169,21 @@ const UserProfileMenu = () => {
       //console.log('Change password clicked');
     },
     [],
+  );
+
+  /**
+   * 🗂 Leave for the closed-account registry. The menu closes first: it is a
+   * navigation, not a form, so leaving the dialog open behind the new page
+   * would trap the owner's next Escape on a screen they have left.
+   */
+  const handleOpenClosedAccounts = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>): void => {
+      e.preventDefault();
+      e.stopPropagation();
+      setModalState('none');
+      navigate(CLOSED_ACCOUNTS_ROUTE);
+    },
+    [navigate],
   );
 
   /**
@@ -363,6 +387,18 @@ const UserProfileMenu = () => {
                   aria-hidden='true'
                 />
                 <span className={styles.menuItemText}>Change Password</span>
+              </button>
+
+              <button
+                className={styles.menuItem}
+                onClick={handleOpenClosedAccounts}
+                aria-label='Open the closed-account registry'
+              >
+                <ArchiveSvg
+                  className={styles.menuItemIcon}
+                  aria-hidden='true'
+                />
+                <span className={styles.menuItemText}>Closed Accounts</span>
               </button>
 
               <div className={styles.menuDivider} />
