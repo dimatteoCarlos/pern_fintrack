@@ -198,8 +198,12 @@
   white-space: nowrap;
  }
 
+ /* No width floor. Carlos repealed the mandatory 44px on pressable controls
+    on 2026-09-11 - "se usara el tamanio de la linea donde se encuentran" - so
+    the button is the chevron plus its own padding, which is what the select
+    beside it is too. */
  .closed-accounts__order {
-  min-inline-size: var(--size-touch-target);
+  padding-inline: var(--space-3);
  }
 }
 
@@ -563,7 +567,8 @@
 
 .closed-accounts__back {
  align-self: flex-start;
- min-block-size: var(--size-touch-target);
+ /* Height from the line it sits in. The 44px floor this carried for one commit
+    was repealed by Carlos on 2026-09-11; the padding above already sets it. */
  font-weight: var(--font-weight-medium);
  transition:
   color var(--motion-fast),

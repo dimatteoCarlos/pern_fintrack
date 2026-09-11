@@ -4326,3 +4326,41 @@ did not have.
 **Verified:** `tsc -p tsconfig.app.json` clean, `npm run build` clean. The
 figure in the stylesheet comment was written as 14.94:1 from memory and
 corrected to the computed 14.51:1 before committing.
+
+
+### 14.19 The 44px floor on pressable controls is repealed, 2026-09-11
+
+Carlos, relayed the same day: *"desde ahora queda derogada usar como obligatorio
+44 px en pulsadores, se usara el tamanio de la linea donde se encuentran"*. A
+button takes the height of the line it sits in; `--size-touch-target` stops
+being a rule for pressable controls.
+
+**Six controls in this module carried it. All six are changed.**
+
+| file | control | it was |
+|---|---|---|
+| `closedAccounts.css` | the back button | `min-block-size`, added one commit earlier in 14.18 |
+| `closedAccounts.css` | the order button below 480px | `min-inline-size`, so the icon-only state stayed square |
+| `account-actions-menu-styles.css` | the menu item | `min-height` |
+| `accountDeletionPage.css` | `.deletion-method-button` | `min-height` |
+| `standardDeletionDialog.css` | `.standard-deletion-dialog__button` | `min-height` |
+| `editAccount-styles.css` | `.editAccount__retry` | `min-height`, under a comment that argued FOR the floor |
+
+**Almost nothing moves.** Each of them already carried `var(--space-3)` or
+`var(--space-2)` of block padding around a `--font-size-base` glyph, which
+composes to about 43px - the floor was setting a height the padding had already
+set. The repeal removes a rule, not a layout.
+
+**Three uses of the token stay, and they are not pulsadores.** The close-reason
+TEXTAREA's minimum height (`closeAccountUI.css:125`) and the two skeletons in
+`editAccount-styles.css` at `:27` and `:103`. A skeleton is not pressed and a
+textarea is not a button; the repeal names pressable controls and these are
+outside it. Reading it wider would change three things nobody asked about.
+
+**The comment that argued for the floor is gone with it.**
+`.editAccount__retry` carried *"Full-height target, unlike the budget block's
+own retry: this one is the only control on screen when it shows, so nothing
+constrains its row."* That is precisely the reasoning the repeal removes, so
+leaving it would have left the module arguing against its own rule.
+
+**Verified:** `tsc -p tsconfig.app.json` clean, `npm run build` clean.

@@ -44,10 +44,13 @@
  font-size: var(--font-size-sm);
 }
 
-/* Full-height target, unlike the budget block's own retry: this one is the
-   only control on screen when it shows, so nothing constrains its row. */
+/* No floor on the height. Carlos repealed the mandatory 44px on pressable
+   controls on 2026-09-11: "desde ahora queda derogada usar como obligatorio
+   44 px en pulsadores, se usara el tamanio de la linea donde se encuentran".
+   The comment here used to argue the opposite - that nothing constrained this
+   button's row, so it could take the full target - which is exactly the
+   reasoning the repeal removes. */
 .editAccount__retry {
- min-height: var(--size-touch-target);
  padding: var(--space-2) var(--space-5);
  border: var(--border-width-thin) solid var(--color-border-inverse);
  border-radius: var(--radius-full);
