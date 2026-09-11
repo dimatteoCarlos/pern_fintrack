@@ -1632,3 +1632,49 @@ a.icon {
  outline-offset: var(--border-width-thick);
  border-radius: var(--radius-sm);
 }
+
+/* The category narrowing of the level-2 expense screen. A wrapping row of
+   chips, each as tall as its own line - the 44px floor was repealed, and a
+   control here is the size of the text it carries. */
+.overviewLayout .categoryFilter {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+ margin-top: var(--space-4);
+}
+
+.overviewLayout .categoryFilter__chip {
+ padding: var(--space-1) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-full);
+ background: transparent;
+ color: var(--color-content-on-dark-subtle);
+ /* Restated and not inherited: a button carries the user agent's own font, so
+    the size has to be named here or the chip comes out at the browser default
+    beside text that is not. */
+ font-size: var(--font-size-xs);
+ cursor: pointer;
+}
+
+.overviewLayout .categoryFilter__chip:hover {
+ color: var(--color-content-on-dark);
+ border-color: var(--color-border-strong);
+}
+
+.overviewLayout .categoryFilter__chip:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+}
+
+/* The selected one is filled rather than merely brighter: one chip of fifteen
+   at a lighter ink is not findable at a glance. */
+.overviewLayout .categoryFilter__chip.is-active {
+ background: var(--color-content-on-dark-subtle);
+ border-color: var(--color-content-on-dark-subtle);
+ color: var(--color-surface-app);
+}
+
+.overviewLayout .categoryFilter__chip:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}

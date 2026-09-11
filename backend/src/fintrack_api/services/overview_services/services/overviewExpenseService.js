@@ -15,6 +15,7 @@
 // formula for a figure that already has one (§4.2), and reaching into that
 // module for its private helpers would open the contract D6 freezes.
 
+import { createError } from '../../../../utils/errorHandling.js';
 import { budgetCalculationService } from '../../budget_services/services/budgetCalculationService.js';
 import {
  getExpenseAccountIds,
@@ -34,6 +35,41 @@ import { wantsAnalysis } from '../core/analysisLevels.js';
 import { TREND_MONTHS } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
+/**
+ * The account ids one category holds, off the status rows that already say so.
+ *
+ * AN UNKNOWN NAME IS A 404 AND NEVER AN EMPTY PAGE. A real category with no
+ * spending this month answers an empty page, and the two cannot be told apart
+ * by a caller: one says "nothing happened here", the other says "there is no
+ * here". The requested name is echoed back so the caller can see what was
+ * looked for.
+ *
+ * The comparison folds case on BOTH sides. 013_normalize_category_budget_name_case
+ * brought the stored names to lowercase and the two controllers that write them
+ * write lowercase, so the client's echo of categories[] matches without folding
+ * today - but only for a database that has run 013, and the fold costs one call
+ * per row. A row with no category is skipped rather than
+ * matched - makeBudgetAccountStatus.js:23 defaults categoryName to null, and
+ * calling toLowerCase on it would throw where the answer is "not this one".
+ *
+ * @param {object} budgetStatus - the output of getBudgetAccountsStatus
+ * @param {string} categoryName - the requested category, trimmed by the schema
+ * @returns {number[]} the ids of every account in that category
+ */
+const categoryAccountIds = (budgetStatus, categoryName) => {
+ const wanted = categoryName.toLowerCase();
+
+ const ids = budgetStatus.accounts
+  .filter((account) => account.categoryName?.toLowerCase() === wanted)
+  .map((account) => account.accountId);
+
+ if (ids.length === 0) {
+  throw createError(404, `No expense category named '${categoryName}'.`);
+ }
+
+ return ids;
+};
+
 export const overviewExpenseService = {
  /**
   * Everything GET /overview/expense returns, for one month and one page.
@@ -50,14 +86,14 @@ export const overviewExpenseService = {
   *
   * @param {object} pool - Database pool
   * @param {string} userId - UUID from the token, never from the client body
-  * @param {object} request - { window, page, pageSize, analysis }
+  * @param {object} request - { window, page, pageSize, analysis, category }
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'expense'
   */
  async getExpenseDomainData(
   pool,
   userId,
-  { window, page, pageSize, includeTransactionRows = true, analysis },
+  { window, page, pageSize, includeTransactionRows = true, analysis, category },
   timeZone = 'UTC',
  ) {
   const {
@@ -77,6 +113,34 @@ export const overviewExpenseService = {
   // to the card and the same screen would show two figures that must reconcile.
   const accountIds = await getExpenseAccountIds(pool, userId);
 
+  // THE CATEGORY FILTER COSTS ONE ROUND TRIP AND ONLY WHEN IT IS USED.
+  //
+  // Which accounts belong to a category is makeCategoryGroups' rule
+  // (budgetCalculationService.js:261-269) and not this file's, so membership is
+  // read off the status rows rather than restated as a second query - a second
+  // definition is how the filtered page and the ranked breakdown end up
+  // disagreeing about which accounts a category holds. That means the status
+  // has to be in hand BEFORE the transaction page is asked for, so a filtered
+  // request is two round trips deep where an unfiltered one is one. Unfiltered,
+  // nothing below is serialised and the common path is unchanged.
+  const categoryStatus = category
+   ? await budgetCalculationService.getBudgetAccountsStatus(
+      pool,
+      accountIds,
+      timeZone,
+      referenceMonth,
+     )
+   : null;
+
+  // The set the LIST is read over. Every other figure of this answer stays on
+  // the whole domain: the card is still the month's spending, the series is
+  // still the month's, and the ranked breakdown is still every category - a
+  // level-3 screen shows one category's rows UNDER the month it belongs to, and
+  // a card narrowed to one category would be a different card with no name.
+  const listedAccountIds = category
+   ? categoryAccountIds(categoryStatus, category)
+   : accountIds;
+
   const [months, oldestAccountDate, transactions, budgetStatus] = await Promise.all([
    getMonthlyExpense(
     pool,
@@ -86,12 +150,20 @@ export const overviewExpenseService = {
     timeZone,
    ),
    getOldestAccountDate(pool, userId, timeZone),
-   getExpenseTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
+   getExpenseTransactionsPage(pool, listedAccountIds, referenceMonth, timeZone, {
     page,
     pageSize,
     includeRows: includeTransactionRows,
    }),
-   budgetCalculationService.getBudgetAccountsStatus(pool, accountIds, timeZone, referenceMonth),
+   // Already read when a category was named. Promise.all takes a plain value
+   // beside its promises, so the second call is not made.
+   categoryStatus ??
+    budgetCalculationService.getBudgetAccountsStatus(
+     pool,
+     accountIds,
+     timeZone,
+     referenceMonth,
+    ),
   ]);
 
   // The reference month is the last point of the same series the chart draws, so

@@ -58,6 +58,12 @@ const DEFAULT_ACTIVITY_PAGE_SIZE = 5;
 // than a sequential scan that was never going to match.
 const MAX_SEARCH_LENGTH = 80;
 
+// The longest category name the endpoint will look for. Not a number of this
+// filter's invention: category_budget_accounts.category_name is VARCHAR(50)
+// since 002_accounts.sql:145, so a longer term cannot name a stored category
+// and is refused at the door instead of matching nothing downstream.
+const MAX_CATEGORY_LENGTH = 50;
+
 /**
  * GET /overview/:domain
  * Params: domain (one of the six the contract defines)
@@ -111,6 +117,28 @@ export const overviewDomainQuerySchema = z.object({
  analysis: z.enum(ANALYSIS_LEVELS, {
   message: `analysis must be one of: ${ANALYSIS_LEVELS.join(', ')}`,
  }).optional(),
+ // The level-3 narrowing: one category of the expense domain.
+ //
+ // A NAME AND NOT AN ID, because a category is not a row anywhere. It is a
+ // GROUP of accounts, folded by makeCategoryGroups on categoryName
+ // (budgetCalculationService.js:261-269), and the ranked breakdown this filter
+ // drills into is keyed by that same name - ExpenseCategoryStatus carries no
+ // id for a caller to send instead.
+ //
+ // Trimmed but NOT case-folded here. The match is made in the service, where
+ // the stored names are, and folding one side at the door would hide which
+ // comparison is actually being made.
+ //
+ // It is NOT a search. An unknown name answers 404 naming it rather than an
+ // empty page, because an empty page is what a real category with no spending
+ // this month also answers, and the two have to be told apart.
+ category: z.string()
+  .trim()
+  .min(1, { message: 'category must not be empty' })
+  .max(MAX_CATEGORY_LENGTH, {
+   message: `category must not exceed ${MAX_CATEGORY_LENGTH} characters`,
+  })
+  .optional(),
 }).strict();
 /**
  * GET /overview/activity

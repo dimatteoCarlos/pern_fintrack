@@ -160,9 +160,21 @@ export async function getOverviewDomain(req, res, next) {
   if (!userId) return;
 
   const { domain } = overviewDomainParamsSchema.parse(req.params);
-  const { month, page, pageSize, analysis } = overviewDomainQuerySchema.parse(
-   req.query,
-  );
+  const { month, page, pageSize, analysis, category } =
+   overviewDomainQuerySchema.parse(req.query);
+
+  // FIVE OF THE SIX DOMAINS HAVE NO CATEGORIES, so a category sent to one of
+  // them is refused rather than ignored. Ignoring it would answer 200 with the
+  // whole domain under a request that asked for a slice of it, which is the
+  // failure a caller cannot see: the page looks like a real answer and is the
+  // wrong one. The schema cannot raise this because the domain is a path
+  // segment and it validates the query.
+  if (category && domain !== 'expense') {
+   return res.status(400).json({
+    status: 400,
+    message: `category narrows the expense domain only; ${domain} has no categories.`,
+   });
+  }
 
   const calculator = DOMAIN_CALCULATORS[domain];
 
@@ -187,7 +199,7 @@ export async function getOverviewDomain(req, res, next) {
   const data = await calculator(
    pool,
    userId,
-   { window, page, pageSize, analysis },
+   { window, page, pageSize, analysis, category },
    timeZone,
   );
 

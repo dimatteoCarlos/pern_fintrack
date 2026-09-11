@@ -36,6 +36,11 @@ export type OverviewDomainQuery = {
  page?: number;
  pageSize?: number;
  analysis?: OverviewAnalysisLevel;
+ // One category of the expense domain, by name. The expense domain's alone:
+ // the other five answer 400 for it, because a category sent to a domain that
+ // has none would otherwise be silently ignored and the caller would read the
+ // whole domain as if it were the slice it asked for.
+ category?: string;
 };
 
 // month is optional and past-only. Omitting it is not the same as computing the
@@ -73,6 +78,10 @@ export const getOverviewDomain = async (
  if (query.page) params.page = String(query.page);
  if (query.pageSize) params.pageSize = String(query.pageSize);
  if (query.analysis) params.analysis = query.analysis;
+ // Dropped when empty rather than sent as '': the schema is strict and refuses
+ // a zero-length category, so '' is how a request for "no narrowing" would
+ // become a 400.
+ if (query.category) params.category = query.category;
 
  const { data } = await authFetch<GetOverviewDomainResponse>(
   url_get_overview_domain(domain),

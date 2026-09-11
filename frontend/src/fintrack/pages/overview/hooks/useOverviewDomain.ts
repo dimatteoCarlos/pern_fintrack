@@ -32,11 +32,16 @@ export const DEFAULT_DOMAIN_PAGE_SIZE = 25;
 type DomainQueryState = {
  page: number;
  pageSize: number;
+ // The category the list is narrowed to, or null for the whole domain. null and
+ // not '': the request drops an empty value, and the two would read the same on
+ // the wire while meaning different things here.
+ category: string | null;
 };
 
 const INITIAL_STATE: DomainQueryState = {
  page: 1,
  pageSize: DEFAULT_DOMAIN_PAGE_SIZE,
+ category: null,
 };
 
 export const useOverviewDomain = (
@@ -65,7 +70,7 @@ export const useOverviewDomain = (
   setQuery(INITIAL_STATE);
  }, [domain, month]);
 
- const { page, pageSize } = query;
+ const { page, pageSize, category } = query;
 
  const load = useCallback(() => {
   const id = requestId.current + 1;
@@ -74,7 +79,15 @@ export const useOverviewDomain = (
   setIsLoading(true);
   setError(null);
 
-  getOverviewDomain(domain, { month, page, pageSize, analysis })
+  getOverviewDomain(domain, {
+   month,
+   page,
+   pageSize,
+   analysis,
+   // Sent for every domain, and null for five of them because nothing can set
+   // it there: the screen only offers the control where categories exist.
+   ...(category ? { category } : {}),
+  })
    .then((answer) => {
     if (requestId.current !== id) return;
 
@@ -94,7 +107,7 @@ export const useOverviewDomain = (
 
     setIsLoading(false);
    });
- }, [domain, month, page, pageSize, analysis]);
+ }, [domain, month, page, pageSize, analysis, category]);
 
  useEffect(() => {
   load();
@@ -109,9 +122,29 @@ export const useOverviewDomain = (
  // activity hook: page 7 of a list at five rows is past the end of the same list
  // at fifty.
  const setPageSize = useCallback(
-  (next: number) => setQuery({ page: 1, pageSize: next }),
+  (next: number) =>
+   setQuery((current) => ({ ...current, page: 1, pageSize: next })),
   [],
  );
 
- return { query, data, isLoading, error, goToPage, setPageSize, refetch: load };
+ // NARROWING RESETS THE PAGE for the same reason a size change does, and it
+ // matters more here: one category is a small fraction of a month, so page 7 of
+ // the domain is past the end of nearly every category in it and the empty
+ // answer would read as "this category has no movements".
+ const narrowToCategory = useCallback(
+  (next: string | null) =>
+   setQuery((current) => ({ ...current, page: 1, category: next })),
+  [],
+ );
+
+ return {
+  query,
+  data,
+  isLoading,
+  error,
+  goToPage,
+  setPageSize,
+  narrowToCategory,
+  refetch: load,
+ };
 };
