@@ -164,6 +164,10 @@ reportTitleWithImpact:string;
  closeOnlyPageTitle: string;
  closeOnlyDetailsTitle: string;
  closeOnlyBlockedNotice: string;
+ closeNetWorthSectionLabel: string;
+ closeNetWorthBeforeLabel: string;
+ closeNetWorthAfterLabel: string;
+ closeNetWorthUnchangedNote: string;
  relatedAccountsSummary: string;
  relatedAccountsNote: string;
  relatedAccountsHeading: string;
@@ -397,7 +401,7 @@ reportTitleWithImpact:"Impact on Affected Accounts",
 
   closeOnlyPageTitle: "Delete Account",
   closeOnlyDetailsTitle: "Account to Delete",
-  closeOnlyBlockedNotice: "This account still holds a balance, so it cannot be closed as it is. Two ways forward: move the balance out yourself with an ordinary transfer and then close it, or use the button below, which reverses the balance and closes in one operation. Either way the account keeps its name on every movement that mentions it.",
+  closeOnlyBlockedNotice: "This account cannot be closed because it still has a balance. You can manually transfer the funds to another account first, or use the button below to close it instantly—but note that this button option will remove the balance from your Net Worth.",
   relatedAccountsSummary: "Related accounts",
   relatedAccountsNote: "New balance and net adjustment show what deleting this account with adjustment would do to each of these accounts. The close changes none of these figures.",
   relatedAccountsHeading: "Accounts this one has moved money with",
@@ -429,6 +433,10 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   closeAccountReverseTitle: "Reverse the Balance and Close",
   closeAccountReverseDescription: "This account holds a balance, so it cannot be closed as it is. FinTrack will move that balance out and close the account, both in one operation - if either part fails, neither happens. You choose nothing else: the amount is exactly what the account holds, and the destination is the compensation account the system keeps for this.",
   closeAccountReverseConfirmButton: "Reverse and Close",
+  closeNetWorthSectionLabel: "What this does to your net worth",
+  closeNetWorthBeforeLabel: "Net worth now",
+  closeNetWorthAfterLabel: "After closing this account",
+  closeNetWorthUnchangedNote: "This account is not one of the holdings net worth adds up, so closing it leaves that figure exactly where it is.",
   closeAccountReversalNotice: "{residual} will be moved out of this account, bringing it to zero, and then the account will be closed. Whatever this balance was counting towards stops counting it: the compensation account that receives it sits outside every balance the app adds up, so a balance that was part of your net worth leaves it. Nothing is destroyed - the movement is recorded and the history stays readable.",
   closeReversalBoundaryStatement: "The balance is reversed against the compensation account the system keeps for this. It is not one of your accounts: it sits outside your net worth and outside every aggregate balance, so moving a balance into it takes that balance out of your figures without destroying the record that it existed. It appears in the list below only if this account has already moved money with it before today, and that row is history like every other one there - it is not the reversal about to be made.",
   closeAccountPreviewError: "The balance could not be read, so the close cannot be offered yet.",
@@ -584,7 +592,7 @@ totalNetAdjustment: 'Ajuste Neto Total:',
 
   closeOnlyPageTitle: "Eliminar Cuenta",
   closeOnlyDetailsTitle: "Cuenta a Eliminar",
-  closeOnlyBlockedNotice: "Esta cuenta todavía tiene saldo, así que no se puede cerrar tal como está. Hay dos caminos: saque el saldo usted mismo con una transferencia normal y después ciérrela, o use el botón de abajo, que revierte el saldo y cierra en una sola operación. En ambos casos la cuenta conserva su nombre en cada movimiento que la menciona.",
+  closeOnlyBlockedNotice: "Esta cuenta no se puede cerrar porque todavía tiene dinero. Puedes transferir el saldo a otra cuenta y luego cerrarla, o tocar el botón de abajo para vaciarla y cerrarla en un solo paso. (Ten en cuenta que si eliges cerrarla ahora, este dinero dejará de sumarse a tu patrimonio total en la app).",
   relatedAccountsSummary: "Cuentas relacionadas",
   relatedAccountsNote: "El saldo nuevo y el ajuste neto muestran lo que le haría a cada una de estas cuentas eliminar esta con ajuste. El cierre no cambia ninguna de esas cifras.",
   relatedAccountsHeading: "Cuentas con las que esta ha movido dinero",
@@ -616,6 +624,10 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   closeAccountReverseTitle: "Revertir el Saldo y Cerrar",
   closeAccountReverseDescription: "Esta cuenta tiene saldo, así que no puede cerrarse tal como está. FinTrack sacará ese saldo y cerrará la cuenta, ambas cosas en una sola operación: si una parte falla, no ocurre ninguna. Usted no elige nada más, el monto es exactamente lo que la cuenta tiene y el destino es la cuenta de compensación que el sistema mantiene para esto.",
   closeAccountReverseConfirmButton: "Revertir y Cerrar",
+  closeNetWorthSectionLabel: "Lo que esto le hace a tu patrimonio",
+  closeNetWorthBeforeLabel: "Patrimonio ahora",
+  closeNetWorthAfterLabel: "Después de cerrar esta cuenta",
+  closeNetWorthUnchangedNote: "Esta cuenta no es una de las tenencias que el patrimonio suma, así que cerrarla deja esa cifra exactamente donde está.",
   closeAccountReversalNotice: "Se sacarán {residual} de esta cuenta, dejándola en cero, y después se cerrará. Lo que ese saldo estuviera sumando deja de sumarlo: la cuenta de compensación que lo recibe queda fuera de todos los saldos que la aplicación suma, así que un saldo que formaba parte de su patrimonio sale de él. No se destruye nada: el movimiento queda registrado y la historia sigue siendo legible.",
   closeReversalBoundaryStatement: "El saldo se revierte contra la cuenta de compensación que el sistema mantiene para esto. No es una de sus cuentas: queda fuera de su patrimonio y fuera de todo saldo agregado, así que mover un saldo hacia ella lo retira de sus cifras sin destruir el registro de que existió. Aparece en la lista de abajo solo si esta cuenta ya movió dinero con ella antes de hoy, y esa fila es historia como todas las demás: no es la reversión que está por hacerse.",
   closeAccountPreviewError: "No se pudo leer el saldo, as\u00ed que el cierre a\u00fan no puede ofrecerse.",

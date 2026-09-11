@@ -74,6 +74,50 @@ const CLOSING_ACCOUNT_QUERY = `
     AND ua.closed_at IS NULL
 `;
 
+// WHAT THE REVERSAL DOES TO NET WORTH, both figures read here rather than
+// computed on the screen.
+//
+// The reversal moves the whole residual onto the compensation account, whose
+// type is `boundary` and therefore outside every list below, so net worth after
+// the operation is the same sum with the closing account taken out. The
+// subtraction is expressed as a FILTER rather than as `before - residual`
+// because that spelling is correct for BOTH cases without a branch: on an
+// account whose type does not count towards net worth the filter removes
+// nothing and the two figures come back equal, which is the true answer and the
+// one the owner most needs to see.
+//
+// THE MEMBERSHIP RULE IS THE HERO'S, not a new one. makeHeroSection.js:197
+// composes netWorth as bankBalance + investmentBalance + debtPosition, and those
+// three inputs read the account types named here: bank and cash together
+// (overviewPageRepository.js:121-138, D45), investment, and the debtor legs. The
+// four types that are absent are absent on purpose - pocket_saving,
+// category_budget, income_source and boundary are not holdings, so an account of
+// one of those types leaves net worth exactly where it was.
+//
+// IT IS NOT THE HERO'S FIGURE, though, and the difference is the time
+// coordinate. The hero answers at the close of its reference month; this answers
+// now, because the close happens now. On the current month the two agree; on a
+// past one they do not, and the one that belongs beside a live residual is this
+// one.
+const NET_WORTH_QUERY = `
+  WITH counted AS (
+    SELECT
+      ua.account_id,
+      ${DERIVED_BALANCE} AS balance
+    FROM user_accounts ua
+    JOIN account_types act ON act.account_type_id = ua.account_type_id
+    WHERE ua.user_id = $1
+      AND ua.deleted_at IS NULL
+      AND ua.closed_at IS NULL
+      AND act.account_type_name IN ('bank', 'cash', 'investment', 'debtor')
+  )
+  SELECT
+    COALESCE(SUM(balance), 0)::text AS net_worth_before,
+    COALESCE(SUM(balance) FILTER (WHERE account_id <> $2), 0)::text AS net_worth_after,
+    EXISTS (SELECT 1 FROM counted WHERE account_id = $2) AS counts_toward_net_worth
+  FROM counted
+`;
+
 /**
  * @param {object} db - pool; this is a read and takes no lock
  * @param {string} userId
@@ -102,6 +146,15 @@ export const getClosePreview = async (db, userId, targetAccountId) => {
 
   const row = rows[0];
 
+  // Second read, and sequential for the same reason the destinations query was:
+  // an account that turned out not to exist has no net worth impact worth
+  // computing, and the 404 above is the more useful answer.
+  const { rows: netWorthRows } = await db.query(NET_WORTH_QUERY, [
+    userId,
+    targetAccountId,
+  ]);
+  const netWorthRow = netWorthRows[0];
+
   // RETIRED 2026-09-08. This query ran on every close preview and on every
   // deletion assessment to build a list CLOSE can no longer act on.
   //
@@ -126,6 +179,14 @@ export const getClosePreview = async (db, userId, targetAccountId) => {
       // that decides whether the close will be accepted at all, and the screen
       // shows it to explain a refusal rather than to price a transfer.
       residual: row.account_balance,
+    },
+    // Text all the way out, like the residual beside it and for the same
+    // reason: the pg driver's float conversion would round the figure the owner
+    // is about to read against the one the engine moves.
+    netWorth: {
+      before: netWorthRow.net_worth_before,
+      after: netWorthRow.net_worth_after,
+      countsTowardNetWorth: netWorthRow.counts_toward_net_worth,
     },
     // FROZEN EMPTY 2026-09-08, not removed. Both keys stay in the response so
     // no consumer reads undefined off a shape that used to carry them - the
