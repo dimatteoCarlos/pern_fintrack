@@ -211,66 +211,38 @@ So: **the code that writes the new columns must be deployed in the same window
 as the migration that requires them.** Schema first, then code, with nobody
 creating records in between; or relax the `NOT NULL`, deploy, and restore it.
 
-### A data step that calls a transaction writer is not a chain file
+### A data step that a SQL file cannot express is a hand-run script
 
 `runMigrations.js:97` filters the directory with `.endsWith('.sql')`, so the
-chain executes SQL and nothing else. A data change that a SQL file cannot
-express is therefore a script run by hand, and that changes what it depends on.
+chain executes SQL and nothing else. A data change SQL cannot express is
+therefore a script run by hand, outside the runner's transaction and outside its
+ledger.
 
-Four writers read the in-memory currency catalog before they write a row:
-`recordTransaction.js:25`, `recordAnnulmentTransaction.js:127`,
-`recordClosureSettlement.js:153` and `recordBalanceReversal.js:135`. Each calls
-`getCurrencyIdSync` above its own `try`, so an unloaded catalog throws before
-any statement is issued. Under HTTP that never happens: `app.js:66` awaits
-`loadCurrencyCatalog()` at boot and every request inherits it. A script started
-with `node scripts/...` never runs `app.js` and inherits nothing.
+**It no longer inherits a currency-catalog dependency, since 2026-09-11.** The
+four transaction writers used to call `getCurrencyIdSync` above their own `try`,
+so a script started with `node scripts/...` — which never runs `app.js` and
+therefore never awaits `loadCurrencyCatalog()` — threw before issuing a
+statement, with the DDL it followed already committed. The deletion session moved
+all four to `getCurrencyId(client, ACCOUNTING_CURRENCY_CODE)` in `de81e7ad`:
+`recordTransaction.js:29`, `recordAnnulmentTransaction.js:131`,
+`recordBalanceReversal.js:152` and `recordClosureSettlement.js:157`. That
+function returns the catalog's answer when it is loaded and queries the client it
+is handed when it is not, so a hand-run step now loads nothing and works on a
+database where no catalog can exist. Verified on `main` at `de81e7ad`:
+`getCurrencyIdSync` is reached by nothing outside its own module — its definition
+at `loadCurrencyCatalog.js:58`, and `currencyLookup.js:21` and `:71`, which are
+the fallback's own use of it and its re-export.
 
-**The failure lands at the worst moment for a migration.** The DDL has already
-applied and committed, and the data step that was supposed to follow it dies on
-its first call. Found 2026-09-08 by the deletion session, when
-`backend/scripts/verifyClose.js` ran for the first time and died exactly there.
-The three older verifiers already load it — `verifyCloseAccount.js:173`,
-`verifyCloseTransfer.js:180` and `verifyClosureSettlement.js:124`, the last with
-the comment explaining why.
+**The `catch` at `app.js:67` stays a `catch`.** `app.js` awaits
+`loadCurrencyCatalog()` during module evaluation, and on an empty database that
+queries a `currencies` table nothing has created yet, so it throws by design. The
+`catch` is what lets the boot continue to the step that creates and seeds it;
+turning it into an exit would stop a new database booting at all. Measured by the
+deletion session on 2026-09-08, and independent of the move above.
 
-So a hand-run data step calls `loadCurrencyCatalog()` before it writes, or it
-writes through SQL and avoids the dependency entirely. Pure SQL migrations are
-unaffected and this section does not apply to them.
-
-**The `catch` around that load is deliberate and must not be turned into an
-exit.** `src/index.js:12` imports `app.js`, whose top-level
-`await loadCurrencyCatalog()` therefore runs during module evaluation, before
-`startServer()` reaches `initializeDatabase()`. On an empty database it queries
-a `currencies` table that nothing has created yet, so it throws by design, and
-the `catch` at `app.js:67` is what lets the boot continue to the step that
-creates and seeds it. Making it exit would stop a new database booting at all.
-Measured and argued by the deletion session on 2026-09-08, correcting an earlier
-version of this paragraph that called the `catch` a defect and said the server
-would then be unable to write a transaction. Both were wrong: the `catch` is
-load-bearing, and `fxDBaccess.js` reloads the catalog on the first FX operation,
-so a process that boots without one usually repairs itself.
-
-**The defect is one file over, and it is why this section exists at all.**
-`utils/currencyLookup.js` says in its own second line that it provides "catalog
-fallback", and `getCurrencyId` at `:17` is that fallback — catalog first through
-`isCurrencyCatalogLoaded()`, then a query on the client it is handed, never
-throwing for an absent catalog. The same file then re-exports `getCurrencyIdSync`
-unchanged at its end, and that is the one all four writers import. So the writers
-reach past the fallback that was written for them.
-
-**If the writers move to `getCurrencyId(dbClient, ACCOUNTING_CURRENCY_CODE)`,
-this whole section stops applying** — a hand-run data step would need to load
-nothing, and it would work on a fresh database where no catalog can exist.
-Proposed by the deletion session and put to Carlos on 2026-09-08, undecided as
-of this writing, deliberately not half-applied: three of the four writers are
-that module's and `recordTransaction.js` is on every ordinary transaction path
-and belongs to none. Delete this section when the four move.
-
-The measurement behind this section is in
+The measurement behind the hazard this section used to describe is in
 `plan-docs/ongoing/PLAN_ACCOUNT_DELETION/DELETION_FINDINGS.md`, under the boot
-that swallows a currency-catalog failure. It was session memory until
-2026-09-09, when it was moved there and the memory deleted, so that file is now
-the only copy.
+that swallows a currency-catalog failure.
 
 ---
 
@@ -535,6 +507,21 @@ Counted and classified on 2026-09-08, against `main` at `3ad15e40` and
 `origin/feat/vercel-serverless` at its head of that date. Re-run the grep before
 acting on this: the ten is a fact about a commit, not about the project, and a
 merge into either branch changes it.
+
+**Re-run 2026-09-11, and the gap has widened rather than closed.**
+`git grep -l account_registry` over `backend/src` returns **nineteen paths on
+`origin/main`** and **zero on `origin/feat/vercel-serverless`**, which is at
+`20de666d`. `closed_at` is also absent from the deploy branch entirely. So the
+deployed code still names neither object, which is what keeps production sound
+at `030`, and the ten of three days ago is now nineteen because the deletion and
+overview modules kept building on the table.
+
+**What that measurement does and does not say.** It says the merge is what would
+put readers of a missing table in front of production, not that the merge is
+what ships the schema — a branch's `sql_migrations/` directory applies nothing,
+and production would sit at `030` the instant after a merge exactly as it does
+now. The protection today is the absence of those readers from the deployed
+code, not the absence of the merge.
 
 The order is therefore forced in one direction only. Running the chain early
 costs nothing, because the deployed code ignores what it adds. Deploying the

@@ -36,6 +36,7 @@ import {
   ensureTransactionOpeningFor,
   ensureAccountRegistry,
   ensureBalanceReversal,
+  ensureTransactionStatusCheck,
   ensureCategoryBudgetCurrency,
   ensureCategoryBudgetFxColumns,
   recreateExchangeRatesTable,
@@ -281,6 +282,12 @@ export async function initializeDatabase() {
     // leaving a database whose catalogs accept movement type 11 and whose
     // transactions table cannot name what a type 11 row reversed.
     await ensureBalanceReversal(client);
+
+    // Runtime counterpart of migration 038. The position carries no
+    // dependency: it needs the transactions table and nothing else, and that
+    // table exists on both branches by here. It follows the call above so the
+    // two counterparts that alter transactions stay in migration order.
+    await ensureTransactionStatusCheck(client);
 
     // Runtime counterpart of migration 011, for the databases this file does
     // reach: a local or self-hosted one that has never had the runner pointed

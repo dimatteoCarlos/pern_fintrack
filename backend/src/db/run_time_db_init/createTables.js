@@ -1431,6 +1431,79 @@ export async function ensureBalanceReversal(client = pool) {
  `);
 }
 
+/**
+ * Runtime counterpart of migration 038.
+ *
+ * Nine call sites write transactions.status and every one of them writes
+ * 'complete', so the column records that the transaction happened rather than
+ * a state it passes through. This path creates the transactions table itself,
+ * so without the same named check a database built here would carry a column
+ * the chain constrains and this file does not - and db:parity compares
+ * constraint definitions.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureTransactionStatusCheck(client = pool) {
+ const {
+  rows: [present],
+ } = await client.query(
+  "SELECT to_regclass('public.transactions') IS NOT NULL AS table_exists",
+ );
+
+ if (!present.table_exists) return;
+
+ const { rows: existing } = await client.query(`
+  SELECT pg_get_constraintdef(con.oid) AS definition
+   FROM pg_constraint con
+   JOIN pg_class rel ON rel.oid = con.conrelid
+   JOIN pg_namespace ns ON ns.oid = rel.relnamespace
+   WHERE ns.nspname = 'public'
+    AND rel.relname = 'transactions'
+    AND con.contype = 'c'
+    AND con.conname = 'chk_transaction_status'
+ `);
+
+ // Skips a no-op that would still take an ACCESS EXCLUSIVE lock on every boot.
+ if (existing.some((row) => row.definition.includes("'complete'"))) return;
+
+ // A constraint of that name admitting something else is an earlier form of
+ // this one, and the migration drops before it adds for the same reason.
+ if (existing.length > 0) {
+  await client.query(`
+   ALTER TABLE transactions
+    DROP CONSTRAINT chk_transaction_status
+  `);
+ }
+
+ // ADD CONSTRAINT validates every existing row, so a status this check does
+ // not admit stops the boot with a bare 23514 naming no row. Read the
+ // offenders first: a second status is a finding about a writer nobody
+ // recorded, not a reason to relax the column.
+ const { rows: offenders } = await client.query(`
+  SELECT status, count(*)::int AS row_count
+   FROM transactions
+   WHERE status IS DISTINCT FROM 'complete'
+   GROUP BY status
+ `);
+
+ if (offenders.length > 0) {
+  const detail = offenders
+   .map(({ status, row_count }) => `"${status ?? 'null'}" on ${row_count} rows`)
+   .join(', ');
+  throw new Error(
+   `transactions.status holds ${detail}. Migration 038 admits 'complete' alone, ` +
+    'so those rows came from a writer this schema does not know about.',
+  );
+ }
+
+ await client.query(`
+  ALTER TABLE transactions
+   ADD CONSTRAINT chk_transaction_status
+   CHECK (status = 'complete')
+ `);
+ console.log(pc.green('transactions.status constrained for 038.'));
+}
+
 export async function ensureCategoryBudgetFxColumns(client = pool) {
  await client.query(`
   ALTER TABLE category_budget_accounts

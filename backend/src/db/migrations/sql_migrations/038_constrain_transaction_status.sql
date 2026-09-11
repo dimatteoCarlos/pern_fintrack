@@ -1,0 +1,117 @@
+-- 038_constrain_transaction_status.sql
+--
+-- ============================================================================
+-- Migration 038: constrains transactions.status to the single value every
+--   writer in the codebase writes, with a named table CHECK, so a different
+--   string can no longer be stored without anyone noticing.
+-- Depends on: 003_transactions.sql, which declares the column as TEXT NOT NULL.
+-- Decided by: Carlos on 2026-09-10. In his words the column "es inocua en el
+--   codigo y esta solo para verificar que la transaccion se hizo", which is
+--   what this constraint records: the column has one meaning and one value.
+-- Measured before writing, read-only on 2026-09-10: fintrack_prod_data holds
+--   785 rows, fintrack_prod_rehearsal 780 and fintrack_dev 157, and 'complete'
+--   is the only value on all three. The column carries no default and no check
+--   on either build path (003_transactions.sql:56, createTables.js:187).
+--   fintrack_prod_data is the untouched 2026-08-21 production dump, so this is
+--   production's own data up to that date and not a local artefact.
+-- ============================================================================
+--
+-- WHY THE COLUMN NEEDED A CONSTRAINT AT ALL
+--
+-- Nine call sites set it and every one of them sets the same literal, read on
+-- main at 03350e0b: transactionController.js:837 and :878,
+-- recordAnnulmentTransaction.js:158 and :194, recordBalanceReversal.js:185 and
+-- :218, recordClosureSettlement.js:194 and :223, and
+-- prepareTransactionOption.js:23. They reach four INSERT statements, and in the
+-- general one the value arrives as $4 from the caller's array
+-- (recordTransaction.js:107), so nothing between the call site and the column
+-- decides what a status may be. Eight of those anchors moved on 2026-09-11 and
+-- none of the literals did: six by seven lines in de81e7ad, which changed how
+-- the four writers resolve the currency, and the two controller ones by eleven
+-- in 03350e0b. Read the grep rather than these numbers if the date has passed.
+-- One place reads it back,
+-- getAnnulmentImpactReport.js:62, and it compares against that same literal.
+--
+-- So the column is a fact about the row - the transaction was recorded - and
+-- not a state machine. A CHECK is how that is said in the schema rather than in
+-- nine files that happen to agree.
+--
+-- WHY A CHECK AND NOT A DEFAULT
+--
+-- The two failures are not symmetric and only one of them is open today. An
+-- omitted status already fails loudly: the column is NOT NULL with no default,
+-- so a writer that forgets it raises 23502 and the transaction never lands.
+-- What is silent is a deliberate different string, which the column accepts
+-- without comment. Adding a DEFAULT would close nothing and would convert the
+-- loud failure into a silent one, which is why this file adds no default.
+--
+-- WHY ONE VALUE AND NOT A LIST WITH ROOM IN IT
+--
+-- Because a list with room in it is a design decision nobody has made. There is
+-- no pending state, no reversal state and no partial state anywhere in the
+-- code: the balance reversal introduced by 037 writes its own movement type and
+-- its own transaction type, and it writes this column 'complete' like every
+-- other writer. Naming values the system does not produce would put a
+-- vocabulary in the schema that no reader could act on.
+--
+-- If a second status is ever needed, this is a DROP CONSTRAINT and an ADD
+-- CONSTRAINT in a new file - cheap, reversible, and the same swap 036 argues
+-- for on account_registry.close_reason.
+--
+-- THE PRECONDITION FOR THE PRODUCTION RUN
+--
+-- ADD CONSTRAINT validates every existing row, so this file fails on adoption
+-- if production holds a status this constraint does not admit. The dump says it
+-- does not, and the dump ends 2026-08-21; rows written since come from the same
+-- nine call sites. Read it anyway before the run, in one query:
+--
+--   SELECT status, count(*) FROM transactions GROUP BY status;
+--
+-- One group named 'complete' is the answer that lets this file run. Any other
+-- group is a finding, and it is a finding about a writer this file did not know
+-- about rather than about the constraint.
+--
+-- BOOT-PATH COUNTERPART
+--
+-- ensureTransactionStatusCheck() in createTables.js, called from
+-- initDatabase.js. Unlike 035 and 036, this one has a counterpart and needs
+-- one: createTables.js creates the transactions table itself, so a database
+-- built by that path would otherwise end with a column this chain constrains
+-- and that path does not, and db:parity compares constraint definitions.
+--
+-- RETIREMENT REGISTER
+--
+-- This constraint retires nothing. No application-side validation of the column
+-- exists to remove, which is the reason the migration exists.
+--
+-- ============================================================================
+
+-- UP ------------------------------------------------------------------------
+--
+-- No BEGIN or COMMIT here: runMigrations.js opens one transaction per file and
+-- writes the ledger row inside it, so a file that opened its own would close
+-- the runner's and leave the ledger row outside the transaction that made it
+-- true.
+--
+-- The DROP first makes the pair re-runnable by hand on a database where an
+-- earlier attempt left the constraint behind. The runner never re-runs a file
+-- it has recorded, so this is for a hand-applied retry and not for the chain.
+
+ALTER TABLE transactions
+ DROP CONSTRAINT IF EXISTS chk_transaction_status;
+
+ALTER TABLE transactions
+ ADD CONSTRAINT chk_transaction_status
+ CHECK (status = 'complete');
+
+-- DOWN ----------------------------------------------------------------------
+--
+-- Run manually. Reversing is lossless: the constraint stores nothing, and
+-- dropping it returns the column to unconstrained TEXT, which every existing
+-- row already satisfies.
+--
+-- BEGIN;
+-- ALTER TABLE transactions
+--  DROP CONSTRAINT IF EXISTS chk_transaction_status;
+-- DELETE FROM migrations WHERE filename = '038_constrain_transaction_status.sql';
+-- COMMIT;
