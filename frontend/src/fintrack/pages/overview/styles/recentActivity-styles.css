@@ -23,14 +23,14 @@
 
 /* One surface for the three controls, so they read as one act of narrowing and
    not as three unrelated fields. */
-/* 44px and no longer 32px. --size-control-sm is for a control inside a row of
-   its own kind; these three are the only controls on the block and each is a
-   separate target, so the row takes the touch minimum. */
+/* --size-control-sm and not the touch minimum, under the same repeal: the row
+   is sized by what it holds. The floor is here only so an empty or a wrapped
+   line keeps the row's own height rather than collapsing onto the text. */
 .recentActivity__controls {
  display: flex;
  flex-wrap: wrap;
  align-items: stretch;
- min-height: var(--size-touch-target);
+ min-height: var(--size-control-sm);
  background-color: var(--color-surface-sunken);
  border: var(--border-width-thin) solid var(--color-border-subtle);
  border-radius: var(--radius-xl);

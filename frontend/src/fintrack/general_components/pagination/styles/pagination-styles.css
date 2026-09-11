@@ -97,20 +97,23 @@
  font-variant-numeric: tabular-nums;
 }
 
-/* Square, so the two steps are the same size whichever glyph they carry.
+/* SIZED BY ITS OWN LINE and no longer by a fixed touch figure. Carlos,
+   2026-09-11, repealing the 44px rule for pressable controls: a button takes
+   the height of the row it belongs to. At 44px these two stood half again as
+   tall as the select beside them and the row read as two rows.
 
-   44px and no longer 24px. The comment above claimed it was "large enough to be
-   a tap target"; --space-6 is 1.5rem, which is 24px and a little over half the
-   floor. These two are the smallest controls on the page and the ones a reader
-   hits most often, and Carlos flagged them by name. */
+   The height is the glyph plus --space-1 on each side, which is the vertical
+   box --pagination__select carries, so the three controls of this row are one
+   height. aspect-ratio is what keeps the button square without restating that
+   height as a width: the two chevrons do not share an advance width, and equal
+   padding alone would give one step a narrower box than the other. */
 .pagination__step {
  display: flex;
  flex: 0 0 auto;
  align-items: center;
  justify-content: center;
- width: var(--size-touch-target);
- height: var(--size-touch-target);
- padding: 0;
+ aspect-ratio: 1;
+ padding: var(--space-1);
  border: var(--border-width-thin) solid var(--color-border-subtle);
  border-radius: var(--radius-md);
  background-color: transparent;
