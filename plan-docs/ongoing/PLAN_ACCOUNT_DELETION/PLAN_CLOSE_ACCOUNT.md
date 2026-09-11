@@ -4227,3 +4227,60 @@ WCAG measurement.** Neither was reported by any review.
 2.88:1 on sunken, 3.09:1 on deep, 2.57:1 on raised. The token is not used
 anywhere in `editionAndDeletion/`, so the failure it names is not in this
 module - but checking for it is what surfaced the two above.
+
+
+### 14.17 The closed-account registry gets a separator and a face, 2026-09-11
+
+Carlos, on the screen delivered in 14.15: *"ponle un separador entre cada cuena
+cerrada. y mejorar la visibilidad del modulo de consulta de cierra de cuentas,
+algunos svg y colores y hovers."*
+
+**The separator changed the list's shape rather than adding a line to it.** The
+rows were twenty free-floating cards with a gap between them. A reader has to
+find the edges of each card before reading it, and a rule drawn between two
+cards that already have their own backgrounds reads as decoration. The list is
+now ONE sunken panel with a hairline between entries and none after the last.
+The boundary is explicit and it costs one border.
+
+**Seven icons, six of them already drawn.** `accountingDashboardSvg/` holds
+bank, investment, debtor, expense, income and pocket, all `viewBox="0 0 32 32"`
+with `stroke="currentColor"` at 1.5. Only `cash` was missing and it was drawn to
+that same pen. `ACCOUNT_TYPE_ICONS` is keyed by the value
+`account_types.account_type_name` actually holds, and a type with no entry -
+including the null a registry row carries when the catalog row was erased before
+the registry existed - falls back to the archive mark, never to an empty box
+that would misalign the row.
+
+**Two more from the pocket module's set, not redrawn either.** The magnifier
+sits inside the search field, and one direction chevron is TURNED for ascending
+rather than swapped for a second icon: two icons on one axis make the reader
+compare shapes to learn which way the list runs.
+
+| element | at rest | on hover |
+|---|---|---|
+| the row | sunken panel, hairline above | `--color-surface-raised`, and a `--color-status-info` bar appears on the leading edge |
+| the leading bar | transparent, already laid out | painted, so the row does not shift |
+| the type chip | `--color-financial-neutral-*` | ink to `--color-content-on-dark`, border to `--color-border-inverse` |
+| the order button | subtle border | border strong, ink `--color-interactive-hover` |
+
+**The neutral ramp, deliberately, and not a colour per type.** Seven type
+colours would be seven facts the registry does not hold. A closed account is
+neither a gain nor a loss, so it takes
+`--color-financial-neutral-surface/-border/-content` and nothing louder. The
+closing date - the one reason a row is on this screen - is given WEIGHT rather
+than colour, because every status colour in this system already means gain, loss
+or alarm.
+
+**A hover on a row that cannot be clicked is still worth having.** It says which
+entry the reader's eye is on in a list where every row looks alike. It does not
+promise an action, because the row has none: the detail view is still open and
+still Carlos's to decide.
+
+**Measured, not assumed.** Every pairing recomputed from `tokens.css`:
+`--color-financial-neutral-content` on its own surface 8.14:1; the accent bar
+`--color-status-info` on `--color-surface-raised` 7.27:1 against a 3:1 graphic
+floor; `--color-content-on-dark-subtle` on raised 8.37:1;
+`--color-interactive-hover` on sunken 15.60:1.
+
+**Verified:** `tsc -p tsconfig.app.json` clean, `npm run build` clean. Not
+confirmed live - the visual is Carlos's to confirm on screen.
