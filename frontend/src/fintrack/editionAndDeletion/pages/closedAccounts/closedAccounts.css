@@ -127,11 +127,20 @@
  gap: 0.5rem;
 }
 
+/* The select gives way, not the button: without this the flex row shrank the
+   button below its label and "Newest first" broke onto two lines on a phone. */
+.closed-accounts__sort-row .closed-accounts__select {
+ flex: 1 1 auto;
+ min-inline-size: 0;
+}
+
 .closed-accounts__order {
  display: inline-flex;
+ flex: 0 0 auto;
  align-items: center;
  justify-content: center;
  gap: 0.5rem;
+ white-space: nowrap;
  block-size: 2.625rem;
  padding-inline: 0.875rem;
  color: #cbd5e1;
@@ -148,6 +157,12 @@
  color: #ffffff;
  border-color: rgba(255, 255, 255, 0.25);
  background-color: rgba(30, 41, 59, 0.8);
+}
+
+/* index.css sets font-size on the universal selector, so the span would not
+   take the button's size without restating it. */
+.closed-accounts__order-text {
+ font-size: inherit;
 }
 
 .closed-accounts__order-icon {
