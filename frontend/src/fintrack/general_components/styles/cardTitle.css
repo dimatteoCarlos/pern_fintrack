@@ -44,11 +44,14 @@
  padding-top: var(--space-8);
 }
 
+/* The row is a div, which index.css sizes at 16px on the universal selector, so
+   the heading inside inherited 16px instead of the title's 1.25rem. */
 .presentation__card--row {
  display: flex;
  justify-content: space-between;
  align-items: baseline;
  gap: var(--space-3);
+ font-size: inherit;
 }
 
 /* Both halves of a row are one heading and have to read as one. The legend

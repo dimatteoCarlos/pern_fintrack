@@ -266,7 +266,11 @@ function OverviewDomain() {
    {/* The expense domain's alone, and the same two drawings level 1 mounts -
        from this answer's own categories rather than from the page payload. */}
    {data.categories && card.domain === 'expense' && (
-    <ExpenseBreakdown categories={data.categories} card={card} />
+    <ExpenseBreakdown
+     categories={data.categories}
+     card={card}
+     referenceMonth={served.referenceMonth}
+    />
    )}
 
    {/* The narrowing sits between the ranking and the list, which is the order

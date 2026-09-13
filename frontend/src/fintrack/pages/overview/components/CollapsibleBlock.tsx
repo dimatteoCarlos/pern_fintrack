@@ -35,6 +35,9 @@ type CollapsibleBlockProps = {
  // to restate the box, and two rules that must agree about a border are a
  // defect waiting for one of them to be edited.
  className?: string;
+ // A hairline above the block, for a page section that follows another one.
+ // A prop and not a caller class, because the rule belongs to this block.
+ isRuled?: boolean;
 };
 
 function CollapsibleBlock({
@@ -43,6 +46,7 @@ function CollapsibleBlock({
  defaultOpen = true,
  variant = 'block',
  className,
+ isRuled = false,
 }: CollapsibleBlockProps) {
  // CONTROLLED, and it has to be. React re-applies the open attribute on every
  // render, so passing defaultOpen straight to details would snap a section the
@@ -53,8 +57,8 @@ function CollapsibleBlock({
  return (
   <details
    className={`collapsible collapsible--${variant}${
-    className ? ` ${className}` : ''
-   }`}
+    isRuled ? ' collapsible--ruled' : ''
+   }${className ? ` ${className}` : ''}`}
    open={isOpen}
    onToggle={(event) => setIsOpen(event.currentTarget.open)}
   >

@@ -20,9 +20,16 @@
 // disagree. No ratio is computed here at all: the colour of a part comes off a
 // categorical scale by rank, which is a drawing rule and never a figure.
 
+import { useId, useState } from 'react';
 import { currencyFormat } from '../../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
-import { RankedRow, categoryInk, percent } from '../helpers/rankedBreakdown';
+import {
+ RankedRow,
+ categoryInk,
+ foldZeroRows,
+ othersLabel,
+ percent,
+} from '../helpers/rankedBreakdown';
 
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
@@ -57,6 +64,8 @@ type DonutChartProps = {
  // percentages have no denominator on screen.
  total: number;
  totalLabel: string;
+ // The plural noun the Others row counts, the same one ParetoBar's foot uses.
+ unitLabel: string;
  // Rendered under the legend when the caller has something the ring cannot
  // draw. For expense that is the spending that carries no category, which by
  // decision D48 is an advisory line and never a slice: it sits outside the set
@@ -70,10 +79,16 @@ function DonutChart({
  currency,
  total,
  totalLabel,
+ unitLabel,
  caption,
 }: DonutChartProps) {
  const money = (value: number) =>
   currencyFormat(currency, value, formatNumberCountry);
+
+ // The same fold the bar's legend makes, opened and closed on its own.
+ const { spending, folded } = foldZeroRows(rows);
+ const [isOthersOpen, setIsOthersOpen] = useState(false);
+ const foldId = `donutChart-folded${useId()}`;
 
  // Where each arc starts, in path units, accumulated over the rows BEFORE it.
  // Taken over every row and not only the drawn ones, so a row that spent
@@ -156,19 +171,73 @@ function DonutChart({
    </div>
 
    <ul className='donutChart__legend'>
-    {rows.map((row, index) => (
+    {spending.map((row) => (
      <li className='donutChart__row' key={row.key}>
       {/* The same square the bar's legend draws, off the same categoryInk
-          call, so a category is one colour across both drawings of the block.
-          A row that spent nothing keeps its square: the row is in the ranking
-          and absent from the ring, and the square is what says so. */}
+          call, so a category is one colour across both drawings of the block. */}
       <span
        className='donutChart__swatch'
        aria-hidden='true'
-       style={{ ['--rankedRow-ink' as string]: categoryInk(index) }}
+       style={{ ['--rankedRow-ink' as string]: categoryInk(row.index) }}
       />
 
       <span className='donutChart__name'>{row.label}</span>
+
+      <span className='donutChart__amount'>{money(row.amount)}</span>
+
+      <span className='donutChart__share'>{percent(row.share)}</span>
+     </li>
+    ))}
+
+    {/* The zero rows fold under one Others row, mounted and hidden so
+        aria-controls always names elements that exist. */}
+    {folded.length > 0 && (
+     <li className='donutChart__row donutChart__row--empty'>
+      <span
+       className='donutChart__swatch donutChart__swatch--others'
+       aria-hidden='true'
+      />
+
+      <button
+       type='button'
+       className={`rankedOthers__toggle rankedOthers__toggle--donut${
+        isOthersOpen ? ' is-active' : ''
+       }`}
+       aria-expanded={isOthersOpen}
+       aria-controls={folded.map((row) => `${foldId}-${row.index}`).join(' ')}
+       onClick={() => setIsOthersOpen((isOpen) => !isOpen)}
+      >
+       <span className='rankedOthers__label'>
+        {othersLabel(folded.length, unitLabel)}
+       </span>
+       <span className='donutChart__amount'>{money(0)}</span>
+       <span className='rankedOthers__end'>
+        <span className='rankedOthers__chevron' aria-hidden='true' />
+        <span className='donutChart__share'>{percent(0)}</span>
+       </span>
+      </button>
+     </li>
+    )}
+
+    {folded.map((row) => (
+     <li
+      className='donutChart__row donutChart__row--empty'
+      id={`${foldId}-${row.index}`}
+      key={row.key}
+      hidden={!isOthersOpen}
+     >
+      {/* Hollow: the row keeps its rank colour and draws no arc. */}
+      <span
+       className='donutChart__swatch donutChart__swatch--empty'
+       aria-hidden='true'
+       style={{ ['--rankedRow-ink' as string]: categoryInk(row.index) }}
+      />
+
+      <span className='donutChart__name donutChart__name--member'>
+       {row.label}
+      </span>
+
+      <span className='donutChart__amount'>{money(row.amount)}</span>
 
       <span className='donutChart__share'>{percent(row.share)}</span>
      </li>

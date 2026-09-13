@@ -391,10 +391,9 @@ a.icon {
 }
 
 /* One card that holds a whole block, so it keeps the grid's gap and drops its
-   column count. It beats the two media queries below on specificity and not on
-   order - they select one class under .overviewLayout and this selects two, so
-   moving it in the file would not change which one applies. */
-.overviewLayout .domainCards--single {
+   column count. Three classes against the 480px rule's two: with two apiece the
+   later media rule won and halved the Pareto and the donut. */
+.overviewLayout .domainCards.domainCards--single {
  grid-template-columns: 1fr;
 }
 
@@ -539,6 +538,12 @@ a.icon {
  padding: var(--space-3) var(--space-4);
  border: 1px solid var(--color-border-subtle);
  border-radius: var(--radius-xl);
+}
+
+/* A chart left alone on the last row of the two-column grid spans it, so
+   "Committed to pockets" keeps one line at 480px. */
+.overviewLayout .trendChart:last-child:nth-child(odd) {
+ grid-column: 1 / -1;
 }
 
 /* The chart's own name, in the head the domain cards use. It is not
@@ -1309,10 +1314,146 @@ a.icon {
  color: var(--color-content-on-dark-subtle);
 }
 
+/* index.css sizes every span at 16px, so the two lines of the foot restate the
+   caption size they sit in. */
+.overviewLayout .paretoBar__foot span {
+ font-size: inherit;
+}
+
 /* What the bar cannot draw, stated in words. Today that is the spending that
    carries no category, which sits outside the set the server ranked. */
 .overviewLayout .paretoBar__caption {
  font-style: italic;
+}
+
+/* A zero row reads quieter than a spending row, amount included. */
+.overviewLayout .paretoBar__row--empty {
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .paretoBar__row--empty .paretoBar__amount {
+ font-weight: var(--font-weight-regular);
+ color: inherit;
+}
+
+/* A folded category sits one step in from the Others row that holds it. */
+.overviewLayout .paretoBar__row--member {
+ padding-left: var(--space-5);
+}
+
+/* The row class sets display, which beats the hidden attribute's own rule. */
+.overviewLayout .paretoBar__row[hidden],
+.overviewLayout .donutChart__row[hidden] {
+ display: none;
+}
+
+/* Hollow at the thick border: the row keeps its rank but draws no segment and
+   no arc. At the thin border the outline disappeared on the dark card. */
+.overviewLayout .paretoBar__swatch--empty,
+.overviewLayout .donutChart__swatch--empty {
+ background: transparent;
+ border: var(--border-width-thick) solid var(--rankedRow-ink);
+}
+
+/* The Others row has no rank, so its outline takes muted ink instead of a hue. */
+.overviewLayout .paretoBar__swatch--others,
+.overviewLayout .donutChart__swatch--others {
+ background: transparent;
+ border: var(--border-width-thick) solid var(--color-ranked-others-outline);
+}
+
+/*------------*/
+/* THE OTHERS CONTROL, shared by the bar's legend and the ring's: one row that
+   folds every category which spent nothing. Quiet ink and no box. */
+
+.overviewLayout .rankedOthers__toggle {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+ min-width: 0;
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-xs);
+ background-color: transparent;
+ font-family: inherit;
+ font-size: inherit;
+ text-align: left;
+ color: var(--color-content-on-dark-subtle);
+ cursor: pointer;
+ transition: color var(--motion-fast);
+}
+
+.overviewLayout .rankedOthers__toggle:hover {
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .rankedOthers__toggle:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+}
+
+.overviewLayout .rankedOthers__toggle:active {
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .rankedOthers__toggle:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The whole row after the swatch is the control, so the chevron can sit after
+   the amount. In the bar's legend it fills the flex row. */
+.overviewLayout .rankedOthers__toggle--pareto {
+ display: flex;
+ flex: 1 1 auto;
+}
+
+/* In the ring's legend it takes the name, amount and share tracks of the row. */
+.overviewLayout .rankedOthers__toggle--donut {
+ display: grid;
+ grid-column: 2 / -1;
+ grid-template-columns: subgrid;
+ column-gap: var(--space-3);
+ align-items: center;
+}
+
+/* The share cell of the ring's Others row: the chevron left, the share right. */
+.overviewLayout .rankedOthers__end {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: var(--space-2);
+ font-size: inherit;
+}
+
+.overviewLayout .rankedOthers__label {
+ min-width: 0;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+ font-size: inherit;
+}
+
+/* The block chevron's turned square at a smaller size, in the control's ink. */
+.overviewLayout .rankedOthers__chevron {
+ flex: 0 0 auto;
+ width: var(--space-2);
+ height: var(--space-2);
+ border-right: var(--border-width-thin) solid currentColor;
+ border-bottom: var(--border-width-thin) solid currentColor;
+ transform: translateY(-25%) rotate(45deg);
+ transition: transform var(--motion-fast);
+}
+
+.overviewLayout .rankedOthers__toggle.is-active .rankedOthers__chevron {
+ transform: translateY(25%) rotate(-135deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .overviewLayout .rankedOthers__toggle,
+ .overviewLayout .rankedOthers__chevron {
+  transition: none;
+ }
 }
 
 /*------------*/
@@ -1391,6 +1532,12 @@ a.icon {
    none of its own. */
 .overviewLayout .collapsible--block > .collapsible__head {
  padding: var(--space-2) 0;
+}
+
+/* A hairline above a page section that follows another, the column's width,
+   so Trend, the Pareto and the donut read as separate sections. */
+.overviewLayout .collapsible--ruled {
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
 /* ONE DOMAIN CARD. The box - border, radius, padding - is NOT declared here.
@@ -1502,26 +1649,24 @@ a.icon {
    aria-hidden: every figure the ring encodes is printed here, and exposing both
    would recite each share twice.
 
-   It wraps into columns rather than running down one, because a ring's legend
-   is names and percentages and not a table of amounts. */
+   One grid, so amounts and shares line up down the list and opening the Others
+   row cannot change a column's width. */
 .overviewLayout .donutChart__legend {
- display: flex;
- flex-wrap: wrap;
- gap: var(--space-1) var(--space-4);
+ display: grid;
+ grid-template-columns: auto minmax(0, 1fr) auto auto;
+ gap: var(--space-2) var(--space-3);
  margin: 0;
  padding: 0;
  list-style: none;
 }
 
-/* The basis is the width a category name plus its percentage needs before the
-   row is worth putting beside another; below it the legend falls to one column.
-   A length with no token, like the ring's ceiling above and the bar's running
-   share column - the three are the only ones in this sheet. */
+/* Each row takes the legend's four tracks: swatch, name, amount, share. */
 .overviewLayout .donutChart__row {
- display: flex;
- flex: 1 1 12rem;
+ display: grid;
+ grid-column: 1 / -1;
+ grid-template-columns: subgrid;
  align-items: center;
- gap: var(--space-2);
+ column-gap: var(--space-3);
  font-size: var(--font-size-sm);
  color: var(--color-content-on-dark-muted);
 }
@@ -1549,7 +1694,30 @@ a.icon {
  flex: 0 0 auto;
  font-size: var(--font-size-xs);
  font-variant-numeric: tabular-nums;
+ text-align: right;
  color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .donutChart__amount {
+ font-size: var(--font-size-sm);
+ font-variant-numeric: tabular-nums;
+ text-align: right;
+}
+
+.overviewLayout .donutChart__row--empty {
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The Others row opens its own group under the spending rows. */
+.overviewLayout .donutChart__row:not(.donutChart__row--empty) + .donutChart__row--empty {
+ padding-top: var(--space-2);
+ border-top: var(--border-dashed);
+}
+
+/* Indented on the name and not the row: the row is a subgrid, so padding on it
+   would push the swatch out of its shared track. */
+.overviewLayout .donutChart__name--member {
+ padding-left: var(--space-5);
 }
 
 /* What the ring cannot draw, stated in words. Today that is the spending which
@@ -1559,6 +1727,32 @@ a.icon {
  font-size: var(--font-size-xs);
  font-style: italic;
  color: var(--color-content-on-dark-subtle);
+}
+
+/* From 768 the column is about 563px, room for the ring beside the legend. */
+@media (min-width: 768px) {
+ .overviewLayout .donutChart {
+  display: grid;
+  grid-template-columns: var(--size-chart-ring-wide) minmax(0, 1fr);
+  gap: var(--space-3) var(--space-6);
+ }
+
+ .overviewLayout .donutChart__ring {
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: var(--size-chart-ring-wide);
+  max-width: none;
+ }
+
+ .overviewLayout .donutChart__legend {
+  grid-column: 2;
+  align-self: end;
+ }
+
+ .overviewLayout .donutChart__foot {
+  grid-column: 2;
+  align-self: start;
+ }
 }
 
 /*------------*/

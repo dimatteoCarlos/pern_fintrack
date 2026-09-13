@@ -22,12 +22,16 @@
 // arithmetic and cannot disagree. No ratio is computed here at all: the colour
 // of a row comes off a categorical scale by rank, never off its amount.
 
+import { useId, useState } from 'react';
 import { currencyFormat } from '../../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import {
  NO_SHARE,
  RankedRow,
  categoryInk,
+ countNoun,
+ foldZeroRows,
+ othersLabel,
  percent,
 } from '../helpers/rankedBreakdown';
 
@@ -91,6 +95,12 @@ function ParetoBar({
   (row) => row.cumulativeShare >= concentrationMark,
  );
 
+ // The Others row opens closed: a category that spent nothing is detail.
+ const { spending, folded } = foldZeroRows(rows);
+ const [isOthersOpen, setIsOthersOpen] = useState(false);
+ // Unique per mount, because the bar can render on level 1 and level 2.
+ const foldId = `paretoBar-folded${useId()}`;
+
  return (
   <figure className='paretoBar'>
    <div className='paretoBar__head'>
@@ -132,10 +142,10 @@ function ParetoBar({
    </div>
 
    <ul className='paretoBar__legend'>
-    {rows.map((row, index) => (
+    {spending.map((row) => (
      <li
       className={
-       index === concentrationIndex
+       row.index === concentrationIndex
         ? 'paretoBar__row paretoBar__row--concentration'
         : 'paretoBar__row'
       }
@@ -143,13 +153,11 @@ function ParetoBar({
      >
       {/* The same square the bar draws, at the same size and off the same
           categoryInk call, so the legend identifies a segment rather than
-          repeating one colour down the column. A zero row keeps its square: it
-          is in the list and absent from the bar, and the empty square is what
-          says so. */}
+          repeating one colour down the column. */}
       <span
        className='paretoBar__swatch'
        aria-hidden='true'
-       style={{ ['--rankedRow-ink' as string]: categoryInk(index) }}
+       style={{ ['--rankedRow-ink' as string]: categoryInk(row.index) }}
       />
 
       <span className='paretoBar__name'>{row.label}</span>
@@ -160,15 +168,65 @@ function ParetoBar({
 
       <span className='paretoBar__amount'>{money(row.amount)}</span>
 
-      {/* A ROW THAT SPENT NOTHING PRINTS NO RUNNING SHARE. September showed
-          four categories at $0.00 each reporting 100.0% - arithmetic that is
-          true, since the running total stops moving once the last spending row
-          is counted, and a column that says the same thing four times beside
-          four zeroes. The dash says what is actually the case: this row adds
-          nothing, so there is no share of it to report. */}
       <span className='paretoBar__cumulative'>
-       {row.amount > 0 ? percent(row.cumulativeShare) : NO_SHARE}
+       {percent(row.cumulativeShare)}
       </span>
+     </li>
+    ))}
+
+    {/* The zero rows fold under one Others row. They stay mounted and hidden so
+        aria-controls always names elements that exist. */}
+    {folded.length > 0 && (
+     <li className='paretoBar__row paretoBar__row--empty'>
+      <span
+       className='paretoBar__swatch paretoBar__swatch--others'
+       aria-hidden='true'
+      />
+
+      <button
+       type='button'
+       className={`rankedOthers__toggle rankedOthers__toggle--pareto${
+        isOthersOpen ? ' is-active' : ''
+       }`}
+       aria-expanded={isOthersOpen}
+       aria-controls={folded.map((row) => `${foldId}-${row.index}`).join(' ')}
+       onClick={() => setIsOthersOpen((isOpen) => !isOpen)}
+      >
+       <span className='rankedOthers__label'>
+        {othersLabel(folded.length, unitLabel)}
+       </span>
+       <span className='paretoBar__amount'>{money(0)}</span>
+       <span className='rankedOthers__chevron' aria-hidden='true' />
+       <span className='paretoBar__cumulative'>{NO_SHARE}</span>
+      </button>
+     </li>
+    )}
+
+    {folded.map((row) => (
+     <li
+      className='paretoBar__row paretoBar__row--empty paretoBar__row--member'
+      id={`${foldId}-${row.index}`}
+      key={row.key}
+      hidden={!isOthersOpen}
+     >
+      {/* Hollow: the row keeps its rank colour and draws no segment. */}
+      <span
+       className='paretoBar__swatch paretoBar__swatch--empty'
+       aria-hidden='true'
+       style={{ ['--rankedRow-ink' as string]: categoryInk(row.index) }}
+      />
+
+      <span className='paretoBar__name'>{row.label}</span>
+
+      {row.isFlagged && (
+       <span className='paretoBar__flag'>over budget</span>
+      )}
+
+      <span className='paretoBar__amount'>{money(row.amount)}</span>
+
+      {/* A ROW THAT SPENT NOTHING PRINTS NO RUNNING SHARE. Four categories at
+          $0.00 each reported 100.0%; the dash says the row adds nothing. */}
+      <span className='paretoBar__cumulative'>{NO_SHARE}</span>
      </li>
     ))}
    </ul>
@@ -188,7 +246,8 @@ function ParetoBar({
     {concentrationIndex !== -1 && (
      <span>
       the white line marks {percent(concentrationMark)}: the top{' '}
-      {concentrationIndex + 1} of {spendingCount} {unitLabel} carry it
+      {concentrationIndex + 1} of {spendingCount}{' '}
+      {countNoun(spendingCount, unitLabel)} carry it
      </span>
     )}
 

@@ -24,6 +24,7 @@ import { CardTitle } from '../../../general_components/CardTitle';
 import CollapsibleBlock from './CollapsibleBlock';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
+import { monthLabel } from '../helpers/monthLabel';
 import { OverviewTrendPoint } from '../../../types/overviewTypes';
 
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
@@ -142,7 +143,7 @@ export const TrendChart = ({
     role='img'
     aria-label={`${label}, ${
      nature === 'flow' ? 'per month' : 'at each month end'
-    }, last 6 months. ${plotted
+    }, last ${points.length} months. ${plotted
      .map((point) => point.title)
      .join('. ')}`}
    >
@@ -190,6 +191,7 @@ export const TrendChart = ({
 function TrendCharts() {
  const charts = useOverviewStore((state) => state.charts);
  const domainCards = useOverviewStore((state) => state.domainCards);
+ const referenceMonth = useOverviewStore((state) => state.referenceMonth);
 
  if (!charts) return null;
 
@@ -202,12 +204,27 @@ function TrendCharts() {
 
  if (drawn.length === 0) return null;
 
+ // The window's length as served, never a literal 6: the subtitle names the
+ // months the charts actually draw.
+ const monthCount = Math.max(
+  ...drawn.map(({ key }) => (charts.trend[key] as OverviewTrendPoint[]).length),
+ );
+
  // The block folds WHOLE and the three charts inside it do not fold one by
  // one, which is the difference Carlos drew between this and the domain cards:
  // three curves are read against each other, and a reader who closed one of
  // them would be comparing two things while looking at a block that says three.
  return (
-  <CollapsibleBlock head={<CardTitle>Trend</CardTitle>}>
+  <CollapsibleBlock
+   head={
+    <CardTitle
+     subtitle={`${monthCount} months to ${monthLabel(referenceMonth)}`}
+    >
+     Trend
+    </CardTitle>
+   }
+   isRuled
+  >
    <section className='domainCards'>
     {drawn.map(({ key, label, nature }) => (
      <TrendChart

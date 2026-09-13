@@ -71,3 +71,27 @@ const CATEGORY_INKS = 8;
 // tokens.css and a change to any of them reaches both drawings.
 export const categoryInk = (index: number) =>
  `var(--color-scale-category-${(index % CATEGORY_INKS) + 1})`;
+
+// Splits a ranking into the rows that spent and the zero rows both legends fold
+// under one "Others" row. The index is taken first because it is the colour.
+export const foldZeroRows = <Row extends RankedRow>(rows: Row[]) => {
+ const indexed = rows.map((row, index) => ({ ...row, index }));
+
+ return {
+  spending: indexed.filter((row) => row.amount > 0),
+  folded: indexed.filter((row) => row.amount <= 0),
+ };
+};
+
+// The caller's plural noun, made singular for a count of one: every unitLabel
+// in use is 'categories', 'sources', 'accounts', 'counterparties' or 'pockets'.
+export const countNoun = (count: number, unitLabel: string) =>
+ count !== 1
+  ? unitLabel
+  : unitLabel.endsWith('ies')
+   ? `${unitLabel.slice(0, -3)}y`
+   : unitLabel.replace(/s$/, '');
+
+// 'Others · 2 categories', 'Others · 1 category'.
+export const othersLabel = (count: number, unitLabel: string) =>
+ `Others · ${count} ${countNoun(count, unitLabel)}`;

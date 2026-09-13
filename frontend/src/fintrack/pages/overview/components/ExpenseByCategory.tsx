@@ -17,6 +17,7 @@ import { CardTitle } from '../../../general_components/CardTitle';
 import { currencyFormat } from '../../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
+import { monthLabel } from '../helpers/monthLabel';
 import {
  OverviewExpenseCard,
  OverviewExpenseCategory,
@@ -57,6 +58,9 @@ const toParetoRows = (categories: OverviewExpenseCategory[]): ParetoRow[] =>
 type ExpenseByCategoryProps = {
  categories: OverviewExpenseCategory[];
  card: OverviewExpenseCard;
+ // 'YYYY-MM-01', the month both titles name. A prop because level 2 reads it
+ // off its own answer rather than off the store.
+ referenceMonth: string | null;
 };
 
 // The store-backed level-1 mount. A wrapper and not a copy: the store read is
@@ -64,6 +68,7 @@ type ExpenseByCategoryProps = {
 function ExpenseByCategory() {
  const charts = useOverviewStore((state) => state.charts);
  const domainCards = useOverviewStore((state) => state.domainCards);
+ const referenceMonth = useOverviewStore((state) => state.referenceMonth);
 
  if (!charts || !domainCards) return null;
 
@@ -71,11 +76,16 @@ function ExpenseByCategory() {
   <ExpenseBreakdown
    categories={charts.expenseCategories}
    card={domainCards.expense}
+   referenceMonth={referenceMonth}
   />
  );
 }
 
-export function ExpenseBreakdown({ categories, card }: ExpenseByCategoryProps) {
+export function ExpenseBreakdown({
+ categories,
+ card,
+ referenceMonth,
+}: ExpenseByCategoryProps) {
  // EMPTY IS A REAL ANSWER AND IT IS NOT AN ERROR. An owner who spent nothing
  // with a category this month has no ranking to draw, and a bar of one empty
  // track would say the figures failed to arrive. The block renders nothing and
@@ -125,9 +135,16 @@ export function ExpenseBreakdown({ categories, card }: ExpenseByCategoryProps) {
  // saying the same thing twice.
  return (
   <>
-   <CollapsibleBlock head={<CardTitle>Expense by category</CardTitle>}>
+   <CollapsibleBlock
+    head={
+     <CardTitle subtitle={monthLabel(referenceMonth, 'long')}>
+      Expense by category
+     </CardTitle>
+    }
+    isRuled
+   >
     {/* The single-column modifier, which the sheet already carries for a block
-        that is one card wide (overview-styles.css:397): the bar is one figure
+        that is one card wide (overview-styles.css:396): the bar is one figure
         across the row and not one of a pair. */}
     <section className='domainCards domainCards--single'>
      <ParetoBar
@@ -142,8 +159,13 @@ export function ExpenseBreakdown({ categories, card }: ExpenseByCategoryProps) {
    </CollapsibleBlock>
 
    <CollapsibleBlock
-    head={<CardTitle>Share of the month</CardTitle>}
+    head={
+     <CardTitle subtitle={monthLabel(referenceMonth, 'long')}>
+      Share of the month
+     </CardTitle>
+    }
     defaultOpen={false}
+    isRuled
    >
     <section className='domainCards domainCards--single'>
      <DonutChart
@@ -151,6 +173,7 @@ export function ExpenseBreakdown({ categories, card }: ExpenseByCategoryProps) {
       currency={expense.currency}
       total={total}
       totalLabel='categorised spending'
+      unitLabel='categories'
       caption={caption}
      />
     </section>
