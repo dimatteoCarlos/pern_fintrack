@@ -4554,8 +4554,8 @@ no route, and the method was not what its copy promised:
 | file | change |
 |---|---|
 | `accountDeleteController.js:35` | `SOFT_DELETION_ENABLED = false`, beside the deletion type constants |
-| `deleteAccountService.js:1637` | refuses SOFT with 403 after the system-account guard and before any transaction, so no pocket is released and `deleted_at` is never written |
-| `assessAccountDeletion.js:196` | the SOFT option is published `available: false` with the same reason; the old `available: true` stays commented |
+| `deleteAccountService.js:1639` | refuses SOFT with 403 after the system-account guard and before any transaction, so no pocket is released and `deleted_at` is never written |
+| `assessAccountDeletion.js:201` | the SOFT option is published `available: false` with the same reason; the old `available: true` stays commented |
 | `deletionMethodPolicy.ts` | its "what it does not do" note names the exception |
 
 The SOFT branch of `processStandardDelete` is untouched and still carries the
@@ -4572,9 +4572,23 @@ of `PLAN_DELETION_METHODS.md` is what it needs in order to be worth turning on.
   Overview session's pending change to that file lands; until then the buttons
   keep `var(--border-width-thin)`.
 
-**Still open:** whether RTA and HARD get the same server-side refusal. Both are
-hidden on the screen and both run on a direct request; the recommendation and
-the reasons are in `PLAN_DELETION_METHODS.md` section 5.
+**RTA and HARD refused too, the same day.** Asked whether they should get the
+same server-side refusal, Carlos answered *"si"*. Both were hidden on the screen,
+both still ran on a direct request, and both erase history this plan exists to
+keep.
+
+- `RTA_DELETION_ENABLED` and `HARD_DELETION_ENABLED`, both `false`
+  (`accountDeleteController.js:40-41`), refused with 403 by one guard right after
+  the SOFT one (`deleteAccountService.js:1649-1657`).
+- The assessment publishes both as unavailable with a reason (`assessAccountDeletion.js`).
+  The RTA impact report is still computed, because the related-accounts panel
+  reads it.
+- CLOSE's own refusal in the assessment named RTA as the way out of a nonzero
+  balance; it now names a transfer or reverse-and-close, and the old text stays
+  commented. HARD's 409 still names RTA, and is unreachable while HARD is off.
+
+**So CLOSE is the only method the API accepts**, which is what *"el unico metodo
+de borrado es close"* said and what the screen alone did not enforce.
 
 **Verified:** `node --check` on the three backend files. Not boot-verified, for
 the reason standing since 14.15.

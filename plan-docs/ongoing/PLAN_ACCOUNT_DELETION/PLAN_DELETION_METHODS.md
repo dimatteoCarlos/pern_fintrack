@@ -25,30 +25,43 @@ re-measured here.
 | Method | What it is | On the deletion screen | Through the API | Owner's ruling |
 |---|---|---|---|---|
 | SOFT | Deactivation: stamps `user_accounts.deleted_at` and keeps the row | hidden (`AccountDeletionPage.tsx:562`) | **refused with 403 since 2026-09-13** | *"dejaremos en esta version, sin efecto el soft delete"* (2026-09-13) |
-| RTA | Reversal-then-annulment: writes an adjusting pair per counterparty against the compensation account, then erases the account | hidden (`isAnnulmentOffered = false`, `AccountDeletionPage.tsx:159`) | **accepted** | withdrawn from the screen 2026-09-08; no ruling on the API |
-| HARD | Erasure: detaches, scrubs and deletes the account and its own transactions | hidden (`AccountDeletionPage.tsx:602`) | **accepted** | withdrawn from the screen 2026-09-08; no ruling on the API |
+| RTA | Reversal-then-annulment: writes an adjusting pair per counterparty against the compensation account, then erases the account | hidden (`isAnnulmentOffered = false`, `AccountDeletionPage.tsx:159`) | **refused with 403 since 2026-09-13** | withdrawn from the screen 2026-09-08; refused on the API 2026-09-13 (*"si"*, to the recommendation in section 5) |
+| HARD | Erasure: detaches, scrubs and deletes the account and its own transactions | hidden (`AccountDeletionPage.tsx:602`) | **refused with 403 since 2026-09-13** | withdrawn from the screen 2026-09-08; refused on the API 2026-09-13 |
+
+So since 2026-09-13 CLOSE is the only method the API accepts, not only the only
+one the screen shows.
 
 Every method shares one guard ahead of its branch: the compensation account and
 any system-created account type cannot be deleted by any method
-(`deleteAccountService.js:1622-1632`).
+(`deleteAccountService.js:1624-1634`).
 
 ---
 
-## 1. The flag that hides three methods does not disable them
+## 1. The flag that hides three methods did not disable them
 
 `CLOSE_IS_THE_ONLY_METHOD` (`frontend/.../config/deletionMethodPolicy.ts`) removes
-the buttons. It changes no route and no service: `DELETE
-/delete/:targetAccountId?type=<method>` (`accountRoutes.js:181-185`) runs any of
+the buttons. It changes no route and no service: until 2026-09-13 `DELETE
+/delete/:targetAccountId?type=<method>` (`accountRoutes.js:181-185`) ran any of
 the four for the account's owner. The administrative restriction on RTA and HARD
 was suspended by the owner on 2026-09-07 and is kept commented
-(`deleteAccountService.js:539`, `:1797`).
+(`deleteAccountService.js:541`, `:1812`).
 
-- **SOFT is now refused server-side**, by `SOFT_DELETION_ENABLED = false`
-  (`accountDeleteController.js:35`), checked before any transaction opens
-  (`deleteAccountService.js:1637`). The assessment endpoint publishes SOFT as
-  unavailable with the same reason (`assessAccountDeletion.js:196`).
-- **RTA and HARD are not.** A direct request still runs them. Whether they get
-  the same server-side refusal is open, section 5.
+Three server flags now close that gap, all `false`, beside the deletion type
+constants (`accountDeleteController.js:35`, `:40`, `:41`):
+
+- **`SOFT_DELETION_ENABLED`**: refused with 403 (`deleteAccountService.js:1639`).
+- **`RTA_DELETION_ENABLED` and `HARD_DELETION_ENABLED`**: refused with 403 by one
+  guard (`deleteAccountService.js:1649-1657`).
+- **Where the guards sit.** After the system-account guard and before any
+  transaction opens, so no pocket is released, no annulment row is written and
+  nothing is erased. `processStandardDelete` and `processRTAAnnulment` are intact.
+- **The assessment agrees.** `assessAccountDeletion.js` publishes all three as
+  `available: false` with a reason naming the flag's effect (`:201`, `:231`,
+  `:259`), keeping the previous values commented. The RTA impact report is still
+  computed there, because it is a read and feeds the related-accounts panel.
+- **Turning a method back on** takes its server flag and
+  `CLOSE_IS_THE_ONLY_METHOD`. For SOFT, section 2.3 is what makes that worth doing;
+  for RTA and HARD, sections 3.2 and 4.2 are what it brings back.
 
 ---
 
@@ -56,12 +69,13 @@ was suspended by the owner on 2026-09-07 and is kept commented
 
 ### 2.1 What it does
 
-`processStandardDelete`, SOFT branch (`deleteAccountService.js:600-664`):
+`processStandardDelete`, SOFT branch (`deleteAccountService.js:602-666`), when the
+flag is on:
 
 1. refuses an account already closed, and one already deactivated;
 2. releases every pocket commitment the account backs, through the pocket
    module's own release, writing a compensating negative row per pocket
-   (`releasePocketCommitments.js`, called at `:633`) — the owner's rule of
+   (`releasePocketCommitments.js`, called at `:635`) — the owner's rule of
    2026-09-11 that no deletion leaves a pocket backed;
 3. stamps `deleted_at` and `updated_at`, guarded on both `deleted_at` and
    `closed_at` being null.
@@ -153,16 +167,16 @@ A module, not a switch.
 
 ### 3.1 What it does
 
-The RTA branch of `deleteAccountService` (`deleteAccountService.js:1647` onward)
-and `processRTAAnnulment` (`:277`):
+The RTA branch of `deleteAccountService` (`deleteAccountService.js:1662` onward)
+and `processRTAAnnulment` (`:279`), when the flag is on:
 
-1. refuses a closed account (`:1677`);
+1. refuses a closed account (`:1692`);
 2. recomputes the impact report inside its own transaction, under a lock, rather
    than trusting the client's copy;
 3. writes, per affected counterparty, a pair of adjusting rows against the
    compensation account (`recordAnnulmentTransaction.js`), prefixed
    `RTA Annulment Target(<name>)`;
-4. runs the erasure tail HARD runs (`eraseAccountTail.js`, called at `:482`).
+4. runs the erasure tail HARD runs (`eraseAccountTail.js`, called at `:484`).
 
 ### 3.2 Warnings
 
@@ -205,12 +219,13 @@ the account being closed and keeps its history in the registry.
 
 ### 4.1 What it does
 
-`processStandardDelete`, HARD branch (`deleteAccountService.js:540-599`):
+`processStandardDelete`, HARD branch (`deleteAccountService.js:542-601`), when the
+flag is on:
 
-1. refuses a closed account (`:561`);
+1. refuses a closed account (`:563`);
 2. locks the account and derives its balance; refuses anything but zero with 409
-   (`:586`);
-3. runs `eraseAccountTail` (`:593`): nulls `source_account_id` and
+   (`:588`);
+3. runs `eraseAccountTail` (`:595`): nulls `source_account_id` and
    `destination_account_id` on other accounts' rows that name it, replacing its
    name in their descriptions with `[deleted account]`; deletes its pocket
    allocations; deletes its own transactions; deletes the account row.
@@ -225,7 +240,7 @@ the account being closed and keeps its history in the registry.
 - **Pocket allocations are deleted, not released**, as in RTA.
 - **It accepts a deactivated account**: its state guard reads `closed_at` only.
 - **A known defect on databases without migration `034`** (`deleteAccountService.js`
-  comment above `:561`): `closed_at` is undefined there, `undefined !== null` is
+  comment above `:563`): `closed_at` is undefined there, `undefined !== null` is
   true, and every hard delete is refused as closed. Production has `034` since
   2026-09-11, so this no longer reaches it.
 
@@ -237,5 +252,5 @@ the account being closed and keeps its history in the registry.
 |---|---|
 | SOFT in this version | **SETTLED 2026-09-13: no effect.** Server refuses it, assessment marks it unavailable, button stays hidden, the branch stays in the code |
 | A recoverable deactivation in a later version | open; section 2.3 is its scope |
-| Whether RTA and HARD get the same server-side refusal as SOFT | **open, and the owner rules.** Recommendation: yes, the same flag pattern. Both are hidden, both run on a direct request, and both erase history the owner ruled must stay |
+| Whether RTA and HARD get the same server-side refusal as SOFT | **SETTLED 2026-09-13: yes.** Recommended because both were hidden, both ran on a direct request, and both erase history the owner ruled must stay; accepted with *"si"*. `RTA_DELETION_ENABLED` and `HARD_DELETION_ENABLED` are `false` |
 | Whether the buttons are removed from the markup | settled by the standing rule: kept, behind the flag |
