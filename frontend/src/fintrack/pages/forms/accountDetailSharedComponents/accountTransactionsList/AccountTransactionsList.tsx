@@ -32,6 +32,13 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // owner never wrote, or a date the server did not serve.
 const DASH = '—';
 
+// The one movement_type whose missing note is not an absence: account-opening
+// is never annotated (extractNoteFromDescription.js:26), so every occurrence
+// hit DASH and read as an error on an otherwise ordinary row. A fixed label
+// instead of the dash, only for this movement type - every other movement
+// with no note keeps DASH, which still means "the owner wrote nothing".
+const ACCOUNT_OPENING_NOTE = 'Account opening';
+
 // Which way a movement moved the account, for the colour that reinforces the
 // sign. Coerced rather than type-tested: an amount can reach here as text, the
 // way every DECIMAL column node-postgres serves does, and a figure the answer
@@ -247,7 +254,12 @@ const AccountTransactionsList = ({
 
                           Not capitalized: these are the owner's own words, and
                           the row is not the place to correct them. */}
-                      <div className='paragraph'>{note ?? DASH}</div>
+                      <div className='paragraph'>
+                        {note ??
+                          (movement_type_name === 'account-opening'
+                            ? ACCOUNT_OPENING_NOTE
+                            : DASH)}
+                      </div>
 
                       {/* Resolved in SQL on the account owner's calendar. The
                           row used to cut this out of the narrative, which broke
