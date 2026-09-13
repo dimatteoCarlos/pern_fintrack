@@ -314,7 +314,7 @@ a.icon {
 
 .goals__last__movements {
  border-radius: 1rem;
- background-color: #1b1b1b;
+ background-color: var(--color-surface-raised);
  margin: .5rem 0;
  padding: 1rem;
  /* border: 1px solid white; */
