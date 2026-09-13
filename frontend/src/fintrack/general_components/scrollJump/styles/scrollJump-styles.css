@@ -30,7 +30,18 @@
  color: var(--color-accent-content);
  box-shadow: var(--shadow-md);
  cursor: pointer;
- transition: background-color var(--motion-fast), transform var(--motion-fast);
+ transition:
+  background-color var(--motion-fast),
+  transform var(--motion-fast),
+  opacity var(--motion-normal),
+  visibility var(--motion-normal);
+}
+
+/* At rest between scrolls. visibility and not display, so it fades out; hidden
+   also takes it out of the tab order and the accessibility tree. */
+.scrollJump--asleep {
+ opacity: 0;
+ visibility: hidden;
 }
 
 .scrollJump:hover {

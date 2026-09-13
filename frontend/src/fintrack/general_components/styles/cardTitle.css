@@ -52,9 +52,12 @@
    the heading inside inherited 16px instead of the title's 1.25rem. */
 .presentation__card--row {
  display: flex;
+ /* A legend wider than the room beside the title drops to its own line instead
+    of running into it ("Account Balance" at 354px). */
+ flex-wrap: wrap;
  justify-content: space-between;
  align-items: baseline;
- gap: var(--space-3);
+ gap: var(--space-1) var(--space-3);
  font-size: inherit;
 }
 

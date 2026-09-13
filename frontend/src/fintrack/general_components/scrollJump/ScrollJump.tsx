@@ -11,7 +11,7 @@
 // half of what can be scrolled, the way back is up; before it, the far end is
 // what a long page makes expensive to reach.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ArrowDownLightSvg from '../../../assets/ArrowDownLightSvg.svg?react';
 import './styles/scrollJump-styles.css';
 
@@ -19,6 +19,10 @@ import './styles/scrollJump-styles.css';
 // distance, because innerHeight is fractional on a zoomed viewport. Below this
 // there is nothing to jump to.
 const MIN_SCROLLABLE_PX = 1;
+
+// How long the control stays on screen after the last scroll. It serves a reader
+// who is moving through the page; at rest it would only cover a row.
+const IDLE_HIDE_MS = 2000;
 
 type ScrollJumpProps = {
  // What the button says it will reach, in the reader's words rather than the
@@ -38,6 +42,19 @@ function ScrollJump({ subject = 'page' }: ScrollJumpProps) {
  // off screen rather than offering a trip of zero pixels.
  const [canJump, setCanJump] = useState(false);
 
+ // Shown only while the page is scrolling and for IDLE_HIDE_MS after it.
+ const [isAwake, setIsAwake] = useState(false);
+ // Hovered or focused: the reader is reaching for it, so it must not fade.
+ const isHeldRef = useRef(false);
+ const hideTimerRef = useRef<number | undefined>(undefined);
+
+ const scheduleHide = useCallback(() => {
+  window.clearTimeout(hideTimerRef.current);
+  hideTimerRef.current = window.setTimeout(() => {
+   if (!isHeldRef.current) setIsAwake(false);
+  }, IDLE_HIDE_MS);
+ }, []);
+
  useEffect(() => {
   const decideDirection = () => {
    const scrollableDistance =
@@ -47,8 +64,16 @@ function ScrollJump({ subject = 'page' }: ScrollJumpProps) {
    setJumpsToTop(window.scrollY > scrollableDistance / 2);
   };
 
+  // Only a scroll wakes it. A resize or a panel arriving moves the threshold
+  // but is not the reader moving through the page.
+  const wakeOnScroll = () => {
+   decideDirection();
+   setIsAwake(true);
+   scheduleHide();
+  };
+
   decideDirection();
-  window.addEventListener('scroll', decideDirection, { passive: true });
+  window.addEventListener('scroll', wakeOnScroll, { passive: true });
 
   // Rotating the device changes innerHeight and a panel arriving changes
   // scrollHeight. Neither fires a scroll event, and both move the threshold.
@@ -58,11 +83,22 @@ function ScrollJump({ subject = 'page' }: ScrollJumpProps) {
   watchDocumentHeight.observe(document.documentElement);
 
   return () => {
-   window.removeEventListener('scroll', decideDirection);
+   window.removeEventListener('scroll', wakeOnScroll);
    window.removeEventListener('resize', decideDirection);
    watchDocumentHeight.disconnect();
+   window.clearTimeout(hideTimerRef.current);
   };
+ }, [scheduleHide]);
+
+ const hold = useCallback(() => {
+  isHeldRef.current = true;
+  window.clearTimeout(hideTimerRef.current);
  }, []);
+
+ const release = useCallback(() => {
+  isHeldRef.current = false;
+  scheduleHide();
+ }, [scheduleHide]);
 
  const jumpToEdge = useCallback(() => {
   // Honoured here and not only in CSS: scroll-behavior does not govern a
@@ -84,8 +120,12 @@ function ScrollJump({ subject = 'page' }: ScrollJumpProps) {
  return (
   <button
    type='button'
-   className='scrollJump'
+   className={`scrollJump${isAwake ? '' : ' scrollJump--asleep'}`}
    onClick={jumpToEdge}
+   onPointerEnter={hold}
+   onPointerLeave={release}
+   onFocus={hold}
+   onBlur={release}
    aria-label={
     jumpsToTop ? `Scroll to top of ${subject}` : `Scroll to bottom of ${subject}`
    }
