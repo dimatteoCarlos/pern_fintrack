@@ -145,6 +145,9 @@ function CategoryBudgetPareto({
  const yShare = (share: number) => PAD_TOP + PLOT_HEIGHT * (1 - share);
  const xCenter = (index: number) =>
   PAD_LEFT + groupWidth * index + groupWidth / 2;
+ // Where a bar's rotated amount ends upwards, its length estimated per character.
+ const amountTop = (value: number) =>
+  yMoney(value) - LABEL_OFFSET - money(value).length * CHAR_WIDTH;
 
  const spentLine = drawn
   .map((c, i) => `${xCenter(i)},${yShare(c.cumulativePercentage)}`)
@@ -367,30 +370,43 @@ function CategoryBudgetPareto({
           points={spentLine}
          />
 
-         {drawn.map((category, index) => (
-          <g key={`points-${category.categoryName}`}>
-           <circle
-            className='budgetPareto__point budgetPareto__point--budget'
-            cx={xCenter(index)}
-            cy={yShare(category.cumulativeBudgetPercentage)}
-            r={POINT_RADIUS}
-           />
-           <circle
-            className='budgetPareto__point budgetPareto__point--spent'
-            cx={xCenter(index)}
-            cy={yShare(category.cumulativePercentage)}
-            r={POINT_RADIUS}
-           />
-           <text
-            className='budgetPareto__shareText'
-            x={xCenter(index)}
-            y={yShare(category.cumulativePercentage) - LABEL_OFFSET * 1.5}
-            textAnchor='middle'
-           >
-            {percent(category.cumulativePercentage)}
-           </text>
-          </g>
-         ))}
+         {drawn.map((category, index) => {
+          const budget = category.budgetAmount as number | null;
+          // Centred between the group's two bars, the label crosses both, so
+          // it rises above their amounts whenever the point sits among them.
+          const shareY = Math.min(
+           yShare(category.cumulativePercentage) - LABEL_OFFSET * 1.5,
+           amountTop(category.actualSpent) - LABEL_OFFSET,
+           budget !== null && budget > 0
+            ? amountTop(budget) - LABEL_OFFSET
+            : Infinity,
+          );
+
+          return (
+           <g key={`points-${category.categoryName}`}>
+            <circle
+             className='budgetPareto__point budgetPareto__point--budget'
+             cx={xCenter(index)}
+             cy={yShare(category.cumulativeBudgetPercentage)}
+             r={POINT_RADIUS}
+            />
+            <circle
+             className='budgetPareto__point budgetPareto__point--spent'
+             cx={xCenter(index)}
+             cy={yShare(category.cumulativePercentage)}
+             r={POINT_RADIUS}
+            />
+            <text
+             className='budgetPareto__shareText'
+             x={xCenter(index)}
+             y={shareY}
+             textAnchor='middle'
+            >
+             {percent(category.cumulativePercentage)}
+            </text>
+           </g>
+          );
+         })}
         </svg>
        </div>
 
