@@ -72,52 +72,61 @@ export const Pagination = ({
    </p>
 
    <div className='pagination__controls'>
-    <label className='pagination__size'>
-     <span className='pagination__sizeLabel'>Rows</span>
+    {/* No size choice when the whole set fits the smallest page: every option
+        would show the same rows. */}
+    {totalRows > PAGE_SIZE_OPTIONS[0] && (
+     <label className='pagination__size'>
+      <span className='pagination__sizeLabel'>Rows</span>
 
-     <select
-      className='pagination__select'
-      value={pageSize}
-      disabled={isBusy}
-      // Back to the first page, always. Keeping the number would land a reader
-      // on page 7 of a list that now has 3, and the server would answer with an
-      // empty page that looks like a filter with no matches.
-      onChange={(event) => onPageSizeChange(Number(event.target.value))}
-      aria-label={`${itemLabel} per page`}
-     >
-      {PAGE_SIZE_OPTIONS.map((size) => (
-       <option key={size} value={size}>
-        {size}
-       </option>
-      ))}
-     </select>
-    </label>
+      <select
+       className='pagination__select'
+       value={pageSize}
+       disabled={isBusy}
+       // Back to the first page, always. Keeping the number would land a reader
+       // on page 7 of a list that now has 3, and the server would answer with an
+       // empty page that looks like a filter with no matches.
+       onChange={(event) => onPageSizeChange(Number(event.target.value))}
+       aria-label={`${itemLabel} per page`}
+      >
+       {PAGE_SIZE_OPTIONS.map((size) => (
+        <option key={size} value={size}>
+         {size}
+        </option>
+       ))}
+      </select>
+     </label>
+    )}
 
-    <div className='pagination__pager'>
-     <button
-      type='button'
-      className='pagination__step'
-      onClick={() => onPageChange(page - 1)}
-      disabled={isBusy || page <= 1}
-      aria-label='Previous page'
-     >
-      ‹
-     </button>
+    {/* One page has nowhere to step to: two inert arrows around "1 / 1" say
+        nothing the count does not. pageCount holds while a page is on the
+        wire, so the row keeps its height during a step. */}
+    {pageCount > 1 && (
+     <div className='pagination__pager'>
+      <button
+       type='button'
+       className='pagination__step'
+       onClick={() => onPageChange(page - 1)}
+       disabled={isBusy || page <= 1}
+       aria-label='Previous page'
+      >
+       ‹
+      </button>
 
-     <span className='pagination__page'>
-      {page} / {pageCount}
-     </span>
+      <span className='pagination__page'>
+       {page} / {pageCount}
+      </span>
 
-     <button
-      type='button'
-      className='pagination__step'
-      onClick={() => onPageChange(page + 1)}
-      disabled={isBusy || page >= pageCount}
-      aria-label='Next page'
-     >
-      ›
-     </button>
-    </div>
+      <button
+       type='button'
+       className='pagination__step'
+       onClick={() => onPageChange(page + 1)}
+       disabled={isBusy || page >= pageCount}
+       aria-label='Next page'
+      >
+       ›
+      </button>
+     </div>
+    )}
    </div>
   </div>
  );

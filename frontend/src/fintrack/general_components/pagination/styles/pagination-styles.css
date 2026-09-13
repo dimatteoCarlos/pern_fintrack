@@ -6,6 +6,12 @@
    override in its own sheet, so the two surfaces stay one decision. */
 
 .pagination {
+ /* The row's line: the select's text line plus its padding and border. The
+    steps take it as both sides, so the three controls share one height. */
+ --pagination-control-size: calc(
+  var(--font-size-xs) * var(--line-height-heading) + 2 * var(--space-1) + 2 *
+   var(--border-width-thin)
+ );
  display: flex;
  flex-wrap: wrap;
  align-items: center;
@@ -65,6 +71,8 @@
  background-color: var(--color-surface-raised);
  color: var(--color-content-on-dark);
  font-size: var(--font-size-xs);
+ /* Stated, so the select's height is the one --pagination-control-size computes. */
+ line-height: var(--line-height-heading);
  font-family: inherit;
  cursor: pointer;
 }
@@ -99,21 +107,19 @@
 
 /* SIZED BY ITS OWN LINE and no longer by a fixed touch figure. Carlos,
    2026-09-11, repealing the 44px rule for pressable controls: a button takes
-   the height of the row it belongs to. At 44px these two stood half again as
-   tall as the select beside them and the row read as two rows.
+   the height of the row it belongs to.
 
-   The height is the glyph plus --space-1 on each side, which is the vertical
-   box --pagination__select carries, so the three controls of this row are one
-   height. aspect-ratio is what keeps the button square without restating that
-   height as a width: the two chevrons do not share an advance width, and equal
-   padding alone would give one step a narrower box than the other. */
+   Square by stating both sides. aspect-ratio: 1 with an auto width took the
+   height from the glyph's narrow advance width, and the glyph's 1rem line then
+   stretched it taller than wide. */
 .pagination__step {
  display: flex;
  flex: 0 0 auto;
  align-items: center;
  justify-content: center;
- aspect-ratio: 1;
- padding: var(--space-1);
+ width: var(--pagination-control-size);
+ height: var(--pagination-control-size);
+ padding: 0;
  border: var(--border-width-thin) solid var(--color-border-subtle);
  border-radius: var(--radius-md);
  background-color: transparent;
