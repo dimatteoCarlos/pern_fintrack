@@ -3,6 +3,7 @@
 import { CurrencyType } from '../../../../../types/types';
 import { DictionaryDataType } from '../../../../utils/languages';
 import { getAccountTypeIcon } from '../../../../utils/accountTypeIcons.ts';
+import { currencyMinorUnit } from '../../../../../helpers/functions.ts';
 import './accountDetailsUI.css';
 
 // ===============================
@@ -88,7 +89,8 @@ export const AccountDetailsUI = ({
         >
           {t('accountBalanceLabel')}
         </strong>
-        {`${accountBalance.toFixed(2)} ${accountCurrency}`}
+        {/* The currency's own decimals: a yen balance has none. */}
+        {`${accountBalance.toFixed(currencyMinorUnit(accountCurrency))} ${accountCurrency}`}
       </p>
 
       {/* Action */}

@@ -1,6 +1,7 @@
 //frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/onfirmationModalUI/InitialConfirmationDeleteAcountUI.tsx
 
 import CircleLoader from '../../../../../loader/circleLoader/CircleLoader';
+import { currencyMinorUnit } from '../../../../../helpers/functions.ts';
 
 import { RTAConfirmationModalPropsType } from './RTAConfirmationModal';
 
@@ -74,7 +75,10 @@ export const InitialConfirmationDeleteAccountUI = ({
               <li key={row.pocketId} className='pocket-impact-row'>
                 <span className='pocket-impact-name'>{row.pocketName}</span>
                 <span className='pocket-impact-amount'>
-                  {row.amountAllocated.toFixed(2)} {row.currencyCode}
+                  {row.amountAllocated.toFixed(
+                    currencyMinorUnit(row.currencyCode),
+                  )}{' '}
+                  {row.currencyCode}
                 </span>
               </li>
             ))}
@@ -83,7 +87,7 @@ export const InitialConfirmationDeleteAccountUI = ({
             {t('pocketImpactTotalLabel')}{' '}
             {pocketImpact
               .reduce((total, row) => total + row.amountAllocated, 0)
-              .toFixed(2)}{' '}
+              .toFixed(currencyMinorUnit(pocketImpact[0].currencyCode))}{' '}
             {pocketImpact[0].currencyCode}
           </p>
           <p className='pocket-impact-note'>{t('pocketImpactNote')}</p>

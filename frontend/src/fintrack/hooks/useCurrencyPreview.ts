@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 import { useCurrencyStore } from '../stores/useCurrencyStore';
 import { CurrencyType } from '../types/types';
-import { numberFormatCurrency } from '../helpers/functions';
+import { currencyMinorUnit, numberFormatCurrency } from '../helpers/functions';
 
 // ===============================
 // 🎯 HOOK: useCurrencyPreview
@@ -44,8 +44,10 @@ export function useCurrencyPreview(amount: number | string, currency: CurrencyTy
    // Convert to USD: amount / rate (since rate = 1 USD = X units of foreign currency)
     const targetCurrencyValue = numericAmount / rate;
     
-   // Format preview with 2 decimal places (toFixed(2) as agreed)
-   const preview = `≈ ${numberFormatCurrency(targetCurrencyValue, 2, undefined, 'es-ES')} ${accountingCurrency}`;
+   // The accounting currency's own decimals, not a fixed 2: a yen amount has
+   // none. The code is appended after, so the number is formatted without it.
+   // const preview = `≈ ${numberFormatCurrency(targetCurrencyValue, 2, undefined, 'es-ES')} ${accountingCurrency}`;
+   const preview = `≈ ${numberFormatCurrency(targetCurrencyValue, currencyMinorUnit(accountingCurrency), undefined, 'es-ES')} ${accountingCurrency}`;
 
    // Direction of the RATE, which reads "1 accounting = rate foreign"
     const direction = `${accountingCurrency}→${currency}`;

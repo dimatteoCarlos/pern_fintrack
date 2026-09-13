@@ -5,6 +5,8 @@ import {
   DEFAULT_CURRENCY,
   DATE_TEXT_FORMAT,
 } from '../../../../../helpers/constants.ts';
+// Every amount below prints the decimals of its own currency, not a fixed 2.
+import { currencyMinorUnit } from '../../../../../helpers/functions.ts';
 
 import {
   ImpactReportRowType,
@@ -212,7 +214,9 @@ const ImpactReportUI = ({
                     <td className='account-name'>{row.affectedAccountName}</td>
 
                     <td className='current-balance'>
-                      {row.affectedAccountCurrentBalance.toFixed(2)}{' '}
+                      {row.affectedAccountCurrentBalance.toFixed(
+                        currencyMinorUnit(row.affectedAccountCurrencyCode),
+                      )}{' '}
                       {row.affectedAccountCurrencyCode}
                     </td>
 
@@ -220,7 +224,9 @@ const ImpactReportUI = ({
                       {(
                         row.affectedAccountCurrentBalance +
                         row.affectedAccountNetAdjustmentAmount
-                      ).toFixed(2)}{' '}
+                      ).toFixed(
+                        currencyMinorUnit(row.affectedAccountCurrencyCode),
+                      )}{' '}
                       {row.affectedAccountCurrencyCode}
                     </td>
 
@@ -228,7 +234,9 @@ const ImpactReportUI = ({
                       className={`net-adjustment
         ${row.affectedAccountNetAdjustmentAmount >= 0 ? 'positive' : 'negative'}`}
                     >
-                      {row.affectedAccountNetAdjustmentAmount.toFixed(2)}{' '}
+                      {row.affectedAccountNetAdjustmentAmount.toFixed(
+                        currencyMinorUnit(row.affectedAccountCurrencyCode),
+                      )}{' '}
                       {row.affectedAccountCurrencyCode}
                     </td>
 
@@ -281,7 +289,9 @@ const ImpactReportUI = ({
                             : ''
                       }`}
                     >
-                      {row.netAmount.toFixed(2)}
+                      {row.netAmount.toFixed(
+                        currencyMinorUnit(targetAccountCurrency ?? DEFAULT_CURRENCY),
+                      )}
                       {targetAccountCurrency ? ` ${targetAccountCurrency}` : ''}
                     </td>
 
@@ -310,7 +320,7 @@ const ImpactReportUI = ({
           }`}
         >
           {hasTotal
-            ? `${totalNetAdjustmentAmount.toFixed(2)} ${DEFAULT_CURRENCY}`
+            ? `${totalNetAdjustmentAmount.toFixed(currencyMinorUnit(DEFAULT_CURRENCY))} ${DEFAULT_CURRENCY}`
             : '—'}
         </span>
       </p>
@@ -320,7 +330,8 @@ const ImpactReportUI = ({
         <p className='impact-report-unattributed'>
           <span className='unattributed-label'>{t('unattributedAmount')}</span>
           <span className='unattributed-amount'>
-            {unattributedAmount.toFixed(2)} {DEFAULT_CURRENCY}
+            {unattributedAmount.toFixed(currencyMinorUnit(DEFAULT_CURRENCY))}{' '}
+            {DEFAULT_CURRENCY}
           </span>
           <span className='unattributed-note'>
             {formatUnattributedNote(t('unattributedNote'))}

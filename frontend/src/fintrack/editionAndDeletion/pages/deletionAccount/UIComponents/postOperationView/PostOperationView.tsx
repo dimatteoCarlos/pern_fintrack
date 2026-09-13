@@ -7,6 +7,7 @@ import {
   ImpactReportRowType,
 } from '../../../../types/deletionTypes';
 import { CurrencyType } from '../../../../../types/types';
+import { currencyMinorUnit } from '../../../../../helpers/functions.ts';
 
 // ==========================
 // 🎯 POST OPERATION VIEW PROPS TYPE
@@ -156,7 +157,9 @@ export const PostOperationView = ({
               {originalAccount.targetAccountId})
             </span>
             <span>
-              {originalAccount.targetAccountBalance.toFixed(2)}{' '}
+              {originalAccount.targetAccountBalance.toFixed(
+                currencyMinorUnit(originalAccount.targetAccountCurrency),
+              )}{' '}
               {originalAccount.targetAccountCurrency}
             </span>
           </div>
