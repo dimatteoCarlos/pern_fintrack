@@ -1,0 +1,44 @@
+/* frontend/src/fintrack/pages/overview/styles/overview-domain-styles.css
+   Level-2 additions to the trend chart: the signed mode's zero line, the
+   series skeleton and the sparse axis. Only OverviewDomain.tsx imports it. */
+
+/* The same box as the hero above it: .bigBox__container and .heroIndicators are
+   88% of .overviewLayout and centred, and this screen is their sibling. */
+.overviewLayout .overviewDomain {
+ width: var(--layout-content-width);
+ margin-inline: auto;
+}
+
+/* The zero of a signed series. A hairline and dashed, so it reads as a
+   reference and never as a second series. */
+.overviewLayout .trendChart__zero {
+ stroke: var(--color-border-subtle);
+ stroke-width: var(--border-width-thin);
+ stroke-dasharray: var(--space-1) var(--space-1);
+}
+
+/* Fills the plot box, which already has the chart's final height. */
+.overviewLayout .trendChart__pending {
+ display: block;
+ height: 100%;
+ border-radius: var(--radius-sm);
+ background-color: var(--color-surface-loading);
+}
+
+/* A labelled cell is narrower than its label once thirteen months share the
+   row; wrapping would break "Aug 25" onto two lines and grow the axis. */
+.overviewLayout .trendChart__axis--sparse span {
+ display: flex;
+ justify-content: center;
+ white-space: nowrap;
+}
+
+/* A flex cell overflows on the side its content is pushed from, so the end
+   names grow inward and stay inside the card. */
+.overviewLayout .trendChart__axis--sparse span:first-child {
+ justify-content: flex-start;
+}
+
+.overviewLayout .trendChart__axis--sparse span:last-child {
+ justify-content: flex-end;
+}

@@ -81,6 +81,27 @@ const ratioOf = (value: number, peak: number) => {
  return Math.abs(value) / peak;
 };
 
+// The signed scale runs from the lowest month to the highest with zero always
+// inside it, so a loss sits under the zero line instead of at a gain's height.
+const signedRatioOf = (value: number, floor: number, ceiling: number) => {
+ const span = ceiling - floor;
+
+ if (span <= 0) return 0;
+
+ return (value - floor) / span;
+};
+
+// 'Aug 25'. Thirteen months name the same month at both ends, so a sparse axis
+// carries the year.
+const shortMonthYear = (month: string) => {
+ const [year, monthNumber] = month.split('-').map(Number);
+
+ return new Date(year, monthNumber - 1, 1).toLocaleDateString('en-US', {
+  month: 'short',
+  year: '2-digit',
+ });
+};
+
 // A month sits at the CENTRE of its share of the width, not at a division of
 // it. The axis below is a row of equal cells with the name centred in each, so
 // dividing the width by the gaps instead would put the first point on the left
@@ -97,16 +118,37 @@ export const TrendChart = ({
  nature,
  points,
  currency,
+ isSigned = false,
+ axis = 'every',
 }: {
  label: string;
  nature: 'flow' | 'position';
  points: OverviewTrendPoint[];
  currency: string;
+ // Draws the value with its sign and a dashed zero line. Off by default, so the
+ // level-1 block keeps plotting magnitudes.
+ isSigned?: boolean;
+ // 'sparse' names the first, middle and last month only: thirteen names do not
+ // fit a 360px row.
+ axis?: 'every' | 'sparse';
 }) => {
  const peak = Math.max(...points.map((point) => Math.abs(point.value)), 0);
+ const floor = Math.min(...points.map((point) => point.value), 0);
+ const ceiling = Math.max(...points.map((point) => point.value), 0);
+
+ const zeroY = PLOT_PADDING + (1 - signedRatioOf(0, floor, ceiling)) * PLOT_BAND;
+
+ const middleIndex = Math.floor((points.length - 1) / 2);
+ const isNamed = (index: number) =>
+  axis === 'every' ||
+  index === 0 ||
+  index === middleIndex ||
+  index === points.length - 1;
 
  const plotted = points.map((point, index) => {
-  const ratio = ratioOf(point.value, peak);
+  const ratio = isSigned
+   ? signedRatioOf(point.value, floor, ceiling)
+   : ratioOf(point.value, peak);
 
   return {
    month: point.month,
@@ -143,9 +185,9 @@ export const TrendChart = ({
     role='img'
     aria-label={`${label}, ${
      nature === 'flow' ? 'per month' : 'at each month end'
-    }, last ${points.length} months. ${plotted
-     .map((point) => point.title)
-     .join('. ')}`}
+    }, last ${points.length} months${
+     isSigned ? ', months under the dashed line are below zero' : ''
+    }. ${plotted.map((point) => point.title).join('. ')}`}
    >
     {/* Stretched to the card on both axes, which is why the stroke is drawn
         at a fixed width instead of in box units: a scaled stroke would be
@@ -156,6 +198,16 @@ export const TrendChart = ({
      preserveAspectRatio='none'
      aria-hidden='true'
     >
+     {isSigned && (
+      <line
+       className='trendChart__zero'
+       vectorEffect='non-scaling-stroke'
+       x1='0'
+       x2='100'
+       y1={zeroY}
+       y2={zeroY}
+      />
+     )}
      <polyline
       className='trendChart__stroke'
       vectorEffect='non-scaling-stroke'
@@ -179,9 +231,20 @@ export const TrendChart = ({
     </div>
    </div>
 
-   <div className='trendChart__axis'>
-    {points.map((point) => (
-     <span key={point.month}>{shortMonth(point.month)}</span>
+   {/* Every cell stays in a sparse axis, so a name keeps sitting under its point. */}
+   <div
+    className={`trendChart__axis${
+     axis === 'sparse' ? ' trendChart__axis--sparse' : ''
+    }`}
+   >
+    {points.map((point, index) => (
+     <span key={point.month}>
+      {!isNamed(index)
+       ? null
+       : axis === 'sparse'
+       ? shortMonthYear(point.month)
+       : shortMonth(point.month)}
+     </span>
     ))}
    </div>
   </article>

@@ -9,81 +9,47 @@
 // this screen steps it on both, and walking back to level 1 lands on the month
 // the reader was studying.
 //
-// NO SECOND IMPLEMENTATION OF ANYTHING. The curve is TrendChart from the level-1
-// block, the ranking and the ring are ExpenseBreakdown from it, the rows are
-// LastMovements and the pager is Pagination. What this file adds is the request,
-// the heading and the order the pieces sit in.
-//
-// THE ANALYSIS SECTION IS NOT ASKED FOR YET. The endpoint offers two depths and
-// this screen requests neither, because a request for a section nothing draws is
-// work the server does for nobody. The four distributions the contract lists for
-// level 2 are the next commit, and they arrive by passing a depth to the hook.
+// THIS FILE IS THE SHELL, AND ONLY WHAT THE SIX SHARE. The guard, the heading,
+// the way back, the fetch states and the movement list. What sits between the
+// heading and the list is each domain's own composition in domains/, because the
+// six analyses are not the same object (OVERVIEW_DECISIONS.md, P5-1).
 
 import { useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { CardTitle } from '../../general_components/CardTitle';
 import { Pagination } from '../../general_components/pagination/Pagination';
-import CollapsibleBlock from './components/CollapsibleBlock';
-import { ExpenseBreakdown } from './components/ExpenseByCategory';
 import LastMovements, { LastMovementType } from './components/LastMovements';
 import PanelState from './components/PanelState';
-import { TrendChart } from './components/TrendCharts';
 import { useOverviewDomain } from './hooks/useOverviewDomain';
 import { currencyFormat } from '../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../helpers/constants';
 import { monthLabel } from './helpers/monthLabel';
+import { DOMAIN_SCREENS } from './domains/domainScreens';
 import {
+ CardOf,
+ DomainScreen,
+ isAnalysisOf,
+ isCardOf,
+} from './domains/domainScreen';
+import {
+ GetOverviewDomainData,
+ OverviewAnalysis,
  OverviewDomain as OverviewDomainName,
- OverviewDomainCard,
- OverviewExpenseCategory,
  OverviewTransactionRow,
 } from '../../types/overviewTypes';
 
 import './styles/overview-styles.css';
+import './styles/overview-domain-styles.css';
 
 const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
-// The six the controller has a calculator for, and the words a reader uses for
-// each. The wire names are not the labels: 'pnl' is a column name and nobody
-// calls a domain that.
-//
-// It is also the guard. A path segment is whatever was typed, so a name absent
-// from this map never becomes a request - the screen says so instead of sending
-// one and rendering the server's 400.
-const DOMAIN_LABELS: Record<OverviewDomainName, string> = {
- income: 'Income',
- expense: 'Expense',
- investment: 'Investment',
- debt: 'Debt',
- pocket: 'Pockets',
- pnl: 'Realised result',
-};
-
-// Which domains have a series at all. The other three do not carry the key, and
-// an absent key says the domain has no series where an empty array would say it
-// has one and it is blank - the same distinction TrendCharts.tsx:5-8 makes.
-const SERIES_NATURE: Partial<
- Record<OverviewDomainName, 'flow' | 'position'>
-> = {
- income: 'flow',
- expense: 'flow',
- pocket: 'position',
-};
-
+// The guard. A path segment is whatever was typed, so a name absent from the
+// registry never becomes a request. An own-key test and not `in`, which would
+// accept 'constructor' and every other name on Object.prototype.
 const isDomain = (value: string | undefined): value is OverviewDomainName =>
- value !== undefined && value in DOMAIN_LABELS;
-
-// The headline figure of a card, and what kind of quantity it is.
-//
-// FIVE OF THE SIX SHARE A SHAPE AND INVESTMENT DOES NOT. The five publish
-// totalAmount, a sum over the month. Investment publishes ledgerBalance, the
-// position at the month's close, and carries no totalAmount at all - printing
-// one under the other's label would state that a balance is a month's activity.
-const headline = (card: OverviewDomainCard) =>
- card.domain === 'investment'
-  ? { amount: card.ledgerBalance, nature: 'at month end' }
-  : { amount: card.totalAmount, nature: 'this month' };
+ value !== undefined &&
+ Object.prototype.hasOwnProperty.call(DOMAIN_SCREENS, value);
 
 // The row shape LastMovements reads, from the server's own column names.
 //
@@ -104,64 +70,102 @@ const toRows = (rows: OverviewTransactionRow[]): LastMovementType[] =>
   transactionId: row.transaction_id,
  }));
 
-// The narrowing control of the expense domain.
-//
-// THE CATEGORIES ARE THE UNFILTERED ONES AND THAT IS DELIBERATE. The server
-// narrows the transaction page and nothing else, so categories[] is still every
-// category of the month while one of them is selected - the strip does not
-// collapse to the single chip that was clicked, and the reader can move to
-// another without clearing first.
-//
-// Buttons and not a select, because the set is the ranking already drawn above:
-// the same names in the same order, so the strip reads as a continuation of the
-// chart rather than as a second, differently sorted list of the same thing.
-const CategoryFilter = ({
- categories,
- selected,
- onSelect,
- isBusy,
-}: {
- categories: OverviewExpenseCategory[];
- selected: string | null;
- onSelect: (next: string | null) => void;
- isBusy: boolean;
-}) => (
- <div className='categoryFilter' role='group' aria-label='Narrow by category'>
-  {/* Present even when nothing is selected, and pressed in that state. A strip
-      whose clear control appears only after a click hides the way back until
-      the reader has already committed. */}
-  <button
-   type='button'
-   className={`categoryFilter__chip${
-    selected === null ? ' is-active' : ''
-   }`}
-   aria-pressed={selected === null}
-   disabled={isBusy}
-   onClick={() => onSelect(null)}
-  >
-   All categories
-  </button>
+type DomainViewProps<D extends OverviewDomainName> = {
+ domain: D;
+ card: CardOf<D>;
+ answer: GetOverviewDomainData;
+ analysis: OverviewAnalysis | null;
+ isLoading: boolean;
+ selectedCategory: string | null;
+ goToPage: (next: number) => void;
+ setPageSize: (next: number) => void;
+ narrowToCategory: (next: string | null) => void;
+ refetch: () => void;
+};
 
-  {categories.map((category) => {
-   const isActive = category.categoryName === selected;
+// Generic over the domain so the registry entry, the card and the analysis are
+// proven to belong to the same one before the composition receives them.
+function DomainView<D extends OverviewDomainName>({
+ domain,
+ card,
+ answer,
+ analysis,
+ isLoading,
+ selectedCategory,
+ goToPage,
+ setPageSize,
+ narrowToCategory,
+ refetch,
+}: DomainViewProps<D>) {
+ const screen: DomainScreen<D> = DOMAIN_SCREENS[domain];
+ const { Composition } = screen;
+ const served = answer.window;
 
-   return (
-    <button
-     type='button'
-     key={category.categoryName}
-     className={`categoryFilter__chip${isActive ? ' is-active' : ''}`}
-     aria-pressed={isActive}
-     disabled={isBusy}
-     // Clicking the selected one clears it. The alternative is a chip that
-     // does nothing when pressed, which reads as a broken control.
-     onClick={() => onSelect(isActive ? null : category.categoryName)}
-    >
-     {category.categoryName}
-    </button>
-   );
-  })}
- </div>
-);
+ const rows = useMemo(
+  () => toRows(answer.transactions.rows),
+  [answer.transactions.rows],
+ );
+
+ return (
+  <section className='overviewDomain'>
+   {/* The month is the layout's and is stated here anyway: this screen can be
+       opened directly by its url, and a page of movements with no period named
+       on it is a page of movements from an unknown month. */}
+   <CardTitle
+    legend={
+     <span className='overviewDomain__amount'>
+      {currencyFormat(
+       card.currency,
+       screen.headline.amountOf(card),
+       formatNumberCountry,
+      )}
+     </span>
+    }
+    subtitle={monthLabel(served.referenceMonth)}
+    subLegend={screen.headline.nature}
+   >
+    {screen.label}
+   </CardTitle>
+
+   <Link className='overviewDomain__back' to='/fintrack/overview'>
+    Back to the overview
+   </Link>
+
+   <Composition
+    card={card}
+    analysis={isAnalysisOf(analysis, domain) ? analysis : null}
+    answer={answer}
+    isLoading={isLoading}
+    onRetry={refetch}
+    selectedCategory={selectedCategory}
+    onSelectCategory={narrowToCategory}
+   />
+
+   {/* The count is the SERVER'S and follows the narrowing, so the subtitle
+       states what the pager is actually paging. Naming the category in it is
+       the only place the selection appears in words - a pressed chip is the
+       state, and a reader who scrolled past it needs the list to say so. */}
+   <LastMovements
+    data={rows}
+    title='Movements'
+    subtitle={`${answer.transactions.totalRows} in ${monthLabel(
+     served.referenceMonth,
+    )}${selectedCategory ? ` · ${selectedCategory}` : ''}`}
+    listHeader={
+     <Pagination
+      page={answer.transactions.page}
+      pageSize={answer.transactions.pageSize}
+      totalRows={answer.transactions.totalRows}
+      onPageChange={goToPage}
+      onPageSizeChange={setPageSize}
+      itemLabel='movements'
+      isBusy={isLoading}
+     />
+    }
+   />
+  </section>
+ );
+}
 
 function OverviewDomain() {
  const { domain } = useParams();
@@ -169,18 +173,21 @@ function OverviewDomain() {
  const monthParam = searchParams.get('month') ?? undefined;
 
  // Narrowed before the hook, so the request is never composed from a segment
- // the map does not know. The fallback is 'expense' and it is never reached:
- // the render below returns early when the guard fails, and the constant only
- // exists because a hook cannot be called conditionally.
+ // the registry does not know. The fallback is never rendered: a hook cannot be
+ // called conditionally, and the guard below returns first.
  const domainName: OverviewDomainName = isDomain(domain) ? domain : 'expense';
 
- const { query, data, isLoading, error, goToPage, setPageSize, narrowToCategory, refetch } =
-  useOverviewDomain(domainName, monthParam);
-
- const rows = useMemo(
-  () => (data ? toRows(data.transactions.rows) : null),
-  [data],
- );
+ const {
+  query,
+  data,
+  analysis,
+  isLoading,
+  error,
+  goToPage,
+  setPageSize,
+  narrowToCategory,
+  refetch,
+ } = useOverviewDomain(domainName, monthParam);
 
  if (!isDomain(domain)) {
   return (
@@ -191,7 +198,11 @@ function OverviewDomain() {
      {/* The six are named rather than left for the reader to guess, because a
          mistyped segment is the only way to arrive here. */}
      The overview breaks down into{' '}
-     {Object.values(DOMAIN_LABELS).join(', ').toLowerCase()}.
+     {Object.values(DOMAIN_SCREENS)
+      .map((screen) => screen.label)
+      .join(', ')
+      .toLowerCase()}
+     .
     </p>
 
     <Link className='overviewDomain__back' to='/fintrack/overview'>
@@ -201,13 +212,16 @@ function OverviewDomain() {
   );
  }
 
- const label = DOMAIN_LABELS[domain];
- const nature = SERIES_NATURE[domain];
+ const label = DOMAIN_SCREENS[domain].label;
+
+ // An answer for another domain is still in hand for one request after the
+ // segment changes; it is not this screen's, so it counts as not arrived.
+ const hasAnswer = data !== null && isCardOf(data.card, domain);
 
  // The skeleton is only for the FIRST answer. A page step with rows already on
  // screen keeps them and marks the pager busy, because replacing a list with a
  // skeleton on every step is the block jumping under the reader's hand.
- const isFirstLoad = isLoading && data === null;
+ const isFirstLoad = isLoading && !hasAnswer;
 
  if (isFirstLoad || error !== null) {
   return (
@@ -223,91 +237,21 @@ function OverviewDomain() {
   );
  }
 
- if (!data) return null;
-
- const { card, window: served } = data;
- const figure = headline(card);
+ if (!data || !isCardOf(data.card, domain)) return null;
 
  return (
-  <section className='overviewDomain'>
-   {/* The month is the layout's and is stated here anyway: this screen can be
-       opened directly by its url, and a page of movements with no period named
-       on it is a page of movements from an unknown month. */}
-   <CardTitle
-    legend={
-     <span className='overviewDomain__amount'>
-      {currencyFormat(card.currency, figure.amount, formatNumberCountry)}
-     </span>
-    }
-    subtitle={monthLabel(served.referenceMonth)}
-    subLegend={figure.nature}
-   >
-    {label}
-   </CardTitle>
-
-   <Link className='overviewDomain__back' to='/fintrack/overview'>
-    Back to the overview
-   </Link>
-
-   {/* Absent for three of the six domains, and absent is not empty. */}
-   {nature && data.trend.length > 0 && (
-    <CollapsibleBlock head={<CardTitle>Trend</CardTitle>}>
-     <section className='domainCards domainCards--single'>
-      <TrendChart
-       label={label}
-       nature={nature}
-       points={data.trend}
-       currency={card.currency}
-      />
-     </section>
-    </CollapsibleBlock>
-   )}
-
-   {/* The expense domain's alone, and the same two drawings level 1 mounts -
-       from this answer's own categories rather than from the page payload. */}
-   {data.categories && card.domain === 'expense' && (
-    <ExpenseBreakdown
-     categories={data.categories}
-     card={card}
-     referenceMonth={served.referenceMonth}
-    />
-   )}
-
-   {/* The narrowing sits between the ranking and the list, which is the order
-       it is read in: the reader sees which categories carry the month, then
-       picks one, then reads its rows. */}
-   {data.categories && card.domain === 'expense' && (
-    <CategoryFilter
-     categories={data.categories}
-     selected={query.category}
-     onSelect={narrowToCategory}
-     isBusy={isLoading}
-    />
-   )}
-
-   {/* The count is the SERVER'S and follows the narrowing, so the subtitle
-       states what the pager is actually paging. Naming the category in it is
-       the only place the selection appears in words - a pressed chip is the
-       state, and a reader who scrolled past it needs the list to say so. */}
-   <LastMovements
-    data={rows}
-    title='Movements'
-    subtitle={`${data.transactions.totalRows} in ${monthLabel(
-     served.referenceMonth,
-    )}${query.category ? ` · ${query.category}` : ''}`}
-    listHeader={
-     <Pagination
-      page={data.transactions.page}
-      pageSize={data.transactions.pageSize}
-      totalRows={data.transactions.totalRows}
-      onPageChange={goToPage}
-      onPageSizeChange={setPageSize}
-      itemLabel='movements'
-      isBusy={isLoading}
-     />
-    }
-   />
-  </section>
+  <DomainView
+   domain={domain}
+   card={data.card}
+   answer={data}
+   analysis={analysis}
+   isLoading={isLoading}
+   selectedCategory={query.category}
+   goToPage={goToPage}
+   setPageSize={setPageSize}
+   narrowToCategory={narrowToCategory}
+   refetch={refetch}
+  />
  );
 }
 
