@@ -359,7 +359,7 @@ missing figure of the snapshot block.
 | **the plan's cumulative curve** | the running sum of each category's budget, over the SAME ranking | Distribution | Overview | L1 | same | computed 2026-09-08 · a row with no plan carries the running figure forward and `hasSkippedBudget` says so |
 | **income by source** | the month's income by source account, ranked | Distribution | Overview | L2 | `analysis=full` | computed · a row with a null account id is real income attributed to no account |
 | **income concentration** | the largest source's share | Position, as a rate | Overview | L2 | `analysis=full` | computed |
-| **profit and loss by account type** | investment against everything else | Decomposition | Overview | L2 | `analysis=derived` | computed · both terms published, the client subtracts nothing |
+| **profit and loss by account type** | investment, bank and cash, and every other account | Decomposition | Overview | L2 | `analysis=derived` | computed · all three parts published and they sum to the card total, the client subtracts nothing |
 | **investment balance per account** | the portfolio distributed across accounts | Distribution | Overview | L2 | `analysis=full` | computed · a zero-balance account is a real row |
 | **contribution history** | when money went in and how much each time | series of events | Overview | L2 | `analysis=full` | computed · the newest page, with the count of what was left out |
 | **debt by counterparty** | who owes and who is owed, largest by MAGNITUDE | Distribution | Overview | L2 | `analysis=full` | computed · a counterparty settled at zero stays in the list |

@@ -589,8 +589,11 @@ export type OverviewPnlAnalysis = {
  domain: 'pnl';
  level: OverviewAnalysisLevel;
  series: OverviewTrendPoint[];
+ // Three parts that sum to the card's totalAmount: investment and bank (bank and
+ // cash) are measured, other is the rest - debtor, pocket and any other account.
  byAccountType: {
   investment: number;
+  bank: number;
   other: number;
  };
  meta: OverviewAnalysisMeta;

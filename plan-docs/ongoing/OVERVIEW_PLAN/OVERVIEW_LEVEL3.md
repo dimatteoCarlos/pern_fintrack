@@ -117,8 +117,8 @@ that category names are already route-safe.
 
 ### Why profit and loss has no level 3
 
-Its `analysis.byAccountType` is a two-part split — `investment` and `other` —
-and neither part is an entity. The domain is a **movement type**, not a set of
+Its `analysis.byAccountType` is a three-part split — `investment`, `bank` (bank
+and cash) and `other`, the third added 2026-09-13 — and no part is an entity. The domain is a **movement type**, not a set of
 accounts: `makePnlAnalysis.js` partitions one sum by where the rows landed, so
 the parts are groupings of accounts of different types and there is nothing
 single to open.

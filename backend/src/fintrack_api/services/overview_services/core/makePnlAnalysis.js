@@ -28,27 +28,36 @@ import { makeTrendSeries } from './makeTrendSeries.js';
  * a withheld one. So there is no notice and no null branch here — the terms
  * exist for every owner, including one who has never traded.
  *
- * other is the subtraction and is stated rather than derived downstream, because
- * the pair is the analysis. It sums back to the card's totalAmount by
- * construction: the investment share is a FILTER over exactly the rows the total
- * summed, so the two parts partition one sum instead of being two reads that
- * agree.
+ * investment and bank are each a FILTER over exactly the rows the total summed.
+ * other is what is left - debtor, pocket and any other non-boundary account -
+ * and is stated rather than derived downstream, so the three parts partition
+ * the card's totalAmount by construction and no client subtracts.
  *
  * @param {object} input
  * @param {string} input.level - the requested depth
  * @param {Array<{month: string, totalAmount: number}>} input.months - the long series
  * @param {number} input.totalAmount - PL1 over every account except the counterparty
  * @param {number} input.realizedFromInvestment - the part of it on investment accounts
+ * @param {number} input.realizedFromBank - the part of it on bank and cash accounts
  * @returns {object} frozen analysis section
  */
-export const makePnlAnalysis = ({ level, months, totalAmount, realizedFromInvestment }) =>
+export const makePnlAnalysis = ({
+ level,
+ months,
+ totalAmount,
+ realizedFromInvestment,
+ realizedFromBank,
+}) =>
  Object.freeze({
   domain: 'pnl',
   level,
   series: Object.freeze(makeTrendSeries(months)),
   byAccountType: Object.freeze({
    investment: realizedFromInvestment,
-   other: toAmount(money(totalAmount).minus(realizedFromInvestment)),
+   bank: realizedFromBank,
+   other: toAmount(
+    money(totalAmount).minus(realizedFromInvestment).minus(realizedFromBank),
+   ),
   }),
   meta: Object.freeze({ notices: Object.freeze([]) }),
  });

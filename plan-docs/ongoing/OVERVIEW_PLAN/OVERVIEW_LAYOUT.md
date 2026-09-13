@@ -562,7 +562,8 @@ type ExpenseAnalysis = AnalysisBase & {
 // pnl — byAccountType SIEMPRE viene cuando se pidió análisis
 type PnlAnalysis = AnalysisBase & {
  series: MonthlyTrendPoint[];
- byAccountType: { investment: number; other: number };
+ // bank añadido 2026-09-13; other = total − investment − bank
+ byAccountType: { investment: number; bank: number; other: number };
 };
 
 // pocket
@@ -719,7 +720,7 @@ que nadie monta no está construido.
 | 23 | Descomposición comprometido / libre | `analysis.committedAgainstFree` (4 términos) | `?analysis=full` | **SERVIDO** |
 | 24 | Conciliación de inversión | `analysis.reconciliation` (6 términos) | `?analysis=derived` | **SERVIDO** |
 | 25 | Historial de aportes | `analysis.contributionHistory{rows, totalRows}` | `?analysis=full` | **SERVIDO** |
-| 26 | Partición del resultado realizado | `analysis.byAccountType{investment, other}` | `?analysis=derived` | **SERVIDO** |
+| 26 | Partición del resultado realizado | `analysis.byAccountType{investment, bank, other}` | `?analysis=derived` | **SERVIDO** |
 | 27 | Split categorizado / sin categorizar | `analysis.categorization` | `?analysis=derived` | **SERVIDO** |
 | 28 | Dos piernas de deuda en el tiempo | `analysis.legsOverTime` | `?analysis=full` | **SERVIDO** |
 | 29 | Selector de mes con etiqueta condicional | `window{referenceMonth, isCurrentMonth, periodStart, periodEnd}` de cualquier sección | `GET /` · nivel 1 | **SERVIDO — la etiqueta es trabajo de frontend, y `isCurrentMonth` es el campo que la decide** |

@@ -170,18 +170,20 @@ test('an expense with no budget withholds the split instead of reporting zero', 
  assert.deepEqual(analysis.meta.notices, [NO_CATEGORIZATION_NOTICE]);
 });
 
-test('the two parts of a losing month still partition its result', () => {
+test('the three parts of a losing month still partition its result', () => {
  const analysis = makePnlAnalysis({
   level: ANALYSIS_DERIVED,
   months,
   totalAmount: -300,
   realizedFromInvestment: -500,
+  realizedFromBank: 150,
  });
 
- // A negative part is a real answer here, and the pair still adds up: a loss on
- // the investment accounts beside a gain everywhere else.
+ // A negative part is a real answer here, and the parts still add up: a loss on
+ // the investment accounts beside gains on the bank and the remaining accounts.
  assert.equal(analysis.byAccountType.investment, -500);
- assert.equal(analysis.byAccountType.other, 200);
+ assert.equal(analysis.byAccountType.bank, 150);
+ assert.equal(analysis.byAccountType.other, 50);
  assert.deepEqual(analysis.meta.notices, []);
 });
 

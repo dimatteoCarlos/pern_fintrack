@@ -170,10 +170,11 @@ export const overviewPnlService = {
        analysis: makePnlAnalysis({
         level: analysis,
         months,
-        // Both terms off the card, so the two parts partition the figure the
-        // card published instead of a second read over the same rows.
+        // Every term off the card, so the parts partition the figure the card
+        // published instead of a second read over the same rows.
         totalAmount: card.totalAmount,
         realizedFromInvestment: card.realizedFromInvestment,
+        realizedFromBank: card.realizedFromBank,
        }),
       }
     : {}),
