@@ -36,6 +36,9 @@ function OverviewLayout() {
  const domainCards = useOverviewStore((state) => state.domainCards);
  const referenceMonth = useOverviewStore((state) => state.referenceMonth);
  const currentMonth = useOverviewStore((state) => state.currentMonth);
+ const isMonthToDate = useOverviewStore(
+  (state) => state.window?.isCurrentMonth ?? false,
+ );
  const isLoading = useOverviewStore((state) => state.isLoading);
  const error = useOverviewStore((state) => state.error);
  const fetchOverview = useOverviewStore((state) => state.fetchOverview);
@@ -135,6 +138,7 @@ function OverviewLayout() {
       surface='cream'
       withSteppers
       isLoading={isLoading}
+      isMonthToDate={isMonthToDate}
       onSelect={selectMonth}
      />
     </div>

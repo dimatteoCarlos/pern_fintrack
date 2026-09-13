@@ -43,6 +43,9 @@ type MonthPickerProps = {
  // last month ASKED FOR rather than the last answer to arrive, so holding an
  // arrow down has to remain possible.
  isLoading?: boolean;
+ // The served window is still running, so its figures stop at today. Opt-in:
+ // the other screens pass nothing and keep the month alone.
+ isMonthToDate?: boolean;
  onSelect: (month: string) => void;
 };
 
@@ -147,6 +150,7 @@ function MonthPicker({
  surface = 'light',
  withSteppers = false,
  isLoading = false,
+ isMonthToDate = false,
  onSelect,
 }: MonthPickerProps) {
  const selected = toDate(month);
@@ -198,7 +202,10 @@ function MonthPicker({
    shouldCloseOnSelect
    popperClassName='monthPicker__popper'
    customInput={
-    <MonthTrigger label={formatBudgetMonthLabel(month)} surface={surface} />
+    <MonthTrigger
+     label={`${formatBudgetMonthLabel(month)}${isMonthToDate ? ' · to date' : ''}`}
+     surface={surface}
+    />
    }
   />
  );
