@@ -105,6 +105,11 @@
     alpha, so the row darkens the panel instead of painting a second colour. */
  --color-surface-hover-on-panel: rgba(20, 20, 20, 0.06);
  --color-surface-active-on-panel: rgba(20, 20, 20, 0.12);
+ /* A progress bar on the cream panel: its track, and the one ink its fill takes
+    (P5-6, no categorical colour). The fill carries 4.24:1 on the track and 5.35:1
+    on the panel; the track is ground and carries no meaning of its own. */
+ --color-progress-track-on-panel: #d3ccbc;
+ --color-progress-fill-on-panel: #5b5b5b;
 
  /* COLOR - FEEDBACK AND THE FINANCIAL SEMAPHORE
     The status square is the signature indicator: teal when a figure is healthy,
@@ -154,9 +159,8 @@
     (5.62) and alert (6.23), quieter than both levels above it.
 
     Both fall under 3:1 on --color-surface-panel (1.98 and 2.81) — so does every
-    scalar in this block, ok included at 2.94. The cream panel needs its own
-    calibrated set the way --color-amount-*-on-panel exists; that is a separate
-    piece of work and these two do not create the gap. */
+    scalar in this block, ok included at 2.94. The cream panel takes its own
+    calibrated set, --color-status-*-on-panel, declared after neutral below. */
  --color-status-ahead: #3db87a;
  --color-status-behind: #9c75d1;
 
@@ -178,6 +182,17 @@
     --color-surface-panel. It is a mark and a border, never text — the word
     beside it keeps the card's own ink. */
  --color-status-neutral: #7a7a7a;
+
+ /* COLOR - STATUS ON THE CREAM PANEL: the pocket level's mark on a level-2 row.
+    Each is its dark-ground sibling darkened along its own hue, and measured
+    against --color-surface-panel; each also holds 3:1 on the row's pressed ground. */
+ --color-status-info-on-panel: #277598; /* 4.05:1 */
+ --color-status-ahead-on-panel: #297c52; /* 4.04:1 */
+ --color-status-neutral-on-panel: #6e6e6e; /* 4.02:1 */
+ --color-status-behind-on-panel: #8555c6; /* 4.02:1 */
+ --color-status-warning-on-panel: #8c6738; /* 4.02:1 */
+ --color-status-alert-on-panel: #b84949; /* 4.05:1 */
+ --color-status-complete-on-panel: #407953; /* 4.06:1 */
 
  /* COLOR - THE SCHEDULE AXIS. Two values, and they are NOT part of the level
     scale above even though each currently equals one of it.

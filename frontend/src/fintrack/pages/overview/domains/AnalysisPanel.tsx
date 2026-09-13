@@ -22,6 +22,17 @@ export const fullSectionStatus = (
  return fullStatus === 'error' ? 'error' : 'pending';
 };
 
+// A derived section rides on the first answer: without an analysis it waits while
+// a request is on the wire, and once none is, the answer came back without it.
+export const derivedSectionStatus = (
+ analysis: OverviewAnalysis | null,
+ isLoading: boolean,
+): AnalysisSectionStatus => {
+ if (analysis !== null) return 'ready';
+
+ return isLoading ? 'pending' : 'error';
+};
+
 // For a list whose card publishes no count, income among them (P5-6).
 export const SKELETON_ROWS_WITHOUT_COUNT = 3;
 
@@ -37,6 +48,9 @@ type AnalysisPanelProps = {
  // The figure under the title, replaced by a skeleton while pending.
  figure?: ReactNode;
  skeletonRows?: number;
+ // A section of a fixed or taller shape draws its own skeleton, replacing the
+ // rows above, so the panel keeps its height when the answer lands.
+ skeleton?: ReactNode;
  isEmpty: boolean;
  // Shown only when the server sent no notice explaining the empty section.
  emptyText: string;
@@ -52,6 +66,7 @@ function AnalysisPanel({
  onRequest,
  figure,
  skeletonRows = SKELETON_ROWS_WITHOUT_COUNT,
+ skeleton,
  isEmpty,
  emptyText,
  notices,
@@ -85,12 +100,13 @@ function AnalysisPanel({
 
    {status === 'pending' && (
     <div aria-hidden='true'>
-     {[...Array(skeletonRows).keys()].map((index) => (
-      <span
-       className='domainAnalysis__skeleton domainAnalysis__skeleton--row'
-       key={`skeleton-${index}`}
-      />
-     ))}
+     {skeleton ??
+      [...Array(skeletonRows).keys()].map((index) => (
+       <span
+        className='domainAnalysis__skeleton domainAnalysis__skeleton--row'
+        key={`skeleton-${index}`}
+       />
+      ))}
     </div>
    )}
 

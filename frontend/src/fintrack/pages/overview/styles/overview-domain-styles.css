@@ -108,6 +108,52 @@
  border-bottom: none;
 }
 
+/* The two-line progress row has no swatch and no share column: name, amount and
+   the chevron that spans both lines. */
+.overviewLayout .domainAnalysis__rows--progress {
+ grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+/* A statement of terms and its total. No column gap, so the rule over the total
+   crosses both cells without a break. */
+.overviewLayout .domainAnalysis__statement {
+ display: grid;
+ grid-template-columns: minmax(0, 1fr) auto;
+ row-gap: var(--space-1);
+ margin: 0;
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .domainAnalysis__term {
+ font-size: var(--font-size-sm);
+ color: var(--color-content-secondary);
+}
+
+.overviewLayout .domainAnalysis__value {
+ margin: 0;
+ padding-left: var(--space-3);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ text-align: right;
+ white-space: nowrap;
+}
+
+.overviewLayout .domainAnalysis__term--total,
+.overviewLayout .domainAnalysis__value--total {
+ padding-top: var(--space-1);
+ border-top: var(--border-width-thin) solid var(--color-border-strong);
+}
+
+.overviewLayout .domainAnalysis__term--total {
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-primary);
+}
+
+.overviewLayout .domainAnalysis__value--total {
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-bold);
+}
+
 /* The same two lines of copy PanelState uses, left-aligned inside the panel. */
 .overviewLayout .domainAnalysis__state {
  display: flex;
@@ -190,6 +236,23 @@
  margin-bottom: var(--border-width-thin);
 }
 
+/* The progress row: the same line, the gap between its lines, and the label line. */
+.overviewLayout .domainAnalysis__skeleton--progressRow {
+ height: calc(
+  var(--space-2) * 2 + var(--font-size-sm) * var(--line-height-body) + var(--space-1) +
+   var(--font-size-xs) * var(--line-height-body)
+ );
+ margin-bottom: var(--border-width-thin);
+}
+
+/* A figure of the statement, about an amount wide and right-aligned. No taller
+   than the term beside it, which sets the line's height in both states. */
+.overviewLayout .domainAnalysis__skeleton--amount {
+ width: calc(var(--font-size-sm) * 5);
+ height: var(--font-size-sm);
+ margin-left: auto;
+}
+
 /* A level-3 row. It takes the list's tracks, so a long name ellipsises and the
    figures beside it keep their column. */
 .overviewLayout .levelThreeRow {
@@ -252,6 +315,121 @@
  font-size: var(--font-size-xs);
  text-align: center;
  color: var(--color-content-secondary);
+}
+
+/* The pocket row (P5-6): name and amount, then bar and label beneath, with the
+   chevron centred across both lines. At 360px one line left the name five letters. */
+.overviewLayout .levelThreeRow--progress {
+ row-gap: var(--space-1);
+}
+
+.overviewLayout .levelThreeRow--progress .levelThreeRow__name {
+ grid-column: 1;
+ grid-row: 1;
+}
+
+.overviewLayout .levelThreeRow--progress .levelThreeRow__amount {
+ grid-column: 2;
+ grid-row: 1;
+}
+
+.overviewLayout .levelThreeRow--progress .levelThreeRow__go,
+.overviewLayout .levelThreeRow--progress .levelThreeRow__nogo {
+ grid-column: 3;
+ grid-row: 1 / 3;
+}
+
+.overviewLayout .levelThreeRow__progress {
+ display: flex;
+ grid-column: 1 / 3;
+ grid-row: 2;
+ align-items: center;
+ gap: var(--space-2);
+ font-size: var(--font-size-xs);
+}
+
+/* --space-1 tall, the height the shared progress bar uses. One ink (P5-6). */
+.overviewLayout .levelThreeRow__track {
+ flex: 1 1 auto;
+ height: var(--space-1);
+ overflow: hidden;
+ border-radius: var(--radius-full);
+ background-color: var(--color-progress-track-on-panel);
+}
+
+.overviewLayout .levelThreeRow__fill {
+ display: block;
+ height: 100%;
+ background-color: var(--color-progress-fill-on-panel);
+}
+
+/* One width for every row, sized to "Above target · 1234%" (15.95ch measured) plus
+   the mark, so every bar has the same length and the marks share a column. */
+.overviewLayout .levelThreeRow__progressLabel {
+ flex: none;
+ width: calc(var(--size-status-square) + var(--space-1) + 17ch);
+ font-size: inherit;
+ font-variant-numeric: tabular-nums;
+ text-align: left;
+ white-space: nowrap;
+ color: var(--color-content-secondary);
+}
+
+/* Read by a screen reader and not drawn: taken out of flow, so it adds no width. */
+.overviewLayout .levelThreeRow__spoken {
+ position: absolute;
+ width: var(--border-width-thin);
+ height: var(--border-width-thin);
+ margin: calc(var(--border-width-thin) * -1);
+ overflow: hidden;
+ clip-path: inset(50%);
+ white-space: nowrap;
+ font-size: inherit;
+}
+
+/* The board's mark at the board's size, in the on-panel set: the dark-ground
+   status colours all fall under 3:1 on cream. */
+.overviewLayout .levelThreeRow__mark {
+ display: inline-block;
+ width: var(--size-status-square);
+ height: var(--size-status-square);
+ margin-right: var(--space-1);
+ vertical-align: middle;
+ color: var(--color-status-neutral-on-panel);
+}
+
+.overviewLayout .levelThreeRow__mark--info {
+ color: var(--color-status-info-on-panel);
+}
+
+.overviewLayout .levelThreeRow__mark--ahead {
+ color: var(--color-status-ahead-on-panel);
+}
+
+.overviewLayout .levelThreeRow__mark--behind {
+ color: var(--color-status-behind-on-panel);
+}
+
+.overviewLayout .levelThreeRow__mark--warning {
+ color: var(--color-status-warning-on-panel);
+}
+
+.overviewLayout .levelThreeRow__mark--alert {
+ color: var(--color-status-alert-on-panel);
+}
+
+.overviewLayout .levelThreeRow__mark--complete {
+ color: var(--color-status-complete-on-panel);
+}
+
+/* The word is the reading, so it takes the panel's full ink; the figure stays secondary. */
+.overviewLayout .levelThreeRow__statusWord {
+ font-size: inherit;
+ color: var(--color-content-primary);
+}
+
+.overviewLayout .levelThreeRow__separator {
+ font-size: inherit;
 }
 
 /* The five states belong to the linked row only: a static row is valid content
