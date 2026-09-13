@@ -132,8 +132,8 @@
   }
 
   .mainNavbarButton .button--label {
-    font-size: var(--font-size-tiny);
-    line-height: var(--line-height-tight);
+    font-size: var(--font-size-2xs);
+    line-height: var(--line-height-heading);
   }
 
   .mainNavbarButton.active {

@@ -7,9 +7,9 @@
    function, never the appearance: --color-surface-panel survives a theme
    change, --color-cream-2 does not.
 
-   Nothing consumes these yet. The legacy names in pages/styles/generalStyles.css
-   stay defined and working; aliasing them onto these is a separate step, and so
-   is migrating any component onto them.
+   Every token below has a consumer; one without a reader is removed rather than
+   kept for a later use. The legacy names in pages/styles/generalStyles.css stay
+   defined and working beside them.
 
    FinTrack is a dark application with light content panels. The page is
    near-black while cards, headers and navbars are white or cream with near-black
@@ -152,7 +152,7 @@
 
     behind: short of the plan and not yet at risk. Violet because every warm
     hue is taken by the levels ABOVE it in severity, and a second amber was
-    measured and rejected — --color-financial-attention (#c49a5a) against
+    measured and rejected — the attention amber (#c49a5a) against
     --color-status-warning (#b8894e) is 1.21 apart in ratio and indistinguishable
     at 12px. Violet says "a different kind of problem" rather than "a softer
     red", which is what behind is against at risk. At 5.88 it sits between ok
@@ -299,11 +299,10 @@
  /* COLOR - FINANCIAL EFFECT: what a movement did to Net Worth. The effect is a
     property of the movement type, not of the sign the figure carries in one
     account. attention is not a fourth effect: it marks a movement that brings
-    in a counterparty, and debt is the only one that does today. */
+    in a counterparty, and debt is the only one that does today. Neutral and
+    attention have no flat colour: no mark reads one, only their triads below. */
  --color-financial-positive: #5b8c93;
  --color-financial-negative: #c97474;
- --color-financial-neutral: #bdb1b1;
- --color-financial-attention: #c49a5a;
 
  /* PROVISIONAL - the naming is not frozen. The flat name above is the effect's
     colour and these are grounds for it, so a pill can carry the effect as a
@@ -325,30 +324,6 @@
  --color-financial-attention-border: #c48e31;
  --color-financial-attention-content: #f6bb55;
 
- /* COLOR - MAGNITUDE SCALE: the two ends of a sequential ramp, for a chart
-    where the colour of a mark encodes HOW BIG a figure is. Nothing else on the
-    page carries that meaning: the semaphore above qualifies a figure as good
-    or bad, and the badge names a direction. A ramp says neither - the darkest
-    segment of a spending bar is not worse than the lightest, it is larger.
-
-    ITS OWN LAYER AND NOT THE ATTENTION FAMILY RENAMED, although the high end
-    is that family's content value. The family has three light steps close
-    together and then drops to #473515, which is designed as a ground and sits
-    at 1.63:1 on --color-surface-app; between the middle and that ground there
-    is nothing, and a sequential scale is exactly the run that is missing. The
-    low end is the one value this ramp adds, at 3.46:1 on --color-surface-app,
-    over the 3:1 floor for a graphical object.
-
-    Named for the function and never the hue, so a palette that changes its
-    tint later does not reach the component that mixes these two.
-
-    ON DARK THE RAMP RUNS THE OTHER WAY than it would on the cream panel: more
-    is brighter here, more would be darker there. Same reading - the largest
-    figure carries the most ink against its ground - stated from the opposite
-    side because the ground changed sides. */
- --color-scale-magnitude-high: #f6bb55;
- --color-scale-magnitude-low: #8a6026;
-
  /* COLOR - CATEGORY SCALE: eight hues that mean nothing but "not the one
     beside me". A ranked breakdown asks WHICH and never HOW MUCH of its colour
     - the width of a bar segment and the angle of a donut arc already carry how
@@ -356,10 +331,6 @@
     the wrong instrument for it. Carlos, 2026-09-11: "para donuts vamos a
     escoger un arco iris, porque no es facil distinguir la variacion entre una
     y otro %".
-
-    THE MAGNITUDE RAMP ABOVE IS NOT REPLACED AND STAYS DECLARED. It is the
-    right scale for a mark whose colour IS the figure - a heat map, a calendar
-    of intensities - and the day one of those is built it is already measured.
 
     THE OKABE-ITO SET, which is designed for colour vision deficiency, with its
     black member replaced by the subtle ink so all eight stand on a dark
@@ -458,7 +429,6 @@
 
  --letter-spacing-wide: 0.5px; /* labels */
  --letter-spacing-wider: 1px; /* titles, totals */
- --letter-spacing-widest: 1.5px; /* the summary amount row */
 
  /* Unitless, so each follows the size of the element it is set on. */
  --line-height-figure: 1.1; /* an amount on its own line */
@@ -500,7 +470,6 @@
     surfaces are dark on dark. */
  --border-width-thin: 1px;
  --border-width-thick: 2px;
- --border-divider: 1px solid var(--color-border-inverse);
  --border-dashed: 1px dashed var(--color-border-subtle);
 
  /* ELEVATION: reserved for content floating over the page. A card gets none. */
@@ -558,7 +527,6 @@
     a navbar. */
  --z-base: 0;
  --z-raised: 1;
- --z-navbar: 10;
  --z-dropdown: 100;
  --z-overlay: 500;
  --z-modal: 1000;
