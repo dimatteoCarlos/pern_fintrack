@@ -2554,6 +2554,11 @@ button.line__container {
 
  .pocketLayout .pocketHero {
   gap: var(--space-3);
+ }
+
+ /* Not the readings stack: two classes outrank its single-class padding: 0,
+    which added vertical space around the cards under the figures. */
+ .pocketLayout .pocketHero:not(.pocketHero--readings) {
   padding: var(--space-2) 0;
  }
 }
@@ -2573,6 +2578,9 @@ button.line__container {
 
  .pocketLayout .pocketHero {
   gap: var(--space-2);
+ }
+
+ .pocketLayout .pocketHero:not(.pocketHero--readings) {
   padding: var(--space-1) 0;
  }
 
