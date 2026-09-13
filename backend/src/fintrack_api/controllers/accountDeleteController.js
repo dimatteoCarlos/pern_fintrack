@@ -28,6 +28,12 @@ export const DELETION_TYPE_HARD = 'HARD';
 export const DELETION_TYPE_SOFT = 'SOFT';
 export const DELETION_TYPE_CLOSE = 'CLOSE';
 
+// Carlos, 2026-09-13: SOFT has no effect in this version. It hid the account
+// from the lists while overview kept counting its balance, and nothing could
+// restore it. The service refuses it; the branch stays in place for later.
+// Findings: plan-docs/ongoing/PLAN_ACCOUNT_DELETION/PLAN_DELETION_METHODS.md.
+export const SOFT_DELETION_ENABLED = false;
+
 // RETIRED 2026-09-08, kept commented per the standing rule. CLOSE's two
 // settlement policies: DISCARD sent the residual to the system's compensation
 // account, TRANSFER to an account the owner picked from the eligible ones.

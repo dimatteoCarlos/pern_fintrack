@@ -16,4 +16,9 @@
 //
 // WHAT IT DOES NOT DO. It changes no service, no route and no request. The
 // three withdrawn methods answer the same as they did to any other caller.
+//
+// Except SOFT, since 2026-09-13: the server refuses it with a 403
+// (SOFT_DELETION_ENABLED in accountDeleteController.js), because a deactivated
+// account could not be restored and overview still counted its balance.
+// Turning SOFT back on takes that flag and this one.
 export const CLOSE_IS_THE_ONLY_METHOD = true;

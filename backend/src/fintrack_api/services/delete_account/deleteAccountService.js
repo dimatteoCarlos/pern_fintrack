@@ -13,6 +13,7 @@ import {
   DELETION_TYPE_SOFT,
   DELETION_TYPE_RTA,
   DELETION_TYPE_CLOSE,
+  SOFT_DELETION_ENABLED,
   USER_ACTION,
   // RETIRED 2026-09-08 with the settlement policies:
   // CLOSE_POLICY_DISCARD,
@@ -1627,6 +1628,16 @@ export const deleteAccountService = async (
    isBoundaryByName
     ? `Account ${targetAccountId} is named '${storedAccountName}', the name the system reserves for the compensation counterpart it posts closures and reversals against. It cannot be closed, deleted or reversed. Rename it first if it is your own account.`
     : `Account ${targetAccountId} is a '${targetAccountTypeName}' account created and maintained by the system. It cannot be closed, deleted or reversed.`,
+  );
+ }
+
+ // SOFT has no effect in this version (Carlos, 2026-09-13). Refused before any
+ // transaction opens, so no pocket is released and deleted_at is never written.
+ // processStandardDelete's SOFT branch is left intact for when it returns.
+ if (deletionType === DELETION_TYPE_SOFT && !SOFT_DELETION_ENABLED) {
+  throw createError(
+   403,
+   `Soft deletion is disabled in this version. Account ${targetAccountId} was not changed; close it instead.`,
   );
  }
   //------------------------------------------

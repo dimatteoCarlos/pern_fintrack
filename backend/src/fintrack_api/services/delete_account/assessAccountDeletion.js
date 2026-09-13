@@ -45,6 +45,7 @@ import {
  DELETION_TYPE_HARD,
  DELETION_TYPE_RTA,
  DELETION_TYPE_SOFT,
+ SOFT_DELETION_ENABLED,
 } from '../../controllers/accountDeleteController.js';
 
 /**
@@ -189,7 +190,13 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
    },
    {
     deletionType: DELETION_TYPE_SOFT,
-    available: true,
+    // Was true. The engine refuses SOFT while the flag is off (Carlos,
+    // 2026-09-13), and offering it would send the owner to that 403.
+    // available: true,
+    available: SOFT_DELETION_ENABLED,
+    reason: SOFT_DELETION_ENABLED
+     ? undefined
+     : 'Soft deletion is disabled in this version. Close the account instead.',
     // Nothing is settled and nothing is reversed: the account stops
     // circulating while still holding whatever it held. That is the
     // difference from CLOSE, and the reason the residual is worth showing
