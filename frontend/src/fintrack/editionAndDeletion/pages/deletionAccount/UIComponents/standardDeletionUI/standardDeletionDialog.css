@@ -178,7 +178,7 @@
 
 .standard-deletion-dialog__button--soft:hover {
  box-shadow: var(--shadow-md);
- transform: translateY(-1px);
+ transform: translateY(var(--motion-lift-sm));
 }
 
 .standard-deletion-dialog__button--soft:active {
@@ -197,7 +197,7 @@
 .standard-deletion-dialog__button--hard:hover {
  background-color: var(--color-status-error);
  box-shadow: var(--shadow-md);
- transform: translateY(-1px);
+ transform: translateY(var(--motion-lift-sm));
 }
 
 .standard-deletion-dialog__button--hard:active {

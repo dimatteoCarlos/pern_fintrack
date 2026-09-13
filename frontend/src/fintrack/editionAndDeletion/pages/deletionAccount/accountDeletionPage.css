@@ -413,7 +413,7 @@
 .deletion-method-button--soft:hover {
   background-color: var(--color-feedback-info-surface);
   border-color: var(--color-feedback-info-content);
-  transform: translateY(-1px);
+  transform: translateY(var(--motion-lift-sm));
 }
 
 .deletion-method-button--soft:active {
@@ -434,7 +434,7 @@
 .deletion-method-button--close:hover {
   background-color: var(--color-feedback-warning-surface);
   border-color: var(--color-feedback-warning-content);
-  transform: translateY(-1px);
+  transform: translateY(var(--motion-lift-sm));
 }
 
 .deletion-method-button--close:active {
@@ -459,7 +459,7 @@
 .deletion-method-button--only:hover {
   background-color: var(--color-action-destructive-hover);
   border-color: var(--color-action-destructive-hover);
-  transform: translateY(-1px);
+  transform: translateY(var(--motion-lift-sm));
 }
 
 .deletion-method-button--only:active {
@@ -478,7 +478,7 @@
 .deletion-method-button--hard:hover {
   background-color: var(--color-feedback-error-surface);
   border-color: var(--color-feedback-error-content);
-  transform: translateY(-1px);
+  transform: translateY(var(--motion-lift-sm));
 }
 
 .deletion-method-button--hard:active {

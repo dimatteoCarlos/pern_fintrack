@@ -522,6 +522,9 @@
  --motion-normal: 200ms ease;
  --motion-slow: 300ms ease;
  --motion-press: 100ms ease-out;
+ /* Hover lift: how far a pressable rises under the cursor, for translateY. */
+ --motion-lift-sm: -1px;
+ --motion-lift-md: -2px;
 
  /* Z-INDEX: a closed scale. An unmanaged z-index is how a modal ends up behind
     a navbar. */

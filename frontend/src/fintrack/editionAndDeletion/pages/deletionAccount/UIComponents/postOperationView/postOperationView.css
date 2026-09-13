@@ -291,7 +291,7 @@
 
 .back-to-actions-button:hover {
   background-color: #2563eb;
-  transform: translateY(-2px);
+  transform: translateY(var(--motion-lift-md));
   box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
 }
 
