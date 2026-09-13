@@ -2,7 +2,7 @@
 // 🧩 COMPONENT: TransactionDetailModal - Versión final (sin dos columnas, botón responsive, Rate Clean con dirección)
 
 import { useModalDialog } from '../../../../../hooks/useModalDialog';
-import { numberFormatCurrency, formatDate, capitalize } from '../../../../helpers/functions';
+import { numberFormatCurrency, formatDate, capitalize, currencyMinorUnit } from '../../../../helpers/functions';
 import { MOVEMENT_TYPES } from '../../../../helpers/constants';
 import { DEFAULT_CURRENCY } from '../../../../helpers/currencyConstants';
 import { TransactionDetailType } from '../../../../types/responseApiTypes';
@@ -47,9 +47,15 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
   // Valores absolutos para la tarjeta FX (sin signo)
   const absOriginalAmount = Math.abs(transaction.original_amount || 0);
   const absConvertedAmount = Math.abs(transaction.amount);
-  
+
   // const formattedOriginalAbs = numberFormatCurrency(absOriginalAmount, 2, transaction.original_currency_code || DEFAULT_CURRENCY, 'es-ES');
   // const formattedConvertedAbs = numberFormatCurrency(absConvertedAmount, 2, DEFAULT_CURRENCY, 'es-ES');
+
+  // Each figure carries its own currency's decimals: printed raw, a JPY row
+  // written before per-currency rounding read "JPY 157.57".
+  const originalCurrency = transaction.original_currency_code || DEFAULT_CURRENCY;
+  const formattedOriginalAbs = numberFormatCurrency(absOriginalAmount, currencyMinorUnit(originalCurrency), undefined, 'es-ES');
+  const formattedConvertedAbs = numberFormatCurrency(absConvertedAmount, currencyMinorUnit(DEFAULT_CURRENCY), undefined, 'es-ES');
 
   // Monto con signo para el hero
   const formattedAmountSigned = numberFormatCurrency(transaction.amount, 2, DEFAULT_CURRENCY, 'es-ES');
@@ -156,14 +162,14 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
               <div className="fx-header">FOREIGN EXCHANGE</div>
               <div className="fx-body">
                 <span className="amount-primary">
-                  {transaction.original_currency_code?.toUpperCase()} {absOriginalAmount}
+                  {transaction.original_currency_code?.toUpperCase()} {formattedOriginalAbs}
                 </span>
                 <svg className="fx-arrow-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                   <polyline points="12 5 19 12 12 19"></polyline>
                 </svg>
                 <span className="amount-secondary">
-                  {DEFAULT_CURRENCY.toUpperCase()} {absConvertedAmount}
+                  {DEFAULT_CURRENCY.toUpperCase()} {formattedConvertedAbs}
                 </span>
               </div>
               <div className="fx-footer">
