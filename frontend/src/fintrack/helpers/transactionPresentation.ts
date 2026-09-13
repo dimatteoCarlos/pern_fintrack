@@ -148,7 +148,7 @@ export const resolveTransactionPresentation = ({
    return { badgeLabel: 'WITHDRAW', badgeColor: 'negative', displaySign };
   }
   if (accountType === 'category_budget') {
-   return { badgeLabel: 'SPENT', badgeColor: 'neutral', displaySign };
+   return { badgeLabel: 'EXPENSE', badgeColor: 'neutral', displaySign };
   }
  }
 
@@ -159,7 +159,7 @@ export const resolveTransactionPresentation = ({
  // reported there.
  if (movementType === 'transfer' || movementType === 'pocket') {
   if (accountType === 'category_budget' && direction === 'out') {
-   return { badgeLabel: 'REFUNDED', badgeColor: 'positive', displaySign };
+   return { badgeLabel: 'EXPENSE REVERSED', badgeColor: 'positive', displaySign };
   }
   if (accountType && LIQUIDITY_ACCOUNT_TYPES.has(accountType)) {
    return direction === 'in'
