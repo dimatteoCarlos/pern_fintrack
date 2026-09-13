@@ -20,7 +20,6 @@ import { DATE_TEXT_FORMAT } from '../../../../helpers/constants';
 import { TransactionDetailType } from '../../../../types/responseApiTypes';
 import FxPathwayCard from '../../../../general_components/fxPathwayCard/FxPathwayCard';
 import { useModalDialog } from '../../../../../hooks/useModalDialog';
-import { resolveTransactionPresentation } from '../../../../helpers/transactionPresentation';
 
 import './styles/accountTransactionDetailModal-styles.css';
 
@@ -138,22 +137,41 @@ const AccountTransactionDetailDialog = ({
   transaction.transaction_local_time,
  );
 
- // What this transaction means from the perspective of transaction.account_id
- // (the account this modal is opened from), not the raw transaction_type
- // string. Replaces the old pair of pills - movement type coloured by net
- // worth effect, transaction type coloured by incoming/outgoing - with the
- // single badge helpers/transactionPresentation.ts resolves.
- const presentation = resolveTransactionPresentation({
-  movementType: transaction.movement_type_name,
-  accountType: transaction.account_type_name,
-  amount: transaction.amount,
-  legacy: { transactionTypeName: transaction.transaction_type_name },
- });
+ // The catalog stores five transaction types. account-opening is neither an
+ // entry nor an exit, so its direction falls back to the sign of the amount.
+ const resolveIsIncoming = () => {
+  const type = transaction.transaction_type_name?.toLowerCase();
+  if (type === 'deposit' || type === 'borrow') return true;
+  if (type === 'withdraw' || type === 'lend') return false;
+  return transaction.amount >= 0;
+ };
 
- const badgeModifier = `transactionDetail__badge--effect${capitalize(
-  presentation.badgeColor,
- )}`;
- const badgeLabel = presentation.badgeLabel;
+ const isIncoming = resolveIsIncoming();
+ const badgeModifier = isIncoming
+  ? 'transactionDetail__badge--positive'
+  : 'transactionDetail__badge--negative';
+ const badgeLabel =
+  transaction.transaction_type_name?.toUpperCase() ?? MISSING_VALUE;
+
+ // The movement is what the transaction was for, the type is which way the
+ // money went. Two different questions, so two pills rather than one.
+ const movementLabel = transaction.movement_type_name?.toUpperCase() ?? null;
+
+ // The colour states the impact on Net Worth, which is a property of the
+ // movement type and never of the sign the figure carries in this account: a
+ // transfer leaves Net Worth where it was. pnl is the one exception, since a
+ // gain and a loss are the same type and only the sign separates them.
+ const resolveNetEffect = () => {
+  const movement = transaction.movement_type_name?.toLowerCase();
+  if (movement === 'income') return 'effectPositive';
+  if (movement === 'expense') return 'effectNegative';
+  if (movement === 'debt') return 'effectAttention';
+  if (movement === 'pnl')
+   return transaction.amount >= 0 ? 'effectPositive' : 'effectNegative';
+  return 'effectNeutral';
+ };
+
+ const movementModifier = `transactionDetail__badge--${resolveNetEffect()}`;
 
  // A conversion happened when the movement was entered in a currency other
  // than the one the account is kept in.
@@ -204,6 +222,12 @@ const AccountTransactionDetailDialog = ({
     </div>
 
     <div className='transactionDetail__badges'>
+     {movementLabel && (
+      <span className={`transactionDetail__badge ${movementModifier}`}>
+       {movementLabel}
+      </span>
+     )}
+
      <span className={`transactionDetail__badge ${badgeModifier}`}>
       {badgeLabel}
      </span>

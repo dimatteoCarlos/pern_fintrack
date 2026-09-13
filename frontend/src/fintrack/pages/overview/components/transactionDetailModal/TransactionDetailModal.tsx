@@ -3,9 +3,9 @@
 
 import { useModalDialog } from '../../../../../hooks/useModalDialog';
 import { numberFormatCurrency, formatDate, capitalize, currencyMinorUnit } from '../../../../helpers/functions';
+import { MOVEMENT_TYPES } from '../../../../helpers/constants';
 import { DEFAULT_CURRENCY } from '../../../../helpers/currencyConstants';
 import { TransactionDetailType } from '../../../../types/responseApiTypes';
-import { resolveTransactionPresentation } from '../../../../helpers/transactionPresentation';
 import './transactionDetailModal.css';
 
 type TransactionDetailModalProps = {
@@ -73,20 +73,35 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
     ? new Intl.NumberFormat('es-ES', { maximumSignificantDigits: 6 }).format(transaction.exchange_rate)
     : 'N/A';
 
-  // What this transaction means from the perspective of transaction.account_id
-  // (the account this row is filed under), not the raw transaction_type
-  // string. Replaces the old pair of badges - movement type coloured by net
-  // worth effect, transaction type coloured by incoming/outgoing - which is
-  // exactly the "DEPOSIT + EXPENSE" double badge on a category_budget row the
-  // plan reports. See helpers/transactionPresentation.ts.
-  const presentation = resolveTransactionPresentation({
-    movementType: transaction.movement_type_name,
-    accountType: transaction.account_type_name,
-    amount: transaction.amount,
-    legacy: { transactionTypeName: transaction.transaction_type_name },
-  });
+  // Movement & Transaction Types
+  const movementTypeRaw = MOVEMENT_TYPES[transaction.movement_type_id];
+  const displayMovementType = movementTypeRaw ? capitalize(movementTypeRaw.replace('-', ' ')) : 'Unknown';
+  const displayTransactionType = transaction.transaction_type_name ? capitalize(transaction.transaction_type_name) : 'N/A';
 
-  const badgeColorClass = `fx-movement-badge-large--effect${capitalize(presentation.badgeColor)}`;
+  // Badge color based on transaction type (incoming/outgoing)
+  const isIncoming = (() => {
+    const type = displayTransactionType;
+    if (type === 'Deposit' || type === 'Income' || type === 'Borrow') return true;
+    if (type === 'Withdraw' || type === 'Expense' || type === 'Lend') return false;
+    return transaction.amount >= 0;
+  })();
+  const badgeClass = isIncoming ? 'fx-badge-income' : 'fx-badge-expense';
+
+  // The colour states the impact on Net Worth, which is a property of the
+  // movement type and never of the sign the figure carries in this account: a
+  // transfer leaves Net Worth where it was. pnl is the one exception, since a
+  // gain and a loss are the same type and only the sign separates them.
+  const resolveNetEffect = () => {
+    const movement = movementTypeRaw?.toLowerCase();
+    if (movement === 'income') return 'effectPositive';
+    if (movement === 'expense') return 'effectNegative';
+    if (movement === 'debt') return 'effectAttention';
+    if (movement === 'pnl')
+      return transaction.amount >= 0 ? 'effectPositive' : 'effectNegative';
+    return 'effectNeutral';
+  };
+
+  const movementModifier = `fx-movement-badge-large--${resolveNetEffect()}`;
 
   // FX Card visibility
   const showFXCard = transaction.original_currency_code && transaction.original_currency_code !== DEFAULT_CURRENCY;
@@ -97,6 +112,10 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
     const directRate = 1 / transaction.exchange_rate;
     directRateFormatted = numberFormatCurrency(directRate, 2, undefined, 'es-ES');
   }
+
+  // Badges text in uppercase
+  const displayMovementUpper = displayMovementType.toUpperCase();
+  const displayTransactionUpper = displayTransactionType.toUpperCase();
 
   // Direction for Rate Clean (original -> target)
   const rateCleanDirection = transaction.original_currency_code && transaction.exchange_rate
@@ -112,7 +131,8 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
           <div>
             <h2 id={titleId} className="fx-modal-id">Transaction #{transaction.transaction_id}</h2>
             <div className="fx-badge-container">
-              <span className={`fx-movement-badge-large ${badgeColorClass}`}>{presentation.badgeLabel}</span>
+              <span className={`fx-movement-badge-large ${movementModifier}`}>{displayMovementUpper}</span>
+              <span className={`fx-modal-badge ${badgeClass}`}>{displayTransactionUpper}</span>
             </div>
           </div>
           <button className="fx-modal-close-btn" onClick={onClose} aria-label="Close modal">✕</button>

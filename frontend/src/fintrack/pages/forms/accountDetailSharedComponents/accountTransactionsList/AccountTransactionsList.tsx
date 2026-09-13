@@ -12,15 +12,12 @@ import {
 } from '../../../../helpers/constants';
 import { BUDGET_NEAR_LIMIT_PERCENT } from '../../../../helpers/budgetStatus';
 import {
+  capitalize,
   currencyFormat,
   formatDateToDDMMYYYY,
   // isDateValid,
 } from '../../../../helpers/functions';
 import { AccountTransactionType } from '../../../../types/responseApiTypes';
-import {
-  resolveDirection,
-  resolveTransactionPresentation,
-} from '../../../../helpers/transactionPresentation';
 
 import './styles/accountTransactionsList-styles.css';
 
@@ -32,26 +29,16 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // owner never wrote, or a date the server did not serve.
 const DASH = '—';
 
-// The one movement_type whose missing note is not an absence: account-opening
-// is never annotated (extractNoteFromDescription.js:26), so every occurrence
-// hit DASH and read as an error on an otherwise ordinary row. A fixed label
-// instead of the dash, only for this movement type - every other movement
-// with no note keeps DASH, which still means "the owner wrote nothing".
-const ACCOUNT_OPENING_NOTE = 'Account opening';
-
 // Which way a movement moved the account, for the colour that reinforces the
 // sign. Coerced rather than type-tested: an amount can reach here as text, the
 // way every DECIMAL column node-postgres serves does, and a figure the answer
-// did not carry must colour as nothing rather than as an outflow. The zero/NaN
-// case is this row's own: resolveTransactionPresentation's matrix has no third
-// state to give it, so it is guarded here rather than pushed onto the shared
-// resolver.
+// did not carry must colour as nothing rather than as an outflow.
 const amountDirection = (amount: number | string | null | undefined) => {
   const value = amount === null || amount === undefined ? NaN : Number(amount);
 
   if (Number.isNaN(value) || value === 0) return 'flat';
 
-  return resolveDirection(value);
+  return value > 0 ? 'in' : 'out';
 };
 
 type AccountTransactionsListPropsType = {
@@ -134,8 +121,6 @@ const AccountTransactionsList = ({
             const {
               transaction_id,
               movement_type_name,
-              account_type_name,
-              transaction_type_name,
               amount,
               currency_code,
               note,
@@ -148,16 +133,6 @@ const AccountTransactionsList = ({
 
             const isClickable = Boolean(onTransactionClick);
             const openDetail = () => onTransactionClick?.(transaction_id);
-
-            // What this row means from the perspective of the account this list
-            // belongs to - the same resolver the two detail modals use, so the
-            // three no longer disagree on the same transaction.
-            const presentation = resolveTransactionPresentation({
-              movementType: movement_type_name,
-              accountType: account_type_name,
-              amount,
-              legacy: { transactionTypeName: transaction_type_name },
-            });
 
             // What share of the budget the month had consumed by this row. One
             // decimal, the same as the summary above the list, so the top row
@@ -209,7 +184,7 @@ const AccountTransactionsList = ({
               >
                 <BoxRow className='transaction-header'>
                   <div className='box__title transaction-movement-type'>
-                    {presentation.badgeLabel}
+                    {capitalize(movement_type_name)}
                   </div>
 
                   {/* {transaction_actual_date &&
@@ -254,12 +229,7 @@ const AccountTransactionsList = ({
 
                           Not capitalized: these are the owner's own words, and
                           the row is not the place to correct them. */}
-                      <div className='paragraph'>
-                        {note ??
-                          (movement_type_name === 'account-opening'
-                            ? ACCOUNT_OPENING_NOTE
-                            : DASH)}
-                      </div>
+                      <div className='paragraph'>{note ?? DASH}</div>
 
                       {/* Resolved in SQL on the account owner's calendar. The
                           row used to cut this out of the narrative, which broke
