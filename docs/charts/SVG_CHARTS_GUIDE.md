@@ -141,9 +141,10 @@ first, then bars, then lines, then points and their labels.
   stroke-linejoin: round;
   ```
 
-- **Redundancy:** do not label a point that does not move the line. The tail of
-  a Pareto sits at 100%, and printing "100.0%" on every zero-spend category adds
-  nothing.
+- **Redundancy:** do not draw what does not move the reading. The expense Pareto
+  stops at the last category with spending: a zero-spend tail adds no bar and
+  repeats "100.0%" on a flat line. The totals still read every category, and
+  the foot states how many were left out.
 - **The font-size trap:** `index.css` sets `font-size` on the universal
   selector, which reaches `<text>` too. Every text class restates its size.
 
@@ -159,12 +160,127 @@ first, then bars, then lines, then points and their labels.
 
 ## 8. Responsive behaviour
 
-A categorical chart cannot shrink below `GROUP_WIDTH` per category without
-overlapping labels. The chart keeps its natural width and scrolls sideways inside
-its own box:
+A 1:1 SVG has a fixed size in pixels, so CSS alone cannot make it responsive:
+`width: 100%` on the `<svg>` would stretch text and strokes along with the
+bars. The chart has to be told how much room it has and redraw its geometry for
+that room. There are four steps.
+
+### 8.1 A first version that is NOT responsive
+
+The first cut of the Pareto gave every category a fixed `GROUP_WIDTH = 48` and
+wrapped the SVG in a scroll box. That does not overflow the page, but it
+does not use the page either: three categories drew a 144 px plot inside a
+600 px card, with 120 px of empty room reserved under it for rotated names.
+Scrolling is the fallback for too many categories, not the layout.
+
+### 8.2 Measure the box
+
+A `ResizeObserver` on the scroll box reports its content width on mount and on
+every change: window resize, phone rotation, a sidebar opening.
 
 ```tsx
-<div className='budgetPareto__scroll' tabIndex={0} role='region' aria-label='… scrolls sideways'>
+import { useEffect, useRef, useState } from 'react';
+
+const scrollRef = useRef<HTMLDivElement>(null);
+const [availableWidth, setAvailableWidth] = useState(0);
+
+useEffect(() => {
+ const box = scrollRef.current;
+ if (!box) return;
+ const observer = new ResizeObserver(([entry]) =>
+  setAvailableWidth(entry.contentRect.width),
+ );
+ observer.observe(box);
+ return () => observer.disconnect(); // no observer outlives the component
+}, [categories]);
+
+// …
+<div ref={scrollRef} className='budgetPareto__scroll'>…</div>
+```
+
+- **Hooks before any early return.** `if (categories.length === 0) return null`
+  sits after the hooks. A hook placed after it would run on some renders and not
+  others, which React refuses.
+- **The dependency is the data, not `[]`.** The box renders only when there is
+  something to draw. With `[]` the effect runs once, finds no box on an empty
+  month, and never observes the box that appears when the month changes.
+- **The first frame measures 0.** Until the observer reports, the geometry falls
+  back to the minimum widths, so the first paint is valid rather than broken.
+- **`contentRect` excludes padding.** Keep the box free of padding, or subtract it.
+
+A `ResizeObserver` beats `window.addEventListener('resize')`: it reports the
+box, not the window, so it also reacts when the container changes size without
+the window changing.
+
+### 8.3 Share the width, with a floor
+
+```ts
+const MIN_GROUP_WIDTH = 48;   // below this, labels of neighbours overlap
+const MIN_BAR_WIDTH = 15;
+const MAX_BAR_WIDTH = 32;     // a single category must not draw a slab
+const BAR_SHARE_OF_GROUP = 0.3;
+
+const groupWidth = Math.max(
+ MIN_GROUP_WIDTH,
+ drawn.length > 0
+  ? Math.floor((availableWidth - PAD_LEFT - PAD_RIGHT) / drawn.length)
+  : 0,
+);
+const barWidth = Math.min(
+ MAX_BAR_WIDTH,
+ Math.max(MIN_BAR_WIDTH, groupWidth * BAR_SHARE_OF_GROUP),
+);
+const width = PAD_LEFT + drawn.length * groupWidth + PAD_RIGHT;
+```
+
+- **Few categories:** each group takes an equal share of the box, so the chart
+  fills it exactly.
+- **Many categories:** the share falls under 48, the floor wins, `width` exceeds
+  the box, and the box scrolls.
+- **`Math.floor`:** a fractional group width can sum a fraction of a pixel past
+  the box and raise a scrollbar that scrolls nothing.
+- **Every x position reads `groupWidth` and `barWidth`,** never a constant. One
+  leftover `GROUP_WIDTH` puts bars and points on two different grids.
+
+### 8.4 Fit the labels, then size the room under the plot
+
+Rotated names are only needed when they do not fit. Decide per render:
+
+```ts
+const CHAR_WIDTH = 7; // estimate at --font-size-xs (0.75rem, 14-16px root)
+const PAD_BOTTOM_FLAT = 28;
+const PAD_BOTTOM_MAX = 160;
+
+const longestLabel =
+ Math.max(0, ...drawn.map((c) => categoryLabel(c).length)) * CHAR_WIDTH;
+const rotateLabels = longestLabel > groupWidth - LABEL_OFFSET;
+const padBottom = rotateLabels
+ ? Math.min(PAD_BOTTOM_MAX, Math.ceil(longestLabel * Math.SQRT1_2) + LABEL_OFFSET * 4)
+ : PAD_BOTTOM_FLAT;
+const height = PAD_TOP + PLOT_HEIGHT + padBottom;
+```
+
+```tsx
+<text
+ x={cx}
+ y={labelY}
+ textAnchor={rotateLabels ? 'end' : 'middle'}
+ transform={rotateLabels ? `rotate(-45 ${cx} ${labelY})` : undefined}
+>
+ {categoryLabel(category)}
+</text>
+```
+
+- **Why √½:** a name rotated 45° drops by its length × sin 45°.
+- **Why an estimate:** measuring real text needs the text rendered first
+  (`getComputedTextLength`) and a second render. Seven pixels a character errs
+  wide, so the worst case is a name rotated that would have fit flat, never one
+  that overlaps.
+
+### 8.5 The scroll box stays as the fallback
+
+```tsx
+<div ref={scrollRef} className='budgetPareto__scroll' tabIndex={0} role='region' aria-label='… scrolls sideways'>
  <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>…</svg>
 </div>
 ```
@@ -176,13 +292,23 @@ its own box:
 `tabIndex={0}` lets a keyboard user focus the box and scroll it with the arrow
 keys. Give it a `:focus-visible` ring.
 
+### 8.6 How to check it
+
+- A month with 2 or 3 categories on a desktop: the plot spans the card, names
+  are flat, no empty band under the axis.
+- The same month narrowed to 360 px: groups shrink, then names rotate, then the
+  box scrolls. The page itself never scrolls sideways.
+- A month with 20+ categories: groups sit at 48, the box scrolls from the start.
+- Rotate a phone or resize the window: the chart redraws without a reload.
+
 ## 9. Why it is dynamic
 
 Nothing in the drawing is fixed to one month:
 
 - **Data:** the component re-renders whenever `GET /overview/expense?month=` answers.
   Changing the month in the picker refetches, and the chart redraws.
-- **Width:** it follows `categories.length`.
+- **Width:** it follows the box's measured width and the count of categories
+  with spending.
 - **Axis top:** it follows the tallest bar of that month.
 - **Colours and labels:** they follow `isOverBudget`, `actualSpent` and
   `hasSkippedBudget` per row.
@@ -213,7 +339,9 @@ Nothing in the drawing is fixed to one month:
 - [ ] Labels have a halo, or cannot collide.
 - [ ] Every ink is a token on a class; no hex, no pixel font size.
 - [ ] Every text class restates `font-size`.
-- [ ] Wide charts scroll inside their own focusable box.
+- [ ] The chart measures its box (`ResizeObserver`) and fills it; it scrolls inside
+      its own focusable box only past the minimum group width.
+- [ ] Labels rotate only when they do not fit, and the room under the plot follows them.
 - [ ] `role="img"` and `aria-label` are set; no state is conveyed by colour alone.
 - [ ] Empty data (`categories.length === 0`) renders nothing, not an empty axis.
 - [ ] A null figure (mixed currency) draws no mark, never a zero-height bar.
