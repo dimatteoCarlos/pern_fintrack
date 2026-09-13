@@ -39,15 +39,18 @@
  font-variant-numeric: tabular-nums;
 }
 
-/* WRAPS. The row holds two groups - the size chooser and the pager - and
-   without this they stayed on one line at any width and drove the collision
-   Carlos saw at 360px: "7/26" sitting on top of the step beside it. Wrapped,
-   the pager drops under the size chooser, which is a row taller and legible. */
+/* Does not shrink, so the ROW wraps first: the count takes its own line and the
+   controls stay one line beside it or under it. Shrinking let the pager drop
+   under the size chooser while the row still had room. max-width keeps the
+   internal wrap as the last resort, for a row narrower than the controls. */
 .pagination__controls {
  display: flex;
+ flex: 0 0 auto;
  flex-wrap: wrap;
  align-items: center;
  gap: var(--space-2) var(--space-4);
+ max-width: 100%;
+ margin-left: auto;
 }
 
 .pagination__size {
@@ -120,20 +123,27 @@
  width: var(--pagination-control-size);
  height: var(--pagination-control-size);
  padding: 0;
- border: var(--border-width-thin) solid var(--color-border-subtle);
+ /* The filter chips' hover border, not --color-border-subtle: at 40% cream the
+    step's outline faded into the raised panel it now sits on. */
+ border: var(--border-width-thin) solid var(--color-content-on-dark-subtle);
  border-radius: var(--radius-md);
  background-color: transparent;
- color: var(--color-content-on-dark-subtle);
- font-size: var(--font-size-base);
- line-height: 1;
+ color: var(--color-content-on-dark);
  cursor: pointer;
- transition: color var(--motion-fast), border-color var(--motion-fast);
+ transition: border-color var(--motion-fast);
 }
 
-.pagination__step:hover,
+.pagination__icon {
+ width: var(--size-status-square);
+ height: var(--size-status-square);
+}
+
+.pagination__step:hover {
+ border-color: var(--color-content-on-dark);
+}
+
 .pagination__step:active {
- color: var(--color-content-on-dark);
- border-color: var(--color-content-on-dark-subtle);
+ border-color: var(--color-content-on-dark-muted);
 }
 
 .pagination__step:focus-visible {
