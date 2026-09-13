@@ -71,6 +71,9 @@
  /* COLOR - INTERACTIVE */
  --color-accent: #e8e4da;
  --color-accent-content: #141414;
+ /* The floating scroll jump at rest: the accent at 45%, so the page shows
+    through while the dark glyph on it stays above 3:1 on the app ground. */
+ --color-scroll-jump-surface: color-mix(in srgb, var(--color-accent) 45%, transparent);
  --color-interactive-hover: #00ffff;
  --color-border-strong: #141414;
  --color-border-inverse: #ffffff;

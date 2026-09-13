@@ -8,7 +8,12 @@
    container for the same reason. */
 .scrollJump {
  position: fixed;
- right: var(--space-4);
+ /* Anchored to the app column's right edge, not the viewport's: past 40rem the
+    column centres and a viewport offset leaves the button outside the app. */
+ right: max(
+  var(--space-4),
+  calc(50% - var(--layout-width-max) / 2 + var(--space-4))
+ );
  bottom: var(--space-4);
  z-index: var(--z-dropdown);
  display: flex;
@@ -19,7 +24,9 @@
  padding: 0;
  border: none;
  border-radius: var(--radius-full);
- background-color: var(--color-accent);
+ /* Translucent at rest so the content under it stays readable; hover and
+    active restore a solid ground. */
+ background-color: var(--color-scroll-jump-surface);
  color: var(--color-accent-content);
  box-shadow: var(--shadow-md);
  cursor: pointer;
