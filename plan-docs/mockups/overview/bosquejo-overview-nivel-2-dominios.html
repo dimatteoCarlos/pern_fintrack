@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview Nivel 2 · cinco dominios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&family=Outfit:wght@400;500;600;700&display=swap">
+<style>
+ *, *::before, *::after { box-sizing: border-box; }
+ img, svg { max-width: 100%; }
+
+ /* Paleta del documento: la misma de bosquejo-overview-nivel-2.html, para que la
+    serie se lea como una. Viste el papel que rodea a las pantallas, no la app. */
+ :root {
+  --ground: #10161B;
+  --ground-deep: #0A0F13;
+  --rule: #2C3B45;
+  --rule-soft: #1D2830;
+  --paper-ink: #A9BDC7;
+  --paper-mute: #6E838E;
+  --bright: #E4EEF3;
+  --nat-position: #7FA6B8;
+  --nat-flow: #C98A2E;
+  --nat-trend: #6FA98C;
+  --alarm: #C4553C;
+
+  --font-display: 'Chivo', system-ui, -apple-system, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, monospace;
+  --font-prose: 'Newsreader', Georgia, serif;
+
+  --s1: 0.375rem;
+  --s2: 0.75rem;
+  --s3: 1.25rem;
+  --s4: 2rem;
+  --s5: 3.25rem;
+  --s6: 5rem;
+ }
+
+ /* Tokens reales de frontend/src/styles/tokens.css, copiados con su nombre y su
+    valor del 2026-09-12. Todo lo que está dentro de un teléfono consume sólo
+    éstos y los cuatro de la brecha de abajo. */
+ :root {
+  --color-surface-app: #0d0f12;
+  --color-surface-raised: #161a22;
+  --color-surface-inverse: #ffffff;
+  --color-surface-panel: #e8e4da;
+  --color-surface-loading: #2f3542;
+  --color-surface-loading-on-panel: #c8c1b0;
+  --color-content-primary: #141414;
+  --color-content-secondary: #5b5b5b;
+  --color-content-on-dark: #ffffff;
+  --color-content-on-dark-muted: #e8e4da;
+  --color-content-on-dark-subtle: #bdb1b1;
+  --color-accent: #e8e4da;
+  --color-border-strong: #141414;
+  --color-border-inverse: #ffffff;
+  --color-border-subtle: rgba(232, 228, 218, 0.4);
+
+  --font-family-sans: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-size-2xs: 0.625rem;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --letter-spacing-wide: 0.5px;
+  --line-height-figure: 1.1;
+  --line-height-body: 1.4;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  --radius-xs: 0.25rem;
+  --radius-md: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+  --border-width-thin: 1px;
+  --border-width-thick: 2px;
+  --size-status-square: 0.75rem;
+  --motion-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --layout-width-max: 40rem;
+  --layout-content-width: 88%;
+ }
+
+ /* BRECHA. Cuatro colores que el panel crema necesita y ningún token cubre. No
+    son nombres propuestos para la app: el prefijo dice que falta el token. */
+ :root {
+  --brecha-linea-en-panel: rgba(20, 20, 20, 0.12);
+  --brecha-hover-en-panel: rgba(20, 20, 20, 0.06);
+  --brecha-activo-en-panel: rgba(20, 20, 20, 0.12);
+  --brecha-pista-avance-en-panel: #d3ccbc;
+ }
+
+ body {
+  margin: 0;
+  background: var(--ground);
+  background-image:
+   linear-gradient(var(--rule-soft) 1px, transparent 1px),
+   linear-gradient(90deg, var(--rule-soft) 1px, transparent 1px);
+  background-size: 44px 44px;
+  color: var(--paper-ink);
+  font-family: var(--font-prose);
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+ }
+
+ .wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--s5) var(--s3) var(--s6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+ }
+
+ /* documento */
+
+ .masthead { display: flex; flex-direction: column; gap: var(--s2); border-bottom: 1px solid var(--rule); padding-bottom: var(--s3); }
+ .masthead__eyebrow { font-family: var(--font-code); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--paper-mute); }
+ .masthead__title { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 6vw, 3.1rem); line-height: 1.05; letter-spacing: -0.02em; color: var(--bright); margin: 0; text-wrap: balance; }
+ .masthead__lede { margin: 0; font-size: 1.08rem; max-width: 64ch; }
+ .masthead__note { margin: 0; font-size: 0.94rem; color: var(--paper-mute); max-width: 76ch; }
+ .masthead__note b { color: var(--paper-ink); }
+
+ .block { display: flex; flex-direction: column; gap: var(--s3); }
+ .block__head { display: flex; flex-direction: column; gap: var(--s1); border-left: 2px solid var(--rule); padding-left: var(--s2); }
+ .block__kicker { font-family: var(--font-code); font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--paper-mute); }
+ .block__name { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.15rem, 3.4vw, 1.55rem); color: var(--bright); margin: 0; letter-spacing: -0.01em; }
+ .block__prose { margin: 0; max-width: 76ch; }
+ .block__prose b, .verdict b, .opt li b, .gaps b { color: var(--bright); }
+ .block__prose code, .masthead__note code, td code, .verdict code, .opt code, .gaps code {
+  font-family: var(--font-code); font-size: 0.86em; color: var(--nat-position);
+ }
+
+ .table-scroll { overflow-x: auto; }
+ table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 0.9rem; }
+ th, td { text-align: left; padding: var(--s2); border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+ th { font-family: var(--font-code); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--paper-mute); border-bottom: 1px solid var(--rule); white-space: nowrap; }
+ tbody tr:last-child td { border-bottom: none; }
+ .cell--domain { font-family: var(--font-display); font-weight: 600; color: var(--bright); white-space: nowrap; }
+ .cell--none { color: var(--paper-mute); font-style: italic; }
+ .cell--gap { color: var(--alarm); }
+
+ .verdict { border: 1px solid var(--rule); border-left: 3px solid var(--nat-flow); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s2); background: var(--ground-deep); }
+ .verdict__label { font-family: var(--font-code); font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--nat-flow); }
+ .verdict p { margin: 0; max-width: 76ch; }
+
+ .weigh { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--s3); }
+ .opt { border: 1px solid var(--rule); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
+ .opt--won { border-color: var(--nat-trend); }
+ .opt__tag { font-family: var(--font-code); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--paper-mute); }
+ .opt--won .opt__tag { color: var(--nat-trend); }
+ .opt__name { font-family: var(--font-display); font-weight: 600; font-size: 1rem; color: var(--bright); margin: 0; }
+ .opt ul { margin: 0; padding-left: var(--s3); font-size: 0.9rem; }
+ .opt li { margin-bottom: var(--s1); }
+
+ .gaps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+ .gaps li { border-left: 2px solid var(--nat-flow); padding-left: var(--s2); font-size: 0.94rem; max-width: 80ch; }
+ .gaps--found li { border-left-color: var(--alarm); }
+
+ /* marcos: el teléfono de 360 y la ventana de 768 */
+
+ .phones { display: flex; flex-wrap: wrap; gap: var(--s4); align-items: flex-start; }
+ .phone { width: 360px; max-width: 100%; flex: none; border: 1px solid var(--rule); background: var(--ground-deep); }
+ .frame { width: 768px; max-width: 100%; border: 1px solid var(--rule); background: var(--ground-deep); overflow-x: auto; }
+ .frame__inner { min-width: 768px; }
+ .caption { font-family: var(--font-code); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--paper-mute); padding: var(--s2); border-bottom: 1px solid var(--rule-soft); }
+
+ /* Anotación del bosquejo, no interfaz: borde punteado y tipografía de código
+    para que nadie la lea como parte de la pantalla. */
+ .anno { align-self: flex-start; font-family: var(--font-code); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 1px 6px; border: 1px dashed var(--rule); color: var(--nat-trend); }
+ .anno--full { color: var(--nat-position); }
+ .anno--state { color: var(--nat-flow); }
+ .hint { margin: 0; font-family: var(--font-code); font-size: 0.7rem; line-height: 1.5; color: var(--paper-mute); }
+
+ /* LA APP. Desde aquí sólo tokens reales o brechas declaradas. */
+
+ .app {
+  background: var(--color-surface-app);
+  color: var(--color-content-on-dark);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
+  padding-bottom: var(--space-8);
+ }
+ .app button, .app select { font-family: inherit; }
+
+ .hdr { position: relative; background: var(--color-surface-inverse); color: var(--color-content-primary); padding: var(--space-3) var(--space-5) var(--space-6); }
+ .hdr__title { margin: 0; font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); }
+ .hdr__pill { position: absolute; left: 50%; top: 100%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: var(--space-3); padding: var(--space-1) var(--space-4); border: var(--border-width-thin) solid var(--color-border-subtle); border-radius: var(--radius-full); background: var(--color-surface-app); color: var(--color-content-on-dark); font-size: var(--font-size-xs); white-space: nowrap; }
+ .hdr__arrow { color: var(--color-content-on-dark-subtle); font-size: inherit; }
+
+ .col { max-width: var(--layout-width-max); margin: 0 auto; }
+ .heroSlot { width: var(--layout-content-width); margin: var(--space-8) auto 0; padding: var(--space-3); border: var(--border-width-thin) dashed var(--color-border-subtle); border-radius: var(--radius-xl); color: var(--color-content-on-dark-subtle); font-size: var(--font-size-xs); text-align: center; }
+
+ .dom { width: var(--layout-content-width); margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-4); padding-block: var(--space-4); }
+
+ .ct { display: flex; flex-direction: column; gap: var(--space-1); }
+ .ct__row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
+ .ct__label { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
+ .ct__amount { font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; }
+ .ct__sub { display: flex; justify-content: space-between; gap: var(--space-2); font-size: var(--font-size-xs); color: var(--color-content-on-dark-subtle); }
+ .ct__sub span { font-size: inherit; }
+ .back { align-self: flex-start; font-size: var(--font-size-sm); color: var(--color-content-on-dark-subtle); text-decoration: underline; }
+
+ /* la cabecera de CollapsibleBlock, abierta */
+ .fold { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); padding: var(--space-2) 0; border-top: var(--border-width-thin) solid var(--color-border-subtle); }
+ .fold__title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); }
+ .fold__chev { width: var(--size-status-square); height: var(--size-status-square); border-right: var(--border-width-thick) solid var(--color-content-on-dark-muted); border-bottom: var(--border-width-thick) solid var(--color-content-on-dark-muted); transform: translateY(25%) rotate(-135deg); }
+
+ /* TrendChart, tal como la dibuja overview-styles.css:534-619 */
+ .trend { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3) var(--space-4); border: var(--border-width-thin) solid var(--color-border-subtle); border-radius: var(--radius-xl); color: var(--color-accent); }
+ .trend__label { display: flex; justify-content: space-between; gap: var(--space-2); font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); color: var(--color-content-on-dark-muted); }
+ .trend__label span { font-size: inherit; }
+ .trend__last { font-weight: var(--font-weight-regular); color: var(--color-content-on-dark-subtle); font-variant-numeric: tabular-nums; }
+ .trend__svg { display: block; width: 100%; height: 4.5rem; }
+ .trend__axis { display: flex; justify-content: space-between; font-size: var(--font-size-2xs); color: var(--color-content-on-dark-subtle); }
+ .trend__axis span { font-size: inherit; }
+ .trend__axis--panel { color: var(--color-content-secondary); }
+
+ /* EL PANEL CREMA de una sección de análisis */
+ .pnl { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-xl); background: var(--color-surface-panel); color: var(--color-content-primary); }
+ .pnl__head { display: flex; flex-direction: column; gap: var(--space-1); }
+ .pnl__title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); line-height: var(--line-height-figure); }
+ .pnl__lede { margin: 0; font-size: var(--font-size-xs); color: var(--color-content-secondary); }
+ .pnl__figure { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); }
+ .pnl__big { font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; }
+ .pnl__unit { font-size: var(--font-size-xs); color: var(--color-content-secondary); }
+ .pnl__foot { margin: 0; font-size: var(--font-size-xs); font-style: italic; color: var(--color-content-secondary); }
+
+ /* La fila de bosquejo-overview-nivel-3.html, traducida a tokens. */
+ .rows { list-style: none; margin: 0; padding: 0; }
+ .rows li { border-bottom: var(--border-width-thin) solid var(--brecha-linea-en-panel); }
+ .rows li:last-child { border-bottom: none; }
+
+ .row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast);
+ }
+ .row__label { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+ .row__swatch { flex: none; width: var(--space-2); height: var(--space-2); border-radius: var(--border-width-thin); background: var(--color-content-secondary); }
+ .row__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: inherit; text-decoration: underline transparent var(--border-width-thin); text-underline-offset: 3px; transition: text-decoration-color var(--motion-fast); }
+ .row__amount { font-size: inherit; font-weight: var(--font-weight-semibold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+ .row__share, .row__word { font-size: var(--font-size-xs); color: var(--color-content-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+ .row__share { min-width: 3.5em; }
+ .row__word { min-width: 4.6em; }
+ .row__go { width: var(--space-4); height: var(--space-4); flex: none; color: var(--color-content-secondary); transition: color var(--motion-fast), transform var(--motion-fast); }
+ .row__nogo { width: var(--space-4); text-align: center; font-size: var(--font-size-xs); color: var(--color-content-secondary); }
+
+ .row:hover, .row.is-hover { background: var(--brecha-hover-en-panel); }
+ .row:hover .row__name, .row.is-hover .row__name { text-decoration-color: currentColor; }
+ .row:hover .row__go, .row.is-hover .row__go { color: var(--color-content-primary); transform: translateX(var(--border-width-thick)); }
+ .row:focus-visible, .row.is-focus { outline: var(--border-width-thick) solid var(--color-border-strong); outline-offset: var(--border-width-thick); }
+ .row:active { background: var(--brecha-activo-en-panel); }
+ .row:disabled { opacity: 0.5; pointer-events: none; }
+
+ /* fila válida sin destino: no es deshabilitada */
+ .row--static { cursor: default; }
+ .row--static:hover { background: none; }
+ .row--static:hover .row__name { text-decoration-color: transparent; }
+
+ /* pocket: barra de avance y rótulo, sin columna de participación */
+ .row__progress { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-1); white-space: nowrap; }
+ .row__track { width: 2.6em; height: var(--space-1); border-radius: var(--radius-full); background: var(--brecha-pista-avance-en-panel); overflow: hidden; }
+ .row__fill { display: block; height: 100%; background: var(--color-content-secondary); }
+ .row__progressLabel { font-size: var(--font-size-xs); color: var(--color-content-secondary); font-variant-numeric: tabular-nums; }
+
+ /* A 360 la barra y su rótulo en la misma línea dejaban cinco letras del nombre,
+    así que bajan a una segunda línea de la misma fila y el botón sigue siendo uno. */
+ .row--pocket { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "label amount go" "progress progress go"; row-gap: var(--space-1); }
+ .row--pocket .row__label { grid-area: label; }
+ .row--pocket .row__amount { grid-area: amount; }
+ .row--pocket .row__progress { grid-area: progress; justify-content: flex-start; }
+ .row--pocket .row__track { flex: 1 1 auto; }
+ .row--pocket .row__go { grid-area: go; }
+
+ /* resultado: barra divergente desde cero, un solo color; el lado es el signo */
+ .row--pnl { grid-template-columns: minmax(0, 1fr) 5.5em auto auto; }
+ .diverge { display: grid; grid-template-columns: 1fr 1fr; height: var(--space-2); }
+ .diverge__half { display: flex; }
+ .diverge__half--neg { justify-content: flex-end; border-right: var(--border-width-thin) solid var(--color-content-primary); }
+ .diverge__fill { display: block; height: 100%; background: var(--color-content-secondary); }
+
+ /* el enunciado de tres o cuatro términos */
+ /* Sin separación entre columnas: la regla del total cruza las dos celdas sin corte. */
+ .stmt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) 0; margin: 0; font-variant-numeric: tabular-nums; }
+ .stmt dt { color: var(--color-content-secondary); font-size: var(--font-size-sm); }
+ .stmt dd { margin: 0; padding-left: var(--space-3); text-align: right; font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+ /* La regla va en el total y no en un elemento suelto: un dl sólo admite dt y dd. */
+ .stmt .stmt__total { padding-top: var(--space-1); border-top: var(--border-width-thin) solid var(--color-border-strong); }
+ .stmt dt.stmt__total { color: var(--color-content-primary); font-weight: var(--font-weight-semibold); }
+ .stmt dd.stmt__total { font-size: var(--font-size-base); font-weight: var(--font-weight-bold); }
+ .verdictLine { margin: 0; font-size: var(--font-size-xs); color: var(--color-content-primary); }
+ .verdictLine span { font-size: inherit; color: var(--color-content-secondary); }
+
+ /* historial de aportes: la fila de ListContent, abre el modal, sin chevron */
+ .hist { list-style: none; margin: 0; padding: 0; }
+ .hist li { border-bottom: var(--border-width-thin) solid var(--brecha-linea-en-panel); }
+ .hist li:last-child { border-bottom: none; }
+ .histRow { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-2); padding: var(--space-2) var(--space-1); border: 0; border-radius: var(--radius-xs); background: none; color: inherit; font-size: var(--font-size-sm); text-align: left; cursor: pointer; transition: background-color var(--motion-fast); }
+ .histRow span, .histRow time { font-size: inherit; }
+ .histRow__amount { font-weight: var(--font-weight-semibold); font-variant-numeric: tabular-nums; }
+ .histRow .histRow__date { grid-column: 1 / -1; font-size: var(--font-size-xs); color: var(--color-content-secondary); font-variant-numeric: tabular-nums; }
+ .histRow:hover { background: var(--brecha-hover-en-panel); }
+ .histRow:focus-visible { outline: var(--border-width-thick) solid var(--color-border-strong); outline-offset: var(--border-width-thick); }
+ .histRow:active { background: var(--brecha-activo-en-panel); }
+ .histRow:disabled { opacity: 0.5; pointer-events: none; }
+ .pnl__count { font-size: var(--font-size-xs); color: var(--color-content-secondary); font-variant-numeric: tabular-nums; }
+
+ /* las dos piernas de deuda: dos gráficos con la misma escala y la misma tinta */
+ .legs { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
+ .legs--wide { grid-template-columns: repeat(2, 1fr); }
+ .leg { display: flex; flex-direction: column; gap: var(--space-1); color: var(--color-content-primary); }
+ .leg__head { display: flex; justify-content: space-between; gap: var(--space-2); font-size: var(--font-size-xs); }
+ .leg__head span { font-size: inherit; }
+ .leg__value { font-weight: var(--font-weight-semibold); font-variant-numeric: tabular-nums; }
+ .leg__svg { display: block; width: 100%; height: 3.5rem; }
+
+ /* estados de una sección full, dentro del panel */
+ .sk { display: block; height: var(--font-size-sm); border-radius: var(--radius-xs); background: var(--color-surface-loading-on-panel); }
+ .sk--row { height: calc(var(--space-2) * 2 + var(--font-size-sm) * var(--line-height-body)); margin-bottom: var(--border-width-thin); }
+ .sk--figure { height: var(--font-size-lg); width: 40%; }
+ .sk--chart { height: 3.5rem; }
+ .sk--w30 { width: 30%; }
+ .sk--w60 { width: 60%; }
+
+ .pstate { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+ .pstate__text { margin: 0; font-size: var(--font-size-sm); }
+ .retry { padding: var(--space-2) var(--space-6); border: var(--border-width-thin) solid var(--color-border-strong); border-radius: var(--radius-full); background: transparent; color: var(--color-content-primary); font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); letter-spacing: var(--letter-spacing-wide); cursor: pointer; transition: background-color var(--motion-fast), color var(--motion-fast); }
+ .retry:hover { background: var(--color-content-primary); color: var(--color-surface-panel); }
+ .retry:focus-visible { outline: var(--border-width-thick) solid var(--color-border-strong); outline-offset: var(--border-width-thick); }
+ .retry:active { background: var(--color-content-secondary); color: var(--color-surface-panel); }
+ .retry:disabled { opacity: 0.5; pointer-events: none; }
+ .pempty { margin: 0; font-size: var(--font-size-sm); color: var(--color-content-secondary); }
+
+ /* Movements: LastMovements con Pagination, sin cambios */
+ .mov { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-xl); background: var(--color-surface-raised); }
+ .mov__title { margin: 0; font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); }
+ .mov__sub { font-size: var(--font-size-sm); color: var(--color-content-on-dark-muted); }
+ .pag { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; }
+ .pag__count { margin: 0; font-size: var(--font-size-xs); color: var(--color-content-on-dark-muted); font-variant-numeric: tabular-nums; }
+ .pag__controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+ .pag__size { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-xs); color: var(--color-content-on-dark-subtle); }
+ .pag__select { padding: var(--space-1) var(--space-2); border: var(--border-width-thin) solid var(--color-border-subtle); border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-content-on-dark); font-size: var(--font-size-xs); }
+ .pag__pager { display: flex; align-items: center; gap: var(--space-2); }
+ .pag__page { font-size: var(--font-size-xs); color: var(--color-content-on-dark-muted); white-space: nowrap; }
+ .pag__step { aspect-ratio: 1; padding: var(--space-1); border: var(--border-width-thin) solid var(--color-border-subtle); border-radius: var(--radius-md); background: transparent; color: var(--color-content-on-dark-subtle); font-size: var(--font-size-base); line-height: 1; }
+ .pag__step:disabled { opacity: 0.5; }
+ .movRow { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-2); padding: var(--space-2) 0; border: 0; border-bottom: var(--border-width-thin) solid var(--color-border-subtle); background: none; color: inherit; font-size: var(--font-size-sm); text-align: left; }
+ .movRow span, .movRow time { font-size: inherit; }
+ .movRow__amount { font-weight: var(--font-weight-semibold); font-variant-numeric: tabular-nums; }
+ .movRow__note { color: var(--color-content-on-dark-subtle); font-size: var(--font-size-xs); }
+ .movRow time { font-size: var(--font-size-xs); color: var(--color-content-on-dark-subtle); }
+
+ @media (prefers-reduced-motion: reduce) {
+  .row, .row__name, .row__go, .histRow, .retry { transition: none; }
+ }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+ <header class="masthead">
+  <div class="masthead__eyebrow">Bosquejo · Overview · Nivel 2 · cinco dominios · 2026-09-12</div>
+  <h1 class="masthead__title">Las secciones de análisis de ingreso, inversión, deuda, bolsillo y resultado</h1>
+  <p class="masthead__lede">Continúa los bloques 3 a 5 de <code>bosquejo-overview-nivel-2.html</code>. El orden no cambia: tarjeta, serie, análisis y la lista de movimientos al final, con la <code>Pagination</code> que la pantalla ya tiene.</p>
+  <p class="masthead__note">Cada campo dibujado existe en <code>overviewTypes.ts:517-703</code>; ninguno se inventó. Las filas de nivel 3 son las de <code>bosquejo-overview-nivel-3.html</code>, con sus cuatro estados. <b>Dentro de los teléfonos los colores son tokens reales</b> copiados de <code>tokens.css</code> con su nombre; cuatro valores sin token llevan el prefijo <code>--brecha-</code> y están en el bloque 7. Los rótulos de pantalla van en inglés, como la app; el texto de las pantallas vacías y de error es provisional.</p>
+  <p class="masthead__note"><b>Las etiquetas punteadas en mayúsculas no son interfaz.</b> Dicen con qué profundidad llega cada sección: <code>derived</code> pinta con la primera respuesta, <code>full</code> llega cuando la sección entra en pantalla.</p>
+ </header>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 1 · Lo común</div>
+   <h2 class="block__name">Qué dibuja cada dominio y con qué profundidad</h2>
+  </div>
+
+  <div class="table-scroll">
+   <table>
+    <thead>
+     <tr><th>Dominio</th><th>Secciones dibujadas</th><th>Profundidad</th><th>Filas de nivel 3</th></tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td class="cell--domain">Ingreso</td>
+      <td>serie de trece meses (<code>series</code>) · por fuente, con la participación de la mayor (<code>bySource</code>, <code>concentration</code>)</td>
+      <td>serie <code>derived</code> · fuente y concentración <code>full</code></td>
+      <td>cada fuente abre <code>/fintrack/overview/account/:accountId</code>; la fuente con <code>accountId</code> nulo es fila estática</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Inversión</td>
+      <td>conciliación itemizada (<code>reconciliation</code>) · saldo por cuenta (<code>balanceByAccount</code>) · historial de aportes (<code>contributionHistory</code>); sin serie</td>
+      <td>conciliación <code>derived</code> · las otras dos <code>full</code></td>
+      <td>saldo por cuenta abre <code>/fintrack/overview/account/:accountId</code>; el aporte abre el modal de la transacción (recomendación, bloque 3)</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Deuda</td>
+      <td>por contraparte (<code>byCounterparty</code>) · las dos piernas mes a mes, nunca netas (<code>legsOverTime</code>); sin serie</td>
+      <td>ambas <code>full</code></td>
+      <td>cada contraparte abre <code>/fintrack/debts/debtor/:debtorId</code> con su <code>accountId</code>, también la saldada</td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Bolsillo</td>
+      <td>serie de lo comprometido (<code>series</code>) · avance por bolsillo (<code>progressByPocket</code>) · comprometido contra libre (<code>committedAgainstFree</code>)</td>
+      <td>serie y avance <code>derived</code> · comprometido contra libre <code>full</code></td>
+      <td>cada bolsillo abre <code>/fintrack/pocket/pockets/:pocketId</code></td>
+     </tr>
+     <tr>
+      <td class="cell--domain">Resultado</td>
+      <td>serie con signo (<code>series</code>) · por tipo de cuenta (<code>byAccountType</code>)</td>
+      <td>ambas <code>derived</code></td>
+      <td class="cell--none">ninguna: dos filas estáticas</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+
+  <div class="verdict">
+   <div class="verdict__label">Tres reglas que las cinco pantallas comparten</div>
+   <p><b>Una sola petición <code>full</code> por pantalla.</b> Se dispara cuando la primera sección <code>full</code> entra en pantalla y completa todas a la vez. Por eso los esqueletos aparecen juntos, y un error aparece en cada sección <code>full</code> con un reintento que repite esa misma petición.</p>
+   <p><b>Pendiente no es vacío.</b> Una clave ausente con <code>analysis.level === 'derived'</code> significa que todavía no se pidió y pinta esqueleto; ausente con <code>level === 'full'</code> es la respuesta y pinta vacío. <code>makeIncomeAnalysis.js:36</code> omite <code>bySource</code> en los dos casos, así que el nivel es lo único que los distingue.</p>
+   <p><b>El esqueleto tiene la altura final.</b> Una sección de forma fija (conciliación, comprometido contra libre, las piernas) reserva exactamente sus líneas. Una lista reserva tantas filas como la tarjeta ya publica (<code>accountCount</code> en inversión, <code>payableCount + receivableCount</code> en deuda) y tres cuando la tarjeta no publica un conteo, como en ingreso.</p>
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 2 · Ingreso</div>
+   <h2 class="block__name">De dónde vino el ingreso del mes</h2>
+  </div>
+  <p class="block__prose">La serie reemplaza a la tendencia de seis meses que la pantalla dibuja hoy: los dos salen de la misma consulta mensual y, en la misma pantalla, dirían dos veces lo mismo con dos longitudes. La participación de la fuente mayor (<code>concentration</code>) encabeza su sección, porque responde qué tan expuesto queda usted si esa fuente falta.</p>
+
+  <div class="phones">
+
+   <div class="phone">
+    <div class="caption">360 · con datos</div>
+    <div class="app">
+     <div class="hdr"><h3 class="hdr__title">Overview</h3><div class="hdr__pill"><span class="hdr__arrow">‹</span><span>August 2026</span><span class="hdr__arrow">›</span></div></div>
+     <div class="heroSlot">Hero de nivel 1 · lo dibuja OverviewLayout, sin cambios</div>
+     <div class="dom">
+      <div class="ct">
+       <div class="ct__row"><span class="ct__label">Income</span><span class="ct__amount">$4,790.00</span></div>
+       <div class="ct__sub"><span>August 2026</span><span>this month</span></div>
+      </div>
+      <a class="back" href="#">Back to the overview</a>
+
+      <span class="anno">derived · series</span>
+      <div class="fold"><h4 class="fold__title">Trend</h4><span class="fold__chev" aria-hidden="true"></span></div>
+      <div class="trend">
+       <div class="trend__label"><span>Income, 13 months</span><span class="trend__last">$4,790.00</span></div>
+       <svg class="trend__svg" viewBox="0 0 320 64" preserveAspectRatio="none" role="img" aria-labelledby="income-trend-title">
+        <title id="income-trend-title">Monthly income from August 2025 to August 2026</title>
+        <polyline points="4,40 30,38 56,42 82,36 108,39 134,37 160,41 186,35 212,38 238,34 264,37 290,33 316,24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>
+       </svg>
+       <div class="trend__axis"><span>Aug 25</span><span>Feb 26</span><span>Aug 26</span></div>
+      </div>
+
+      <span class="anno anno--full">full · bySource · concentration</span>
+      <section class="pnl" aria-labelledby="inc-src">
+       <div class="pnl__head">
+        <h4 class="pnl__title" id="inc-src">Where the income came from</h4>
+        <div class="pnl__figure"><span class="pnl__big">66.8%</span><span class="pnl__unit">from the largest source</span></div>
+       </div>
+       <ul class="rows">
+        <li><button type="button" class="row"><span class="row__label"><span class="row__swatch"></span><span class="row__name">Salary account</span></span><span class="row__amount">$3,200.00</span><span class="row__share">66.8%</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><button type="button" class="row is-hover"><span class="row__label"><span class="row__swatch"></span><span class="row__name">Consulting</span></span><span class="row__amount">$850.00</span><span class="row__share">17.7%</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><button type="button" class="row is-focus"><span class="row__label"><span class="row__swatch"></span><span class="row__name">Rent received</span></span><span class="row__amount">$400.00</span><span class="row__share">8.4%</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><div class="row row--static"><span class="row__label"><span class="row__swatch"></span><span class="row__name">Unattributed</span></span><span class="row__amount">$340.00</span><span class="row__share">7.1%</span><span class="row__nogo" aria-hidden="true">—</span></div></li>
+       </ul>
+       <p class="pnl__foot">Some income in this period names no source account and is reported as unattributed.</p>
+      </section>
+      <p class="hint">Filas 2 y 3 dibujadas al apuntar y con foco. La cuarta es la del accountId nulo: el servidor manda label vacío y el aviso de meta.notices, que va al pie de la sección.</p>
+
+      <article class="mov">
+       <h4 class="mov__title">Movements</h4>
+       <div class="mov__sub">7 in August 2026</div>
+       <div class="pag">
+        <p class="pag__count">1-5 of 7 movements</p>
+        <div class="pag__controls">
+         <label class="pag__size">Rows <select class="pag__select" aria-label="movements per page"><option>5</option></select></label>
+         <div class="pag__pager"><button type="button" class="pag__step" disabled aria-label="Previous page">‹</button><span class="pag__page">1 / 2</span><button type="button" class="pag__step" aria-label="Next page">›</button></div>
+        </div>
+       </div>
+       <div>
+        <button type="button" class="movRow"><span>Salary account</span><span class="movRow__amount">$3,200.00</span><span class="movRow__note">August salary</span><time>25/08/2026</time></button>
+        <button type="button" class="movRow"><span>Consulting</span><span class="movRow__amount">$850.00</span><span class="movRow__note">—</span><time>18/08/2026</time></button>
+        <button type="button" class="movRow"><span>Rent received</span><span class="movRow__amount">$400.00</span><span class="movRow__note">—</span><time>05/08/2026</time></button>
+       </div>
+      </article>
+     </div>
+    </div>
+   </div>
+
+   <div class="phone">
+    <div class="caption">360 · la sección full en sus tres estados</div>
+    <div class="app">
+     <div class="dom">
+      <span class="anno anno--state">cargando · primera pintura con derived</span>
+      <section class="pnl" aria-busy="true" aria-labelledby="inc-src-l">
+       <div class="pnl__head">
+        <h4 class="pnl__title" id="inc-src-l">Where the income came from</h4>
+        <span class="sk sk--figure" aria-hidden="true"></span>
+       </div>
+       <div aria-hidden="true"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+      </section>
+      <p class="hint">El título se dibuja en los tres estados, así la sección no desaparece y vuelve. Tres filas porque la tarjeta de ingreso no publica cuántas fuentes hay.</p>
+
+      <span class="anno anno--state">error · la petición full falló</span>
+      <section class="pnl" aria-labelledby="inc-src-e">
+       <div class="pnl__head"><h4 class="pnl__title" id="inc-src-e">Where the income came from</h4></div>
+       <div class="pstate" role="alert">
+        <p class="pstate__text">Income by source could not be loaded.</p>
+        <button type="button" class="retry">Try again</button>
+       </div>
+      </section>
+      <p class="hint">La misma frase y el mismo botón que PanelState, en variante para panel crema. La serie de arriba ya llegó con derived y sigue en pantalla.</p>
+
+      <span class="anno anno--state">vacío · level full y bySource ausente</span>
+      <section class="pnl" aria-labelledby="inc-src-v">
+       <div class="pnl__head">
+        <h4 class="pnl__title" id="inc-src-v">Where the income came from</h4>
+        <div class="pnl__figure"><span class="pnl__big">—</span><span class="pnl__unit">from the largest source</span></div>
+       </div>
+       <p class="pempty">No income was received in this period, so it is not broken down by source.</p>
+      </section>
+      <p class="hint">El texto es el aviso que el servidor ya publica. La concentración se dibuja como raya y no como 0 %: la participación de nada no es una participación pequeña.</p>
+     </div>
+    </div>
+   </div>
+
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 3 · Inversión</div>
+   <h2 class="block__name">Si los libros cuadran, dónde está el saldo y cuándo entró el dinero</h2>
+  </div>
+  <p class="block__prose">Sin serie: una acumulación sólo sube. La conciliación llega con la primera respuesta y abre la pantalla; las otras dos secciones son <code>full</code>. La diferencia es <b>los tres términos menos el saldo contable</b> (<code>makeInvestmentAnalysis.js:51</code>), así que un valor positivo dice que los términos explican más de lo que el saldo tiene. La pantalla no resta nada: imprime la diferencia servida y su tolerancia.</p>
+
+  <div class="phones">
+
+   <div class="phone">
+    <div class="caption">360 · con datos</div>
+    <div class="app">
+     <div class="hdr"><h3 class="hdr__title">Overview</h3><div class="hdr__pill"><span class="hdr__arrow">‹</span><span>August 2026</span><span class="hdr__arrow">›</span></div></div>
+     <div class="heroSlot">Hero de nivel 1 · sin cambios</div>
+     <div class="dom">
+      <div class="ct">
+       <div class="ct__row"><span class="ct__label">Investment</span><span class="ct__amount">$12,825.00</span></div>
+       <div class="ct__sub"><span>August 2026</span><span>at month end</span></div>
+      </div>
+      <a class="back" href="#">Back to the overview</a>
+
+      <span class="anno">derived · reconciliation</span>
+      <section class="pnl" aria-labelledby="inv-rec">
+       <div class="pnl__head"><h4 class="pnl__title" id="inv-rec">Do the books add up?</h4></div>
+       <dl class="stmt">
+        <dt>Capital contributed</dt><dd>$12,000.00</dd>
+        <dt>Realised P&amp;L</dt><dd>+$840.00</dd>
+        <dt>Closure adjustment</dt><dd>−$15.00</dd>        <dt class="stmt__total">Ledger balance</dt><dd class="stmt__total">$12,825.00</dd>
+        <dt>Difference</dt><dd>$0.00</dd>
+       </dl>
+       <p class="verdictLine">The terms match the ledger balance. <span>Tolerance $0.01</span></p>
+      </section>
+
+      <span class="anno anno--full">full · balanceByAccount</span>
+      <section class="pnl" aria-labelledby="inv-bal">
+       <div class="pnl__head"><h4 class="pnl__title" id="inv-bal">Where the balance sits</h4></div>
+       <ul class="rows">
+        <li><button type="button" class="row"><span class="row__label"><span class="row__swatch"></span><span class="row__name">Brokerage XP</span></span><span class="row__amount">$7,695.00</span><span class="row__share">60.0%</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><button type="button" class="row"><span class="row__label"><span class="row__swatch"></span><span class="row__name">Index fund</span></span><span class="row__amount">$3,847.50</span><span class="row__share">30.0%</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><button type="button" class="row"><span class="row__label"><span class="row__swatch"></span><span class="row__name">Crypto wallet</span></span><span class="row__amount">$1,282.50</span><span class="row__share">10.0%</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+       </ul>
+      </section>
+
+      <span class="anno anno--full">full · contributionHistory</span>
+      <section class="pnl" aria-labelledby="inv-hist">
+       <div class="pnl__head">
+        <h4 class="pnl__title" id="inv-hist">When money went in</h4>
+        <span class="pnl__count">Latest 5 of 57 contributions</span>
+       </div>
+       <ul class="hist">
+        <li><button type="button" class="histRow"><span>Brokerage XP</span><span class="histRow__amount">$500.00</span><time class="histRow__date">01/08/2026</time></button></li>
+        <li><button type="button" class="histRow"><span>Index fund</span><span class="histRow__amount">$300.00</span><time class="histRow__date">15/07/2026</time></button></li>
+        <li><button type="button" class="histRow"><span>Brokerage XP</span><span class="histRow__amount">$500.00</span><time class="histRow__date">01/07/2026</time></button></li>
+        <li><button type="button" class="histRow"><span>closed account</span><span class="histRow__amount">$200.00</span><time class="histRow__date">20/06/2026</time></button></li>
+        <li><button type="button" class="histRow"><span>Index fund</span><span class="histRow__amount">$300.00</span><time class="histRow__date">15/06/2026</time></button></li>
+       </ul>
+      </section>
+      <p class="hint">Los aportes no llevan chevron: no navegan, abren el modal de la transacción, igual que Movements. "closed account" es la palabra que toRows ya usa para accountName nulo. El recuento dice cuántos quedan fuera.</p>
+
+      <article class="mov">
+       <h4 class="mov__title">Movements</h4>
+       <div class="mov__sub">4 in August 2026</div>
+       <div class="pag">
+        <p class="pag__count">1-4 of 4 movements</p>
+        <div class="pag__controls">
+         <label class="pag__size">Rows <select class="pag__select" aria-label="movements per page"><option>5</option></select></label>
+         <div class="pag__pager"><button type="button" class="pag__step" disabled aria-label="Previous page">‹</button><span class="pag__page">1 / 1</span><button type="button" class="pag__step" disabled aria-label="Next page">›</button></div>
+        </div>
+       </div>
+       <div>
+        <button type="button" class="movRow"><span>Brokerage XP</span><span class="movRow__amount">$500.00</span><span class="movRow__note">monthly contribution</span><time>01/08/2026</time></button>
+       </div>
+      </article>
+     </div>
+    </div>
+   </div>
+
+   <div class="phone">
+    <div class="caption">360 · diferencia fuera de tolerancia y estados full</div>
+    <div class="app">
+     <div class="dom">
+      <span class="anno">derived · la conciliación no cuadra</span>
+      <section class="pnl" aria-labelledby="inv-rec-off">
+       <div class="pnl__head"><h4 class="pnl__title" id="inv-rec-off">Do the books add up?</h4></div>
+       <dl class="stmt">
+        <dt>Capital contributed</dt><dd>$12,000.00</dd>
+        <dt>Realised P&amp;L</dt><dd>+$840.00</dd>
+        <dt>Closure adjustment</dt><dd>−$15.00</dd>        <dt class="stmt__total">Ledger balance</dt><dd class="stmt__total">$12,821.80</dd>
+        <dt>Difference</dt><dd>+$3.20</dd>
+       </dl>
+       <p class="verdictLine">The terms account for $3.20 more than the ledger balance holds. <span>Tolerance $0.01</span></p>
+      </section>
+      <p class="hint">Sin rojo: la diferencia es una cifra y la frase dice su dirección. El signo servido decide la frase; la pantalla nunca resta los términos.</p>
+
+      <span class="anno anno--state">cargando · 3 filas = card.accountCount</span>
+      <section class="pnl" aria-busy="true" aria-labelledby="inv-bal-l">
+       <div class="pnl__head"><h4 class="pnl__title" id="inv-bal-l">Where the balance sits</h4></div>
+       <div aria-hidden="true"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+      </section>
+
+      <span class="anno anno--state">error</span>
+      <section class="pnl" aria-labelledby="inv-hist-e">
+       <div class="pnl__head"><h4 class="pnl__title" id="inv-hist-e">When money went in</h4></div>
+       <div class="pstate" role="alert">
+        <p class="pstate__text">Contribution history could not be loaded.</p>
+        <button type="button" class="retry">Try again</button>
+       </div>
+      </section>
+
+      <span class="anno anno--state">vacío · totalRows 0</span>
+      <section class="pnl" aria-labelledby="inv-hist-v">
+       <div class="pnl__head"><h4 class="pnl__title" id="inv-hist-v">When money went in</h4></div>
+       <p class="pempty">No contribution has been recorded yet.</p>
+      </section>
+      <p class="hint">Vacío de saldo por cuenta, con el mismo trato: "No investment account holds a balance." Un usuario nuevo, no una falla.</p>
+     </div>
+    </div>
+   </div>
+
+  </div>
+
+  <div class="weigh">
+   <div class="opt opt--won">
+    <div class="opt__tag">Recomendada</div>
+    <h3 class="opt__name">El aporte abre el modal de su transacción</h3>
+    <ul>
+     <li><b>A favor:</b> la identidad de la fila es <code>transactionId</code>; la fila la lleva y el componente la lee, sin buscar nada.</li>
+     <li><b>A favor:</b> reutiliza <code>useTransactionDetail</code> y <code>TransactionDetailModal</code>, que <code>ListContent.tsx:30</code> ya monta. No hace falta ninguna ruta nueva.</li>
+     <li><b>A favor:</b> la cuenta ya se abre desde "Where the balance sits", una sección más arriba; un segundo camino a la misma pantalla no agrega nada.</li>
+     <li><b>A favor:</b> la fila de una cuenta cerrada, con <code>accountName</code> nulo, también abre algo real: la transacción sobrevive al cierre.</li>
+     <li><b>En contra:</b> la fila parece navegable y no lleva chevron. La diferencia con las filas de nivel 3 queda en la ausencia del chevron, y hay que aceptarla.</li>
+    </ul>
+   </div>
+   <div class="opt">
+    <div class="opt__tag">Descartada</div>
+    <h3 class="opt__name">El aporte navega a su cuenta</h3>
+    <ul>
+     <li><b>A favor:</b> las mismas afordancias que el resto de las filas de nivel 3.</li>
+     <li><b>En contra:</b> un aporte de una cuenta cerrada no tiene destino y queda como fila estática, cuando la transacción existe.</li>
+     <li><b>En contra:</b> la fila responde "cuándo entró el dinero" y el destino responde otra cosa: el lector pulsa un aporte y aterriza en una cuenta sin ese aporte resaltado.</li>
+    </ul>
+   </div>
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 4 · Deuda</div>
+   <h2 class="block__name">Con quién está el saldo y si crecieron los dos lados</h2>
+  </div>
+  <p class="block__prose">Sin serie en ninguna profundidad, por decisión: un neto que no se mueve puede esconder que las dos piernas se duplicaron. El ejemplo dibuja exactamente ese caso. El neto queda cerca de −$550 los trece meses mientras lo que le deben pasa de $600 a $1,750 y lo que usted debe pasa de $1,100 a $2,300. <b>Las dos piernas van en dos gráficos con la misma escala y la misma tinta</b>: un color por pierna sería color para identidad, y la palabra sobre cada gráfico ya dice cuál es.</p>
+  <p class="block__prose">La dirección de cada contraparte la llevan <b>el signo y una palabra</b>: "owes you", "you owe", "settled". Las filas se ordenan por magnitud, así que la mayor deuda y el mayor crédito quedan arriba los dos.</p>
+
+  <div class="phones">
+
+   <div class="phone">
+    <div class="caption">360 · con datos</div>
+    <div class="app">
+     <div class="hdr"><h3 class="hdr__title">Overview</h3><div class="hdr__pill"><span class="hdr__arrow">‹</span><span>August 2026</span><span class="hdr__arrow">›</span></div></div>
+     <div class="heroSlot">Hero de nivel 1 · sin cambios</div>
+     <div class="dom">
+      <div class="ct">
+       <div class="ct__row"><span class="ct__label">Debt</span><span class="ct__amount">−$550.00</span></div>
+       <div class="ct__sub"><span>August 2026</span><span>this month</span></div>
+      </div>
+      <a class="back" href="#">Back to the overview</a>
+
+      <span class="anno anno--full">full · byCounterparty</span>
+      <section class="pnl" aria-labelledby="debt-cp">
+       <div class="pnl__head"><h4 class="pnl__title" id="debt-cp">Who the balance is with</h4></div>
+       <ul class="rows">
+        <li><button type="button" class="row"><span class="row__label"><span class="row__name">Bank loan</span></span><span class="row__amount">−$2,300.00</span><span class="row__word">you owe</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><button type="button" class="row"><span class="row__label"><span class="row__name">Ana Pérez</span></span><span class="row__amount">+$1,200.00</span><span class="row__word">owes you</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><button type="button" class="row"><span class="row__label"><span class="row__name">Luis Gómez</span></span><span class="row__amount">+$550.00</span><span class="row__word">owes you</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><button type="button" class="row"><span class="row__label"><span class="row__name">Marta Ruiz</span></span><span class="row__amount">$0.00</span><span class="row__word">settled</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+       </ul>
+      </section>
+      <p class="hint">Sin columna de participación: el tipo no la publica, y una participación con signos mezclados no significa nada. La saldada navega: tiene accountId y un historial.</p>
+
+      <span class="anno anno--full">full · legsOverTime</span>
+      <section class="pnl" aria-labelledby="debt-legs">
+       <div class="pnl__head">
+        <h4 class="pnl__title" id="debt-legs">Did both sides grow?</h4>
+        <p class="pnl__lede">Same scale on both charts. Never netted.</p>
+       </div>
+       <div class="legs">
+        <div class="leg">
+         <div class="leg__head"><span>You’re owed</span><span class="leg__value">$1,750.00</span></div>
+         <svg class="leg__svg" viewBox="0 0 320 64" preserveAspectRatio="none" role="img" aria-labelledby="debt-rec-title">
+          <title id="debt-rec-title">Money owed to you at each month close, August 2025 to August 2026</title>
+          <line x1="0" y1="63" x2="320" y2="63" stroke="currentColor" stroke-width="1" opacity="0.3" vector-effect="non-scaling-stroke"></line>
+          <polyline points="4,50 30,48.83 56,47.67 82,45.33 108,44.17 134,41.83 160,40.67 186,38.33 212,36 238,32.5 264,30.17 290,26.67 316,23.17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>
+         </svg>
+        </div>
+        <div class="leg">
+         <div class="leg__head"><span>You owe</span><span class="leg__value">$2,300.00</span></div>
+         <svg class="leg__svg" viewBox="0 0 320 64" preserveAspectRatio="none" role="img" aria-labelledby="debt-pay-title">
+          <title id="debt-pay-title">Money you owe at each month close, August 2025 to August 2026</title>
+          <line x1="0" y1="63" x2="320" y2="63" stroke="currentColor" stroke-width="1" opacity="0.3" vector-effect="non-scaling-stroke"></line>
+          <polyline points="4,38.33 30,37.17 56,34.83 82,33.67 108,31.33 134,30.17 160,27.83 186,25.5 212,23.17 238,19.67 264,17.33 290,13.83 316,10.33" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>
+         </svg>
+        </div>
+        <div class="trend__axis trend__axis--panel"><span>Aug 25</span><span>Feb 26</span><span>Aug 26</span></div>
+       </div>
+      </section>
+      <p class="hint">"You owe" y "You’re owed" son las palabras de la tarjeta de nivel 1 (DomainCards.tsx:722 y :730).</p>
+
+      <article class="mov">
+       <h4 class="mov__title">Movements</h4>
+       <div class="mov__sub">12 in August 2026</div>
+       <div class="pag">
+        <p class="pag__count">1-5 of 12 movements</p>
+        <div class="pag__controls">
+         <label class="pag__size">Rows <select class="pag__select" aria-label="movements per page"><option>5</option></select></label>
+         <div class="pag__pager"><button type="button" class="pag__step" disabled aria-label="Previous page">‹</button><span class="pag__page">1 / 3</span><button type="button" class="pag__step" aria-label="Next page">›</button></div>
+        </div>
+       </div>
+       <div>
+        <button type="button" class="movRow"><span>Bank loan</span><span class="movRow__amount">$150.00</span><span class="movRow__note">instalment 8</span><time>20/08/2026</time></button>
+       </div>
+      </article>
+     </div>
+    </div>
+   </div>
+
+   <div class="phone">
+    <div class="caption">360 · estados de las dos secciones full</div>
+    <div class="app">
+     <div class="dom">
+      <span class="anno anno--state">cargando · 3 filas = payableCount + receivableCount</span>
+      <section class="pnl" aria-busy="true" aria-labelledby="debt-cp-l">
+       <div class="pnl__head"><h4 class="pnl__title" id="debt-cp-l">Who the balance is with</h4></div>
+       <div aria-hidden="true"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+      </section>
+      <p class="hint">Las contrapartes saldadas no entran en ninguno de los dos conteos, así que la lista puede crecer una fila por cada una cuando llega.</p>
+
+      <section class="pnl" aria-busy="true" aria-labelledby="debt-legs-l">
+       <div class="pnl__head"><h4 class="pnl__title" id="debt-legs-l">Did both sides grow?</h4><p class="pnl__lede">Same scale on both charts. Never netted.</p></div>
+       <div class="legs" aria-hidden="true">
+        <div class="leg"><span class="sk sk--w30"></span><span class="sk sk--chart"></span></div>
+        <div class="leg"><span class="sk sk--w30"></span><span class="sk sk--chart"></span></div>
+       </div>
+      </section>
+
+      <span class="anno anno--state">error · un reintento por sección, la misma petición</span>
+      <section class="pnl" aria-labelledby="debt-cp-e">
+       <div class="pnl__head"><h4 class="pnl__title" id="debt-cp-e">Who the balance is with</h4></div>
+       <div class="pstate" role="alert">
+        <p class="pstate__text">Debts by counterparty could not be loaded.</p>
+        <button type="button" class="retry">Try again</button>
+       </div>
+      </section>
+
+      <span class="anno anno--state">vacío · ninguna contraparte</span>
+      <section class="pnl" aria-labelledby="debt-cp-v">
+       <div class="pnl__head"><h4 class="pnl__title" id="debt-cp-v">Who the balance is with</h4></div>
+       <p class="pempty">No debtors or lenders yet.</p>
+      </section>
+      <section class="pnl" aria-labelledby="debt-legs-v">
+       <div class="pnl__head"><h4 class="pnl__title" id="debt-legs-v">Did both sides grow?</h4></div>
+       <div class="legs">
+        <div class="leg">
+         <div class="leg__head"><span>You’re owed</span><span class="leg__value">$0.00</span></div>
+         <svg class="leg__svg" viewBox="0 0 320 64" preserveAspectRatio="none" aria-hidden="true"><polyline points="4,63 316,63" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline></svg>
+        </div>
+        <div class="leg">
+         <div class="leg__head"><span>You owe</span><span class="leg__value">$0.00</span></div>
+         <svg class="leg__svg" viewBox="0 0 320 64" preserveAspectRatio="none" aria-hidden="true"><polyline points="4,63 316,63" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline></svg>
+        </div>
+       </div>
+      </section>
+      <p class="hint">Las piernas no tienen estado vacío: foldLegs llena cada mes de la ventana con cero, y cero al cierre es una cifra. Se dibujan planas y con su $0.00.</p>
+     </div>
+    </div>
+   </div>
+
+  </div>
+
+  <div class="frame">
+   <div class="caption">768 · deuda, la columna topada en --layout-width-max</div>
+   <div class="frame__inner">
+    <div class="app">
+     <div class="hdr"><h3 class="hdr__title">Overview</h3><div class="hdr__pill"><span class="hdr__arrow">‹</span><span>August 2026</span><span class="hdr__arrow">›</span></div></div>
+     <div class="col">
+      <div class="heroSlot">Hero de nivel 1 · sin cambios</div>
+      <div class="dom">
+       <div class="ct">
+        <div class="ct__row"><span class="ct__label">Debt</span><span class="ct__amount">−$550.00</span></div>
+        <div class="ct__sub"><span>August 2026</span><span>this month</span></div>
+       </div>
+       <a class="back" href="#">Back to the overview</a>
+
+       <section class="pnl" aria-labelledby="debt-cp-w">
+        <div class="pnl__head"><h4 class="pnl__title" id="debt-cp-w">Who the balance is with</h4></div>
+        <ul class="rows">
+         <li><button type="button" class="row"><span class="row__label"><span class="row__name">Bank loan</span></span><span class="row__amount">−$2,300.00</span><span class="row__word">you owe</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+         <li><button type="button" class="row"><span class="row__label"><span class="row__name">Ana Pérez</span></span><span class="row__amount">+$1,200.00</span><span class="row__word">owes you</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+         <li><button type="button" class="row"><span class="row__label"><span class="row__name">Luis Gómez</span></span><span class="row__amount">+$550.00</span><span class="row__word">owes you</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+         <li><button type="button" class="row"><span class="row__label"><span class="row__name">Marta Ruiz</span></span><span class="row__amount">$0.00</span><span class="row__word">settled</span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        </ul>
+       </section>
+
+       <section class="pnl" aria-labelledby="debt-legs-w">
+        <div class="pnl__head"><h4 class="pnl__title" id="debt-legs-w">Did both sides grow?</h4><p class="pnl__lede">Same scale on both charts. Never netted.</p></div>
+        <div class="legs legs--wide">
+         <div class="leg">
+          <div class="leg__head"><span>You’re owed</span><span class="leg__value">$1,750.00</span></div>
+          <svg class="leg__svg" viewBox="0 0 320 64" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="63" x2="320" y2="63" stroke="currentColor" stroke-width="1" opacity="0.3" vector-effect="non-scaling-stroke"></line><polyline points="4,50 30,48.83 56,47.67 82,45.33 108,44.17 134,41.83 160,40.67 186,38.33 212,36 238,32.5 264,30.17 290,26.67 316,23.17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline></svg>
+         </div>
+         <div class="leg">
+          <div class="leg__head"><span>You owe</span><span class="leg__value">$2,300.00</span></div>
+          <svg class="leg__svg" viewBox="0 0 320 64" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="63" x2="320" y2="63" stroke="currentColor" stroke-width="1" opacity="0.3" vector-effect="non-scaling-stroke"></line><polyline points="4,38.33 30,37.17 56,34.83 82,33.67 108,31.33 134,30.17 160,27.83 186,25.5 212,23.17 238,19.67 264,17.33 290,13.83 316,10.33" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline></svg>
+         </div>
+        </div>
+       </section>
+       <p class="hint">A 768 el cambio real es uno: las dos piernas quedan lado a lado, con @media (min-width: 480px). La columna no pasa de 40rem, así que las filas no se estiran más allá del ancho de lectura.</p>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 5 · Bolsillo</div>
+   <h2 class="block__name">Cuánto le falta a cada bolsillo y cuánto efectivo queda libre</h2>
+  </div>
+  <p class="block__prose">El avance por bolsillo llega con <code>derived</code> y usa la fila de nivel 3 sin cambios: barra más "of its goal", sin columna de participación, y las filas no suman 100. Comprometido contra libre es <code>full</code> y tiene forma fija, así que su esqueleto es exacto. <b>El faltante absorbido por el piso (<code>flooredShortfall</code>)</b> es la línea que explica por qué el saldo bancario menos lo comprometido no da el efectivo libre: cada cuenta se cuenta desde cero y no presta su saldo a otra.</p>
+
+  <div class="phones">
+
+   <div class="phone">
+    <div class="caption">360 · con datos</div>
+    <div class="app">
+     <div class="hdr"><h3 class="hdr__title">Overview</h3><div class="hdr__pill"><span class="hdr__arrow">‹</span><span>August 2026</span><span class="hdr__arrow">›</span></div></div>
+     <div class="heroSlot">Hero de nivel 1 · sin cambios</div>
+     <div class="dom">
+      <div class="ct">
+       <div class="ct__row"><span class="ct__label">Pockets</span><span class="ct__amount">$6,400.00</span></div>
+       <div class="ct__sub"><span>August 2026</span><span>this month</span></div>
+      </div>
+      <a class="back" href="#">Back to the overview</a>
+
+      <span class="anno">derived · series</span>
+      <div class="fold"><h4 class="fold__title">Trend</h4><span class="fold__chev" aria-hidden="true"></span></div>
+      <div class="trend">
+       <div class="trend__label"><span>Committed to pockets, 13 months</span><span class="trend__last">$6,400.00</span></div>
+       <svg class="trend__svg" viewBox="0 0 320 64" preserveAspectRatio="none" role="img" aria-labelledby="pocket-trend-title">
+        <title id="pocket-trend-title">Amount committed to pockets at each month close, August 2025 to August 2026</title>
+        <polyline points="4,52 30,50 56,49 82,46 108,44 134,43 160,40 186,37 212,35 238,31 264,28 290,24 316,20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>
+       </svg>
+       <div class="trend__axis"><span>Aug 25</span><span>Feb 26</span><span>Aug 26</span></div>
+      </div>
+
+      <span class="anno">derived · progressByPocket</span>
+      <section class="pnl" aria-labelledby="pk-prog">
+       <div class="pnl__head"><h4 class="pnl__title" id="pk-prog">How far each pocket is from its goal</h4></div>
+       <ul class="rows">
+        <li><button type="button" class="row row--pocket"><span class="row__label"><span class="row__name">Japan trip</span></span><span class="row__amount">$2,800.00</span><span class="row__progress"><span class="row__track"><span class="row__fill" style="width: 70%"></span></span><span class="row__progressLabel">70% of its goal</span></span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><button type="button" class="row row--pocket"><span class="row__label"><span class="row__name">Emergency fund</span></span><span class="row__amount">$2,400.00</span><span class="row__progress"><span class="row__track"><span class="row__fill" style="width: 48%"></span></span><span class="row__progressLabel">48% of its goal</span></span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+        <li><button type="button" class="row row--pocket"><span class="row__label"><span class="row__name">New laptop</span></span><span class="row__amount">$1,200.00</span><span class="row__progress"><span class="row__track"><span class="row__fill" style="width: 100%"></span></span><span class="row__progressLabel">112% of its goal</span></span><svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg></button></li>
+       </ul>
+      </section>
+      <p class="hint">progress viene de 0 a 100 y no se recorta: la barra se llena al 100 % y el rótulo dice 112 %. A 360 la barra baja a una segunda línea; en la misma línea el nombre quedaba en cinco letras.</p>
+
+      <span class="anno anno--full">full · committedAgainstFree</span>
+      <section class="pnl" aria-labelledby="pk-free">
+       <div class="pnl__head"><h4 class="pnl__title" id="pk-free">How much cash is still free</h4></div>
+       <dl class="stmt">
+        <dt>Bank balance</dt><dd>$8,000.00</dd>
+        <dt>Committed to pockets</dt><dd>−$6,400.00</dd>
+        <dt>Floored shortfall</dt><dd>+$300.00</dd>        <dt class="stmt__total">Free cash</dt><dd class="stmt__total">$1,900.00</dd>
+       </dl>
+       <p class="pnl__foot">One account has $300.00 committed beyond its own balance. Each account counts from zero, so that shortfall is not taken from the others.</p>
+      </section>
+
+      <article class="mov">
+       <h4 class="mov__title">Movements</h4>
+       <div class="mov__sub">9 in August 2026</div>
+       <div class="pag">
+        <p class="pag__count">1-5 of 9 movements</p>
+        <div class="pag__controls">
+         <label class="pag__size">Rows <select class="pag__select" aria-label="movements per page"><option>5</option></select></label>
+         <div class="pag__pager"><button type="button" class="pag__step" disabled aria-label="Previous page">‹</button><span class="pag__page">1 / 2</span><button type="button" class="pag__step" aria-label="Next page">›</button></div>
+        </div>
+       </div>
+       <div>
+        <button type="button" class="movRow"><span>Japan trip</span><span class="movRow__amount">$400.00</span><span class="movRow__note">—</span><time>10/08/2026</time></button>
+       </div>
+      </article>
+     </div>
+    </div>
+   </div>
+
+   <div class="phone">
+    <div class="caption">360 · estados</div>
+    <div class="app">
+     <div class="dom">
+      <span class="anno anno--state">cargando · forma fija, altura exacta</span>
+      <section class="pnl" aria-busy="true" aria-labelledby="pk-free-l">
+       <div class="pnl__head"><h4 class="pnl__title" id="pk-free-l">How much cash is still free</h4></div>
+       <dl class="stmt" aria-hidden="true">
+        <dt>Bank balance</dt><dd><span class="sk" style="width: 5rem"></span></dd>
+        <dt>Committed to pockets</dt><dd><span class="sk" style="width: 5rem"></span></dd>
+        <dt>Floored shortfall</dt><dd><span class="sk" style="width: 4rem"></span></dd>        <dt class="stmt__total">Free cash</dt><dd class="stmt__total"><span class="sk" style="width: 5.5rem"></span></dd>
+       </dl>
+      </section>
+      <p class="hint">Los rótulos se pintan de inmediato y sólo las cifras esperan: la sección no cambia de altura cuando llegan. Los anchos en línea son del bosquejo; en la hoja van por clase.</p>
+
+      <span class="anno anno--state">error</span>
+      <section class="pnl" aria-labelledby="pk-free-e">
+       <div class="pnl__head"><h4 class="pnl__title" id="pk-free-e">How much cash is still free</h4></div>
+       <div class="pstate" role="alert">
+        <p class="pstate__text">Free cash could not be loaded.</p>
+        <button type="button" class="retry">Try again</button>
+       </div>
+      </section>
+
+      <span class="anno anno--state">sin bolsillos · cero es una cifra, no un vacío</span>
+      <section class="pnl" aria-labelledby="pk-prog-v">
+       <div class="pnl__head"><h4 class="pnl__title" id="pk-prog-v">How far each pocket is from its goal</h4></div>
+       <p class="pempty">No pockets yet.</p>
+      </section>
+      <section class="pnl" aria-labelledby="pk-free-v">
+       <div class="pnl__head"><h4 class="pnl__title" id="pk-free-v">How much cash is still free</h4></div>
+       <dl class="stmt">
+        <dt>Bank balance</dt><dd>$8,000.00</dd>
+        <dt>Committed to pockets</dt><dd>$0.00</dd>
+        <dt>Floored shortfall</dt><dd>$0.00</dd>        <dt class="stmt__total">Free cash</dt><dd class="stmt__total">$8,000.00</dd>
+       </dl>
+      </section>
+      <p class="hint">Comprometido contra libre no tiene estado vacío: sin bolsillos el saldo bancario sigue siendo real y todo queda libre. La lista de avance sí lo tiene.</p>
+     </div>
+    </div>
+   </div>
+
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 6 · Resultado</div>
+   <h2 class="block__name">Dónde se hizo el resultado del mes</h2>
+  </div>
+  <p class="block__prose">Todo <code>derived</code>, así que no hay estados de sección: si la primera respuesta falla, falla la pantalla entera con <code>PanelState</code>. Los dos términos llevan signo, nunca faltan y <b>suman el total de la tarjeta por construcción</b> (<code>makePnlAnalysis.js:32</code>). Un mes con pérdida es una pérdida, no una cifra ausente.</p>
+  <p class="block__prose">Las dos filas son estáticas y <b>no llevan la columna de participación</b> que dibuja <code>bosquejo-overview-nivel-3.html</code>. El tipo no la publica y, con un término positivo y otro negativo, daría 129 % y −29 %. En su lugar va una barra desde cero: la longitud es la magnitud y el lado es el signo, con una sola tinta.</p>
+
+  <div class="phones">
+
+   <div class="phone">
+    <div class="caption">360 · mes con ganancia</div>
+    <div class="app">
+     <div class="hdr"><h3 class="hdr__title">Overview</h3><div class="hdr__pill"><span class="hdr__arrow">‹</span><span>August 2026</span><span class="hdr__arrow">›</span></div></div>
+     <div class="heroSlot">Hero de nivel 1 · sin cambios</div>
+     <div class="dom">
+      <div class="ct">
+       <div class="ct__row"><span class="ct__label">Realised result</span><span class="ct__amount">+$512.30</span></div>
+       <div class="ct__sub"><span>August 2026</span><span>this month</span></div>
+      </div>
+      <a class="back" href="#">Back to the overview</a>
+
+      <span class="anno">derived · series, con signo</span>
+      <div class="fold"><h4 class="fold__title">Trend</h4><span class="fold__chev" aria-hidden="true"></span></div>
+      <div class="trend">
+       <div class="trend__label"><span>Realised result, 13 months</span><span class="trend__last">+$512.30</span></div>
+       <svg class="trend__svg" viewBox="0 0 320 64" preserveAspectRatio="none" role="img" aria-labelledby="pnl-trend-title">
+        <title id="pnl-trend-title">Monthly realised result, August 2025 to August 2026, with months below zero under the line</title>
+        <line x1="0" y1="34" x2="320" y2="34" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.5" vector-effect="non-scaling-stroke"></line>
+        <polyline points="4,27 30,38.69 56,30.48 82,21.7 108,42.79 134,28.73 160,31.66 186,16.42 212,37.52 238,23.45 264,19.35 290,36.34 316,4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>
+       </svg>
+       <div class="trend__axis"><span>Aug 25</span><span>0 is the dashed line</span><span>Aug 26</span></div>
+      </div>
+      <p class="hint">La línea punteada es el cero. TrendChart hoy dibuja Math.abs(value) (TrendCharts.tsx:81), así que un mes con pérdida saldría por encima del eje. Hace falta una variante con signo antes de montar esta serie.</p>
+
+      <span class="anno">derived · byAccountType</span>
+      <section class="pnl" aria-labelledby="pnl-type">
+       <div class="pnl__head"><h4 class="pnl__title" id="pnl-type">Where the result was made</h4><p class="pnl__lede">The two parts add up to the total above.</p></div>
+       <ul class="rows">
+        <li><div class="row row--static row--pnl"><span class="row__label"><span class="row__name">Investment</span></span><span class="diverge" aria-hidden="true"><span class="diverge__half diverge__half--neg"></span><span class="diverge__half"><span class="diverge__fill" style="width: 100%"></span></span></span><span class="row__amount">+$388.10</span><span class="row__nogo" aria-hidden="true">—</span></div></li>
+        <li><div class="row row--static row--pnl"><span class="row__label"><span class="row__name">Other</span></span><span class="diverge" aria-hidden="true"><span class="diverge__half diverge__half--neg"></span><span class="diverge__half"><span class="diverge__fill" style="width: 32%"></span></span></span><span class="row__amount">+$124.20</span><span class="row__nogo" aria-hidden="true">—</span></div></li>
+       </ul>
+      </section>
+
+      <article class="mov">
+       <h4 class="mov__title">Movements</h4>
+       <div class="mov__sub">6 in August 2026</div>
+       <div class="pag">
+        <p class="pag__count">1-5 of 6 movements</p>
+        <div class="pag__controls">
+         <label class="pag__size">Rows <select class="pag__select" aria-label="movements per page"><option>5</option></select></label>
+         <div class="pag__pager"><button type="button" class="pag__step" disabled aria-label="Previous page">‹</button><span class="pag__page">1 / 2</span><button type="button" class="pag__step" aria-label="Next page">›</button></div>
+        </div>
+       </div>
+       <div>
+        <button type="button" class="movRow"><span>Brokerage XP</span><span class="movRow__amount">$388.10</span><span class="movRow__note">sale of position</span><time>22/08/2026</time></button>
+       </div>
+      </article>
+     </div>
+    </div>
+   </div>
+
+   <div class="phone">
+    <div class="caption">360 · mes con pérdida, signos mezclados</div>
+    <div class="app">
+     <div class="dom">
+      <div class="ct">
+       <div class="ct__row"><span class="ct__label">Realised result</span><span class="ct__amount">−$325.00</span></div>
+       <div class="ct__sub"><span>July 2026</span><span>this month</span></div>
+      </div>
+
+      <div class="trend">
+       <div class="trend__label"><span>Realised result, 13 months</span><span class="trend__last">−$325.00</span></div>
+       <svg class="trend__svg" viewBox="0 0 320 64" preserveAspectRatio="none" role="img" aria-labelledby="pnl-trend-loss-title">
+        <title id="pnl-trend-loss-title">Monthly realised result, July 2025 to July 2026, ending below zero</title>
+        <line x1="0" y1="34" x2="320" y2="34" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.5" vector-effect="non-scaling-stroke"></line>
+        <polyline points="4,24.4 30,40.4 56,29.2 82,17.2 108,46 134,26.8 160,30.8 186,10 212,38.8 238,19.6 264,14 290,37.2 316,60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>
+       </svg>
+       <div class="trend__axis"><span>Jul 25</span><span>0 is the dashed line</span><span>Jul 26</span></div>
+      </div>
+
+      <section class="pnl" aria-labelledby="pnl-type-loss">
+       <div class="pnl__head"><h4 class="pnl__title" id="pnl-type-loss">Where the result was made</h4><p class="pnl__lede">The two parts add up to the total above.</p></div>
+       <ul class="rows">
+        <li><div class="row row--static row--pnl"><span class="row__label"><span class="row__name">Investment</span></span><span class="diverge" aria-hidden="true"><span class="diverge__half diverge__half--neg"><span class="diverge__fill" style="width: 100%"></span></span><span class="diverge__half"></span></span><span class="row__amount">−$420.00</span><span class="row__nogo" aria-hidden="true">—</span></div></li>
+        <li><div class="row row--static row--pnl"><span class="row__label"><span class="row__name">Other</span></span><span class="diverge" aria-hidden="true"><span class="diverge__half diverge__half--neg"></span><span class="diverge__half"><span class="diverge__fill" style="width: 23%"></span></span></span><span class="row__amount">+$95.00</span><span class="row__nogo" aria-hidden="true">—</span></div></li>
+       </ul>
+      </section>
+      <p class="hint">Sin rojo en la pérdida: el signo y el lado de la barra la dicen. Cero en un término se dibuja $0.00 sin barra, nunca raya: el tipo garantiza que nunca falta.</p>
+     </div>
+    </div>
+   </div>
+
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 7 · Tokens</div>
+   <h2 class="block__name">Qué consume cada pieza y qué no tiene token</h2>
+  </div>
+  <div class="table-scroll">
+   <table>
+    <thead><tr><th>Pieza</th><th>Token</th><th>Estado</th></tr></thead>
+    <tbody>
+     <tr><td>Panel de una sección</td><td><code>--color-surface-panel</code> (el mismo valor que <code>--creme</code>), <code>--color-content-primary</code> (el de <code>--dark</code>), <code>--radius-xl</code>, <code>--space-4</code></td><td>existe</td></tr>
+     <tr><td>Texto secundario, chevron en reposo, marca de fila</td><td><code>--color-content-secondary</code>, 5.35:1 sobre el panel</td><td>existe</td></tr>
+     <tr><td>Anillo de foco y regla de total en panel</td><td><code>--color-border-strong</code>, <code>--border-width-thick</code></td><td>existe</td></tr>
+     <tr><td>Esqueleto en panel</td><td><code>--color-surface-loading-on-panel</code></td><td>existe</td></tr>
+     <tr><td>Reintento en panel</td><td><code>--color-border-strong</code>, <code>--color-content-primary</code>, <code>--color-surface-panel</code>, <code>--motion-fast</code></td><td>existe; hace falta la variante crema de <code>.panelState__retry</code></td></tr>
+     <tr><td>Serie y piernas sobre fondo oscuro</td><td><code>--color-accent</code> vía <code>currentColor</code></td><td>existe</td></tr>
+     <tr><td>Línea entre filas sobre el panel</td><td><code>--brecha-linea-en-panel</code></td><td class="cell--gap">sin token: <code>--color-border-subtle</code> es crema y desaparece sobre crema; <code>--color-border-subtle-on-inverse</code> es para blanco</td></tr>
+     <tr><td>Fondo de fila al apuntar y al presionar, sobre el panel</td><td><code>--brecha-hover-en-panel</code>, <code>--brecha-activo-en-panel</code></td><td class="cell--gap">sin token</td></tr>
+     <tr><td>Pista de la barra de avance sobre el panel</td><td><code>--brecha-pista-avance-en-panel</code></td><td class="cell--gap">sin token; usar el del esqueleto la haría leer como carga</td></tr>
+     <tr><td>Tinta de barra de magnitud sobre el panel (avance, barra divergente)</td><td>prestado <code>--color-content-secondary</code></td><td class="cell--gap">sin token: la rampa <code>--color-scale-magnitude-*</code> está calibrada para fondo oscuro y su extremo alto queda cerca de 1.5:1 sobre crema</td></tr>
+    </tbody>
+   </table>
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 8 · Para Carlos</div>
+   <h2 class="block__name">Decisiones que tomó este bosquejo y que usted debe confirmar</h2>
+  </div>
+  <ul class="gaps">
+   <li><b>El aporte abre el modal de su transacción y no navega.</b> Recomendación: modal, porque la fila lleva <code>transactionId</code> y la cuenta ya se abre desde la sección de saldo.</li>
+   <li><b>La serie de trece meses reemplaza a la tendencia de seis en nivel 2.</b> Recomendación: reemplazar; llega con la primera respuesta y dos series de la misma consulta repiten una cifra.</li>
+   <li><b>La serie de resultado necesita una variante de <code>TrendChart</code> con cero.</b> Recomendación: variante con signo antes de montar resultado, porque hoy la pérdida se dibuja como ganancia.</li>
+   <li><b>Las filas de resultado pierden la columna de participación del bosquejo de nivel 3.</b> Recomendación: barra divergente y monto con signo, porque el tipo no publica participación.</li>
+   <li><b>La fila de bolsillo del nivel 3 pasa a dos líneas: nombre y monto arriba, barra y "of its goal" abajo.</b> Recomendación: dos líneas, porque medido a 360 la fila de una línea dejaba "Japan…" y "Emerg…".</li>
+   <li><b>La fuente de ingreso sin cuenta se rotula "Unattributed".</b> Recomendación: esa palabra, que es la del aviso del servidor; el <code>label</code> llega vacío.</li>
+   <li><b>Las secciones nuevas van en panel crema, mientras el Pareto y la dona de gasto viven sobre fondo oscuro.</b> Recomendación: crema para las cinco, como pide la regla de superficies, y dejar gasto como está hasta que se decida aparte.</li>
+   <li><b>Una sola tinta en las barras de las cinco secciones, sin la escala categórica.</b> Recomendación: una tinta, porque una lista con ancho ya dice cuánto y ninguna fila necesita distinguirse por color de su vecina.</li>
+   <li><b>La dirección de la deuda va sólo en signo y palabra, sin el color de dirección que usa la tarjeta de nivel 1.</b> Recomendación: sin color, porque cada fila ya lleva la palabra.</li>
+   <li><b>El historial de aportes no tiene paginador.</b> Recomendación: sólo "Latest N of totalRows" hasta que el endpoint acepte una página.</li>
+   <li><b>El esqueleto de una lista toma su número de filas de la tarjeta, o tres.</b> Recomendación: así; la deuda puede crecer una fila por cada contraparte saldada.</li>
+   <li><b>Un error de la petición full aparece en cada sección full, cada una con su reintento.</b> Recomendación: así, todos los botones repiten la misma petición.</li>
+   <li><b>El faltante absorbido por el piso se muestra siempre, también en $0.00.</b> Recomendación: siempre, porque cero es una cifra y la sección conserva su altura.</li>
+   <li><b>Los avisos de <code>meta.notices</code> van al pie de la sección a la que se refieren.</b> Recomendación: al pie, en cursiva secundaria, como el pie del Pareto.</li>
+   <li><b>El texto de vacío y de error es provisional</b>, salvo los dos avisos que publica el servidor. Recomendación: que usted lo apruebe antes del commit de cada dominio.</li>
+  </ul>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 9 · Hallazgos</div>
+   <h2 class="block__name">Defectos medidos fuera de este bosquejo, sin corregir</h2>
+  </div>
+  <ul class="gaps gaps--found">
+   <li><b>La cifra de deuda y la de bolsillo se rotulan "this month" siendo posiciones al cierre.</b> <code>OverviewDomain.tsx:83-86</code> sólo le da "at month end" a inversión. Los teléfonos lo dibujan como está hoy.</li>
+   <li><b><code>TrendChart</code> dibuja el valor absoluto.</b> <code>TrendCharts.tsx:81</code> devuelve <code>Math.abs(value) / peak</code>; hoy no importa porque ninguna serie montada tiene signo.</li>
+   <li><b>La lista de movimientos pinta su fondo con un hex.</b> <code>overview-styles.css:317</code> declara <code>#1b1b1b</code> en <code>.goals__last__movements</code>; el bosquejo usa <code>--color-surface-raised</code> como el valor más cercano.</li>
+  </ul>
+ </section>
+
+</div>
+</body>
+</html>

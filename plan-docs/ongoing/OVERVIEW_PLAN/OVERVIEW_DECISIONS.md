@@ -2332,6 +2332,41 @@ cannot be read as a part of the sum.
 - **There is no frontend test in this repository.** The row key, the accumulation
   and the viewport trigger are verified by hand until there is.
 
+## P5-6. The five level-2 domain screens — ruled by Carlos on 2026-09-12
+
+**The drawing is frozen:** `plan-docs/mockups/overview/bosquejo-overview-nivel-2-dominios.html`
+(income, investment, debt, pocket, profit and loss). Expense stays as drawn in
+`bosquejo-overview-nivel-2.html`. Nothing is redrawn; what remains is
+implementation.
+
+| subject | ruling |
+|---|---|
+| request depth | one `derived` request paints the screen; ONE `full` request fires when the first `full` section reaches the viewport and resolves every `full` section of the screen. Not a click |
+| retry of a failed `full` | each `full` section shows its own error and retry, and every retry re-issues the same single `full` request; never one request per section |
+| investment contribution row | opens the transaction modal by `transactionId`; it does not navigate |
+| series | the 13-month series replaces the 6-month trend on level 2 |
+| profit-and-loss series | needs a signed trend variant. `TrendCharts.tsx` draws `Math.abs`, so a loss would read as a gain; the variant is explicit and the existing chart keeps its behaviour |
+| profit-and-loss split | a bar from zero with the signed amount; no share column (mixed signs give 129 % and −29 %) |
+| pocket level-3 row | two lines: name and amount, then bar and "of its goal" |
+| income row with null `accountId` | labelled "Unattributed", static, never linked |
+| surface | the five new sections sit on the cream panel; expense's Pareto and donut stay dark |
+| bar ink | one ink, no categorical colour |
+| debt direction | sign and word, no direction colour |
+| contribution history | "Latest N of totalRows", no pager — V1, a consequence of the endpoint, not a product ruling |
+| list skeleton | as many rows as the card counts publish, three when none |
+| `flooredShortfall` | always shown, `$0.00` included: it is a term of the free-cash identity |
+| `meta.notices` | at the foot of the section they qualify, secondary ink, italic |
+| empty and error copy | provisional; approved per domain before that domain's commit. Server notices are not provisional |
+
+**Two measured defects enter the work, not the drawing:**
+- debt and pocket headline figures are labelled "this month" on level 2
+  (`OverviewDomain.tsx:83-86`); they are positions at the month's close;
+- the signed trend variant above, before the profit-and-loss series is mounted.
+
+**Tokens the drawing needs and the system lacks** (marked `--brecha-` in the
+mockup): row divider on cream, row hover and active ground on cream, progress
+track on cream, bar ink on cream. Added when the first component needs them.
+
 
 ---
 

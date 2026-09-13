@@ -92,8 +92,8 @@ times against 4.
 | P2 | repoint Pocket to the plan model | **DONE**, `f4b999d9` and `f0388039` |
 | P3 | complete and correct the level-1 indicators | **DONE** 2026-09-07 |
 | P4 | the API contract, the served window and the activity page | **DONE**, `4b99fffa` and `7ba6761e` |
-| P5 | frontend | **NOT STARTED**, no longer blocked |
-| P6 | level 2 | **BACKEND DONE**, `7ba6761e`; renderer not started |
+| P5 | frontend | **IN PROGRESS** (measured 2026-09-12). Level 1 built, last commit `b99338da`. Level 2 reachable with card, trend, expense ranking, category narrowing and movements (`46a54353`, `9159baa1`), and no analysis section. Level-3 links not wired |
+| P6 | level 2 | **BACKEND DONE**, `7ba6761e`; renderer started at `46a54353`, analysis sections not drawn |
 
 ### The three endpoints
 
@@ -327,7 +327,7 @@ separate calls to build three figures.
 
 | gap | what it is |
 |---|---|
-| **no mockup for the six domain screens** | the level-2 backend is served and committed; nothing draws it. This blocks commit 6 of P5 and nothing before it |
+| **no mockup for five of the six domain screens** | expense is drawn in `mockups/overview/bosquejo-overview-nivel-2.html`; income, investment, debt, pocket and profit-and-loss are drafted in `mockups/overview/bosquejo-overview-nivel-2-dominios.html` (2026-09-12), awaiting Carlos's approval of its open decisions. This blocks the analysis sections of commit 6 and nothing before it |
 
 ### The gap that was found and closed the same day
 
