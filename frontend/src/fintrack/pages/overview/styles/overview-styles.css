@@ -1002,8 +1002,11 @@ a.icon {
    over a box that already measured --space-2 on each side of the label, so the
    figure was raising the button above the line it prints on rather than
    guaranteeing anything the padding had not. */
+/* Sized by its line: the button's own text line plus --space-1 above and below,
+   so it does not stand taller than the message it answers. */
 .overviewLayout .panelState__retry {
- padding: var(--space-2) var(--space-6);
+ padding: var(--space-1) var(--space-4);
+ line-height: var(--line-height-heading);
  border: var(--border-width-thin) solid var(--color-border-inverse);
  border-radius: var(--radius-full);
  background-color: transparent;
