@@ -184,7 +184,7 @@ export const TrendChart = ({
     className='trendChart__plot'
     role='img'
     aria-label={`${label}, ${
-     nature === 'flow' ? 'per month' : 'at each month end'
+     nature === 'flow' ? 'per month' : 'closing balance of each month'
     }, last ${points.length} months${
      isSigned ? ', months under the dashed line are below zero' : ''
     }. ${plotted.map((point) => point.title).join('. ')}`}

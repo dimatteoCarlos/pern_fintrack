@@ -25,7 +25,8 @@ export type AnalysisOf<D extends OverviewDomain> = Extract<
 >;
 
 // A flow is summed over the month; a position is read at the month's close.
-export type HeadlineNature = 'this month' | 'at month end';
+// "closing balance", not "at month end", which read as a sum up to that day.
+export type HeadlineNature = 'this month' | 'closing balance';
 
 export type DomainCompositionProps<D extends OverviewDomain> = {
  card: CardOf<D>;
