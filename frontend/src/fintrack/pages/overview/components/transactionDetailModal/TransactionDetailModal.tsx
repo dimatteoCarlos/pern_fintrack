@@ -64,8 +64,13 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
   const amountPrefix = isPositive ? '+' : '';
 
   // Tasa almacenada (para Rate Clean)
+  // const formattedExchangeRate = transaction.exchange_rate
+  //   ? numberFormatCurrency(transaction.exchange_rate, 4, undefined, 'es-ES')
+  //   : 'N/A';
+  // A rate is a ratio, not money: four decimals cut 0.00650195 to 0,0065, which
+  // no longer reproduces the 153,80 shown above it. Six significant digits do.
   const formattedExchangeRate = transaction.exchange_rate
-    ? numberFormatCurrency(transaction.exchange_rate, 4, undefined, 'es-ES')
+    ? new Intl.NumberFormat('es-ES', { maximumSignificantDigits: 6 }).format(transaction.exchange_rate)
     : 'N/A';
 
   // Movement & Transaction Types
