@@ -90,6 +90,16 @@
  display: inline-block;
 }
 
+/* The account type's icon, beside its name. Centred on the line rather than
+   on the baseline the row aligns to, which would sit a 32px viewBox low. */
+.account-detail__type-icon {
+ align-self: center;
+ inline-size: var(--size-glyph-inline);
+ block-size: var(--size-glyph-inline);
+ flex: 0 0 auto;
+ color: currentColor;
+}
+
 /* =========================================
    VALUE STYLES
 ========================================= */

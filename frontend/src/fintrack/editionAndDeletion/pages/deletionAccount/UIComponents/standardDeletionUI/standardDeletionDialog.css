@@ -12,13 +12,20 @@
  inset: 0;
  z-index: var(--z-modal);
  display: flex;
- align-items: center;
+ /* align-items: center; - a panel taller than the viewport was cut at both
+    ends with no way to reach them. The overlay scrolls now, and the panel's
+    auto margins centre it only while it fits. */
+ align-items: flex-start;
  justify-content: center;
+ overflow-y: auto;
+ overscroll-behavior: contain;
+ padding-block: var(--space-4);
  background-color: var(--color-surface-overlay);
  backdrop-filter: blur(2px);
 }
 
 .standard-deletion-dialog__panel {
+ margin-block: auto;
  width: var(--layout-content-width);
  max-width: var(--layout-modal-width);
  padding: var(--space-6);

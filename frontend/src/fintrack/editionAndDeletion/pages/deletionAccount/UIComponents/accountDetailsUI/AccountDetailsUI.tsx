@@ -2,6 +2,7 @@
 
 import { CurrencyType } from '../../../../../types/types';
 import { DictionaryDataType } from '../../../../utils/languages';
+import { getAccountTypeIcon } from '../../../../utils/accountTypeIcons.ts';
 import './accountDetailsUI.css';
 
 // ===============================
@@ -39,6 +40,9 @@ export const AccountDetailsUI = ({
   titleKey = 'accountDetailsTitle',
   t,
 }: AccountDetailsUIPropsType) => {
+  // The same mark the closed-account list and the dashboard give this type.
+  const TypeIcon = getAccountTypeIcon(accountType);
+
   return (
     <div
       className='account-details'
@@ -74,6 +78,7 @@ export const AccountDetailsUI = ({
         <strong aria-label={`Account Type: ${accountType}`}>
           {t('accountTypeLabel')}
         </strong>
+        <TypeIcon className='account-detail__type-icon' aria-hidden='true' />
         {t(`${accountType as keyof DictionaryDataType}`)}
       </p>
       {/* Account Current Balance */}
