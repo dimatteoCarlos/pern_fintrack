@@ -599,6 +599,12 @@ export type AccountTransactionType = {
   account_name: string;
   account_starting_amount: number;
   account_start_date: string; // ISO 8601 date string
+  // The account_type of the account this row is posted against, and the raw
+  // transaction_type of the movement — the two inputs a badge is resolved
+  // from, from that account's own perspective. Nullable: account_type_id is
+  // nullable on user_accounts, and the join is LEFT.
+  account_type_name: string | null;
+  transaction_type_name: string | null;
   // The date the transaction falls on in the ACCOUNT OWNER's calendar, resolved
   // in SQL. Render this instead of slicing transaction_actual_date, which is an
   // instant and can name the neighbouring day. Both windows serve it; optional

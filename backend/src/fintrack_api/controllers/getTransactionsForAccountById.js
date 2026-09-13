@@ -242,6 +242,11 @@ export const getTransactionsForAccountById = async (req, res, next) => {
       WITH ${accountLedgerCte('$1')}
       SELECT
         tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date,
+        -- Which account_type and transaction_type this row was posted against,
+        -- so the client can resolve a badge from the account's own perspective
+        -- instead of the raw transaction_type string. Nullable: account_type_id
+        -- is nullable on user_accounts, hence LEFT JOIN.
+        act.account_type_name, trt.transaction_type_name,
         -- The balance derived from the ledger, replacing the stored column that
         -- tr.* still ships. It is renamed onto that column's key in JavaScript,
         -- so the stale figure never reaches the response.
@@ -275,6 +280,10 @@ export const getTransactionsForAccountById = async (req, res, next) => {
       -- that helper because it needs the zone in JavaScript to build its bounds.
       LEFT JOIN
         users u ON u.user_id = ua.user_id
+      -- account_type_id is nullable on user_accounts, so a row whose account
+      -- type is missing still lists, without the label.
+      LEFT JOIN
+        account_types act ON act.account_type_id = ua.account_type_id
       WHERE
         tr.account_id = $1 AND ua.user_id = $2
         AND (
@@ -322,6 +331,9 @@ export const getTransactionsForAccountById = async (req, res, next) => {
       WITH ${accountLedgerCte('$1')}
       SELECT
         tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date,
+        -- Same account_type/transaction_type labels as the legacy query above,
+        -- for the same client-side badge resolution.
+        act.account_type_name, trt.transaction_type_name,
         -- Derived over the account's whole life, not over this month: a window
         -- function sees only the rows its own query returns, so anchoring the
         -- series here would restart the balance at each month.
