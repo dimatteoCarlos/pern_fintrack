@@ -15,7 +15,12 @@
 // six analyses are not the same object (OVERVIEW_DECISIONS.md, P5-1).
 
 import { useMemo } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import {
+ Link,
+ useLocation,
+ useParams,
+ useSearchParams,
+} from 'react-router-dom';
 
 import { CardTitle } from '../../general_components/CardTitle';
 import { Pagination } from '../../general_components/pagination/Pagination';
@@ -28,6 +33,7 @@ import {
 import { currencyFormat } from '../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../helpers/constants';
 import { monthLabel } from './helpers/monthLabel';
+import { pocketLink } from './helpers/levelThreeLink';
 import { DOMAIN_SCREENS } from './domains/domainScreens';
 import {
  CardOf,
@@ -37,6 +43,7 @@ import {
 } from './domains/domainScreen';
 import {
  GetOverviewDomainData,
+ OverviewAllocationRow,
  OverviewAnalysis,
  OverviewDomain as OverviewDomainName,
  OverviewTransactionRow,
@@ -60,18 +67,47 @@ const isDomain = (value: string | undefined): value is OverviewDomainName =>
 // user_accounts LEFT, because closing an account deletes that row while its
 // movements survive. An inner join would have dropped those rows from the page
 // while the count beside it still counted them.
-const toRows = (rows: OverviewTransactionRow[]): LastMovementType[] =>
- rows.map((row) => ({
-  accountName: row.account_name ?? 'closed account',
-  record: row.amount,
-  description: row.description,
-  // transaction_local_date and not transaction_actual_date: the other is an
-  // instant, and a day rendered from it is the previous day for every reader
-  // west of Greenwich.
-  date: row.transaction_local_date,
-  currency: row.currency_code as LastMovementType['currency'],
-  transactionId: row.transaction_id,
- }));
+const toTransactionRow = (row: OverviewTransactionRow): LastMovementType => ({
+ accountName: row.account_name ?? 'closed account',
+ record: row.amount,
+ description: row.description,
+ // transaction_local_date and not transaction_actual_date: the other is an
+ // instant, and a day rendered from it is the previous day for every reader
+ // west of Greenwich.
+ date: row.transaction_local_date,
+ currency: row.currency_code as LastMovementType['currency'],
+ transactionId: row.transaction_id,
+});
+
+// The pocket page's row. Mapped as a transaction it read "closed account", since
+// an allocation has no account_name, and opened a detail with no transaction id.
+const isAllocationRow = (
+ row: OverviewTransactionRow | OverviewAllocationRow,
+): row is OverviewAllocationRow => 'allocationId' in row;
+
+const toAllocationRow = (
+ row: OverviewAllocationRow,
+ origin: string,
+): LastMovementType => {
+ const amount = Number(row.amount);
+ // Null only once the source account's row is gone, as in toTransactionRow above.
+ const account = row.sourceAccountName ?? 'a closed account';
+ // The word beside the sign, as PocketDetail.tsx states it: a negative row
+ // released the money back to the account, and a bare minus reads as a spend.
+ const source =
+  amount < 0 ? `Released to ${account}` : `Committed from ${account}`;
+
+ return {
+  accountName: row.pocketName,
+  record: amount,
+  description: source,
+  note: source,
+  date: row.allocationDate,
+  currency: row.currency as LastMovementType['currency'],
+  link: pocketLink(row.pocketId, origin),
+  rowKey: row.allocationId,
+ };
+};
 
 type DomainViewProps<D extends OverviewDomainName> = {
  domain: D;
@@ -107,11 +143,18 @@ function DomainView<D extends OverviewDomainName>({
  const screen: DomainScreen<D> = DOMAIN_SCREENS[domain];
  const { Composition } = screen;
  const served = answer.window;
+ const { pathname, search } = useLocation();
+ // The search keeps the month, so the pocket's back arrow returns to it.
+ const origin = `${pathname}${search}`;
 
- const rows = useMemo(
-  () => toRows(answer.transactions.rows),
-  [answer.transactions.rows],
- );
+ const rows = useMemo(() => {
+  const pageRows: Array<OverviewTransactionRow | OverviewAllocationRow> =
+   answer.transactions.rows;
+
+  return pageRows.map((row) =>
+   isAllocationRow(row) ? toAllocationRow(row, origin) : toTransactionRow(row),
+  );
+ }, [answer.transactions.rows, origin]);
 
  return (
   <section className='overviewDomain'>
@@ -156,7 +199,7 @@ function DomainView<D extends OverviewDomainName>({
        state, and a reader who scrolled past it needs the list to say so. */}
    <LastMovements
     data={rows}
-    title='Movements'
+    title={screen.list.title}
     subtitle={`${answer.transactions.totalRows} in ${monthLabel(
      served.referenceMonth,
     )}${selectedCategory ? ` · ${selectedCategory}` : ''}`}
@@ -167,7 +210,7 @@ function DomainView<D extends OverviewDomainName>({
       totalRows={answer.transactions.totalRows}
       onPageChange={goToPage}
       onPageSizeChange={setPageSize}
-      itemLabel='movements'
+      itemLabel={screen.list.itemLabel}
       isBusy={isLoading}
      />
     }

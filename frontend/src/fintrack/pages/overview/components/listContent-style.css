@@ -30,6 +30,8 @@
   background-color: transparent;
   color: inherit;
   font: inherit;
+  /* A row that leads to another screen is a link, and a link is underlined by default. */
+  text-decoration: none;
   cursor: pointer;
  }
 

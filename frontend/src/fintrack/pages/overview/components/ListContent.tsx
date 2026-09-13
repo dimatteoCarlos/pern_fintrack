@@ -3,6 +3,8 @@
 // and not in general_components/: LastMovements is its only consumer and the
 // row type it renders comes from that same page component.
 
+import { Link } from 'react-router-dom';
+
 import {
  CURRENCY_OPTIONS,
  DATE_TIME_FORMAT_DEFAULT,
@@ -44,23 +46,10 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
  return (
   <div className='listContent__container'>
    {listOfItems.map((item) => {
-    const { accountName, record, note, date, currency, transactionId } = item;
+    const { accountName, record, note, date, currency } = item;
 
-    return (
-     // A button and not a div carrying an onClick: the row takes keyboard
-     // focus, gives :focus-visible something to attach to, and announces
-     // itself as activatable.
-     //
-     // Keyed on the transaction and not on the map index: once the list
-     // accumulates pages or drops a row, React reuses the node of a row that
-     // shifted, and the click opens a transaction other than the one under
-     // the pointer.
-     <button
-      type='button'
-      key={transactionId}
-      className='listContent__item'
-      onClick={() => openTransaction(transactionId)}
-     >
+    const cells = (
+     <>
       <span className='listContent__item-header'>
        <span className='listContent__account'>{accountName}</span>
        <span className='listContent__amount'>
@@ -80,6 +69,40 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
         <time className='listContent__date'>{formatDate(date)}</time>
        )}
       </span>
+     </>
+    );
+
+    // A row that is not a transaction has no detail to open: it leads to its
+    // own screen, keyed on its own identity.
+    if (item.link !== undefined) {
+     return (
+      <Link
+       key={item.rowKey}
+       className='listContent__item'
+       to={item.link.to}
+       state={item.link.state}
+      >
+       {cells}
+      </Link>
+     );
+    }
+
+    return (
+     // A button and not a div carrying an onClick: the row takes keyboard
+     // focus, gives :focus-visible something to attach to, and announces
+     // itself as activatable.
+     //
+     // Keyed on the transaction and not on the map index: once the list
+     // accumulates pages or drops a row, React reuses the node of a row that
+     // shifted, and the click opens a transaction other than the one under
+     // the pointer.
+     <button
+      type='button'
+      key={item.transactionId}
+      className='listContent__item'
+      onClick={() => openTransaction(item.transactionId)}
+     >
+      {cells}
      </button>
     );
    })}

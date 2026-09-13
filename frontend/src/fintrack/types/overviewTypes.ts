@@ -514,6 +514,26 @@ export type OverviewTransactionPage = {
  totalRows: number;
 };
 
+// One row of the pocket domain's page. A pocket moves no money, so its page is the
+// month's allocations, in ALLOCATIONS_PAGE_QUERY's names, and not transactions.
+export type OverviewAllocationRow = {
+ allocationId: string;
+ pocketId: number;
+ pocketName: string;
+ // Numeric text: the column is serialised as ::text.
+ amount: string;
+ // 'YYYY-MM-DD' on the owner's calendar.
+ allocationDate: string;
+ sourceAccountId: number;
+ // LEFT-joined through user_accounts, so null once the account's row is gone.
+ sourceAccountName: string | null;
+ currency: string;
+};
+
+export type OverviewAllocationPage = Omit<OverviewTransactionPage, 'rows'> & {
+ rows: OverviewAllocationRow[];
+};
+
 export type OverviewAnalysisMeta = {
  notices: string[];
 };
@@ -696,7 +716,8 @@ export type OverviewAnalysis =
 export type GetOverviewDomainData = {
  window: ServedWindow;
  card: OverviewDomainCard;
- transactions: OverviewTransactionPage;
+ // Allocations on the pocket domain, transactions on the other five.
+ transactions: OverviewTransactionPage | OverviewAllocationPage;
  trend: OverviewTrendPoint[];
  categories?: OverviewExpenseCategory[];
  analysis?: OverviewAnalysis;

@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import ListContent from './ListContent.tsx';
 import { CurrencyType } from '../../../types/types.ts';
+import { LevelThreeLink } from '../helpers/levelThreeLink.ts';
 
 export type LastMovementType = {
   accountName: string; //category of expense
@@ -15,8 +16,13 @@ export type LastMovementType = {
   note?: string | null;
   date: Date | string;
   currency: CurrencyType;
-  transactionId: number;
-};
+} & (
+  // A transaction: the row opens its detail.
+  | { transactionId: number; link?: never; rowKey?: never }
+  // Not a transaction, so there is no detail to open: the row leads to its own
+  // screen, as a pocket allocation leads to its pocket.
+  | { transactionId?: never; link: LevelThreeLink; rowKey: string }
+);
 
 type LastMovementsProps = {
   data: LastMovementType[] | null;

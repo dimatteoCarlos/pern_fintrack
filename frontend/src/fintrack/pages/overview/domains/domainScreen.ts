@@ -49,6 +49,11 @@ export type DomainScreen<D extends OverviewDomain> = {
   nature: HeadlineNature;
   amountOf: (card: CardOf<D>) => number;
  };
+ // The list under the composition: movements on five domains, allocations on pockets.
+ list: {
+  title: string;
+  itemLabel: string;
+ };
  Composition: ComponentType<DomainCompositionProps<D>>;
 };
 
