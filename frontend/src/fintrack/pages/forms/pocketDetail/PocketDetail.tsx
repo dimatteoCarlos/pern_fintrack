@@ -41,6 +41,7 @@ import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { isIanaTimeZone } from '../../../../auth/auth_utils/timeZoneOptions.ts';
 import { PocketAllocationEntry } from '../../../types/pocketTypes.ts';
+import { sourceAccountLabel } from './sourceAccountLabel.ts';
 
 import '../styles/forms-styles.css';
 import './styles/pocketDetail-styles.css';
@@ -529,7 +530,7 @@ function PocketDetail() {
               zone, resolved by the server: two decisions taken on one day are
               told apart by nothing else. */}
           <span className='pocketDetail__rowSubtitle'>
-           {entry.sourceAccountName ?? DASH}
+           {sourceAccountLabel(entry, DASH)}
            {' · '}
            {formatCalendarDate(entry.allocationDate)}
            {entry.allocationTime ? `, ${entry.allocationTime}` : ''}

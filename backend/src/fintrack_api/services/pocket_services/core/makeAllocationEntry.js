@@ -36,6 +36,7 @@ export function makeAllocationEntry({
  allocationTime,
  sourceAccountId,
  sourceAccountName,
+ sourceAccountIsClosed,
  originalAmount,
  originalCurrency,
  exchangeRate,
@@ -51,7 +52,9 @@ export function makeAllocationEntry({
   allocationDate,
   allocationTime,
   sourceAccountId,
-  sourceAccountName,
+  // Null only for an account erased before account_registry existed.
+  sourceAccountName: sourceAccountName ?? null,
+  sourceAccountIsClosed,
   originalAmount: toAmount(originalAmount),
   originalCurrency,
   // Not an amount: it keeps the ten decimals of its column, so a rate that

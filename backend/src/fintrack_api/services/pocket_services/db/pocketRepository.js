@@ -210,14 +210,20 @@ export async function getPocketHistory(db, userId, pocketId, timeZone) {
    to_char(pa.allocation_actual_date AT TIME ZONE $3, 'YYYY-MM-DD') AS "allocationDate",
    to_char(pa.allocation_actual_date AT TIME ZONE $3, 'HH24:MI')     AS "allocationTime",
    pa.source_account_id          AS "sourceAccountId",
-   ua.account_name               AS "sourceAccountName",
+   -- A closed account's name survives on account_registry, stamped at closure.
+   COALESCE(ua.account_name, ar.account_name) AS "sourceAccountName",
+   -- CLOSE deletes the user_accounts row, so its absence is the closure.
+   (ua.account_id IS NULL)       AS "sourceAccountIsClosed",
    pa.original_amount::text      AS "originalAmount",
    lower(oc.currency_code)       AS "originalCurrency",
    pa.exchange_rate::text        AS "exchangeRate",
    pa.exchange_rate_source       AS "exchangeRateSource",
    pa.exchange_rate_timestamp    AS "exchangeRateTimestamp"
   FROM pocket_allocations pa
-  JOIN user_accounts ua ON ua.account_id = pa.source_account_id
+  -- LEFT: this join supplies a label, not a row. Inner, it dropped every
+  -- allocation of a closed account from the history.
+  LEFT JOIN user_accounts ua ON ua.account_id = pa.source_account_id
+  LEFT JOIN account_registry ar ON ar.account_id = pa.source_account_id
   JOIN currencies oc ON oc.currency_id = pa.original_currency_id
   WHERE pa.user_id = $1
    AND pa.pocket_id = $2

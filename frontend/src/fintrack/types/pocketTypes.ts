@@ -362,6 +362,8 @@ export type PocketAllocationEntry = {
  allocationTime: string;
  sourceAccountId: number;
  sourceAccountName: string | null;
+ // True when CLOSE deleted the account; its name survives on the registry.
+ sourceAccountIsClosed: boolean;
  // Audit metadata proving the conversion ran, never a second unit to do
  // arithmetic in.
  originalAmount: number;

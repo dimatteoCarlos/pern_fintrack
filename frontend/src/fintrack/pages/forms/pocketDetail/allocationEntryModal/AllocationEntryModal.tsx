@@ -22,6 +22,7 @@ import {
  numberFormatCurrency,
 } from '../../../../helpers/functions';
 import { PocketAllocationEntry } from '../../../../types/pocketTypes';
+import { sourceAccountLabel } from '../sourceAccountLabel';
 import { CurrencyType } from '../../../../types/types';
 import { useModalDialog } from '../../../../../hooks/useModalDialog';
 
@@ -101,10 +102,9 @@ function AllocationEntryModal({
      <div className='allocationEntry__row'>
       <span className='allocationEntry__label'>Source</span>
       <span className='allocationEntry__value'>
-       {/* The ledger names an account this read could not resolve — one the
-           owner removed, or the internal account the read filters out. What it
-           holds is still counted; only the name is missing. */}
-       {entry.sourceAccountName ?? DASH}
+       {/* No name only for an account erased before account_registry existed.
+           What it holds is still counted; only the name is missing. */}
+       {sourceAccountLabel(entry, DASH)}
       </span>
      </div>
 
