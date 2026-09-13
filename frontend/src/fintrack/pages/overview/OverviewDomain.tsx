@@ -169,6 +169,15 @@ function DomainView<D extends OverviewDomainName>({
 
  return (
   <section className='overviewDomain'>
+   {/* First on the screen, so the level the reader is on is named before the
+       figures. */}
+   <Link className='overviewDomain__back' to='/fintrack/overview'>
+    <span className='overviewDomain__backArrow' aria-hidden='true'>
+     ←
+    </span>
+    Back to Overview
+   </Link>
+
    {/* The month is the layout's and is stated here anyway: this screen can be
        opened directly by its url, and a page of movements with no period named
        on it is a page of movements from an unknown month. */}
@@ -187,10 +196,6 @@ function DomainView<D extends OverviewDomainName>({
    >
     {screen.label}
    </CardTitle>
-
-   <Link className='overviewDomain__back' to='/fintrack/overview'>
-    Back to the overview
-   </Link>
 
    <Composition
     card={card}
@@ -257,6 +262,13 @@ function OverviewDomain() {
  if (!isDomain(domain)) {
   return (
    <section className='overviewDomain'>
+    <Link className='overviewDomain__back' to='/fintrack/overview'>
+     <span className='overviewDomain__backArrow' aria-hidden='true'>
+      ←
+     </span>
+     Back to Overview
+    </Link>
+
     <CardTitle>Not a domain</CardTitle>
 
     <p className='overviewDomain__note'>
@@ -269,10 +281,6 @@ function OverviewDomain() {
       .toLowerCase()}
      .
     </p>
-
-    <Link className='overviewDomain__back' to='/fintrack/overview'>
-     Back to the overview
-    </Link>
    </section>
   );
  }

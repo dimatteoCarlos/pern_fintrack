@@ -603,14 +603,17 @@ const DomainCard = ({
     <span>{sub}</span>
    </div>
 
-   {/* Named for what is on the other side rather than "see more": the level-2
-       screen is every movement of this domain in the month, and the label says
-       so on all six cards. */}
+   {/* Named for what is on the other side rather than "see more", with the
+       domain in it: six links all called "View movements" cannot be told apart
+       in a screen reader's link list. */}
    <Link
     className='domainCard__drill'
     to={{ pathname: `/fintrack/overview/${domain}`, search }}
    >
-    Every {label.toLowerCase()} movement
+    View {label.toLowerCase()} movements
+    <span className='domainCard__drillArrow' aria-hidden='true'>
+     →
+    </span>
    </Link>
   </CollapsibleBlock>
  );

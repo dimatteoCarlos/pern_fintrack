@@ -1568,8 +1568,18 @@ a.icon {
    which is why the body restates it for its own children. */
 .overviewLayout .collapsible--card > .collapsible__body {
  display: flex;
+ flex: 1 1 auto;
  flex-direction: column;
  gap: var(--space-2);
+}
+
+/* Chrome wraps everything after the summary in this box, so it is the card's
+   flex item and not the body. Without it the body never stretches and the
+   drill link stays under the figures of the shorter card. */
+.overviewLayout .collapsible--card::details-content {
+ display: flex;
+ flex: 1 1 auto;
+ flex-direction: column;
 }
 
 /*------------*/
@@ -1790,22 +1800,44 @@ a.icon {
 /* The way back, and it is a link and not a history step: a reader who opened
    this screen from its url has no history to go back to, and a button calling
    back() would do nothing for them. */
+/* A badge at rest, its left edge on the content edge like the title under it.
+   No underline: the outline and the arrow already mark it as the way back. */
 .overviewLayout .overviewDomain__back {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-1);
  align-self: flex-start;
- padding: var(--space-1) 0;
+ padding: var(--space-1) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-full);
  font-size: var(--font-size-sm);
  color: var(--color-content-on-dark-subtle);
- text-decoration: underline;
+ transition:
+  color var(--motion-fast),
+  background-color var(--motion-fast),
+  border-color var(--motion-fast);
 }
 
+.overviewLayout .overviewDomain__backArrow {
+ font-size: inherit;
+}
+
+/* Filled with the accent pair, the same cream the selected category chip uses. */
 .overviewLayout .overviewDomain__back:hover {
- color: var(--color-content-on-dark);
+ background: var(--color-accent);
+ border-color: var(--color-accent);
+ color: var(--color-accent-content);
 }
 
 .overviewLayout .overviewDomain__back:focus-visible {
  outline: var(--border-width-thick) solid var(--color-accent);
  outline-offset: var(--border-width-thick);
- border-radius: var(--radius-sm);
+}
+
+.overviewLayout .overviewDomain__back:active {
+ background: var(--color-content-on-dark-subtle);
+ border-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
 }
 
 .overviewLayout .overviewDomain__note {
@@ -1818,17 +1850,47 @@ a.icon {
    these down the page at full ink would compete with the figures they sit
    under, and the reader who wants one is looking for it. */
 .overviewLayout .domainCard__drill {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-1);
  align-self: flex-start;
- margin-top: var(--space-2);
+ /* The card's last row: auto pushes it to the bottom of a card stretched by its
+    taller neighbour. */
+ margin-top: auto;
  padding: var(--space-1) 0;
  font-size: var(--font-size-xs);
  letter-spacing: var(--letter-spacing-wide);
  color: var(--color-content-on-dark-subtle);
- text-decoration: underline;
+ transition: color var(--motion-fast);
+}
+
+.overviewLayout .domainCard__drillArrow {
+ font-size: inherit;
+ transition: transform var(--motion-fast);
 }
 
 .overviewLayout .domainCard__drill:hover {
  color: var(--color-content-on-dark);
+}
+
+/* The arrow steps toward where the link goes; the text stays put. */
+.overviewLayout .domainCard__drill:hover .domainCard__drillArrow {
+ transform: translateX(var(--space-1));
+}
+
+.overviewLayout .domainCard__drill:active {
+ color: var(--color-content-on-dark-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .overviewLayout .domainCard__drill,
+ .overviewLayout .domainCard__drillArrow {
+  transition: none;
+ }
+
+ .overviewLayout .domainCard__drill:hover .domainCard__drillArrow {
+  transform: none;
+ }
 }
 
 .overviewLayout .domainCard__drill:focus-visible {
@@ -1837,17 +1899,53 @@ a.icon {
  border-radius: var(--radius-sm);
 }
 
-/* The category narrowing of the level-2 expense screen. A wrapping row of
-   chips, each as tall as its own line - the 44px floor was repealed, and a
-   control here is the size of the text it carries. */
+/* The category narrowing of the level-2 expense screen: a titled section, then
+   a wrapping row of chips, each as tall as its own line - the 44px floor was
+   repealed, and a control here is the size of the text it carries. */
 .overviewLayout .categoryFilter {
  display: flex;
- flex-wrap: wrap;
- gap: var(--space-2);
+ flex-direction: column;
+ gap: var(--space-3);
  margin-top: var(--space-4);
 }
 
+/* Ruled like the collapsible blocks above it, so it reads as the next section. */
+.overviewLayout .categoryFilter__head {
+ display: flex;
+ justify-content: space-between;
+ align-items: baseline;
+ gap: var(--space-2);
+ padding-top: var(--space-2);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+/* Stated, not inherited: the ink that reaches this section is dark, and the
+   heading read dark on the dark ground. */
+.overviewLayout .categoryFilter__title {
+ margin: 0;
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ line-height: var(--line-height-heading);
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .categoryFilter__meta {
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+ font-variant-numeric: tabular-nums;
+ white-space: nowrap;
+}
+
+.overviewLayout .categoryFilter__chips {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+
 .overviewLayout .categoryFilter__chip {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-1);
  padding: var(--space-1) var(--space-3);
  border: var(--border-width-thin) solid var(--color-border-subtle);
  border-radius: var(--radius-full);
@@ -1857,12 +1955,24 @@ a.icon {
     the size has to be named here or the chip comes out at the browser default
     beside text that is not. */
  font-size: var(--font-size-xs);
+ white-space: nowrap;
  cursor: pointer;
+ transition:
+  color var(--motion-fast),
+  background-color var(--motion-fast),
+  border-color var(--motion-fast);
 }
 
+/* The chip declares display, which beats the hidden attribute's own rule. */
+.overviewLayout .categoryFilter__chip[hidden] {
+ display: none;
+}
+
+/* Not --color-border-strong: that is the panel's dark ink and vanishes on the
+   dark surface. */
 .overviewLayout .categoryFilter__chip:hover {
  color: var(--color-content-on-dark);
- border-color: var(--color-border-strong);
+ border-color: var(--color-content-on-dark-subtle);
 }
 
 .overviewLayout .categoryFilter__chip:focus-visible {
@@ -1870,15 +1980,45 @@ a.icon {
  outline-offset: var(--border-width-thick);
 }
 
-/* The selected one is filled rather than merely brighter: one chip of fifteen
-   at a lighter ink is not findable at a glance. */
+.overviewLayout .categoryFilter__chip:active {
+ background: var(--color-surface-raised);
+ color: var(--color-content-on-dark);
+}
+
+/* Filled with the accent pair: one cream chip among grey outlines is findable. */
 .overviewLayout .categoryFilter__chip.is-active {
+ background: var(--color-accent);
+ border-color: var(--color-accent);
+ color: var(--color-accent-content);
+ font-weight: var(--font-weight-semibold);
+}
+
+.overviewLayout .categoryFilter__chip.is-active:hover {
+ border-color: var(--color-content-on-dark);
+}
+
+.overviewLayout .categoryFilter__chip.is-active:active {
  background: var(--color-content-on-dark-subtle);
- border-color: var(--color-content-on-dark-subtle);
- color: var(--color-surface-app);
 }
 
 .overviewLayout .categoryFilter__chip:disabled {
  opacity: 0.5;
  pointer-events: none;
+}
+
+/* Dashed so the disclosure does not read as one more category. */
+.overviewLayout .categoryFilter__chip--more {
+ border-style: dashed;
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .categoryFilter__count {
+ font-size: inherit;
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .categoryFilter__icon {
+ flex: none;
+ width: var(--size-status-square);
+ height: var(--size-status-square);
 }
