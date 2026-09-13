@@ -12,12 +12,15 @@ import {
 } from '../../../../helpers/constants';
 import { BUDGET_NEAR_LIMIT_PERCENT } from '../../../../helpers/budgetStatus';
 import {
-  capitalize,
   currencyFormat,
   formatDateToDDMMYYYY,
   // isDateValid,
 } from '../../../../helpers/functions';
 import { AccountTransactionType } from '../../../../types/responseApiTypes';
+import {
+  resolveDirection,
+  resolveTransactionPresentation,
+} from '../../../../helpers/transactionPresentation';
 
 import './styles/accountTransactionsList-styles.css';
 
@@ -32,13 +35,16 @@ const DASH = '—';
 // Which way a movement moved the account, for the colour that reinforces the
 // sign. Coerced rather than type-tested: an amount can reach here as text, the
 // way every DECIMAL column node-postgres serves does, and a figure the answer
-// did not carry must colour as nothing rather than as an outflow.
+// did not carry must colour as nothing rather than as an outflow. The zero/NaN
+// case is this row's own: resolveTransactionPresentation's matrix has no third
+// state to give it, so it is guarded here rather than pushed onto the shared
+// resolver.
 const amountDirection = (amount: number | string | null | undefined) => {
   const value = amount === null || amount === undefined ? NaN : Number(amount);
 
   if (Number.isNaN(value) || value === 0) return 'flat';
 
-  return value > 0 ? 'in' : 'out';
+  return resolveDirection(value);
 };
 
 type AccountTransactionsListPropsType = {
@@ -121,6 +127,8 @@ const AccountTransactionsList = ({
             const {
               transaction_id,
               movement_type_name,
+              account_type_name,
+              transaction_type_name,
               amount,
               currency_code,
               note,
@@ -133,6 +141,16 @@ const AccountTransactionsList = ({
 
             const isClickable = Boolean(onTransactionClick);
             const openDetail = () => onTransactionClick?.(transaction_id);
+
+            // What this row means from the perspective of the account this list
+            // belongs to - the same resolver the two detail modals use, so the
+            // three no longer disagree on the same transaction.
+            const presentation = resolveTransactionPresentation({
+              movementType: movement_type_name,
+              accountType: account_type_name,
+              amount,
+              legacy: { transactionTypeName: transaction_type_name },
+            });
 
             // What share of the budget the month had consumed by this row. One
             // decimal, the same as the summary above the list, so the top row
@@ -184,7 +202,7 @@ const AccountTransactionsList = ({
               >
                 <BoxRow className='transaction-header'>
                   <div className='box__title transaction-movement-type'>
-                    {capitalize(movement_type_name)}
+                    {presentation.badgeLabel}
                   </div>
 
                   {/* {transaction_actual_date &&
