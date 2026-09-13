@@ -34,6 +34,12 @@ export const DELETION_TYPE_CLOSE = 'CLOSE';
 // Findings: plan-docs/ongoing/PLAN_ACCOUNT_DELETION/PLAN_DELETION_METHODS.md.
 export const SOFT_DELETION_ENABLED = false;
 
+// Carlos, 2026-09-13: RTA and HARD are refused too. Both were hidden on the
+// screen and still ran on a direct request, and both erase history the owner
+// ruled must stay. CLOSE is the only method the API accepts.
+export const RTA_DELETION_ENABLED = false;
+export const HARD_DELETION_ENABLED = false;
+
 // RETIRED 2026-09-08, kept commented per the standing rule. CLOSE's two
 // settlement policies: DISCARD sent the residual to the system's compensation
 // account, TRANSFER to an account the owner picked from the eligible ones.

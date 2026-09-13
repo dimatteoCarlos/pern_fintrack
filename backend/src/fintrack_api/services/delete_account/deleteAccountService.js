@@ -14,6 +14,8 @@ import {
   DELETION_TYPE_RTA,
   DELETION_TYPE_CLOSE,
   SOFT_DELETION_ENABLED,
+  RTA_DELETION_ENABLED,
+  HARD_DELETION_ENABLED,
   USER_ACTION,
   // RETIRED 2026-09-08 with the settlement policies:
   // CLOSE_POLICY_DISCARD,
@@ -1638,6 +1640,19 @@ export const deleteAccountService = async (
   throw createError(
    403,
    `Soft deletion is disabled in this version. Account ${targetAccountId} was not changed; close it instead.`,
+  );
+ }
+
+ // RTA and HARD have no effect either (Carlos, 2026-09-13): both erase the
+ // account's history, which CLOSE keeps. Same place and same reason as SOFT;
+ // processRTAAnnulment and processStandardDelete stay intact.
+ if (
+  (deletionType === DELETION_TYPE_RTA && !RTA_DELETION_ENABLED) ||
+  (deletionType === DELETION_TYPE_HARD && !HARD_DELETION_ENABLED)
+ ) {
+  throw createError(
+   403,
+   `${deletionType} deletion is disabled in this version. Account ${targetAccountId} was not changed; close it instead.`,
   );
  }
   //------------------------------------------

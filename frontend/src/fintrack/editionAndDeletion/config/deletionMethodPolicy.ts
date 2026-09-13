@@ -21,4 +21,8 @@
 // (SOFT_DELETION_ENABLED in accountDeleteController.js), because a deactivated
 // account could not be restored and overview still counted its balance.
 // Turning SOFT back on takes that flag and this one.
+//
+// RTA and HARD were refused the same day (RTA_DELETION_ENABLED,
+// HARD_DELETION_ENABLED), because both erase history. So CLOSE is the only
+// method the API accepts too, not only the only one this screen shows.
 export const CLOSE_IS_THE_ONLY_METHOD = true;

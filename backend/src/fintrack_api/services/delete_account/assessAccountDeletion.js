@@ -46,6 +46,8 @@ import {
  DELETION_TYPE_RTA,
  DELETION_TYPE_SOFT,
  SOFT_DELETION_ENABLED,
+ RTA_DELETION_ENABLED,
+ HARD_DELETION_ENABLED,
 } from '../../controllers/accountDeleteController.js';
 
 /**
@@ -152,9 +154,12 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
     available: isSettled,
     // The refusal quoted before the owner meets it, in the same shape HARD
     // uses below, naming the two routes that do accept a nonzero balance.
+    // Named RTA as the way out until 2026-09-13, when RTA was refused on the
+    // API. The way out now is a transfer, or the reversal the close runs itself.
+    // : `This account holds ${closePreview.targetAccount.residual} and cannot be closed until that is zero. Move the balance out with a transfer, or use RTA to reverse the account's effects on other accounts.`,
     reason: isSettled
      ? undefined
-     : `This account holds ${closePreview.targetAccount.residual} and cannot be closed until that is zero. Move the balance out with a transfer, or use RTA to reverse the account's effects on other accounts.`,
+     : `This account holds ${closePreview.targetAccount.residual} and cannot be closed until that is zero. Move the balance out with a transfer, or reverse the balance and close in one step.`,
     // INVERTED IN MEANING 2026-09-08, same field, same value, honest again.
     // It used to mean "the close will have to settle something". CLOSE settles
     // nothing now, so it means what it says: a settlement is REQUIRED of the
@@ -219,7 +224,14 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
    },
    {
     deletionType: DELETION_TYPE_RTA,
-    available: true,
+    // Was true. Refused by the engine while the flag is off (Carlos,
+    // 2026-09-13). The report below is still computed: it is a read, and the
+    // related-accounts panel is built from the same figures.
+    // available: true,
+    available: RTA_DELETION_ENABLED,
+    reason: RTA_DELETION_ENABLED
+     ? undefined
+     : 'RTA deletion is disabled in this version. Close the account instead.',
     impactReport,
     affectedAccountsCount: impactReport.length,
     totalNetAdjustmentAmount,
@@ -240,14 +252,23 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
    },
    {
     deletionType: DELETION_TYPE_HARD,
-    available: isSettled,
+    // Was isSettled alone. Refused by the engine while the flag is off (Carlos,
+    // 2026-09-13), whatever the balance; the balance reason below applies only
+    // once it is back on.
+    // available: isSettled,
+    available: HARD_DELETION_ENABLED && isSettled,
     // The refusal the engine will raise, quoted before the owner meets it, and
     // naming the route to making it available - which is what makes this an
     // assessment rather than a disabled button. CLOSE leads and RTA follows,
     // matching the engine's own 409: an owner who is done with an account
     // wants the residual moved out, while RTA reverses the account's effect on
     // OTHER accounts and is the answer to a different question.
-    reason: isSettled
+    // reason: isSettled
+    //  ? undefined
+    //  : `...cannot be erased until that is settled...`,
+    reason: !HARD_DELETION_ENABLED
+     ? 'Hard deletion is disabled in this version. Close the account instead.'
+     : isSettled
      ? undefined
      : `This account holds ${closePreview.targetAccount.residual} and cannot be erased until that is settled. CLOSE refuses the same balance, so move it out with a transfer first, or use RTA if the account's effects on other accounts should be reversed.`,
     removesPocketAllocations: true,
