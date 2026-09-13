@@ -377,6 +377,164 @@ a.icon {
  font-variant-numeric: tabular-nums;
 }
 
+/* The consolidated card, variant A of overview-all-card-preview.html. Its own box
+   rather than .domainCard, whose rule still carries a raw 1px border. The fold,
+   its chevron and its hover, focus and press states come from .collapsible. */
+.overviewLayout .consolidatedCard {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ padding: var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+}
+
+.overviewLayout .consolidatedCard__head {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2);
+}
+
+.overviewLayout .consolidatedCard__label {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .consolidatedCard__scope {
+ flex-shrink: 0;
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .consolidatedCard__figures {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+}
+
+.overviewLayout .consolidatedCard__figureLabel {
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .consolidatedCard__figure {
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-semibold);
+ line-height: var(--line-height-heading);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+/* The four referenced figures under the headline, ruled off from it. One column
+   at 360px, two from 480px. */
+.overviewLayout .consolidatedCard__list {
+ display: grid;
+ grid-template-columns: 1fr;
+ gap: var(--space-1) var(--space-6);
+ margin: 0;
+ padding-top: var(--space-2);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+@media (min-width: 30em) {
+ .overviewLayout .consolidatedCard__list {
+  grid-template-columns: repeat(2, 1fr);
+ }
+}
+
+.overviewLayout .consolidatedCard__listRow {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2);
+ font-size: var(--font-size-sm);
+}
+
+/* The label wraps its tag under it rather than pushing the figure off the row. */
+/* Centred and not baselined: the definition button is an icon with no text
+   baseline of its own. */
+.overviewLayout .consolidatedCard__listLabel {
+ display: flex;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: 0 var(--space-2);
+ min-width: 0;
+ font-size: inherit;
+ color: var(--color-content-on-dark-muted);
+}
+
+/* Direct children only, so the tooltip's own text keeps its size. */
+.overviewLayout .consolidatedCard__listLabel > span {
+ font-size: inherit;
+}
+
+/* The tooltip wrapper is inline-block, a line box with descender space under
+   the icon; as a flex box it centres on the label (heroIndicators does the same). */
+.overviewLayout .consolidatedCard__listLabel .tooltip__wrapper {
+ display: inline-flex;
+ align-items: center;
+ line-height: 1;
+}
+
+.overviewLayout .consolidatedCard__listLabel .consolidatedCard__scope {
+ font-size: var(--font-size-xs);
+}
+
+.overviewLayout .consolidatedCard__listAmount {
+ flex: none;
+ margin: 0;
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+/* Quieter than a figure, so a dash reads as "did not arrive" and never as a value. */
+.overviewLayout .consolidatedCard__listAmount--missing,
+.overviewLayout .consolidatedCard__figure--missing {
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .consolidatedCard__sub {
+ display: flex;
+ flex-direction: column;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-muted);
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .consolidatedCard__sub span {
+ font-size: inherit;
+}
+
+.overviewLayout .consolidatedCard__count {
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .consolidatedCard__aside {
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* One line of the figure's own height, so the card keeps its shape while loading. */
+.overviewLayout .consolidatedCard__skeleton {
+ display: inline-block;
+ width: calc(var(--space-6) * 3);
+ height: 1em;
+ vertical-align: middle;
+ border-radius: var(--radius-xs);
+ background-color: var(--color-surface-loading);
+}
+
+.overviewLayout .consolidatedCard__count .consolidatedCard__skeleton {
+ width: var(--space-4);
+}
+
 /*------------*/
 /* The six domain cards of level 1.
    One column at 360px, two from 480px, three from 768px. The grid is on the

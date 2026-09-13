@@ -23,6 +23,7 @@ import { onAccountChanged, onTransactionRecorded } from './transactionEvents.ts'
 import {
  MonthlySnapshot,
  OverviewActivityRow,
+ OverviewAllCard,
  OverviewCharts,
  OverviewDomainCards,
  OverviewFinancialGoals,
@@ -43,6 +44,8 @@ type OverviewState = {
  referenceMonth: string | null;
  currentMonth: string | null;
  hero: OverviewHero | null;
+ // The consolidated card the strip above the domain cards reads.
+ all: OverviewAllCard | null;
  domainCards: OverviewDomainCards | null;
  // The saved amount, the target and the remainder, read at the close of the
  // served month like every position on the page.
@@ -86,6 +89,7 @@ export const useOverviewStore = create<OverviewState>((set, get) => ({
  referenceMonth: null,
  currentMonth: null,
  hero: null,
+ all: null,
  domainCards: null,
  financialGoals: null,
  charts: null,
@@ -130,6 +134,8 @@ export const useOverviewStore = create<OverviewState>((set, get) => ({
     referenceMonth: data.window.referenceMonth,
     currentMonth: data.window.currentMonth,
     hero: data.hero,
+    // ?? null so a backend that predates the field reads as absent, not undefined.
+    all: data.all ?? null,
     domainCards: data.domainCards,
     financialGoals: data.financialGoals,
     charts: data.charts,

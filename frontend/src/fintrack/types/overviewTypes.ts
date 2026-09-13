@@ -8,8 +8,8 @@ import type { PocketStatus } from './pocketTypes';
 // is never null that is written here as `number`, because a nullable type would
 // make every consumer branch on a case the server does not produce.
 //
-// PARTIAL ON PURPOSE. The payload also carries the all card, the financial
-// goals, the recent-activity teaser and the charts. Each arrives here with the
+// PARTIAL ON PURPOSE. The payload also carries the financial goals, the
+// recent-activity teaser and the charts. Each arrives here with the
 // component that renders it, so the type never claims a field nobody reads yet.
 // Adding one is additive: no existing consumer changes.
 
@@ -421,10 +421,28 @@ export type OverviewActivityRow = {
  currency_code: string;
 };
 
+// The consolidated card, from makeAllCard.js. Five figures are copies of the hero
+// and the domain cards; transactionCountAll is the only one it owns.
+export type OverviewAllCard = {
+ domain: 'all';
+ netWorth: number;
+ totalIncomePeriod: number;
+ totalExpensePeriod: number;
+ // Positive when others owe the user, negative when the user owes.
+ netDebtPosition: number;
+ totalPocketBalance: number;
+ // The sum of the domain counts; transfers are not counted.
+ transactionCountAll: number;
+ currency: string;
+ window: OverviewCardWindow;
+ meta: OverviewMeta;
+};
+
 // The slice of the payload the frontend reads today.
 export type GetOverviewData = {
  window: ServedWindow;
  hero: OverviewHero;
+ all: OverviewAllCard;
  domainCards: OverviewDomainCards;
  financialGoals: OverviewFinancialGoals;
  charts: OverviewCharts;

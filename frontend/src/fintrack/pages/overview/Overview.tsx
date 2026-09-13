@@ -14,6 +14,7 @@ import { useFetch } from '../../hooks/useFetch.ts';
 
 // UI COMPONENTS
 import AccountBalance from './components/AccountBalance.tsx';
+import ConsolidatedCard from './components/ConsolidatedCard.tsx';
 import DomainCards from './components/DomainCards.tsx';
 import FinancialGoals from './components/FinancialGoals.tsx';
 // MonthlyAverage is superseded by MonthlySnapshot, which prints the same
@@ -601,6 +602,9 @@ function Overview() {
           </div>
         ) : (
           <>
+            {/* The month consolidated, above the cards that break it down. */}
+            <ConsolidatedCard />
+
             <DomainCards />
 
             {/* No props: the widget subscribes to useOverviewStore, which the
