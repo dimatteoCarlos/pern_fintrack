@@ -859,6 +859,27 @@ declaración muerta.
 
 ## 8. Overview
 
+> **STALE — marked 2026-09-13.** Everything below in this section was measured
+> between 2026-08-30 and 2026-08-31 against the `feat/overview` worktree
+> (`pern_fintrack_overview`). That worktree no longer exists (`git worktree list`,
+> 2026-09-13) and the branch is merged into `main`. **The current state lives in
+> `plan-docs/ongoing/OVERVIEW_PLAN/OVERVIEW_PLAN.md` sections 3 and 6.** In short,
+> as of 2026-09-13 on `main`:
+>
+> - **Backend:** the three endpoints are built; the pocket figures read the plan
+>   model (`overviewPageRepository.js:220-224`) and cash accounts count as bank
+>   (`overviewAccountRepository.js:92`, `:347-360`).
+> - **Frontend:** the page makes one request; level 1 and all six level-2 screens
+>   are built; level-3 links are wired for all five routable domains, the expense
+>   one landing 2026-09-13.
+> - **Branch divergence over the saving-goals component:** moot; the branches are
+>   merged and `FinancialGoals` is mounted at `Overview.tsx:618`.
+> - **Not re-measured here:** how the goals shortfall is summed (clamped per
+>   pocket, or a flat subtraction). Check `OVERVIEW_DECISIONS.md` before reading
+>   the paragraph below as open.
+>
+> The text below is kept for history; do not act on it.
+
 ### Decisiones abiertas
 
 Once. Las que deciden algo: si un movimiento entre cuentas propias merece tarjeta propia

@@ -4,6 +4,10 @@
 state below was measured in the code of `feat/overview`, not read from another
 plan. Where a figure is named, it is the identifier the payload publishes.
 
+**Re-measured 2026-09-13 on `main`.** `feat/overview` is merged and its worktree
+no longer exists. Sections 2, 3, 5, 6, 7 and 8 were corrected against the code
+that day, with the file and line of each claim.
+
 On 2026-09-09 it absorbed the three documents whose sequencing and scope it had
 already superseded - `PLAN_OVERVIEW_RECOVERY.md`, `OVERVIEW.md` and
 `PLAN_OVERVIEW_LEVEL2.md` - so the stage board, the exit conditions, what is out
@@ -23,15 +27,15 @@ destination. It answers three questions at three depths and refuses a fourth.
 |---|---|---|
 | level 1 | what is my situation | the Overview page, one request |
 | level 2 | what explains this domain | the per-domain detail screen |
-| level 3 | what explains this entity | the owning module computes it, **Overview routes to it** — `OVERVIEW_LEVEL3.md` |
+| level 3 | what explains this entity | the owning module computes it, **Overview routes to it** — `OVERVIEW_LAYOUT.md` section 9 |
 
 **The level-3 row said "not Overview" until 2026-09-08 and that was wrong by
 half.** Computing an entity's figures belongs to the owning module; routing from
 a level-2 row to that entity belongs to Overview, because the row the user
 clicks is Overview's payload. Measured, five of the six domains already publish
 the id the destination screen reads, so level 3 needs no new endpoint and no new
-figure — only links. `OVERVIEW_LEVEL3.md` carries the field and the destination
-per domain.
+figure — only links. `OVERVIEW_LAYOUT.md` section 9 carries the field and the
+destination per domain.
 
 The problem it exists to solve, still true today: the live screen renders **three
 figures** — net worth, income, expense — built from **five calls** to the
@@ -42,9 +46,9 @@ Everything Overview computes is computed and discarded.
 
 ## 2. The reference set — which file answers what
 
-Two tracks. **Five documents and three mockups, once the layout merge below is
-done. Nothing outside them is a source.** Eleven documents became seven on
-2026-09-09 and become five when `OVERVIEW_LAYOUT.md` absorbs the last two: the
+Two tracks. **Five documents and five mockups. Nothing outside them is a
+source.** Eleven documents became seven on 2026-09-09 and five on 2026-09-13,
+when `OVERVIEW_LAYOUT.md` absorbed the last two: the
 same stage board lived in three of them, the same out-of-scope list in two, and
 the open decisions in six.
 
@@ -57,8 +61,9 @@ the open decisions in six.
 | `OVERVIEW_LAYOUT.md` | which published field feeds each block, on which endpoint, at which depth |
 | `PLAN_OVERVIEW_CONTRACT.md` | the exact wire shape of the payload - consulted, not read front to back |
 | `OVERVIEW_DECISIONS.md` | why a thing was decided the way it was, and the rulings frozen for P5 - consulted |
-| `OVERVIEW_CHART_TECHNIQUE.md` | how a chart is drawn in this module - **folds into `OVERVIEW_LAYOUT.md`** |
-| `OVERVIEW_LEVEL3.md` | which entity each domain opens and the field carrying its id - **folds into `OVERVIEW_LAYOUT.md`** |
+| `OVERVIEW_LAYOUT.md` section 8 | how a chart is drawn in this module - **folded from `OVERVIEW_CHART_TECHNIQUE.md` on 2026-09-13** |
+| `OVERVIEW_LAYOUT.md` section 9 | which entity each domain opens and the field carrying its id - **folded from `OVERVIEW_LEVEL3.md` on 2026-09-13** |
+| `docs/charts/SVG_CHARTS_GUIDE.md` (tracked, outside `plan-docs/`) | the implementation reference for hand-drawn SVG charts: coordinates, scales, marks, measured responsive width, accessibility |
 
 ### How it looks
 
@@ -71,6 +76,8 @@ are relative to that folder.
 | `bosquejo-overview-nivel-1.html` | the whole page at page density: month picker, hero, six domain cards, monthly snapshot, goals, activity teaser, charts |
 | `propuesta-pareto-gasto.html` | the spend-distribution component: colour ramp, redundant encoding, sub-pixel segment, zero spend, uncategorised, reversal larger than spend, three fetch states, tokens consumed |
 | `propuesta-snapshot-mensual.html` | the monthly-snapshot component: the state box, the dead band, the three fetch states, edge cases, tokens consumed |
+| `bosquejo-overview-nivel-2.html` | the expense level-2 screen |
+| `bosquejo-overview-nivel-2-dominios.html` | the other five level-2 screens: income, investment, debt, pocket, profit and loss. **Frozen by Carlos 2026-09-12** (P5-6, `OVERVIEW_DECISIONS.md:2335-2369`) |
 
 **The sketch and the two proposals are not redundant.** The sketch draws the
 block at page density and settles the technique — the distribution bar is native
@@ -92,8 +99,8 @@ times against 4.
 | P2 | repoint Pocket to the plan model | **DONE**, `f4b999d9` and `f0388039` |
 | P3 | complete and correct the level-1 indicators | **DONE** 2026-09-07 |
 | P4 | the API contract, the served window and the activity page | **DONE**, `4b99fffa` and `7ba6761e` |
-| P5 | frontend | **IN PROGRESS** (measured 2026-09-12). Level 1 built, last commit `b99338da`. Level 2 reachable with card, trend, expense ranking, category narrowing and movements (`46a54353`, `9159baa1`), and no analysis section. Level-3 links not wired |
-| P6 | level 2 | **BACKEND DONE**, `7ba6761e`; renderer started at `46a54353`, analysis sections not drawn |
+| P5 | frontend | **IN PROGRESS** (re-measured 2026-09-13 on `main`). Level 1 built and on production. **Level 2 built for all six domains:** the five analysis screens draw their sections through `AnalysisPanel.tsx` (mounted at `IncomeDomain.tsx:56`, `InvestmentDomain.tsx:187,217,246`, `DebtDomain.tsx:73,104`, `PocketDomain.tsx:124,170`, `PnlDomain.tsx:57`), with the single `full` request fired on viewport entry by `useFullAnalysisTrigger.ts:10` (`AnalysisPanel.tsx:76`); expense draws the spend-against-budget Pareto `CategoryBudgetPareto.tsx` at `ExpenseDomain.tsx:232-237` (`d898c7c0`, `f516f1ec`). **Level-3 links: all five wired** — debt `DebtDomain.tsx:97`, investment `InvestmentDomain.tsx:239`, income `IncomeDomain.tsx:92-96`, pocket `PocketDomain.tsx:163`, and expense from the category selected in the level-2 filter, `categoryLink` at `ExpenseDomain.tsx:185-191` (`79eb08d0`, 2026-09-13). The running month's picker label reads "· to date" (`c7e80bda`; `MonthPicker.tsx:206`, fed at `OverviewLayout.tsx:39-41` and `:141`). Open P5 item: the consolidated card, variant A, `ConsolidatedCard`, being built 2026-09-13 |
+| P6 | level 2 | **DONE** — backend `7ba6761e`; renderer and analysis sections on `main`, as the P5 row measures |
 
 ### The three endpoints
 
@@ -135,7 +142,9 @@ level 2 exists to expose.
 
 ### Tests
 
-`backend/test/overview` — six files, 69 tests, no database. Run the files
+`backend/test/overview` — eight files, 87 tests (counted at the end of 2026-09-13
+by `test(` and `it(` calls; seven files and 83 tests earlier the same day), no
+database. Run the files
 explicitly; pointing the runner at the directory makes it load the directory as
 a module and fail.
 
@@ -253,16 +262,16 @@ does not carry component behaviour.
 | 3 | the six domain cards — five on a shared component, investment on its own | `bosquejo-overview-nivel-1.html` |
 | 4 | the spend distribution, from the page payload, no `analysis` parameter, no client-side reordering | `propuesta-pareto-gasto.html` |
 | 5 | monthly snapshot, financial goals, activity teaser — all three from the same payload | `propuesta-snapshot-mensual.html` and the sketch |
-| 6 | the six domain screens, `derived` where it suffices and `full` only where a ranked breakdown is needed | **no mockup exists** |
-| 7 | the level-3 links out of the level-2 rows — five domains, no new calculation and no entity endpoint | `OVERVIEW_LEVEL3.md` |
+| 6 | the six domain screens, `derived` where it suffices and `full` only where a ranked breakdown is needed | `bosquejo-overview-nivel-2.html` for expense; `bosquejo-overview-nivel-2-dominios.html` for the other five, frozen 2026-09-12 (P5-6). **Built** — section 3 |
+| 7 | the level-3 links out of the level-2 rows — five domains, no new calculation and no entity endpoint | `OVERVIEW_LAYOUT.md` section 9. **Built, five of five (2026-09-13)** |
 
-**Two pieces of P5 do not wait on the remaining decisions and can start now.**
-The month picker reading the served window off the response, and the level-3
-navigation wiring. Both are settled inputs: the served window publishes the
-month, its bounds and whether it is still running, and the five routable domains
-each publish the identity their destination screen reads. What must not be
-advanced with them is the semantics — the final figures, the hero, and the change
-published as an amount or as a rate, which are still open.
+**The two pieces that did not wait on decisions are both built (2026-09-13).**
+The level-3 navigation wiring covers all five routable domains (section 3). The
+month picker's conditional label is built: `OverviewLayout.tsx:39-41` reads
+`window.isCurrentMonth` and `MonthPicker.tsx:206` appends "· to date"
+(`c7e80bda`). The semantics that were
+open when this paragraph was written — the change published as an amount or as a
+rate — are settled (section 6).
 
 **The exit condition is the one that matters to the user:** the live screen must
 end with no dependency on the balance-by-account-type endpoint for any Overview
@@ -323,11 +332,11 @@ stage being declared finished early.
 The last one is the point of the whole plan: today that screen makes five
 separate calls to build three figures.
 
-### The two gaps that are not stage work
+### The gap that was not stage work — closed
 
 | gap | what it is |
 |---|---|
-| **no mockup for five of the six domain screens** | expense is drawn in `mockups/overview/bosquejo-overview-nivel-2.html`; income, investment, debt, pocket and profit-and-loss are drafted in `mockups/overview/bosquejo-overview-nivel-2-dominios.html` (2026-09-12), awaiting Carlos's approval of its open decisions. This blocks the analysis sections of commit 6 and nothing before it |
+| **no mockup for five of the six domain screens** — **CLOSED 2026-09-12** | expense is drawn in `mockups/overview/bosquejo-overview-nivel-2.html`; income, investment, debt, pocket and profit-and-loss are drawn in `mockups/overview/bosquejo-overview-nivel-2-dominios.html`, **frozen by Carlos on 2026-09-12** with its open decisions ruled (P5-6, `OVERVIEW_DECISIONS.md:2335-2369`). The analysis sections of commit 6 were built against it |
 
 ### The gap that was found and closed the same day
 
@@ -371,17 +380,56 @@ are recorded here as closed and removed from the open list.
 | how far back a level-2 series reaches, six points or thirteen | **thirteen** at `derived`, published from one bound — `ANALYSIS_MONTHS` in `monthArithmetic.js`; the card's six-point chart is the tail of the same array |
 | whether the reconciliation difference is published with its tolerance | **yes, at level 2 only** — `makeInvestmentAnalysis.js` publishes `difference` and `tolerance` beside the four terms. Level 1 still publishes the four terms and refuses the difference, because a client cannot reconstruct the tolerance: the comparison runs through the decimal library and a floating-point subtraction finds a cent where the server found none |
 
-### Still open
+### Settled since — the five that were listed as open, re-measured 2026-09-13
 
-None of these blocks building a component.
+Until 2026-09-13 this table sat under "Still open". Every row had been answered
+by a ruling or by the code.
 
-| decision | the two readings | who decides |
-|---|---|---|
-| whether the change is also published as a rate | the amount already exists and is always defined; the rate reads better but is null in the two cases that matter most | the developer |
-| which card owns the spend distribution | it can render inside the expense card, or route to its own screen | frontend, during P5 |
-| whether the six cards route to six screens or to three | investment, debt and pocket already have their own module; income, expense and profit-and-loss do not | frontend, during P5 |
-| the missing colour tokens | the sketches carry raw hex values, which a sketch may do and a stylesheet may not | requested when the block is built, never before |
-| whether a past month's category ranking is in scope | the ranking exists for the current month only; extending it is the same statement with a different bound, but it changes what the endpoint promises | the developer |
+| question | answer, and where it lives |
+|---|---|
+| whether the change is also published as a rate | **no rate field.** The server publishes the prior month's figure `priorTotalAmount`, and the card reads the change as a percentage over its absolute value — ruling of 2026-09-09, `OVERVIEW_DECISIONS.md:2423-2451` |
+| which card owns the spend distribution | **level 1, in its own section below the cards** (D47, `OVERVIEW_DECISIONS.md:675-704`), mounted at `Overview.tsx:628`. Level 2 expense draws the spend-against-budget Pareto instead (`CategoryBudgetPareto.tsx` at `ExpenseDomain.tsx:232-237`), so the two screens do not repeat one reading (`ExpenseByCategory.tsx:54-56`) |
+| whether the six cards route to six screens or to three | **six level-2 screens, separate from the Budget, Pocket and Debts boards** (P5-1, `OVERVIEW_DECISIONS.md:2187-2223`); the route is `:domain` at `App.tsx:310` |
+| the missing colour tokens | **a missing token does not stall a block:** add what the component needs and normalise later (Carlos, 2026-09-08, `OVERVIEW_DECISIONS.md:2330-2331`) |
+| whether a past month's category ranking is in scope | **in scope and built: the ranking is cut to the chosen month.** `overviewExpenseService.js:162-166` reads the budget status for `referenceMonth` and `:214` ranks it with `makeCategoryBreakdown`; the category filter's own read at `:127-133` takes the same bound |
+
+### Decided 2026-09-13 — the budget Pareto's execution rate divides categorised spending
+
+- **Rule:** the level-2 Pareto's execution rate is categorised spending over the budget of the same categories — the last ranked row's `cumulativeActual` over its `cumulativeBudget`.
+- **Why:** Carlos, 2026-09-13: *"lo que estamos presentando es gastos con categoria"* — the chart ranks categories; uncategorised spending is stated under it, not ranked (`CategoryBudgetPareto.tsx:180`, `:417-419`).
+- **Different from the expense card, on purpose:** the card's `executionPercentage` divides total spending `totalAmount` by `budgetAmount` (`DomainCards.tsx:232-240`, ruling of 2026-09-08).
+- **Served, not client arithmetic (2026-09-13, `e1c19f9f`):** `makeCategoryBudgetExecution.js:18-34` builds `categoryExecution` (`spentAmount`, `budgetAmount`, `executionPercentage`, `remainingBudget`, `isOverBudget`), published at `overviewExpenseService.js:234`, read at `CategoryBudgetPareto.tsx:165-171`, tested in `categoryBudgetExecution.test.js`.
+
+### Decided 2026-09-13 — an expense reversal into an investment account is a capital contribution
+
+- **Question:** does money coming back from an expense into an investment account — a transfer (movement type 6) out of a `category_budget` account — count as capital contributed?
+- **Answer:** **yes, it counts** (Carlos, 2026-09-13). Moved here from the open list the same day.
+- **No code change:** `contributions` already sums every transfer and opening row on investment accounts (`overviewInvestmentRepository.js:129-135`), and `last_funding` takes any positive transfer (`:136-143`).
+- **Why:** the identity that file publishes stays intact — ledger balance = contributions + realised result + closure adjustment. Excluding the reversal would leave its money in the balance with no term to explain it.
+
+### Decided 2026-09-13 — the consolidated "all" card is built, not retired
+
+- **Question:** render or retire the consolidated card the server builds (`makeAllCard.js:52-69`, called at `overviewPageService.js:158`) and no frontend reads.
+- **Answer:** **build it** (Carlos, 2026-09-13), as variant A of `plan-docs/design-refs/overview-all-card-preview.html`. He first picked variant B, then approved A from its screenshot the same day.
+- **Variant A:** a card above the domain cards on level 1 that folds like them. It shows:
+  - net worth as the headline;
+  - income and expense tagged as flows;
+  - net debt ("owed to you" or "you owe" by sign) and pockets tagged as positions;
+  - a footer with the month's movement count (`transactionCountAll`) and "transfers are not counted".
+- **Pending work, in progress 2026-09-13:** a `ConsolidatedCard` component reading `all` from the overview store. The `all` type and store field were added that day.
+
+### Still open for Carlos
+
+None as of 2026-09-13: both decisions listed here that day were ruled the same day.
+
+### Deferred to a later version
+
+- **Year-to-date spend per category:** not served (`charts.expenseYtdDistribution` does not exist), and the client may not sum months (D40, `OVERVIEW_DECISIONS.md:165`).
+- **Soft-deleted accounts in Overview figures:** how a logically deleted account enters each total is not re-ruled for V1.
+- **Row colour for accounting accounts:** owned by the transaction presentation resolver now (`dc655248`, `16fbe797`), not by Overview.
+- **Financial Goals band counts:** level 1 publishes only the three goal totals; "target reached / in progress" needs per-band counts in the payload.
+- **Hiding the header's $0 in an empty month:** the empty-month state hides the month blocks (`Overview.tsx:591-613`, `:628`); the layout header still prints income and expense at $0.
+- **The selected chip's `:active` colour:** `overview-styles.css:2287-2289` paints `--color-content-on-dark-subtle`.
 
 ---
 
@@ -471,14 +519,18 @@ Overview module"* and `PLAN_OVERVIEW_RECOVERY.md` said *"this is the plan of
 record for the Overview module"*, six days apart. A reader following either was
 following a real plan; the two disagreed on which stages were done.
 
-### Scheduled, not yet executed - the last two
+### Folded - the last two, 2026-09-13
 
-`OVERVIEW_CHART_TECHNIQUE.md` and `OVERVIEW_LEVEL3.md` are both render documents
-and both fold into `OVERVIEW_LAYOUT.md`. **They stay until that file is rewritten
-in English**, because deleting a document before its content lands is the failure
-this log exists to prevent. `OVERVIEW_LAYOUT.md` carries the pending note.
+`OVERVIEW_CHART_TECHNIQUE.md` and `OVERVIEW_LEVEL3.md` are both render documents.
+On 2026-09-13 `OVERVIEW_LAYOUT.md` was rewritten in English and absorbed them as
+**section 8** (how a chart is drawn) and **section 9** (level 3, the entity
+depth), keeping every rule and decision and dropping only text the layout already
+held. **Neither source was deleted:** each carries a header naming the section
+its content moved to. Deleting them is a later step, after their citations are
+counted, because deleting a document before its content lands is the failure this
+log exists to prevent.
 
-**The folder becomes one language with that rewrite.** `OVERVIEW.md` and
+**The folder became one language with that rewrite.** `OVERVIEW.md` and
 `OVERVIEW_LAYOUT.md` were the castellano pair; the developer ruled on 2026-09-09
 that the surviving set is English, as `CLAUDE.md` requires.
 `PLAN_OVERVIEW_CONTRACT.md` and `OVERVIEW_DECISIONS.md` keep their castellano
@@ -526,7 +578,7 @@ section 9, which held the same table in two languages and disagreed on two rows.
 | **P3 hero** | `netWorth - liquidNetWorth == receivable` wherever both are reported. **This is the single check that catches the inverted payable sign** — get it backwards and it fails immediately instead of producing a plausible wrong number. It is a validation identity and never the production formula: liquid net worth is not derived from net worth |
 | **P3 expense** | **corrected 2026-09-07.** There is no uncategorised field to check. Verify instead that `hasUncategorizedExpense` is true exactly when `totalAmount > categorizedExpense`, on a month that has uncategorised spend and on one that does not |
 | **P3 debt** | the legs the Overview card emits match the legacy endpoint's two directions **in magnitude**, the payable leg differing only in sign |
-| **P4 / P6** | the module's 69 contract tests pass. Run the files explicitly; pointing the runner at the directory makes it load the directory as a module and fail |
+| **P4 / P6** | the module's 87 contract tests in eight files pass (counted at the end of 2026-09-13). Run the files explicitly; pointing the runner at the directory makes it load the directory as a module and fail |
 | **P5, per component** | the three fetch states are three — skeleton, error with retry, empty — and no missing figure prints as `0` or `NaN` |
 | **all** | unit probes importing the builders directly, no database, following the pattern used for the savings rate. Boot test `APP LOADED OK` |
 

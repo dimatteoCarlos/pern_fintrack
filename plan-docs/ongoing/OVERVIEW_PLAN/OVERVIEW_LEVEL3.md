@@ -1,3 +1,8 @@
+> **Folded into `OVERVIEW_LAYOUT.md` §9 on 2026-09-13.** Every rule and decision
+> below now lives there, with the wiring state and route lines re-measured that
+> day. This file is kept for history and is no longer a source; edit section 9
+> instead.
+
 # OVERVIEW — level 3, the entity depth
 
 **Written 2026-09-08.** Every state below was measured in the code of `main`,

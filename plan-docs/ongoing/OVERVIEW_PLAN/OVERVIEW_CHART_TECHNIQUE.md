@@ -1,3 +1,7 @@
+> **Folded into `OVERVIEW_LAYOUT.md` §8 on 2026-09-13.** Every rule below now
+> lives there, with line anchors re-measured that day. This file is kept for
+> history and is no longer a source; edit section 8 instead.
+
 # Overview — how a chart is drawn in this module
 
 **Written 2026-09-08.** Every rule below is taken from the one chart that is
