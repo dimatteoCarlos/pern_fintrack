@@ -51,10 +51,9 @@ const toParetoRows = (categories: OverviewExpenseCategory[]): ParetoRow[] =>
   isFlagged: category.isOverBudget,
  }));
 
-// THE DRAWING TAKES ITS ROWS AND NOT A STORE, so the level-2 expense screen
-// mounts the same two readings from the domain answer. Level 1 reads
-// charts.expenseCategories off the page payload; level 2 reads categories off
-// GET /overview/expense. Same array, two routes to it, one component.
+// THE DRAWING TAKES ITS ROWS AND NOT A STORE. Level 1 reads
+// charts.expenseCategories off the page payload; level 2 mounts
+// CategoryBudgetPareto instead, so the two screens do not repeat one reading.
 type ExpenseByCategoryProps = {
  categories: OverviewExpenseCategory[];
  card: OverviewExpenseCard;

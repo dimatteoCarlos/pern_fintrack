@@ -1460,6 +1460,283 @@ a.icon {
 }
 
 /*------------*/
+/* SPENDING AGAINST BUDGET, level 2 expense. A hand-drawn SVG Pareto: spent and
+   budget bars per category, and the two served running shares as lines. Every
+   ink reads a token; the drawing is 1:1 so text keeps its token size. */
+
+.overviewLayout .budgetPareto {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ margin: 0;
+ padding: var(--space-3) var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+}
+
+.overviewLayout .budgetPareto__head {
+ display: flex;
+ align-items: baseline;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+
+.overviewLayout .budgetPareto__total {
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .budgetPareto__totalLabel {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .budgetPareto__legend {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-2) var(--space-4);
+ margin: 0;
+ padding: 0;
+ list-style: none;
+}
+
+.overviewLayout .budgetPareto__key {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .budgetPareto__swatch {
+ flex: 0 0 auto;
+ width: var(--size-status-square);
+ height: var(--size-status-square);
+}
+
+.overviewLayout .budgetPareto__swatch--spent {
+ background: var(--color-scale-category-1);
+}
+
+.overviewLayout .budgetPareto__swatch--budget {
+ border: var(--border-width-thin) solid var(--color-accent);
+}
+
+.overviewLayout .budgetPareto__stroke {
+ flex: 0 0 auto;
+ width: var(--space-5);
+ height: var(--border-width-thick);
+}
+
+.overviewLayout .budgetPareto__stroke--spent {
+ background: var(--color-scale-category-2);
+}
+
+.overviewLayout .budgetPareto__stroke--budget {
+ background: var(--color-scale-category-7);
+}
+
+/* The only box that may be wider than the screen. */
+.overviewLayout .budgetPareto__scroll {
+ overflow-x: auto;
+ max-width: 100%;
+ border-radius: var(--radius-sm);
+}
+
+.overviewLayout .budgetPareto__scroll:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+}
+
+.overviewLayout .budgetPareto__chart {
+ display: block;
+}
+
+.overviewLayout .budgetPareto__grid {
+ stroke: var(--color-border-subtle);
+ stroke-width: var(--border-width-thin);
+}
+
+.overviewLayout .budgetPareto__mark {
+ stroke: var(--color-content-on-dark-muted);
+ stroke-width: var(--border-width-thin);
+ stroke-dasharray: var(--space-1) var(--space-1);
+}
+
+.overviewLayout .budgetPareto__bar--spent {
+ fill: var(--color-scale-category-1);
+}
+
+.overviewLayout .budgetPareto__bar--budget {
+ fill: none;
+ stroke: var(--color-accent);
+ stroke-width: var(--border-width-thin);
+}
+
+.overviewLayout .budgetPareto__line {
+ fill: none;
+ stroke-width: var(--border-width-thick);
+ stroke-linejoin: round;
+}
+
+.overviewLayout .budgetPareto__line--spent {
+ stroke: var(--color-scale-category-2);
+}
+
+.overviewLayout .budgetPareto__line--budget {
+ stroke: var(--color-scale-category-7);
+}
+
+.overviewLayout .budgetPareto__point--spent {
+ fill: var(--color-scale-category-2);
+}
+
+.overviewLayout .budgetPareto__point--budget {
+ fill: var(--color-scale-category-7);
+}
+
+/* index.css sets font-size on the universal selector, so every text element
+   restates its own. */
+.overviewLayout .budgetPareto__axisText,
+.overviewLayout .budgetPareto__valueText,
+.overviewLayout .budgetPareto__shareText,
+.overviewLayout .budgetPareto__categoryText {
+ font-size: var(--font-size-xs);
+ font-variant-numeric: tabular-nums;
+ fill: var(--color-content-on-dark-subtle);
+ /* A halo in the ground's ink, so a label stays legible where it crosses a bar,
+    a line or a point. */
+ paint-order: stroke;
+ stroke: var(--color-surface-app);
+ stroke-width: var(--border-width-thick);
+ stroke-linejoin: round;
+}
+
+.overviewLayout .budgetPareto__valueText {
+ fill: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .budgetPareto__shareText {
+ fill: var(--color-scale-category-2);
+}
+
+.overviewLayout .budgetPareto__categoryText {
+ fill: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .budgetPareto__categoryText--over {
+ fill: var(--color-status-alert);
+}
+
+/*------------*/
+/* EXECUTION RATE, under the Pareto and above the category filter. The value
+   takes the budget status level's ink; the legend states that convention. */
+
+.overviewLayout .budgetRate {
+ --budgetRate-ok: var(--color-status-ok);
+ --budgetRate-near: var(--color-status-warning);
+ --budgetRate-over: var(--color-status-alert);
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ padding: var(--space-3) var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+}
+
+.overviewLayout .budgetRate__head {
+ display: flex;
+ align-items: baseline;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+
+.overviewLayout .budgetRate__label {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .budgetRate__value {
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .budgetRate__value--ok {
+ color: var(--budgetRate-ok);
+}
+
+.overviewLayout .budgetRate__value--near {
+ color: var(--budgetRate-near);
+}
+
+.overviewLayout .budgetRate__value--over {
+ color: var(--budgetRate-over);
+}
+
+.overviewLayout .budgetRate__finding {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .budgetRate__legend {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-1) var(--space-4);
+ margin: 0;
+ padding: 0;
+ list-style: none;
+}
+
+.overviewLayout .budgetRate__key {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .budgetRate__swatch {
+ flex: 0 0 auto;
+ width: var(--size-status-square);
+ height: var(--size-status-square);
+ border-radius: var(--radius-sm);
+}
+
+.overviewLayout .budgetRate__swatch--ok {
+ background: var(--budgetRate-ok);
+}
+
+.overviewLayout .budgetRate__swatch--near {
+ background: var(--budgetRate-near);
+}
+
+.overviewLayout .budgetRate__swatch--over {
+ background: var(--budgetRate-over);
+}
+
+.overviewLayout .budgetPareto__foot {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* index.css sizes every span at 16px. */
+.overviewLayout .budgetPareto__foot span {
+ font-size: inherit;
+}
+
+.overviewLayout .budgetPareto__caption {
+ font-style: italic;
+}
+
+/*------------*/
 /* THE FOLD. One block the reader can close, built on details and summary so the
    open state, the keyboard and the announced expanded state come from the
    element rather than from this sheet. */

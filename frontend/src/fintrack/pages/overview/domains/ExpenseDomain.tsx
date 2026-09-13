@@ -1,12 +1,12 @@
 // frontend/src/fintrack/pages/overview/domains/ExpenseDomain.tsx
 //
-// Expense on level 2: the series, then the ranking and the ring level 1 mounts,
-// then the category narrowing of the list below. The two drawings stay on the
-// dark surface (OVERVIEW_DECISIONS.md, P5-6).
+// Expense on level 2: the series, then spending against budget by category,
+// then the category narrowing of the list below. The Pareto and the ring stay
+// on level 1; repeating them here showed the same month twice.
 
 import { useEffect, useId, useRef, useState } from 'react';
 
-import { ExpenseBreakdown } from '../components/ExpenseByCategory';
+import CategoryBudgetPareto from '../components/CategoryBudgetPareto';
 import DomainSeries from './DomainSeries';
 import { DomainCompositionProps } from './domainScreen';
 import { OverviewExpenseCategory } from '../../../types/overviewTypes';
@@ -200,10 +200,8 @@ function ExpenseDomain({
     onRetry={onRetry}
    />
 
-   {/* The same two drawings level 1 mounts, from this answer's own categories
-       rather than from the page payload. */}
    {answer.categories && (
-    <ExpenseBreakdown
+    <CategoryBudgetPareto
      categories={answer.categories}
      card={card}
      referenceMonth={answer.window.referenceMonth}
