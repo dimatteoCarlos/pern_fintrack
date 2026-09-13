@@ -1694,6 +1694,12 @@ button.line__container {
  color: var(--color-content-on-dark-subtle);
 }
 
+/* The population on one line, the figures on the next. */
+.pocketHero__lifetimeLine {
+ display: block;
+ font-size: inherit;
+}
+
 /* The named ratio holds together. Split, it leaves the word "progress" alone on
    a line under the figure it names — the same orphan the counts rule prevents
    for the parenthesis. */
@@ -1750,9 +1756,10 @@ button.line__container {
  word-break: keep-all;
 }
 
+/* Plain ink: the green was --color-schedule-over's hex, which tied the balance
+   to the "over schedule" count below it. */
 .pocketHero__figure--allocated {
  font-size: var(--font-size-xl);
- color: var(--color-pocket-allocated);
 }
 
 .pocketHero__figure--required {
@@ -1838,11 +1845,10 @@ button.line__container {
  color: var(--color-content-on-dark-subtle);
 }
 
-/* Allowed to wrap, unlike the sentence's counts: a clipped count is a wrong count. */
+/* Allowed to wrap, unlike the sentence's counts: a clipped count is a wrong count.
+   No rule above it: the tile's own border already groups it with the count. */
 .pocketHero__planSchedule {
  margin: 0;
- padding-top: var(--space-2);
- border-top: var(--border-width-thin) solid var(--color-border-subtle);
  font-size: var(--font-size-sm);
  line-height: var(--line-height-body);
  text-wrap: balance;

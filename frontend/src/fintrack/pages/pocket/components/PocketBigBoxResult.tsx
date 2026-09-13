@@ -728,25 +728,30 @@ export function PocketBoardReadings() {
             "allocated" appears twice in this card against two different totals
             — the scheduled pockets above, every pocket here — and a rule alone
             does not tell a reader the universe changed under it. */}
-        Lifetime &middot; all{' '}
-        <b className='pocketHero__num'>{summary.pocketCount}</b> pockets
+        {/* Two lines: the population, then the figures. One sentence wrapped
+            with a middot opening its last line. */}
+        <span className='pocketHero__lifetimeLine'>
+         Lifetime &middot; all{' '}
+         <b className='pocketHero__num'>{summary.pocketCount}</b> pockets
+        </span>
         {/* The figures take the count's ink and no colour: green and violet
             belong to the schedule reading above, and this line divides by the
             goals. */}
-        &middot;{' '}
-        <b className='pocketHero__num'>{amount(summary.totalAllocated)}</b>{' '}
-        allocated of{' '}
-        <b className='pocketHero__num'>{amount(summary.totalTarget)}</b> total
-        target &middot;{' '}
-        {/* The ratio is NAMED. Two percentages measure different things on this
-            board — the bar divides by the schedule, this divides by the goals —
-            and an unnamed one asks the reader to work out which. The word is
-            the served field's own name, not a coinage. */}
-        <span className='pocketHero__ratioName'>
-         <b className='pocketHero__num'>
-          {percent(summary.overallProgress)}
-         </b>{' '}
-         overall progress
+        <span className='pocketHero__lifetimeLine'>
+         <b className='pocketHero__num'>{amount(summary.totalAllocated)}</b>{' '}
+         allocated of{' '}
+         <b className='pocketHero__num'>{amount(summary.totalTarget)}</b> total
+         target &middot;{' '}
+         {/* The ratio is NAMED. Two percentages measure different things on this
+             board — the bar divides by the schedule, this divides by the goals —
+             and an unnamed one asks the reader to work out which. The word is
+             the served field's own name, not a coinage. */}
+         <span className='pocketHero__ratioName'>
+          <b className='pocketHero__num'>
+           {percent(summary.overallProgress)}
+          </b>{' '}
+          overall progress
+         </span>
         </span>
        </p>
         </>

@@ -224,11 +224,10 @@
  --color-schedule-under: #9c75d1;
 
  /* COLOR - POCKET PORTFOLIO: the card that sums the pockets with a plan. The
-    heading is gold, the allocated balance green and the monthly pace amber;
-    their own names so a change to the schedule or attention scales does not
-    move them. */
+    heading is gold and the monthly pace amber; their own names so a change to
+    the schedule or attention scales does not move them. The allocated balance
+    takes plain ink. */
  --color-pocket-portfolio-heading: #c49a5a;
- --color-pocket-allocated: #3db87a;
  --color-pocket-pace: #f6bb55;
 
  /* COLOR - FEEDBACK ON A LIGHT SURFACE: the banner triad, valid on inverse and
