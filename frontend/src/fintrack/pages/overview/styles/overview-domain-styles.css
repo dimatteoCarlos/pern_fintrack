@@ -490,3 +490,47 @@
   transition: none;
  }
 }
+
+/* INVESTMENT LEVEL 2 */
+
+/* The contribution history: date, account and amount. No chevron track: an event
+   has no screen of its own to open. */
+.overviewLayout .domainAnalysis__rows--contributions {
+ grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+/* The level-3 row's box and tracks without its states: nothing here is interactive. */
+.overviewLayout .contributionRow {
+ display: grid;
+ grid-column: 1 / -1;
+ grid-template-columns: subgrid;
+ align-items: baseline;
+ column-gap: var(--space-2);
+ padding: var(--space-2) var(--space-1);
+ font-size: var(--font-size-sm);
+}
+
+/* Inline elements restate the size: index.css sets it on the universal selector. */
+.overviewLayout .contributionRow__date {
+ font-size: var(--font-size-xs);
+ font-variant-numeric: tabular-nums;
+ white-space: nowrap;
+ color: var(--color-content-secondary);
+}
+
+/* The name gives way at 360px, so the date and the amount keep their columns. */
+.overviewLayout .contributionRow__account {
+ min-width: 0;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+ font-size: inherit;
+}
+
+.overviewLayout .contributionRow__amount {
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ font-variant-numeric: tabular-nums;
+ text-align: right;
+ white-space: nowrap;
+}
