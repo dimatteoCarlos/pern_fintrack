@@ -129,6 +129,21 @@
  color: var(--color-content-secondary);
 }
 
+/* A term with its info button: the button sits against the words it explains. */
+.overviewLayout .domainAnalysis__term--withTip {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-1);
+}
+
+/* The tooltip wrapper is inline-block; as a flex box it drops the line's
+   descender space, so the glyph centres on the word (heroIndicators does the same). */
+.overviewLayout .domainAnalysis__term--withTip .tooltip__wrapper {
+ display: inline-flex;
+ align-items: center;
+ line-height: 1;
+}
+
 .overviewLayout .domainAnalysis__value {
  margin: 0;
  padding-left: var(--space-3);

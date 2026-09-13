@@ -15,6 +15,7 @@ import DomainSeries from './DomainSeries';
 import LevelThreeRow from './LevelThreeRow';
 import { DomainCompositionProps } from './domainScreen';
 import { pocketLink } from '../helpers/levelThreeLink';
+import { KpiTooltip } from '../../../general_components/kpiTooltip/KpiTooltip';
 import { currencyFormat } from '../../../helpers/functions';
 import {
  POCKET_STATUS_WORD,
@@ -63,7 +64,15 @@ function FreeCashStatement({ figures, formatAmount }: FreeCashStatementProps) {
     {figure((terms) => signed(MINUS, terms.committed))}
    </dd>
 
-   <dt className='domainAnalysis__term'>Floored shortfall</dt>
+   <dt className='domainAnalysis__term domainAnalysis__term--withTip'>
+    Over-committed accounts
+    {/* The panel is cream. */}
+    <KpiTooltip
+     label='Over-committed accounts'
+     definition='Promised to pockets beyond what the account holds. Each account stops at zero, so this is added back and never taken from another account. Formula: Σ per account of max(0, committed − balance).'
+     surface='cream'
+    />
+   </dt>
    <dd className='domainAnalysis__value'>
     {figure((terms) => signed('+', terms.flooredShortfall))}
    </dd>
