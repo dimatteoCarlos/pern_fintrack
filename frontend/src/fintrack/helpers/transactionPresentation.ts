@@ -126,8 +126,10 @@ export const resolveTransactionPresentation = ({
  // Deliberately deferred: known, real catalog values with no frozen
  // presentation yet. Checked first because both sets can pair with any
  // movement/account type on their own side of a two-leg transaction.
+ // movement_type_name is the title every row carried before this resolver, so
+ // a row without transaction_type_name keeps a name instead of a dash.
  const legacyPresentation = (): TransactionPresentation => ({
-  badgeLabel: legacy.transactionTypeName?.toUpperCase() ?? '—',
+  badgeLabel: (legacy.transactionTypeName || movementType)?.toUpperCase() || '—',
   badgeColor: direction === 'out' ? 'negative' : 'positive',
   displaySign,
  });
