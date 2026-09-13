@@ -3,8 +3,8 @@
 .closed-accounts {
  display: flex;
  flex-direction: column;
- gap: var(--space-5, 1.5rem);
- padding-block: var(--space-5, 1.5rem);
+ gap: var(--space-5, 1.25rem);
+ padding-block: var(--space-5, 1.25rem);
  padding-inline: var(--space-4, 1rem);
  max-inline-size: 1120px;
  margin-inline: auto;
@@ -21,9 +21,9 @@
 
 .closed-accounts__title {
  margin: 0;
- color: #ffffff;
+ color: var(--color-content-on-dark);
  font-size: 1.75rem;
- font-weight: 700;
+ font-weight: var(--font-weight-bold);
  letter-spacing: -0.02em;
 }
 
@@ -45,7 +45,7 @@
  padding: var(--space-4, 1rem);
  background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%);
  backdrop-filter: blur(12px);
- border: 1px solid rgba(255, 255, 255, 0.08);
+ border: var(--border-width-thin) solid rgba(255, 255, 255, 0.08);
  border-radius: 16px;
  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
 }
@@ -64,8 +64,8 @@
 
 .closed-accounts__label {
  color: #64748b;
- font-size: 0.75rem;
- font-weight: 600;
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-semibold);
  text-transform: uppercase;
  letter-spacing: 0.05em;
 }
@@ -85,7 +85,7 @@
  block-size: 1.125rem;
  color: #64748b;
  pointer-events: none;
- transition: color 0.2s ease;
+ transition: color var(--motion-normal);
 }
 
 .closed-accounts__input,
@@ -95,10 +95,13 @@
  padding-inline: 0.875rem;
  color: #f8fafc;
  background-color: rgba(15, 23, 42, 0.6);
- border: 1px solid rgba(255, 255, 255, 0.1);
+ border: var(--border-width-thin) solid rgba(255, 255, 255, 0.1);
  border-radius: 10px;
- font-size: 0.875rem;
- transition: all 0.2s ease;
+ font-size: var(--font-size-sm);
+ /* transition: all var(--motion-normal); - `all` also animated the focus
+    state, so the ring arrived late. Named properties only. */
+ transition: border-color var(--motion-normal),
+  background-color var(--motion-normal), box-shadow var(--motion-normal);
 }
 
 .closed-accounts__input--with-icon {
@@ -124,7 +127,7 @@
 
 .closed-accounts__sort-row {
  display: flex;
- gap: 0.5rem;
+ gap: var(--space-2);
 }
 
 /* The select gives way, not the button: without this the flex row shrank the
@@ -139,22 +142,25 @@
  flex: 0 0 auto;
  align-items: center;
  justify-content: center;
- gap: 0.5rem;
+ gap: var(--space-2);
  white-space: nowrap;
  block-size: 2.625rem;
  padding-inline: 0.875rem;
  color: #cbd5e1;
  background-color: rgba(15, 23, 42, 0.6);
- border: 1px solid rgba(255, 255, 255, 0.1);
+ border: var(--border-width-thin) solid rgba(255, 255, 255, 0.1);
  border-radius: 10px;
- font-size: 0.875rem;
- font-weight: 500;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
  cursor: pointer;
- transition: all 0.2s ease;
+ /* transition: all var(--motion-normal); - named properties, so the focus
+    outline is not animated. */
+ transition: color var(--motion-normal), border-color var(--motion-normal),
+  background-color var(--motion-normal);
 }
 
 .closed-accounts__order:hover {
- color: #ffffff;
+ color: var(--color-content-on-dark);
  border-color: rgba(255, 255, 255, 0.25);
  background-color: rgba(30, 41, 59, 0.8);
 }
@@ -168,7 +174,7 @@
 .closed-accounts__order-icon {
  inline-size: 1rem;
  block-size: 1rem;
- transition: transform 0.2s ease;
+ transition: transform var(--motion-normal);
 }
 
 .closed-accounts__order-icon.is-ascending {
@@ -181,7 +187,7 @@
 .closed-accounts__list {
  display: flex;
  flex-direction: column;
- gap: 0.75rem;
+ gap: var(--space-3);
  margin: 0;
  padding: 0;
  list-style: none;
@@ -191,12 +197,16 @@
  position: relative;
  display: flex;
  flex-direction: column;
- gap: 1rem;
- padding: 1.25rem;
+ gap: var(--space-4);
+ padding: var(--space-5);
  background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
- border: 1px solid rgba(255, 255, 255, 0.07);
+ border: var(--border-width-thin) solid rgba(255, 255, 255, 0.07);
  border-radius: 14px;
- transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+ /* transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); - the hover changes
+    these three; the background is a gradient and does not interpolate. */
+ transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+  border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+  box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
  overflow: hidden;
 }
 
@@ -237,7 +247,7 @@
  block-size: 2.75rem;
  color: #38bdf8;
  background: rgba(56, 189, 248, 0.1);
- border: 1px solid rgba(56, 189, 248, 0.2);
+ border: var(--border-width-thin) solid rgba(56, 189, 248, 0.2);
  border-radius: 12px;
 }
 
@@ -249,26 +259,26 @@
 .closed-accounts__identity-text {
  display: flex;
  flex-direction: column;
- gap: 0.25rem;
+ gap: var(--space-1);
  min-inline-size: 0;
 }
 
 .closed-accounts__name {
  color: #f8fafc;
- font-size: 1rem;
- font-weight: 600;
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
  letter-spacing: -0.01em;
 }
 
 .closed-accounts__type {
  align-self: flex-start;
- padding: 0.125rem 0.5rem;
+ padding: 0.125rem var(--space-2);
  color: #94a3b8;
  background: rgba(255, 255, 255, 0.05);
- border: 1px solid rgba(255, 255, 255, 0.08);
+ border: var(--border-width-thin) solid rgba(255, 255, 255, 0.08);
  border-radius: 6px;
- font-size: 0.75rem;
- font-weight: 500;
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-medium);
  text-transform: uppercase;
  letter-spacing: 0.05em;
 }
@@ -277,24 +287,24 @@
 .closed-accounts__facts {
  display: grid;
  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
- gap: 0.75rem;
+ gap: var(--space-3);
  margin: 0;
  padding: 0.875rem;
  background-color: rgba(15, 23, 42, 0.5);
- border: 1px solid rgba(255, 255, 255, 0.04);
+ border: var(--border-width-thin) solid rgba(255, 255, 255, 0.04);
  border-radius: 10px;
 }
 
 .closed-accounts__fact {
  display: flex;
  flex-direction: column;
- gap: 0.25rem;
+ gap: var(--space-1);
 }
 
 .closed-accounts__fact-label {
  color: #64748b;
  font-size: 0.6875rem;
- font-weight: 600;
+ font-weight: var(--font-weight-semibold);
  text-transform: uppercase;
  letter-spacing: 0.05em;
 }
@@ -302,29 +312,29 @@
 .closed-accounts__fact-value {
  margin: 0;
  color: #cbd5e1;
- font-size: 0.875rem;
- font-weight: 500;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
 }
 
 .closed-accounts__fact-value--key {
  color: #f8fafc;
- font-weight: 600;
+ font-weight: var(--font-weight-semibold);
 }
 
 /* Motivo de cierre */
 .closed-accounts__reason {
  display: flex;
  flex-direction: column;
- gap: 0.25rem;
+ gap: var(--space-1);
  margin: 0;
  /* The proposal draws the red rule under the identity and the reason as plain
     text beneath it, not as a boxed quote with a left bar. */
  padding-block: 0.625rem 0;
  padding-inline: 0;
  color: #94a3b8;
- border-block-start: 2px solid #ef4444;
+ border-block-start: var(--border-width-thick) solid #ef4444;
  font-size: 0.8125rem;
- line-height: 1.4;
+ line-height: var(--line-height-body);
 }
 
 /* ===========================
@@ -335,26 +345,26 @@
  flex-wrap: wrap;
  align-items: center;
  justify-content: space-between;
- gap: 1rem;
- padding-block-start: 0.5rem;
+ gap: var(--space-4);
+ padding-block-start: var(--space-2);
 }
 
 .closed-accounts__count {
  color: #64748b;
- font-size: 0.875rem;
- font-weight: 500;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
 }
 
 .closed-accounts__pager-controls {
  display: flex;
  align-items: center;
- gap: 0.5rem;
+ gap: var(--space-2);
 }
 
 .closed-accounts__page-status {
  color: #cbd5e1;
- font-size: 0.875rem;
- padding-inline: 0.5rem;
+ font-size: var(--font-size-sm);
+ padding-inline: var(--space-2);
 }
 
 /* index.css sets font-size on the universal selector, so the numbers restate
@@ -362,7 +372,7 @@
 .closed-accounts__page-status strong {
  color: #f8fafc;
  font-size: inherit;
- font-weight: 700;
+ font-weight: var(--font-weight-bold);
 }
 
 .closed-accounts__page-button,
@@ -370,15 +380,18 @@
  display: inline-flex;
  align-items: center;
  justify-content: center;
- padding: 0.5rem 1rem;
+ padding: var(--space-2) var(--space-4);
  color: #f8fafc;
  background-color: rgba(30, 41, 59, 0.6);
- border: 1px solid rgba(255, 255, 255, 0.1);
+ border: var(--border-width-thin) solid rgba(255, 255, 255, 0.1);
  border-radius: 8px;
- font-size: 0.875rem;
- font-weight: 500;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
  cursor: pointer;
- transition: all 0.2s ease;
+ /* transition: all var(--motion-normal); - named properties, so the focus
+    outline is not animated. */
+ transition: color var(--motion-normal), border-color var(--motion-normal),
+  background-color var(--motion-normal);
 }
 
 .closed-accounts__page-button:hover:not(:disabled),
@@ -388,8 +401,21 @@
 }
 
 .closed-accounts__page-button:disabled {
- opacity: 0.4;
- cursor: not-allowed;
+ /* opacity: 0.4;
+ cursor: not-allowed; - the disabled state is 0.5 and takes no pointer
+    events, as every other disabled control. */
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* index.css sets `button { outline: none }`, so without this a keyboard user
+   gets no sign of which button holds focus. Same ring as
+   standardDeletionDialog.css:148-151. */
+.closed-accounts__order:focus-visible,
+.closed-accounts__page-button:focus-visible,
+.closed-accounts__back:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
 }
 
 .closed-accounts__back {
@@ -401,9 +427,29 @@
 }
 
 .closed-accounts__back:hover {
- color: #ffffff;
+ color: var(--color-content-on-dark);
  background: #0284c7;
  border-color: #0284c7;
+}
+
+/* The row rises under the cursor; an owner who asked the system for less
+   motion gets the colour change without the movement. */
+@media (prefers-reduced-motion: reduce) {
+ .closed-accounts__input-icon,
+ .closed-accounts__input,
+ .closed-accounts__select,
+ .closed-accounts__order,
+ .closed-accounts__order-icon,
+ .closed-accounts__row,
+ .closed-accounts__row::before,
+ .closed-accounts__page-button,
+ .closed-accounts__back {
+  transition: none;
+ }
+
+ .closed-accounts__row:hover {
+  transform: none;
+ }
 }
 
 /* ===========================
@@ -419,7 +465,7 @@
   display: grid;
   grid-template-columns: 240px 1fr;
   grid-template-rows: auto auto;
-  gap: 1rem 1.5rem;
+  gap: var(--space-4) var(--space-6);
  }
 
  .closed-accounts__identity {
