@@ -550,9 +550,11 @@ a.icon {
 
 /* One card that holds a whole block, so it keeps the grid's gap and drops its
    column count. Three classes against the 480px rule's two: with two apiece the
-   later media rule won and halved the Pareto and the donut. */
+   later media rule won and halved the Pareto and the donut. minmax(0, ...)
+   because a bare 1fr keeps the SVG's width as the column minimum, so the card
+   overflowed instead of the chart scrolling inside it. */
 .overviewLayout .domainCards.domainCards--single {
- grid-template-columns: 1fr;
+ grid-template-columns: minmax(0, 1fr);
 }
 
 @media (min-width: 480px) {
