@@ -26,25 +26,39 @@ export type LevelThreeProgress = {
  };
 };
 
+// Colours a signed amount; absent leaves the row's ink.
+export type LevelThreeAmountTone = 'positive' | 'negative';
+
 type LevelThreeRowProps = {
  name: string;
  // Formatted by the caller, which knows the currency and the share's scale.
  amount: string;
+ amountTone?: LevelThreeAmountTone;
  link: LevelThreeLink | null;
 } & (
  | { share: string; progress?: never }
  | { progress: LevelThreeProgress; share?: never }
 );
 
-function LevelThreeRow({ name, amount, share, progress, link }: LevelThreeRowProps) {
+function LevelThreeRow({
+ name,
+ amount,
+ amountTone,
+ share,
+ progress,
+ link,
+}: LevelThreeRowProps) {
  const variant = progress === undefined ? '' : ' levelThreeRow--progress';
+ const amountClass = `levelThreeRow__amount${
+  amountTone === undefined ? '' : ` levelThreeRow__amount--${amountTone}`
+ }`;
 
  const cells =
   progress === undefined ? (
    <>
     <span className='levelThreeRow__swatch' aria-hidden='true' />
     <span className='levelThreeRow__name'>{name}</span>
-    <span className='levelThreeRow__amount'>{amount}</span>
+    <span className={amountClass}>{amount}</span>
     <span className='levelThreeRow__share'>{share}</span>
    </>
   ) : (

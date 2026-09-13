@@ -310,6 +310,15 @@
  white-space: nowrap;
 }
 
+/* A signed amount in the amount colours; the row's words still say the direction. */
+.overviewLayout .levelThreeRow__amount--positive {
+ color: var(--color-amount-positive-on-panel);
+}
+
+.overviewLayout .levelThreeRow__amount--negative {
+ color: var(--color-amount-negative-on-panel);
+}
+
 .overviewLayout .levelThreeRow__share {
  font-size: var(--font-size-xs);
  font-variant-numeric: tabular-nums;
@@ -489,6 +498,150 @@
  .overviewLayout .levelThreeRow__go {
   transition: none;
  }
+}
+
+/* DEBT LEVEL 2 */
+
+/* A counterparty is not a part of one whole, so its row draws no swatch. The
+   hidden swatch leaves the grid, which is why the list declares four tracks. */
+.overviewLayout .domainAnalysis__rows--debt {
+ grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.overviewLayout .domainAnalysis__rows--debt .levelThreeRow__swatch {
+ display: none;
+}
+
+.overviewLayout .debtLegs {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+}
+
+.overviewLayout .debtLegs__lede {
+ margin: 0;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-secondary);
+}
+
+/* Stacked at 360px; side by side from 480px, as the mockup draws them. */
+.overviewLayout .debtLegs__grid {
+ display: grid;
+ grid-template-columns: minmax(0, 1fr);
+ gap: var(--space-3);
+}
+
+@media (min-width: 480px) {
+ .overviewLayout .debtLegs__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+ }
+}
+
+.overviewLayout .debtLegs__leg {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-width: 0;
+ color: var(--color-content-primary);
+}
+
+.overviewLayout .debtLegs__head {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2);
+ font-size: var(--font-size-xs);
+}
+
+/* Inline elements restate the size: index.css sets it on the universal selector. */
+.overviewLayout .debtLegs__label {
+ font-size: inherit;
+}
+
+.overviewLayout .debtLegs__value {
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ font-variant-numeric: tabular-nums;
+ white-space: nowrap;
+}
+
+.overviewLayout .debtLegs__value--positive {
+ color: var(--color-amount-positive-on-panel);
+}
+
+.overviewLayout .debtLegs__value--negative {
+ color: var(--color-amount-negative-on-panel);
+}
+
+/* One height for both plots, so equal figures sit at equal heights across the pair. */
+.overviewLayout .debtLegs__plot {
+ position: relative;
+ height: var(--size-chart-debt-leg);
+}
+
+.overviewLayout .debtLegs__pending {
+ height: var(--size-chart-debt-leg);
+}
+
+.overviewLayout .debtLegs__line {
+ display: block;
+ width: 100%;
+ height: 100%;
+}
+
+/* The zero both legs rise from. A hairline, so it reads as a reference. */
+.overviewLayout .debtLegs__baseline {
+ stroke: var(--color-border-subtle-on-panel);
+ stroke-width: var(--border-width-thin);
+}
+
+/* One ink for both legs: the word above each chart says which it is (P5-6). */
+.overviewLayout .debtLegs__stroke {
+ fill: none;
+ stroke: currentColor;
+ stroke-width: var(--border-width-thick);
+ stroke-linecap: round;
+ stroke-linejoin: round;
+}
+
+.overviewLayout .debtLegs__markers {
+ position: absolute;
+ inset: 0;
+}
+
+/* Placed by its centre: its own left and bottom are the point. */
+.overviewLayout .debtLegs__marker {
+ position: absolute;
+ width: var(--space-1);
+ height: var(--space-1);
+ border-radius: var(--radius-full);
+ background-color: currentColor;
+ transform: translate(-50%, 50%);
+}
+
+/* No gap: each name is centred in the cell its point is centred over. */
+.overviewLayout .debtLegs__axis {
+ display: flex;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-secondary);
+}
+
+/* A named cell is narrower than its name; the end names grow inward to stay inside. */
+.overviewLayout .debtLegs__month {
+ display: flex;
+ flex: 1;
+ justify-content: center;
+ min-width: 0;
+ white-space: nowrap;
+ font-size: inherit;
+}
+
+.overviewLayout .debtLegs__month:first-child {
+ justify-content: flex-start;
+}
+
+.overviewLayout .debtLegs__month:last-child {
+ justify-content: flex-end;
 }
 
 /* INVESTMENT LEVEL 2 */
