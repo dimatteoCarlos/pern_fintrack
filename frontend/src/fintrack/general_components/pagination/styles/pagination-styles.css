@@ -53,10 +53,13 @@
  margin-left: auto;
 }
 
+/* width restated: forms-styles.css gives every bare label width: 100%, which
+   filled the controls and pushed the pager onto a line of its own. */
 .pagination__size {
  display: flex;
  align-items: center;
  gap: var(--space-2);
+ width: auto;
 }
 
 .pagination__sizeLabel {
