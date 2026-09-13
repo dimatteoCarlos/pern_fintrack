@@ -497,6 +497,8 @@ export type OverviewTransactionRow = {
  // LEFT-joined through user_accounts, so null on a closed account's movement.
  account_type_name: string | null;
  currency_code: string;
+ // Read from account_registry once the account closes; null only for an account
+ // erased before the registry existed.
  account_name: string | null;
  account_type_id: number | null;
  account_starting_amount: number | null;
@@ -505,6 +507,8 @@ export type OverviewTransactionRow = {
  // The movement's date on the OWNER's calendar, 'YYYY-MM-DD'. Read this and not
  // transaction_actual_date wherever a day is rendered: the other is an instant.
  transaction_local_date: string;
+ // True once the account's user_accounts row is gone.
+ account_is_closed: boolean;
 };
 
 export type OverviewTransactionPage = {
@@ -525,8 +529,10 @@ export type OverviewAllocationRow = {
  // 'YYYY-MM-DD' on the owner's calendar.
  allocationDate: string;
  sourceAccountId: number;
- // LEFT-joined through user_accounts, so null once the account's row is gone.
+ // Read from account_registry once the account closes; null only for an account
+ // erased before the registry existed.
  sourceAccountName: string | null;
+ sourceAccountIsClosed: boolean;
  currency: string;
 };
 

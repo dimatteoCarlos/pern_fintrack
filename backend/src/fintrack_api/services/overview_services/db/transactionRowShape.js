@@ -75,12 +75,15 @@ export function transactionRowColumns(timeZonePlaceholder) {
     trt.transaction_type_name,
     act.account_type_name,
     cr.currency_code,
-    ua.account_name,
+    -- A closed account's name survives on account_registry, stamped at closure.
+    COALESCE(ua.account_name, ar.account_name) AS account_name,
     ua.account_type_id,
     ua.account_starting_amount,
     ${DERIVED_BALANCE} AS account_balance,
     ua.account_start_date,
-    (tr.transaction_actual_date AT TIME ZONE ${timeZonePlaceholder})::date::text AS transaction_local_date`;
+    (tr.transaction_actual_date AT TIME ZONE ${timeZonePlaceholder})::date::text AS transaction_local_date,
+    -- CLOSE deletes the user_accounts row, so its absence is the closure.
+    (ua.account_id IS NULL) AS account_is_closed`;
 }
 
 // The tables the columns above come from. The account_types join is LEFT in
@@ -93,12 +96,15 @@ export function transactionRowColumns(timeZonePlaceholder) {
 // so an INNER join dropped every movement of a closed account from the page
 // while the count statement beside it - which touches only transactions - went
 // on counting them, and the paginator offered a page that came back short. The
-// account's own columns come back null for such a row, which is the honest
-// answer until the identity is read from the registry.
+// account's own columns come back null for such a row, except its name.
+//
+// account_registry supplies that name and nothing else. It is LEFT for the same
+// label-not-a-row reason, and keyed on its primary key it adds no row.
 export const TRANSACTION_ROW_SOURCE = `
   FROM transactions tr
   JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
   JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
   JOIN currencies cr ON cr.currency_id = tr.currency_id
   LEFT JOIN user_accounts ua ON ua.account_id = tr.account_id
+  LEFT JOIN account_registry ar ON ar.account_id = tr.account_id
   LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id`;

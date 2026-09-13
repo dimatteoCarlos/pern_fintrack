@@ -122,7 +122,10 @@ const ALLOCATIONS_PAGE_QUERY = `
     pa.amount::text         AS amount,
     to_char(pa.allocation_actual_date AT TIME ZONE $3, 'YYYY-MM-DD') AS "allocationDate",
     pa.source_account_id    AS "sourceAccountId",
-    ua.account_name         AS "sourceAccountName",
+    -- A closed account's name survives on account_registry, stamped at closure.
+    COALESCE(ua.account_name, ar.account_name) AS "sourceAccountName",
+    -- CLOSE deletes the user_accounts row, so its absence is the closure.
+    (ua.account_id IS NULL) AS "sourceAccountIsClosed",
     lower(cr.currency_code) AS currency
   FROM pocket_allocations pa
   JOIN pockets p ON p.pocket_id = pa.pocket_id
@@ -136,6 +139,8 @@ const ALLOCATIONS_PAGE_QUERY = `
   -- The other two joins cannot lose a row and stay inner: an allocation cannot
   -- outlive its pocket, and currencies is a catalog nothing deletes from.
   LEFT JOIN user_accounts ua ON ua.account_id = pa.source_account_id
+  -- The name only, for the same reason; keyed on its primary key it adds no row.
+  LEFT JOIN account_registry ar ON ar.account_id = pa.source_account_id
   JOIN currencies cr ON cr.currency_id = p.currency_id
   ${ALLOCATIONS_FILTER}
   ORDER BY pa.allocation_actual_date DESC, pa.allocation_id DESC
@@ -232,7 +237,8 @@ export async function getAllocationsPage(
    // Declared rather than left to the driver. The source account's join is
    // LEFT, so this is the one field of the row that can be absent, and a
    // consumer reading it has to branch on null instead of on a missing key.
-   // sourceAccountId is still there, so the row stays identifiable.
+   // sourceAccountId is still there, so the row stays identifiable. Null now
+   // only for an account erased before account_registry existed.
    sourceAccountName: row.sourceAccountName ?? null,
   })),
   totalRows: Number(total.rows[0]?.total_rows ?? 0),

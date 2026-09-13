@@ -61,6 +61,14 @@ const isDomain = (value: string | undefined): value is OverviewDomainName =>
  value !== undefined &&
  Object.prototype.hasOwnProperty.call(DOMAIN_SCREENS, value);
 
+// A closed account keeps its name, marked, so the reader does not look for it
+// among the live ones. No name is left only for one erased before the registry.
+const accountLabel = (name: string | null, isClosed: boolean, unnamed: string) => {
+ if (name === null) return unnamed;
+
+ return isClosed ? `${name} (closed)` : name;
+};
+
 // The row shape LastMovements reads, from the server's own column names.
 //
 // account_name is nullable and the dash is why: transactionRowShape.js joins
@@ -68,7 +76,7 @@ const isDomain = (value: string | undefined): value is OverviewDomainName =>
 // movements survive. An inner join would have dropped those rows from the page
 // while the count beside it still counted them.
 const toTransactionRow = (row: OverviewTransactionRow): LastMovementType => ({
- accountName: row.account_name ?? 'closed account',
+ accountName: accountLabel(row.account_name, row.account_is_closed, 'closed account'),
  record: row.amount,
  description: row.description,
  // transaction_local_date and not transaction_actual_date: the other is an
@@ -90,8 +98,11 @@ const toAllocationRow = (
  origin: string,
 ): LastMovementType => {
  const amount = Number(row.amount);
- // Null only once the source account's row is gone, as in toTransactionRow above.
- const account = row.sourceAccountName ?? 'a closed account';
+ const account = accountLabel(
+  row.sourceAccountName,
+  row.sourceAccountIsClosed,
+  'a closed account',
+ );
  // The word beside the sign, as PocketDetail.tsx states it: a negative row
  // released the money back to the account, and a bare minus reads as a spend.
  const source =
