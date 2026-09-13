@@ -33,12 +33,17 @@ design can advance; they can still move.
 | Method conceptualization | received, evaluated, accepted with three measured collisions |
 | Matrix by account type | settled: six types close, one never does, one no longer exists |
 | Historical identity design | the registry, ruled by the migration session; its extension half reversed by the owner on 2026-09-07 |
-| Schema | **written and merged** on 2026-09-08 (`035_create_account_registry.sql`); applied to no production database. The suspension that held it there was lifted on 2026-09-08 — see below |
+| Schema | **written and merged** on 2026-09-08 (`035_create_account_registry.sql`); **applied to production on 2026-09-11** with the rest of `031`-`038` (`backend/src/db/docs/db-documented/production-runs/2026-09-11-after.txt`) |
 | Historical identity contract | **closed by the owner on 2026-09-08** — fourteen columns, 4.6 |
 | Implementation spec | written against the closed contract, section 7 |
 | Close operation | **written and merged** on 2026-09-08, all three blocks |
-| Frontend | **written and merged** on 2026-09-08 by this session, not by the design session |
-| Exercised against a database | **no**, and section 0.1 says what that costs |
+| Frontend | **written and merged** on 2026-09-08 by this session, not by the design session; closed-account registry screen added 2026-09-11 (14.15) |
+| Exercised against a database | **yes, on `fintrack_dev`, rolled back**: `scripts/verifyClose.js` closes a probe account it creates, 26 assertions (14.11). Never exercised against production data |
+| Other deletion methods | SOFT refused by the server since 2026-09-13; RTA and HARD reachable through the API only. Their state and warnings live in `PLAN_DELETION_METHODS.md` beside this file |
+
+Corrected 2026-09-13. The two rows above read "applied to no production
+database" and "exercised: no" until that day; both were true when written and
+had stopped being true on 2026-09-11 and 2026-09-09.
 
 ---
 
@@ -497,6 +502,9 @@ running it would be that permission decision bypassed rather than met.
   unrunnable before the settlement was retired. Recorded rather than fixed:
   repairing them means deciding what they should assert about a close that no
   longer settles, which is a rewrite rather than a signature change.
+  **Resolved:** both now open with `// RETIRED 2026-09-08. DO NOT RUN; IT CANNOT
+  RUN.` and name `scripts/verifyClose.js` as their successor, and no
+  `package.json` script calls either (checked 2026-09-13).
 
 ---
 
@@ -4520,3 +4528,53 @@ standing since 14.15.
 **Open, and Carlos's alone:** whether the SOFT button and the HARD button should
 stay on the deletion screen at all, given *"el unico metodo de borrado es
 close"*. Removing a reachable path is a product decision, not a defect fix.
+**Ruled for SOFT on 2026-09-13, see 14.22.**
+
+### 14.22 SOFT has no effect in this version, and the owner's rulings of 2026-09-13
+
+Carlos, asked whether deactivation could be offered as a recoverable deletion:
+*"dejaremos en esta version, sin efecto el soft delete."* He also asked that the
+warnings behind the answer be recorded, together with a plan document for the
+methods other than CLOSE. That document is `PLAN_DELETION_METHODS.md`, beside
+this file.
+
+**WHY SOFT WAS SWITCHED OFF RATHER THAN LEFT HIDDEN.** Hiding the button changed
+no route, and the method was not what its copy promised:
+
+- nothing in the backend sets `deleted_at` back to null, so a deactivated account
+  could never be restored;
+- the account left every list filtered by `LIVE_ACCOUNT` and stayed in every
+  Overview total, because `accountIdentityCte` never reads `deleted_at`
+  (`accountIdentity.js:135`), so net worth counted an account no list showed;
+- no zero balance was required, movements could still be recorded into it, and
+  CLOSE refuses it afterwards, so a deactivated account could never be closed.
+
+**WHAT CHANGED.**
+
+| file | change |
+|---|---|
+| `accountDeleteController.js:35` | `SOFT_DELETION_ENABLED = false`, beside the deletion type constants |
+| `deleteAccountService.js:1637` | refuses SOFT with 403 after the system-account guard and before any transaction, so no pocket is released and `deleted_at` is never written |
+| `assessAccountDeletion.js:196` | the SOFT option is published `available: false` with the same reason; the old `available: true` stays commented |
+| `deletionMethodPolicy.ts` | its "what it does not do" note names the exception |
+
+The SOFT branch of `processStandardDelete` is untouched and still carries the
+pocket release of 14.21; turning SOFT back on is the two flags, and section 2.3
+of `PLAN_DELETION_METHODS.md` is what it needs in order to be worth turning on.
+
+**Also ruled the same day.**
+
+- **No detail view for a closed row** (the open item of 14.15). The registry
+  carries no closing balance, so a row already shows what exists.
+- **The compensation account is not merged** (14.7). It stays one `slack`
+  account per user.
+- **The press-offset token** (14.15) gets its own name in `tokens.css` once the
+  Overview session's pending change to that file lands; until then the buttons
+  keep `var(--border-width-thin)`.
+
+**Still open:** whether RTA and HARD get the same server-side refusal. Both are
+hidden on the screen and both run on a direct request; the recommendation and
+the reasons are in `PLAN_DELETION_METHODS.md` section 5.
+
+**Verified:** `node --check` on the three backend files. Not boot-verified, for
+the reason standing since 14.15.
