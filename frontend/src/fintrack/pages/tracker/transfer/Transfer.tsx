@@ -81,7 +81,11 @@ export type ShowValidationType = {
   // destinationAccountId?: boolean;
 };
 
-type RadioOptionType<T extends string> = { value: T; label: string };
+type RadioOptionType<T extends string> = {
+  value: T;
+  label: string;
+  disabled?: boolean;
+};
 
 //=================================
 // ⚙️ Initial Configuration and default values
@@ -401,11 +405,23 @@ function Transfer(): JSX.Element {
           )
           .map((acc) => ({
             value: acc.account_name,
-            label: `${acc.account_name} (${acc.currency_code} ${acc.account_balance})`,
+            // An income source's balance is a sum of withdraw legs and reads
+            // negative; the reader expects what it has paid in, unsigned, the way
+            // Income.tsx:222 prints the same accounts.
+            label: `${acc.account_name} (${acc.currency_code} ${
+              formData.destinationAccountType === 'income_source'
+                ? Math.abs(acc.account_balance)
+                : acc.account_balance
+            })`,
           })) || ACCOUNT_OPTIONS_DEFAULT,
       variant: VARIANT_DEFAULT,
     }),
-    [destinationAccountsResponse, formData.originAccountId, isOpenOnChosenDay],
+    [
+      destinationAccountsResponse,
+      formData.originAccountId,
+      formData.destinationAccountType,
+      isOpenOnChosenDay,
+    ],
   );
 
   // A selection already made may stop qualifying when the date moves back. Both
@@ -586,6 +602,26 @@ function Transfer(): JSX.Element {
       setTimeout(() => setIsResetDestinationAccount(true), 10); //Then activate for following rendering
     },
     [setFormData, setValidationMessages],
+  );
+
+  //-------------------------------------
+  // BUSINESS RULE: no transfer between an expense category and an income source.
+  // Each side disables the option that would pair with what the other side holds,
+  // so the combination cannot be selected. The server refuses it as well.
+  const originTypeOptions = inputRadioOptionsAccountTopCard.map((option) => ({
+    ...option,
+    disabled:
+      option.value === 'category_budget' &&
+      formData.destinationAccountType === 'income_source',
+  }));
+
+  const destinationTypeOptions = inputRadioOptionsAccountBottomCard.map(
+    (option) => ({
+      ...option,
+      disabled:
+        option.value === 'income_source' &&
+        formData.originAccountType === 'category_budget',
+    }),
   );
 
   //-------------------------------------
@@ -774,7 +810,7 @@ function Transfer(): JSX.Element {
             radioOptionSelected:
               formData.originAccountType ??
               initialMovementData.originAccountType!,
-            inputRadioOptions: inputRadioOptionsAccountTopCard,
+            inputRadioOptions: originTypeOptions,
             setRadioOptionSelected: handleOriginAccountTypeChange,
             title: '',
             disabled:
@@ -801,7 +837,7 @@ function Transfer(): JSX.Element {
                 formData.destinationAccountType ??
                 initialMovementData.destinationAccountType!
               }
-              inputRadioOptions={inputRadioOptionsAccountBottomCard}
+              inputRadioOptions={destinationTypeOptions}
               setRadioOptionSelected={handleDestinationAccountTypeChange}
               title={''}
               labelId='destination'

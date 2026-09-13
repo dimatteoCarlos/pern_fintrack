@@ -531,6 +531,22 @@ export const transferBetweenAccounts = async (req, res, next) => {
     } = config;
     // console.log('🚀 ~ transferBetweenAccounts ~ config:', config, sourceAccountTypeName);
 
+    // BUSINESS RULE: no movement between an expense category and an income
+    // source, in either direction. Refused before the transaction opens; the
+    // transfer screen disables the pair, and this guards any other client.
+    const pairsCategoryWithIncomeSource =
+      (sourceAccountTypeName === 'category_budget' &&
+        destinationAccountTypeName === 'income_source') ||
+      (sourceAccountTypeName === 'income_source' &&
+        destinationAccountTypeName === 'category_budget');
+
+    if (pairsCategoryWithIncomeSource) {
+      throw createError(
+        400,
+        'A transfer between an expense category and an income source is not allowed',
+      );
+    }
+
     //adjust the movement type name
     const movement_type_name = transformMovementType(
       movementName,
@@ -720,6 +736,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //NOT TRANSFERS ALLOWED BETWEEN: category_budget to any account, other than bank to category_budget, any account to income_source. Any transaction between debt and category_budget nor income_source
 
     //REVERSAL TRANSFERS FROM EXPENSE AND INCOME ACCOUNTS, NOW ARE ALLOWED TO ANY ACCOUNT BUT SLACK and DEBTOR
+    //EXCEPT BETWEEN category_budget AND income_source, refused by pairsCategoryWithIncomeSource
     //-----------------------------
     //----- Origin or source Account
     //-----------------------------

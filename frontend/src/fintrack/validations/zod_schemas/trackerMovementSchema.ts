@@ -63,5 +63,16 @@ export const transferSchema = z.object({
     return true;
   }
 )
+// Business rule: an expense category and an income source never transfer to
+// each other. A reversal goes back through a bank or investment account.
+.refine(
+  data =>
+    !(data.originAccountType === 'category_budget' &&
+      data.destinationAccountType === 'income_source'),
+  {
+    message: "An expense reversal cannot go to an income source",
+    path: ["destination"]
+  }
+)
 .transform(roundAmountToCurrency)
   

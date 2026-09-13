@@ -20,7 +20,7 @@ export type RadioInputPropsType<T = string> = {
   /** Currently selected option value */
   radioOptionSelected: T;
   /** Array of options to display */
-  inputRadioOptions: { value: T; label: string }[];
+  inputRadioOptions: { value: T; label: string; disabled?: boolean }[];
   /** Callback when selection changes */
   setRadioOptionSelected: (radioOptionSelected: T) => void;
   /** Optional title for the radio group */
@@ -78,7 +78,9 @@ const RadioInput =  <T extends string>({
                 type='radio'
                 id={`option-${labelId}-${index}`}
                 value={option.value}
-                disabled={disabled}
+                // The group's flag or the option's own: one option can be off
+                // while its siblings stay selectable.
+                disabled={disabled || option.disabled === true}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   onChangeHandleRadio(e)
                 }
