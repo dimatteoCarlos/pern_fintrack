@@ -27,15 +27,23 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // A row the owner never annotated renders as this, never as blank space.
 const DASH = '—';
 
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+// A 'YYYY-MM-DD' label is already the owner's calendar day. new Date reads it
+// as UTC midnight, which is the previous day for every reader west of Greenwich.
+const formatDate = (dateInput: Date | string | number): string => {
+ const dateOnly = typeof dateInput === 'string' ? DATE_ONLY.exec(dateInput) : null;
+ const date = dateOnly
+  ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+  : new Date(dateInput);
+
+ return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
+};
+
 function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
  // State for modal
  const { selectedTransaction, isLoading, openTransaction, closeTransaction } =
   useTransactionDetail();
-
- const formatDate = (dateInput: Date | string | number): string => {
-  const date = new Date(dateInput);
-  return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
- };
 
  // Empty is a declared state and not an absent block. It is not the loading
  // state, which the page owns, and it is not an error.
