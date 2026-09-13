@@ -2293,6 +2293,39 @@ a.icon {
  pointer-events: none;
 }
 
+/* The selected category's level-3 screen, under the chips it answers. */
+.overviewLayout .categoryFilter__link {
+ display: inline-flex;
+ align-items: center;
+ align-self: flex-start;
+ gap: var(--space-1);
+ border-radius: var(--radius-sm);
+ color: var(--color-accent);
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-semibold);
+ text-decoration: none;
+ transition: color var(--motion-fast);
+}
+
+.overviewLayout .categoryFilter__link:hover {
+ color: var(--color-content-on-dark);
+ text-decoration: underline;
+}
+
+.overviewLayout .categoryFilter__link:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+}
+
+.overviewLayout .categoryFilter__link:active {
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .categoryFilter__link[aria-disabled='true'] {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
 /* Dashed so the disclosure does not read as one more category. */
 .overviewLayout .categoryFilter__chip--more {
  border-style: dashed;

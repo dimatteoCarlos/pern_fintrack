@@ -5,8 +5,10 @@
 // on level 1; repeating them here showed the same month twice.
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import CategoryBudgetPareto from '../components/CategoryBudgetPareto';
+import { categoryLink } from '../helpers/levelThreeLink';
 import DomainSeries from './DomainSeries';
 import { DomainCompositionProps } from './domainScreen';
 import { OverviewExpenseCategory } from '../../../types/overviewTypes';
@@ -32,11 +34,14 @@ const CategoryFilter = ({
  selected,
  onSelect,
  isBusy,
+ month,
 }: {
  categories: OverviewExpenseCategory[];
  selected: string | null;
  onSelect: (next: string | null) => void;
  isBusy: boolean;
+ // 'YYYY-MM', carried to the category screen, which reads its own URL.
+ month: string | null;
 }) => {
  const titleId = useId();
  const [isExpanded, setIsExpanded] = useState(false);
@@ -176,6 +181,29 @@ const CategoryFilter = ({
      </button>
     )}
    </div>
+
+   {selected !== null && (
+    <Link
+     className='categoryFilter__link'
+     to={categoryLink(selected, month).to}
+     aria-disabled={isBusy}
+    >
+     {`Open ${selected} budget detail`}
+     <svg
+      className='categoryFilter__icon'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      aria-hidden='true'
+      focusable='false'
+     >
+      <polyline points='9 5 16 12 9 19' />
+     </svg>
+    </Link>
+   )}
   </section>
  );
 };
@@ -217,6 +245,7 @@ function ExpenseDomain({
      selected={selectedCategory}
      onSelect={onSelectCategory}
      isBusy={isLoading}
+     month={answer.window.referenceMonth?.slice(0, 7) ?? null}
     />
    )}
   </>
