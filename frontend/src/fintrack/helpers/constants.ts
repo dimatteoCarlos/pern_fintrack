@@ -90,19 +90,6 @@ export const VARIANT_DEFAULT: VariantType = 'tracker';
 export const VARIANT_FORM: VariantType = 'form';
 
 //=================================
-// 🏷️ Movement type mapping (exactly as stored in DB)
-export const MOVEMENT_TYPES: Record<number, string> = {
-  1: 'expense',
-  2: 'income',
-  3: 'investment',
-  4: 'debt',
-  5: 'pocket',
-  6: 'transfer',
-  7: 'receive',
-  8: 'account-opening',
-  9: 'pnl',
-};
-
 //VALUES WERE USED FOR VISUAL MOCKS
 //tracker/expense
 export const ACCOUNT_OPTIONS_DEFAULT = [
@@ -258,6 +245,8 @@ export const DEFAULT_ACCOUNT_TRANSACTIONS: TransactionsAccountApiResponseType =
           created_at: '2025-06-16T04:55:13.424Z',
           updated_at: '2025-06-16T04:55:13.424Z',
           movement_type_name: 'example',
+          account_type_name: 'bank',
+          transaction_type_name: 'withdraw',
           currency_code: 'usd',
           account_name: 'Nueva Cuenta',
           account_starting_amount: 1010.55,
