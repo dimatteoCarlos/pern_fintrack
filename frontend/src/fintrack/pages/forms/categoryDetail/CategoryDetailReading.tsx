@@ -298,19 +298,20 @@ function CategoryDetailReading() {
               <SummaryDetailBox
                 bubleInfo={summaryData}
                 surface='dark'
+                // Absent, not hidden, in a past month: a control that can only
+                // refuse is noise, and the title comes first so nothing shifts.
                 action={
-                  <button
-                    type='button'
-                    className={`budgetDetail__editBudget${
-                      canEdit ? '' : ' budgetDetail__editBudget--hidden'
-                    }`}
-                    onClick={() => setIsEditingBudget(true)}
-                    disabled={!canEdit}
-                    aria-label={`Edit budget for ${budgetAccount.subcategory ?? budgetAccount.accountName}`}
-                    title='Edit budget'
-                  >
-                    <EditSvg />
-                  </button>
+                  canEdit ? (
+                    <button
+                      type='button'
+                      className='budgetDetail__editBudget'
+                      onClick={() => setIsEditingBudget(true)}
+                      aria-label={`Edit budget for ${budgetAccount.subcategory ?? budgetAccount.accountName}`}
+                      title='Edit budget'
+                    >
+                      <EditSvg />
+                    </button>
+                  ) : undefined
                 }
               />
 

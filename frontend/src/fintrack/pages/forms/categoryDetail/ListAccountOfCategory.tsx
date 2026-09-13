@@ -284,18 +284,19 @@ function ListAccountOfCategory({
                     {currencyFormat(currency_code, budgetAmount, 'en-US')}
                   </div>
 
-                  <button
-                    type='button'
-                    className={`budgetDetail__editBudget dark${
-                      canEdit ? '' : ' budgetDetail__editBudget--hidden'
-                    }`}
-                    onClick={() => onEditAccount(accountId)}
-                    disabled={!canEdit}
-                    aria-label={`Edit budget for ${subcategory ?? accountName}`}
-                    title='Edit budget'
-                  >
-                    <EditSvg />
-                  </button>
+                  {/* Absent, not hidden, in a past month: a hidden button kept
+                      its width and pushed the pair off the percentage below. */}
+                  {canEdit && (
+                    <button
+                      type='button'
+                      className='budgetDetail__editBudget dark'
+                      onClick={() => onEditAccount(accountId)}
+                      aria-label={`Edit budget for ${subcategory ?? accountName}`}
+                      title='Edit budget'
+                    >
+                      <EditSvg />
+                    </button>
+                  )}
                 </div>
               </BoxRow>
 
