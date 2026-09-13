@@ -118,11 +118,18 @@
  background-color: rgba(15, 23, 42, 0.8);
 }
 
+/* The ring the other dark toolbars draw on their search and select
+   (debtsToolbar.css:193-198, pocketToolbar.css:323-328): 2px, white, inset so
+   it stays inside the field. The radius is left to the field's own 10px;
+   --radius-lg is redeclared by the deletion chunk. */
 .closed-accounts__input:focus-visible,
 .closed-accounts__select:focus-visible {
- outline: none;
+ /* outline: none;
  border-color: #38bdf8;
- box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+ box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); - a sky-blue glow no other
+    control in the app uses for focus. */
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
 }
 
 .closed-accounts__sort-row {
@@ -430,6 +437,16 @@
  color: var(--color-content-on-dark);
  background: #0284c7;
  border-color: #0284c7;
+}
+
+/* The press lights the border in the accent, as the tracker's state buttons
+   (trackerStateButton.css:34-37) and the toolbars' fields
+   (debtsToolbar.css:189-191) do. Written after the hover rules, and with the
+   page button's :not(:disabled), so it wins while the cursor is also over it. */
+.closed-accounts__order:active,
+.closed-accounts__page-button:active:not(:disabled),
+.closed-accounts__back:active {
+ border-color: var(--color-accent);
 }
 
 /* The row rises under the cursor; an owner who asked the system for less
