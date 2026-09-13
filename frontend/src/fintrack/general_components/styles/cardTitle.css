@@ -18,8 +18,12 @@
    so it carries the layout and nothing else. */
 .presentation__card--title--split {
  display: flex;
+ flex-wrap: wrap;
  justify-content: space-between;
  align-items: center;
+ /* Without a gap a long legend ran into the title ("Account BalanceBANK AND
+    CASH"); wrapping drops it under the title when the row is too narrow. */
+ gap: var(--space-1) var(--space-3);
 }
 
 /* The legend span sits inside the title but does not carry the base class, so
