@@ -119,6 +119,12 @@ export const useOverviewStore = create<OverviewState>((set, get) => ({
    // would paint one month's figures under another month's badge.
    if (get().requestedMonth !== key) return;
 
+   // Every figure is cut against the served window; an answer without one is
+   // not this endpoint's, and saying so beats a TypeError on referenceMonth.
+   if (!data?.window) {
+    throw new Error('The overview answer arrived without its reporting window.');
+   }
+
    set({
     window: data.window,
     referenceMonth: data.window.referenceMonth,
