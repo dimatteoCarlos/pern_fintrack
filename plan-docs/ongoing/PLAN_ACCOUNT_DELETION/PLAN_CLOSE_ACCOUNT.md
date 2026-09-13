@@ -354,7 +354,9 @@ production since 2026-09-11. The nine dashboard joins no longer name
 environment flag `INCLUDE_CLOSED_ACCOUNTS` (`closedAccountReads.js:33-34`), which
 is off unless the backend's environment sets it to `true`. Whether production's
 environment sets it cannot be read from this session. Until it does, the closed
-account's own movements still leave those nine answers.
+account's own movements still leave those nine answers. **Later the same day**
+Carlos set it in the backend's Vercel Production environment, and the nine
+answers turned out to have no live caller in the frontend; 14.23 records both.
 
 Two modules break the same promise for the same reason and are unblocked by the
 same event. Recording it once here, at Overview's request, rather than in two
@@ -4610,3 +4612,68 @@ de borrado es close"* said and what the screen alone did not enforce.
 
 **Verified:** `node --check` on the three backend files. Not boot-verified, for
 the reason standing since 14.15.
+
+### 14.23 What the session of 2026-09-13 closed, found and left open
+
+Measured on `main` at `16fbe797`, the commit `origin/main` and production
+(`feat/vercel-serverless`) both pointed at when the session closed.
+
+**SHIPPED, ON MAIN AND ON PRODUCTION.**
+
+| commit | change |
+|---|---|
+| `16779d17` | the hover lift reads `--motion-lift-sm` (-1px) and `--motion-lift-md` (-2px) in nine declarations across five deletion stylesheets |
+| `00e17045` | `closedAccounts.css` onto tokens: 54 value-identical swaps, the two `--space-5` fallbacks corrected from 1.5rem to 1.25rem; `transition: all` replaced by named properties; a `prefers-reduced-motion` block; a 2px focus ring on the sort, page and back buttons; the disabled page button at opacity 0.5 with no pointer events |
+| `95fccbe0` | the search field and selects focus with the inset white ring the dark toolbars use (`debtsToolbar.css`, `pocketToolbar.css`), replacing a sky-blue glow; a press lights the border in `--color-accent`, as `trackerStateButton.css` does |
+| `da08f4e7` | this document's status rows brought back in line with the code |
+
+**WHAT THE TOKEN RETROFIT LEFT LITERAL, AND WHY.** The page's slate palette
+(`#94a3b8`, `#64748b`, `#f8fafc`, `#cbd5e1`), the sky-blue accent `#38bdf8`, the
+red rule `#ef4444` and every translucent surface have no token of equal value.
+The px radii stay px: the root font size runs from 14px to 16px with the
+viewport, so a rem token would shrink the corners on a phone. `--radius-lg` is
+not used here because the deletion chunk redeclares it in the global `:root`.
+
+**THE FLAG THAT LETS THE OLD DASHBOARD SEE CLOSED ACCOUNTS CHANGES NO SCREEN.**
+Carlos set `INCLUDE_CLOSED_ACCOUNTS=true` in the backend's Vercel Production
+environment on 2026-09-13; whether a deployment created after that has been
+published was not confirmed. The flag is safe on production - all nine joins in
+`dashboardController.js` bind the owner's id first, the shape the registry
+subquery filters on (`ar.user_id = ${userIdPlaceholder}` in `accountIdentity.js`),
+and `account_registry` is there since 2026-09-11. But no live frontend module
+requests `/dashboard/movements`: the five requests in `Overview.tsx` sit inside
+the block comment that opens with *"Retired with the requests that consumed
+it"*, retired when `be08f507` moved those lists to the `/overview` activity
+teaser, and the URL constants in `urlConfig.ts` have no other caller. So the flag
+only changes those raw responses, and no check in the interface can observe it.
+It stays on so that a screen calling those routes again sees closed accounts.
+This session first told Carlos the Overview lists would show it; the Overview
+session caught the block comment.
+
+**THE RELATED-ACCOUNTS COPY PROPOSAL WAS NOT APPLIED.** Carlos brought a
+rewritten title, subtitle and notice for the related-accounts panel. Both strings
+it rewrites, `relatedAccountsNote` and `relatedAccountsLedeAdjustment`, describe
+the annulment's projection columns, and the page never renders them
+(`const isAnnulmentOffered: boolean = false;` in `AccountDeletionPage.tsx`) while
+the server refuses RTA. The proposal also carried markdown emphasis that
+`t()` prints literally, a hardcoded count where `{count}` belongs, "closing
+accounts" in the plural on a one-account screen, and the same sentence in the
+subtitle and the notice, which render together. If the panel ever shows
+projection columns again, it will be for reverse-and-close, which runs before
+the close rather than instead of it, so that copy would be wrong then too.
+
+**THE ROLLED-BACK CLOSE PROBE ON THE PRODUCTION COPY WAS NOT RUN.** Carlos
+authorized `verifyClose.js` against `fintrack_prod_rehearsal`. The script's pool
+comes from `configDB.js`, which reads `DATABASE_URI` alone - `DB_NAME`, the
+override `db:migrate` honours, does not reach it - so pointing it at the
+rehearsal means editing `backend/.env`, which this session may not read. The
+probe was recommended as optional and skipped: CLOSE passed its assertions on
+`fintrack_dev` (14.11), and the rehearsal's ledger was last measured at `035`,
+short of the `037` its reversal assertions need.
+
+**LEFT OPEN, AND ONLY CARLOS CAN CLOSE THEM.**
+
+- A screenshot of the closed-accounts page after `00e17045` and `95fccbe0`.
+- On a phone, the close dialog scrolls to its confirm button (`5e08dd11`).
+- The three 403 refusals of the other methods have passed `node --check` only;
+  a boot needs `.env` confirmed to name a local database.
