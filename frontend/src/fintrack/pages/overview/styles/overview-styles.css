@@ -320,8 +320,8 @@ a.icon {
  /* border: 1px solid white; */
 }
 .goals__last__movements{
-  border-bottom: 1px dashed var(--crems,rgba(232, 228, 218, 0.26));
-  border-left: 1px dashed var(--cremse,rgba(232, 228, 218, 0.26));
+  border-bottom: var(--border-dashed);
+  border-left: var(--border-dashed);
   padding-bottom: 1rem;
 }
 
@@ -1136,8 +1136,8 @@ a.icon {
 
 /*------------*/
 /* The ranked breakdown of one total: the half of block 07 that TrendCharts
-   above records as waiting on a colour ramp. The wait ended when
-   --color-scale-magnitude-* was declared; nothing here is hardcoded.
+   above records as waiting on a colour ramp. Each row reads its hue from
+   --color-scale-category-*; nothing here is hardcoded.
 
    Segments and squares are elements with a width, not a canvas, for the same
    reason the trend is: var(--token) resolves on an element and does not reach
@@ -1496,6 +1496,16 @@ a.icon {
  border-radius: var(--radius-md);
 }
 
+/* The chevron is the only mark that says the row opens, so it carries the
+   hover and press states. No :disabled: a summary cannot be disabled. */
+.overviewLayout .collapsible__head:hover .collapsible__chevron {
+ border-color: var(--color-accent);
+}
+
+.overviewLayout .collapsible__head:active .collapsible__chevron {
+ border-color: var(--color-content-on-dark-subtle);
+}
+
 /* The head takes the width so the chevron is pushed to the far edge and lands
    in the same column on every block down the page. */
 .overviewLayout .collapsible__headContent {
@@ -1517,7 +1527,7 @@ a.icon {
  /* Rotated about its own centre, and lifted by a quarter of its height so the
     turned square reads as centred on the row rather than sitting low. */
  transform: translateY(-25%) rotate(45deg);
- transition: transform 150ms ease;
+ transition: transform 150ms ease, border-color var(--motion-fast);
 }
 
 .overviewLayout .collapsible[open] > .collapsible__head .collapsible__chevron {

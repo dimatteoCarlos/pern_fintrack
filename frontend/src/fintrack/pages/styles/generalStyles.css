@@ -59,20 +59,22 @@ layout style is stablished by the following elements:
    🎯 UTILITY CLASSES (optional but helpful)
    ===================================== */
 
+/* The --spacing-* names these read were deleted in fd4e5ff0; the --space-*
+   scale carries the same four values. */
 .vertical-spacing-large {
-  margin-bottom: var(--spacing-large);
+  margin-bottom: var(--space-4);
 }
 
 .vertical-spacing-medium {
-  margin-bottom: var(--spacing-medium);
+  margin-bottom: var(--space-3);
 }
 
 .vertical-spacing-small {
-  margin-bottom: var(--spacing-small);
+  margin-bottom: var(--space-2);
 }
 
 .vertical-spacing-tiny {
-  margin-bottom: var(--spacing-tiny);
+  margin-bottom: var(--space-1);
 }
 /*-----------------------------*/
 body {
@@ -517,7 +519,8 @@ input[type='number'] {
 /* Retry, which is what separates a failure from an empty board: the reader can
    do something about it. The touch target is stated rather than counted from
    padding, so the control clears the floor whatever the label says. */
-.boardState__retry {
+.boardState__retry,
+.boardState__action {
   min-height: var(--size-touch-target);
   padding: var(--space-2) var(--space-6);
   border: var(--border-width-thin) solid var(--color-border-inverse);
@@ -534,17 +537,20 @@ input[type='number'] {
     color var(--motion-fast);
 }
 
-.boardState__retry:hover {
+.boardState__retry:hover,
+.boardState__action:hover {
   background-color: var(--color-content-on-dark);
   color: var(--color-content-primary);
 }
 
-.boardState__retry:focus-visible {
+.boardState__retry:focus-visible,
+.boardState__action:focus-visible {
   outline: var(--border-width-thick) solid var(--color-border-inverse);
   outline-offset: var(--border-width-thick);
 }
 
-.boardState__retry:active {
+.boardState__retry:active,
+.boardState__action:active {
   background-color: var(--color-accent);
   color: var(--color-content-primary);
 }
@@ -552,6 +558,14 @@ input[type='number'] {
 .boardState__retry:disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+/* The same control as a link: an empty board's way out is another page. An
+   anchor is inline, so min-height needs a flex box to apply. */
+.boardState__action {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
 .box__container, .box__row { 

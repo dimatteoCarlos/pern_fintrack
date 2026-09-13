@@ -3,7 +3,12 @@
 import { useEffect, useState } from 'react';
 
 //NAVIGATION
-import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Link,
+  NavigateFunction,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import useAuth from '../../../auth/hooks/useAuth.ts';
 import { useFetch } from '../../hooks/useFetch.ts';
 
@@ -26,6 +31,8 @@ import RecentActivity from './components/RecentActivity.tsx';
 import InvestmentAccountBalance from './components/InvestmentAccBalance.tsx';
 import OpenAddEditBtn from '../../general_components/OpenAddEditBtn.tsx';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
+import { useOverviewStore } from '../../stores/useOverviewStore.ts';
+import { monthLabel } from './helpers/monthLabel.ts';
 
 //ENDPOINTS
 import {
@@ -214,6 +221,16 @@ function Overview() {
 
   // AUTHENTICATION STATE
   const { isAuthenticated, isCheckingAuth } = useAuth();
+
+  // A MONTH WITH NO MOVEMENT in any of the six domains. Every count is cut to
+  // the month, so all six at 0 means the cards, the snapshot and the ranking
+  // would be zeros and empty categories. Null while the payload is on the wire:
+  // not yet is not empty.
+  const domainCards = useOverviewStore((state) => state.domainCards);
+  const referenceMonth = useOverviewStore((state) => state.referenceMonth);
+  const isMonthEmpty =
+    domainCards !== null &&
+    Object.values(domainCards).every((card) => card.transactionCount === 0);
 
   // ONE REQUEST FOR BOTH ACCOUNT CARDS. Account Balance asked the route for
   // ?type=bank and Investment Accounts asked the same route for
@@ -571,13 +588,29 @@ function Overview() {
             them is detail on one part of that answer. Like MonthlyAverage it
             takes no props and reads the store the layout above has filled.
             Each card folds on its own, inside the component. */}
-        <DomainCards />
+        {isMonthEmpty ? (
+          // The positions above and below stay: balances and goals are not cut
+          // to the month. Only the blocks that measure the month give way.
+          <div className='flex-col-sb boardState' role='status'>
+            <p className='boardState__text'>
+              No movements recorded in {monthLabel(referenceMonth)}.
+            </p>
+            <Link className='boardState__action' to='/fintrack/tracker/expense'>
+              Record a movement
+            </Link>
+          </div>
+        ) : (
+          <>
+            <DomainCards />
 
-        {/* No props: the widget subscribes to useOverviewStore, which the
-            layout above it has already filled for the month on screen. Passing
-            them from here would have made this page fetch a month of its own,
-            and the two months would drift the moment the picker moved. */}
-        <MonthlySnapshot />
+            {/* No props: the widget subscribes to useOverviewStore, which the
+                layout above it has already filled for the month on screen.
+                Passing them from here would have made this page fetch a month
+                of its own, and the two months would drift the moment the
+                picker moved. */}
+            <MonthlySnapshot />
+          </>
+        )}
 
         {/* Block 05, in the sketch's own order: the goals read at the close of
             the same month the cards above are cut to. Store-backed like the two
@@ -588,11 +621,11 @@ function Overview() {
         <TrendCharts />
 
         {/* Block 07, second half, which the line above used to record as
-            waiting on a ramp the design system did not carry. The ramp is
-            declared (tokens.css, --color-scale-magnitude-*) and the bar is
-            mounted. Store-backed like every block above it: the ranking is
+            waiting on a ramp the design system did not carry. The bar is
+            mounted and reads the category scale (tokens.css,
+            --color-scale-category-*). Store-backed like every block above it: the ranking is
             already in the level-1 answer, so no request is added. */}
-        <ExpenseByCategory />
+        {!isMonthEmpty && <ExpenseByCategory />}
 {/* ------------------ */}
         {/* One list, not five. The five that stood here came from /dashboard,
             one request per domain, and carried no row cap: on this data they
