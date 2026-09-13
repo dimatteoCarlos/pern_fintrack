@@ -1538,6 +1538,13 @@ a.icon {
    so Trend, the Pareto and the donut read as separate sections. */
 .overviewLayout .collapsible--ruled {
  border-top: var(--border-width-thin) solid var(--color-border-subtle);
+ /* The line sits midway: 1.25rem above it, and below it the head's 0.5rem plus
+    the title's 0.75rem. The total gap is the 2.5rem the title opened before. */
+ margin-top: var(--space-5);
+}
+
+.overviewLayout .collapsible--ruled .presentation__card--title--stacked {
+ padding-top: var(--space-3);
 }
 
 /* ONE DOMAIN CARD. The box - border, radius, padding - is NOT declared here.
