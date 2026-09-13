@@ -76,8 +76,7 @@ function PocketLayout() {
  // renders, so the header and the list cannot disagree.
 
  // Raised only when the board holds pockets it could not fold. An empty board
- // also serves a null currency, and that is not a mix — it is the empty state
- // the list below renders.
+ // also serves a null currency, which is not a mix: the hero states it as empty.
  const notice =
   summary !== null && summary.pocketCount > 0 && summary.currency === null
    ? notices[0] ?? null

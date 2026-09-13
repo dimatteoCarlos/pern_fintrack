@@ -146,12 +146,15 @@
    one added a rem the other did not, which read as a deeper seam. */
 .pocketLayout .cards__presentation {
   padding: 0;
+  /* The shared 88% (generalStyles.css) would leave the readings narrower than the hero. */
+  width: 100%;
 }
 
 /* The lower half, and what closes the shape. The 4rem it drops was clearance for
-   an absolute hero and has nothing left to clear. */
+   an absolute hero and has nothing left to clear. No side inset: the readings
+   and the list take the hero's width. */
 .pocketLayout .content__presentation {
-  padding: 0 var(--space-3) var(--space-2);
+  padding: 0 0 var(--space-2);
   background-color: var(--color-surface-deep);
   border-radius: 0 0 1rem 1rem;
 }
@@ -525,6 +528,34 @@ button.line__container {
    No vertical padding of its own — the scroller already spaces its children. */
 .pocketHero--readings {
  padding: 0;
+}
+
+/* The empty board keeps the populated hero's box: the figures are laid out but
+   never painted, so the height is theirs at every width and height step. */
+.pocketHero--empty {
+ position: relative;
+}
+
+/* visibility and not display: the rows must keep taking their height. */
+.pocketHero--empty > .pocketHero__equation,
+.pocketHero--empty > .pocketHero__progress {
+ visibility: hidden;
+}
+
+/* The list's own empty sentence, moved up; same type and ink as .pocketList__stateText. */
+.pocketHero__empty {
+ position: absolute;
+ inset: 0;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ margin: 0;
+ padding: 0 var(--space-4);
+ text-align: center;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
 }
 
 /* The goal, what is committed against it and the gap left, with a rule between
@@ -952,7 +983,9 @@ button.line__container {
    attribute from a min-width query is not possible: a presentation attribute
    sits at author level with no specificity, so reverting an author declaration
    goes straight past it to the user agent's stroke-width of 1. */
-@container pocketHero (max-width: 479.98px) {
+/* 600 and not 480: the cards take the hero's full width now, so they pass 480 on
+   boards that are still too narrow for the larger glyph. */
+@container pocketHero (max-width: 599.98px) {
  /* --space-6 and not a size-scale entry: the size scale starts at 2rem, which
     is the step this replaces, and .monthStepper__chevron already reaches for
     the spacing scale for the same reason. 24px takes the closed card from 56px
@@ -1669,6 +1702,192 @@ button.line__container {
  white-space: nowrap;
 }
 
+/* The card's inner layout answers to its own width, not the viewport: past 768px
+   the hero stops growing, so a viewport step fires at a width the card never has. */
+.pocketHero__card--portfolio {
+ container: pocketPortfolio / inline-size;
+}
+
+.pocketHero__label--portfolio,
+.pocketHero__glyph--portfolio {
+ color: var(--color-pocket-portfolio-heading);
+}
+
+.pocketHero__portfolio {
+ display: grid;
+ grid-template-columns: minmax(0, 1fr);
+ gap: var(--space-3);
+}
+
+.pocketHero__balance {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ min-width: 0;
+}
+
+.pocketHero__figureRow {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: baseline;
+ column-gap: var(--space-2);
+ margin: 0;
+}
+
+.pocketHero__figureRow--required {
+ padding-top: var(--space-2);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+/* An amount never breaks inside itself, the same rule as the hero values. */
+.pocketHero__figure {
+ font-weight: var(--font-weight-bold);
+ letter-spacing: var(--letter-spacing-wide);
+ line-height: var(--line-height-figure);
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-on-dark);
+ overflow-wrap: normal;
+ word-break: keep-all;
+}
+
+.pocketHero__figure--allocated {
+ font-size: var(--font-size-xl);
+ color: var(--color-pocket-allocated);
+}
+
+.pocketHero__figure--required {
+ font-size: var(--font-size-lg);
+}
+
+/* Violet only while allocated is below required; plain ink otherwise. */
+.pocketHero__figure--under {
+ color: var(--color-schedule-under);
+}
+
+.pocketHero__figure--pace {
+ font-size: var(--font-size-base);
+ color: var(--color-pocket-pace);
+}
+
+.pocketHero__figureWord {
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.pocketHero__plans {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ min-width: 0;
+ padding-top: var(--space-3);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+/* One tile: the pocket count over the schedule counts it splits into, stacked at
+   every width, because side by side the counts took two lines at 768. */
+.pocketHero__planTile {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ min-width: 0;
+ margin: 0;
+ padding: var(--space-2) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-md);
+ font-size: var(--font-size-sm);
+}
+
+.pocketHero__planLead {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ min-width: 0;
+ font-size: inherit;
+}
+
+.pocketHero__planGlyph {
+ display: block;
+ width: var(--size-glyph-tile);
+ height: var(--size-glyph-tile);
+ flex-shrink: 0;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.pocketHero__planGlyph path {
+ stroke-width: 1;
+}
+
+.pocketHero__planText {
+ display: flex;
+ flex-direction: column;
+ min-width: 0;
+ font-size: inherit;
+}
+
+.pocketHero__planCount {
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ line-height: var(--line-height-heading);
+ white-space: nowrap;
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-on-dark);
+}
+
+.pocketHero__planSub {
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* Allowed to wrap, unlike the sentence's counts: a clipped count is a wrong count. */
+.pocketHero__planSchedule {
+ margin: 0;
+ padding-top: var(--space-2);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
+ font-size: var(--font-size-sm);
+ line-height: var(--line-height-body);
+ text-wrap: balance;
+ color: var(--color-content-on-dark-muted);
+}
+
+/* A count stays with its word, so a wrap can only fall on the slash. */
+.pocketHero__planSide {
+ font-size: inherit;
+ white-space: nowrap;
+}
+
+.pocketHero__pace {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: baseline;
+ column-gap: var(--space-2);
+ margin: 0;
+}
+
+/* Figures left, tile and pace right, once the card itself is 480px wide. */
+@container pocketPortfolio (min-width: 480px) {
+ .pocketHero__portfolio {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0;
+ }
+
+ .pocketHero__balance {
+  justify-content: center;
+  padding-right: var(--space-4);
+ }
+
+ .pocketHero__plans {
+  justify-content: center;
+  padding-top: 0;
+  padding-left: var(--space-4);
+  border-top: none;
+  border-left: var(--border-width-thin) solid var(--color-border-subtle);
+ }
+
+ .pocketHero__figure--pace {
+  font-size: var(--font-size-lg);
+ }
+}
+
 /* Past what the schedule asked for. The fill is clamped at the track, so LENGTH
    alone cannot tell this apart from a board that landed exactly on its line —
    both paint a full bar. The texture carries the difference, and it survives a
@@ -1731,7 +1950,11 @@ button.line__container {
  .pocketHero__equation .pocketHero__tile + .pocketHero__tile {
   padding-left: var(--space-4);
  }
+}
 
+/* The reading cards' own step. They share the pocketHero container with the hero
+   but take its full width now, so at 480 they are still too narrow for rows. */
+@container pocketHero (min-width: 600px) {
  /* The two bands go side by side, told apart by a hairline. Below this the
     strip stays stacked: each band keeps its heading over its own readings
     either way, and that is the only thing the two rows have to preserve. */
@@ -1822,14 +2045,15 @@ button.line__container {
 
    The padding is scroll clearance, not air: overflow-y computes overflow-x to
    clip as well, so without it the focus ring of a card at either edge is cut
-   off by its own scroller. */
+   off by its own scroller. Vertical only, so the children keep the hero's width;
+   the pocket card's ring is drawn inset for the two sides. */
 .pocketLayout .pocketBoard__scroller {
  display: flex;
  flex-direction: column;
  gap: var(--space-3);
  flex: 1;
  min-height: 0;
- padding: var(--space-1);
+ padding: var(--space-1) 0;
  overflow-y: auto;
  /* The gutter is reserved whether or not a scrollbar is drawn in it. Without
     this, overflow-y: auto only draws the bar when the content does not fit, so
@@ -1851,7 +2075,7 @@ button.line__container {
  grid-template-columns: minmax(0, 1fr);
  align-content: start;
  gap: var(--space-3);
- padding: var(--space-1);
+ padding: var(--space-1) 0;
 }
 
 /* The error and empty boxes are the only child, so they take the row rather
@@ -1910,9 +2134,10 @@ button.line__container {
  border-color: var(--color-interactive-hover);
 }
 
+/* Inset: the list sits flush with the scroller, whose overflow clips an outer ring. */
 .pocketCard:focus-visible {
  outline: var(--border-width-thick) solid var(--color-border-inverse);
- outline-offset: var(--border-width-thick);
+ outline-offset: calc(var(--border-width-thick) * -2);
 }
 
 .pocketCard:active {
@@ -1986,6 +2211,11 @@ button.line__container {
 
 .pocketCard__status--alert {
  color: var(--color-status-alert);
+}
+
+/* Under its own plan: the word takes the violet its percentage and bar already carry. */
+.pocketCard__status--behind {
+ color: var(--color-status-behind);
 }
 
 /* Running in FRONT of its own plan, which the board could not say until the

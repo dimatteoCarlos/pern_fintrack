@@ -154,13 +154,50 @@ function PocketBigBoxResult({
   );
  }
 
- // Nothing to measure, so nothing is drawn. Three tiles of dashes over an
- // unpainted track say the schedule was measured and came out empty, when
- // there is no schedule to measure — but a message here would be the THIRD
- // "no pockets yet" on one screen: the list owns that sentence, and the card
- // below answers again for whoever opens it. A null summary is not this state:
- // the board has not answered yet, and the dashes are right for that.
- if (summary !== null && summary.pocketCount === 0) return null;
+ // Nothing to measure, so the sentence stands in the hero's box instead of the
+ // figures, and the list and readings below stay silent. The placeholder rows
+ // are laid out but hidden so the box keeps its populated height. A null
+ // summary is not this state: the board has not answered yet.
+ if (summary !== null && summary.pocketCount === 0) {
+  return (
+   <div className='total__container flex-col-sb'>
+    <div className='pocketHero pocketHero--empty'>
+     <div className='pocketHero__equation' aria-hidden='true'>
+      <div className='pocketHero__tile pocketHero__tile--target'>
+       <span className='pocketHero__label'>Required to date</span>
+       <span className='pocketHero__value'>{MISSING}</span>
+       <span className='pocketHero__meta'>from 0 of 0 pockets</span>
+      </div>
+      <div className='pocketHero__tile pocketHero__tile--allocated'>
+       <span className='pocketHero__label'>Allocated to date</span>
+       <span className='pocketHero__value'>{MISSING}</span>
+       <span className='pocketHero__meta'>No net movement</span>
+      </div>
+      <div className='pocketHero__tile pocketHero__tile--variance'>
+       <span className='pocketHero__label'>Variance</span>
+       <span className='pocketHero__value'>{MISSING}</span>
+       <span className='pocketHero__meta'>over the schedule</span>
+      </div>
+     </div>
+
+     <div className='pocketHero__progress' aria-hidden='true'>
+      <p className='pocketHero__progressRow'>
+       <span className='pocketHero__progressText'>
+        <BarChartSvg className='pocketHero__glyph' />{' '}
+        <b className='pocketHero__pct'>{MISSING}</b> of what your plans
+        required to date
+       </span>
+      </p>
+      <div className='pocketHero__bar'></div>
+     </div>
+
+     <p className='pocketHero__empty'>
+      No pockets yet. Create one to plan towards a target.
+     </p>
+    </div>
+   </div>
+  );
+ }
 
  // The furthest deadline and the lifetime progress both left this component
  // with the schedule redesign: the equation measures against the plan now, and
@@ -296,11 +333,8 @@ function PocketBigBoxResult({
         The two meta lines are gone with the demotion. "of a $X target" and "to
         reach every target" existed only because the target had no tile of its
         own to be stated in; each now repeats the line above or below it. */}
-    {/* EMPTY is its own state here too, and it is the whole hero: three tiles
-        of dashes over an unpainted track say the schedule was measured and
-        came out empty, when there is no schedule to measure. The message is
-        what the reader can act on. The cards below stay, closed, and answer
-        the same way when opened. */}
+    {/* Only a board with pockets reaches this markup: the zero-pocket branch
+        above returns the sentence in this box's place. */}
     <>
      <div className='pocketHero__equation'>
      {/* One word each, because the three sit in one row under one heading and a
@@ -515,6 +549,11 @@ export function PocketBoardReadings() {
  const scheduledPocketCount = summary?.scheduledPocketCount ?? 0;
  const underScheduleCount = summary?.underScheduleCount ?? 0;
  const overScheduleCount = summary?.overScheduleCount ?? 0;
+ // Required turns violet only on a real shortfall; a missing operand decides nothing.
+ const isBelowRequired =
+  scheduledPocketsAllocated !== null &&
+  totalScheduledByNow !== null &&
+  scheduledPocketsAllocated < totalScheduledByNow;
 
  const currency_code = summary?.currency ?? DEFAULT_CURRENCY;
  // The locale is the reader's, never the amount's. Taken from the amount's own
@@ -530,7 +569,9 @@ export function PocketBoardReadings() {
  const percent = (value: number | null | undefined) =>
   value === null || value === undefined ? MISSING : `${Math.round(value)}%`;
 
- if (summary === null || isWithheld(summary)) return null;
+ // With zero pockets the hero above already states the empty board.
+ if (summary === null || isWithheld(summary) || summary.pocketCount === 0)
+  return null;
 
  // Served, not folded here. This component used to count the levels itself
  // while the cards read the served flags, so one board could be partitioned two
@@ -570,19 +611,22 @@ export function PocketBoardReadings() {
         goals themselves. It sits in this card rather than in the hero because
         it explains no tile up there, and it leaves the page entirely once the
         overview module carries it. */}
-    <div className='pocketHero__card'>
+    {/* Its own container: the body splits into two columns on the card's width. */}
+    <div className='pocketHero__card pocketHero__card--portfolio'>
      <div className='pocketHero__cardHeadRow'>
       <span className='pocketHero__cardHead'>
        {/* A pulse and not the bar chart the ratio above already wears: two
            identical glyphs read as two views of one thing. It names the STATE
            of the portfolio, which is what this card reads. */}
-       <PulseSvg className='pocketHero__glyph' />
+       <PulseSvg className='pocketHero__glyph pocketHero__glyph--portfolio' />
 
        {/* No count in the bracket, unlike the two cards below. The population
            this card counts is not the board's — it is the pockets holding a
            plan window — and a bare figure after this heading would be read as
            how many pockets there are. The body states it in full, as a pair. */}
-       <span className='pocketHero__label'>Pocket portfolio</span>
+       <span className='pocketHero__label pocketHero__label--portfolio'>
+        Pocket portfolio
+       </span>
       </span>
 
       <button
@@ -601,19 +645,9 @@ export function PocketBoardReadings() {
 
      {isPortfolioOpen && (
       <div className='pocketHero__cardBody' id={PORTFOLIO_BODY_ID}>
-       {/* EMPTY is its own state and not a row of dashes. With nothing to
-           measure, the two sentences below print the whole structure with
-           every amount a dash and every count a zero, which states in symbols
-           that the arithmetic ran and came out empty — it did not run at all.
-           The two empties are told apart because the answer to each is a
-           different action: make a pocket, or give a pocket a plan. Same
-           shape as the withheld-totals notice at the top of this component. */}
-       {summary.pocketCount === 0 ? (
-        <p className='pocketHero__cardEmpty'>
-         No pockets yet. Create one with a target and a date, and this card
-         measures it against its own plan.
-        </p>
-       ) : scheduledPocketCount === 0 ? (
+       {/* No plan to measure is a sentence and not a row of dashes, which would
+           claim the arithmetic ran. Zero pockets never reaches this card. */}
+       {scheduledPocketCount === 0 ? (
         <p className='pocketHero__cardEmpty'>
          None of your {summary.pocketCount} pockets carries a plan. A target
          and a date are what a pocket is measured against, and this card is
@@ -621,48 +655,73 @@ export function PocketBoardReadings() {
         </p>
        ) : (
         <>
-       <p className='pocketHero__reading'>
-        {/* The two operands of the ratio, in words. This is exactly why the
-            served percentage is unclamped: a reader divides these two by eye,
-            and a clamped figure would disagree with the division. */}
-        <b className='pocketHero__num'>{amount(scheduledPocketsAllocated)}</b>{' '}
-        allocated of{' '}
-        <b className='pocketHero__num'>{amount(totalScheduledByNow)}</b>{' '}
-        required &middot;{' '}
-        {/* Both counts print. The complement is never recovered by subtraction:
-            one number beside a signed net pointing the other way reads as a
-            contradiction, and it makes the reader do arithmetic for a figure
-            the line can simply state.
+       <div className='pocketHero__portfolio'>
+        {/* The two operands of the ratio as figures. This is why the served
+            percentage is unclamped: a reader divides these two by eye. */}
+        <div className='pocketHero__balance'>
+         <p className='pocketHero__figureRow'>
+          <b className='pocketHero__figure pocketHero__figure--allocated'>
+           {amount(scheduledPocketsAllocated)}
+          </b>
+          <span className='pocketHero__figureWord'>Allocated</span>
+         </p>
 
-            "under" and "over schedule" — never "behind" and "ahead", which are
-            the classifier's words for a different partition. */}
-        <b className='pocketHero__num'>{scheduledPocketCount}</b> of{' '}
-        <b className='pocketHero__num'>{summary.pocketCount}</b> pockets on a
-        plan{' '}
-        <span className='pocketHero__counts'>
-         (<b className='pocketHero__num pocketHero__num--under'>
-          {underScheduleCount}
-         </b>{' '}
-         under /{' '}
-         <b className='pocketHero__num pocketHero__num--over'>
-          {overScheduleCount}
-         </b>{' '}
-         over schedule)
-        </span>
-        {totalRequiredMonthly !== null && (
-         <>
-          {' '}
-          &middot;{' '}
-          {/* The pace to FINISH, never a bill due this month: the shortfall is
-              already spread inside this figure, and wording it as due would
-              invite adding it to what the schedule already asked for.
-              "per month" and not "a month", which reads as a duration rather
-              than a rate to anyone whose first language is not English. */}
-          <b className='pocketHero__num'>{amount(totalRequiredMonthly)}</b> per
-          month to finish on time
-         </>
-        )}
-       </p>
+         <p className='pocketHero__figureRow pocketHero__figureRow--required'>
+          <b
+           className={`pocketHero__figure pocketHero__figure--required${
+            isBelowRequired ? ' pocketHero__figure--under' : ''
+           }`}
+          >
+           {amount(totalScheduledByNow)}
+          </b>
+          <span className='pocketHero__figureWord'>Required</span>
+         </p>
+        </div>
+
+        <div className='pocketHero__plans'>
+         <div className='pocketHero__planTile'>
+          <span className='pocketHero__planLead'>
+           <WalletSvg className='pocketHero__planGlyph' />
+           <span className='pocketHero__planText'>
+            <b className='pocketHero__planCount'>
+             {scheduledPocketCount} of {summary.pocketCount} pockets
+            </b>
+            <span className='pocketHero__planSub'>with a plan</span>
+           </span>
+          </span>
+
+          {/* Both counts print, never one recovered by subtraction. "under" and
+              "over schedule", never the classifier's "behind" and "ahead". */}
+          <p className='pocketHero__planSchedule'>
+           (
+           <span className='pocketHero__planSide'>
+            <b className='pocketHero__num pocketHero__num--under'>
+             {underScheduleCount}
+            </b>{' '}
+            under
+           </span>{' '}
+           /{' '}
+           <span className='pocketHero__planSide'>
+            <b className='pocketHero__num pocketHero__num--over'>
+             {overScheduleCount}
+            </b>{' '}
+            over schedule)
+           </span>
+          </p>
+         </div>
+
+         {/* The pace to FINISH, never a bill due this month. "per month" and not
+             "a month", which reads as a duration rather than a rate. */}
+         <p className='pocketHero__pace'>
+          <b className='pocketHero__figure pocketHero__figure--pace'>
+           {amount(totalRequiredMonthly)}
+          </b>
+          <span className='pocketHero__figureWord'>
+           to finish on time (per month)
+          </span>
+         </p>
+        </div>
+       </div>
 
        <p className='pocketHero__lifetime'>
         {/* The POPULATION is declared, as the sentence above declares its own.

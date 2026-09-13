@@ -198,6 +198,14 @@
  --color-schedule-over: #3db87a;
  --color-schedule-under: #9c75d1;
 
+ /* COLOR - POCKET PORTFOLIO: the card that sums the pockets with a plan. The
+    heading is gold, the allocated balance green and the monthly pace amber;
+    their own names so a change to the schedule or attention scales does not
+    move them. */
+ --color-pocket-portfolio-heading: #c49a5a;
+ --color-pocket-allocated: #3db87a;
+ --color-pocket-pace: #f6bb55;
+
  /* COLOR - FEEDBACK ON A LIGHT SURFACE: the banner triad, valid on inverse and
     on panel. Separate from the semaphore above because those scalars are
     calibrated against the app surface and drop to 1.89:1 on the cream panel.
@@ -425,6 +433,11 @@
  --letter-spacing-wider: 1px; /* titles, totals */
  --letter-spacing-widest: 1.5px; /* the summary amount row */
 
+ /* Unitless, so each follows the size of the element it is set on. */
+ --line-height-figure: 1.1; /* an amount on its own line */
+ --line-height-heading: 1.2; /* a count or a short heading */
+ --line-height-body: 1.4; /* a sentence */
+
  /* SPACING
     Base unit 4px, linear to 8 and then it jumps. Applies to padding, margin,
     gap and to absolute offsets. It does not apply to width or height, which
@@ -487,6 +500,8 @@
     against the pen -- at this size the 0.375 stroke stops resolving, so the
     marks used here are drawn as fills. */
  --size-glyph-inline: 1.25rem;
+ /* The same set beside a count in a tile, with the pen scaled to 1. */
+ --size-glyph-tile: 1.5rem;
  /* Minimum tappable area. In px on purpose: it is bounded by a finger, not by
     the type scale, so it must not follow --font-size-root, which clamps 14-16px
     and only reaches 16 at a 767px viewport. As 2.75rem this resolved to 38.5px

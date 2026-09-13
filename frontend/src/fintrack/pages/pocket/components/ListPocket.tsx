@@ -167,17 +167,8 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
   );
  }
 
- if (pockets.length === 0) {
-  return (
-   <article className='list__main__container pocketList'>
-    <div className='pocketList__state'>
-     <p className='pocketList__stateText'>
-      No pockets yet. Create one to plan towards a target.
-     </p>
-    </div>
-   </article>
-  );
- }
+ // The hero owns the empty-board sentence; repeating it here would state it twice.
+ if (pockets.length === 0) return null;
 
  //--------------------------------------------
  return (
