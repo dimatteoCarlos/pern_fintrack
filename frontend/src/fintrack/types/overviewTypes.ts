@@ -404,7 +404,10 @@ export type OverviewCharts = {
 // detail's payload as well.
 export type OverviewActivityRow = {
  transaction_id: number;
- account_name: string;
+ // Null only for an account erased before account_registry existed.
+ account_name: string | null;
+ // True once the account's user_accounts row is gone; the list keeps its rows.
+ account_is_closed: boolean;
  amount: number;
  description: string;
  // What the owner typed, split out of description by the server. Null when the
@@ -570,6 +573,9 @@ export type OverviewExpenseAnalysis = {
 export type OverviewIncomeSourcePart = OverviewDistributionPart & {
  accountId: number | null;
  accountName: string | null;
+ // The source account was closed: its name comes from account_registry and the
+ // row does not link.
+ accountIsClosed: boolean;
 };
 
 export type OverviewIncomeAnalysis = {

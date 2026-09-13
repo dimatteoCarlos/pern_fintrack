@@ -37,6 +37,7 @@ import {
  PNL_MOVEMENT_TYPE_ID,
  TRANSFER_MOVEMENT_TYPE_ID,
 } from './movementTypes.js';
+import { incomeReversalLeg } from './incomeReversalSql.js';
 import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/annulmentRowIdentity.js';
 import { transactionRowColumns, TRANSACTION_ROW_SOURCE } from './transactionRowShape.js';
@@ -72,10 +73,11 @@ const EXPENSE_COUNT_QUERY = `
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
 `;
 
+// Income rows and their reversals, the same rows MONTHLY_INCOME_QUERY sums.
 const INCOME_PAGE_QUERY = `
   SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID}
+    AND (tr.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID} OR ${incomeReversalLeg('tr')})
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
   ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
@@ -86,7 +88,7 @@ const INCOME_COUNT_QUERY = `
   SELECT COUNT(*) AS total_rows
   FROM transactions tr
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID}
+    AND (tr.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID} OR ${incomeReversalLeg('tr')})
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
 `;

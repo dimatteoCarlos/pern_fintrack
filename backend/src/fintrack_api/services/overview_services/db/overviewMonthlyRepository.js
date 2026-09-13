@@ -40,6 +40,7 @@ import {
  PNL_MOVEMENT_TYPE_ID,
  TRANSFER_MOVEMENT_TYPE_ID,
 } from './movementTypes.js';
+import { incomeReversalLeg } from './incomeReversalSql.js';
 import { toAmount } from '../../budget_services/core/money.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/annulmentRowIdentity.js';
 
@@ -71,16 +72,13 @@ const MONTHLY_EXPENSE_QUERY = `
   ORDER BY m.month
 `;
 
-// Income: one movement type and no netting. There is no reversal counterpart to
-// D20 here — a transfer cannot name income_source as an endpoint
-// (getTransferConfig takes its types from the request body, which offers bank,
-// pocket, investment and debtor), so no movement_type_id 6 row can ever be an
-// undone income.
+// Income: movement type 2 netted by its reversal, D20's counterpart. A reversal
+// is a transfer into an income_source account (incomeReversalSql.js).
 //
 // The leg is selected by the account set the caller passes, not by
 // transaction_type_id: income_source accounts are not in that set, so only the
-// leg that landed in the user's own account survives the join. That is also why
-// the sum comes out positive — the surviving leg is the deposit.
+// leg on the user's own account survives the join - the deposit of an income
+// and the withdraw of its reversal, which subtracts without a CASE.
 const MONTHLY_INCOME_QUERY = `
   SELECT
     m.month::date::text AS month,
@@ -89,7 +87,7 @@ const MONTHLY_INCOME_QUERY = `
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   LEFT JOIN transactions t
     ON t.account_id = ANY($1::int[])
-   AND t.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID}
+   AND (t.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID} OR ${incomeReversalLeg('t')})
    AND t.transaction_actual_date >= (m.month AT TIME ZONE $4)
    AND t.transaction_actual_date <  ((m.month + INTERVAL '1 month') AT TIME ZONE $4)
   GROUP BY m.month
@@ -186,10 +184,10 @@ const MONTHLY_PNL_QUERY = `
 // sum to the card's figure rather than merely resemble it, and it is why this
 // statement lives beside the total it splits instead of in a file of its own.
 //
-// The source is the OTHER leg's account, read off source_account_id. Both legs
-// of a movement are written carrying the same source and destination
-// (prepareTransactionOption.js), so the deposit leg this set selects names the
-// income_source account it came from without the counter leg being fetched.
+// The source is the income_source account on the other side: source_account_id
+// for an income, destination_account_id for its reversal. Both legs carry the
+// same source and destination (transactionController.js:857-859, :898-900), so
+// a reversal nets against the source it undoes without the counter leg.
 //
 // The join is LEFT and the grouping keeps a NULL source as its own part.
 // source_account_id is nullable (003_transactions.sql:49), so an income written
@@ -201,19 +199,32 @@ const MONTHLY_PNL_QUERY = `
 // No ORDER BY. The ranking is the builder's — it breaks ties on the source name
 // and a SQL ordering would be a second, weaker ordering that the builder then
 // discards.
+// A closed source keeps its name: CLOSE deletes the user_accounts row and stamps
+// the name on account_registry, the same fallback transactionRowShape.js:79 uses.
+// account_is_closed tells the screen not to link a row whose account is gone.
 const INCOME_BY_SOURCE_QUERY = `
+  WITH legs AS (
+    SELECT
+      CASE WHEN t.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID}
+           THEN t.source_account_id ELSE t.destination_account_id END AS source_id,
+      t.amount,
+      t.transaction_id
+    FROM transactions t
+    WHERE t.account_id = ANY($1::int[])
+      AND (t.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID} OR ${incomeReversalLeg('t')})
+      AND t.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
+      AND t.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
+  )
   SELECT
-    t.source_account_id AS account_id,
-    src.account_name AS account_name,
-    COALESCE(SUM(t.amount), 0) AS total_amount,
-    COUNT(t.transaction_id) AS transaction_count
-  FROM transactions t
-  LEFT JOIN user_accounts src ON src.account_id = t.source_account_id
-  WHERE t.account_id = ANY($1::int[])
-    AND t.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID}
-    AND t.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
-    AND t.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
-  GROUP BY t.source_account_id, src.account_name
+    legs.source_id AS account_id,
+    COALESCE(src.account_name, src_ar.account_name) AS account_name,
+    (legs.source_id IS NOT NULL AND src.account_id IS NULL) AS account_is_closed,
+    COALESCE(SUM(legs.amount), 0) AS total_amount,
+    COUNT(legs.transaction_id) AS transaction_count
+  FROM legs
+  LEFT JOIN user_accounts src ON src.account_id = legs.source_id
+  LEFT JOIN account_registry src_ar ON src_ar.account_id = legs.source_id
+  GROUP BY legs.source_id, src.account_id, src.account_name, src_ar.account_name
 `;
 
 // Pocket has no statement here. It used to: a monthly net over the rows of the
@@ -356,7 +367,7 @@ export async function getMonthlyPnl(
  * @param {number[]} accountIds - the same set the month's total is summed over
  * @param {string} month - the month to break down, as 'YYYY-MM-01'
  * @param {string} timeZone - IANA zone of the account owner
- * @returns {Promise<Array<{accountId: number|null, accountName: string|null, amount: number, transactionCount: number}>>}
+ * @returns {Promise<Array<{accountId: number|null, accountName: string|null, accountIsClosed: boolean, amount: number, transactionCount: number}>>}
  */
 export async function getIncomeBySource(pool, accountIds, month, timeZone = 'UTC') {
  const { rows } = await pool.query(INCOME_BY_SOURCE_QUERY, [
@@ -368,6 +379,7 @@ export async function getIncomeBySource(pool, accountIds, month, timeZone = 'UTC
  return rows.map((row) => ({
   accountId: row.account_id ?? null,
   accountName: row.account_name ?? null,
+  accountIsClosed: row.account_is_closed === true,
   amount: toAmount(row.total_amount ?? 0),
   transactionCount: Number(row.transaction_count ?? 0),
  }));

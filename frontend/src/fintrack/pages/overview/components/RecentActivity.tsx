@@ -150,7 +150,14 @@ function ActivityList({ currentMonth }: { currentMonth: string }) {
   () =>
    data
     ? data.transactions.rows.map((row) => ({
-       accountName: row.account_name,
+       // Closed accounts are listed now; marked the way the level-2 lists mark
+       // them (OverviewDomain.tsx:66-70).
+       accountName:
+        row.account_name === null
+         ? 'closed account'
+         : row.account_is_closed
+          ? `${row.account_name} (closed)`
+          : row.account_name,
        record: row.amount,
        description: row.description,
        note: row.note,

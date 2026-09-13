@@ -254,17 +254,16 @@ const SAVING_GOALS_QUERY = `
 // carrying one of them could only be pasted into the statement it was written
 // for.
 const ACTIVITY_FILTER = `
-  WHERE ua.user_id = $1
-    -- The type was selected here and never compared until 2026-09-06, and the
-    -- comparison was IS DISTINCT FROM because the type could be cleared. Migration
-    -- 033 made the column NOT NULL behind a RESTRICT foreign key, so it cannot be,
-    -- and <> returns the same rows.
-    --
-    -- The join this reads is LEFT on purpose and now lives in
-    -- TRANSACTION_ROW_SOURCE. It was already LEFT before this module compared the
-    -- type at all, so it was not written for the nullable case and retiring it is
-    -- a decision this change did not make.
-    AND act.account_type_name <> 'boundary'`;
+  -- The owner and the type are read off account_registry, which holds every
+  -- account open or closed. CLOSE deletes the user_accounts row, so reading
+  -- ua.user_id and the type joined through ua dropped every movement of a closed
+  -- account from the list (both came back NULL), while the domain totals kept it.
+  WHERE ar.user_id = $1
+    -- IS DISTINCT FROM and not <>: the registry's type is ON DELETE SET NULL, and
+    -- a NULL type is not a boundary account.
+    AND COALESCE(ua.account_type_id, ar.account_type_id) IS DISTINCT FROM (
+      SELECT account_type_id FROM account_types WHERE account_type_name = 'boundary'
+    )`;
 
 // The reader's own two narrowings, written once for the page and for the count
 // that has to answer over the same set. They are NOT part of ACTIVITY_FILTER:
@@ -296,7 +295,7 @@ const ACTIVITY_READER_FILTER = `
     AND (
       $5::text IS NULL
       OR strpos(lower(tr.description), lower($5::text)) > 0
-      OR strpos(lower(COALESCE(ua.account_name, '')), lower($5::text)) > 0
+      OR strpos(lower(COALESCE(ua.account_name, ar.account_name, '')), lower($5::text)) > 0
     )
     -- By NAME and not by id. The id is what the statements of this module select
     -- on; the name is what a client can send without holding the catalog in its

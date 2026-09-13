@@ -42,7 +42,7 @@ export const UNATTRIBUTED_INCOME_NOTICE =
  * @param {string} input.level - the requested depth
  * @param {Array<{month: string, totalAmount: number}>} input.months - the long series
  * @param {number} input.totalAmount - the card's figure, which the shares are taken against
- * @param {Array<{accountId: number|null, accountName: string|null, amount: number}>} [input.sources]
+ * @param {Array<{accountId: number|null, accountName: string|null, accountIsClosed?: boolean, amount: number}>} [input.sources]
  * @returns {object} frozen analysis section
  */
 export const makeIncomeAnalysis = ({ level, months, totalAmount, sources }) => {
@@ -66,6 +66,8 @@ export const makeIncomeAnalysis = ({ level, months, totalAmount, sources }) => {
     sources.map((source) => ({
      accountId: source.accountId,
      accountName: source.accountName,
+     // A closed source keeps its name but its account screen is gone.
+     accountIsClosed: source.accountIsClosed === true,
      // The label the ranking breaks ties on. An unattributed part has no name,
      // so it sorts under the empty string — deterministic, which is all the tie
      // break owes.

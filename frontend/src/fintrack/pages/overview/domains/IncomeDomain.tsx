@@ -79,14 +79,20 @@ function IncomeDomain({
         name={
          source.accountId === null
           ? UNATTRIBUTED_LABEL
-          : (source.accountName ?? CLOSED_ACCOUNT_LABEL)
+          : source.accountName === null
+           ? CLOSED_ACCOUNT_LABEL
+           : source.accountIsClosed
+            ? `${source.accountName} (closed)`
+            : source.accountName
         }
         amount={currencyFormat(card.currency, source.amount, formatNumberCountry)}
         share={shareOf(source.share)}
-        // No name means the account row is gone, and getAccountById answers 404
-        // for it; a closed account keeps its row and its screen, so it links.
+        // A closed source's user_accounts row is gone and getAccountById answers
+        // 404 for it, so the row keeps its name and loses the link.
         link={
-         source.accountName === null ? null : accountLink(source.accountId, origin)
+         source.accountIsClosed || source.accountName === null
+          ? null
+          : accountLink(source.accountId, origin)
         }
        />
       </li>

@@ -8,9 +8,8 @@
 //
 // No budget module is involved, and that is the whole difference from expense:
 // income has no counterpart to E4/E5, so the card is the base of §5 and nothing
-// more. There is no reversal to net either — a transfer cannot name
-// income_source as an endpoint, so no movement can undo an income the way
-// movement_type_id 6 undoes an expense (D20).
+// more. Its reversal nets the way expense's does (D20): a transfer into an
+// income_source account, read by incomeReversalSql.js.
 
 import {
  getIncomeAccountIds,
