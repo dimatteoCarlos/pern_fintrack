@@ -269,7 +269,8 @@
  border-radius: 6px;
  font-size: 0.75rem;
  font-weight: 500;
- text-transform: capitalize;
+ text-transform: uppercase;
+ letter-spacing: 0.05em;
 }
 
 /* Grid de métricas/datos */
@@ -316,11 +317,12 @@
  flex-direction: column;
  gap: 0.25rem;
  margin: 0;
- padding: 0.75rem 0.875rem;
+ /* The proposal draws the red rule under the identity and the reason as plain
+    text beneath it, not as a boxed quote with a left bar. */
+ padding-block: 0.625rem 0;
+ padding-inline: 0;
  color: #94a3b8;
- background: rgba(15, 23, 42, 0.3);
- border-left: 2px solid #ef4444;
- border-radius: 4px 8px 8px 4px;
+ border-block-start: 2px solid #ef4444;
  font-size: 0.8125rem;
  line-height: 1.4;
 }
@@ -355,6 +357,14 @@
  padding-inline: 0.5rem;
 }
 
+/* index.css sets font-size on the universal selector, so the numbers restate
+   the line's size. */
+.closed-accounts__page-status strong {
+ color: #f8fafc;
+ font-size: inherit;
+ font-weight: 700;
+}
+
 .closed-accounts__page-button,
 .closed-accounts__back {
  display: inline-flex;
@@ -383,7 +393,8 @@
 }
 
 .closed-accounts__back {
- align-self: flex-start;
+ /* align-self: flex-start; - the button now sits in the pager row, where the
+    row's own alignment places it. */
  color: #38bdf8;
  background: rgba(56, 189, 248, 0.08);
  border-color: rgba(56, 189, 248, 0.2);

@@ -8,6 +8,7 @@ import { useClosedAccounts } from '../../hooks/useClosedAccounts.ts';
 import { useLanguageTranslation } from '../../hooks/useLangTranslation.ts';
 import {
  defaultLanguage,
+ DictionaryDataType,
  isLanguageTypeValid,
  LanguageKeyType,
 } from '../../utils/languages.ts';
@@ -116,6 +117,18 @@ const ACCOUNT_TYPE_ICONS: Record<
  category_budget: CategorySvg,
  income_source: IncomeSvg,
  pocket_saving: PocketSvg,
+};
+
+// The dictionary entry that names each type, so the pill reads "Banco" rather
+// than the catalog's "bank". A type with no entry shows its raw name.
+const ACCOUNT_TYPE_LABEL_KEYS: Record<string, keyof DictionaryDataType> = {
+ bank: 'bank',
+ cash: 'cash',
+ investment: 'investment',
+ debtor: 'debtor',
+ category_budget: 'category_budget',
+ income_source: 'income_source',
+ pocket_saving: 'pocket_saving',
 };
 
 export const ClosedAccountsPage = () => {
@@ -278,7 +291,13 @@ export const ClosedAccountsPage = () => {
        type='button'
        className='closed-accounts__order'
        onClick={() => setOrder(query.order === 'desc' ? 'asc' : 'desc')}
-       aria-label={t('closedAccountsOrderToggle')}
+       // The visible text is the short DESC/ASC of the proposal; the full
+       // sentence stays for a screen reader, which cannot read an abbreviation.
+       aria-label={`${t('closedAccountsOrderToggle')}: ${
+        query.order === 'desc'
+         ? t('closedAccountsOrderDesc')
+         : t('closedAccountsOrderAsc')
+       }`}
       >
        {/* One chevron, turned. Two icons for one axis would make the reader
            compare shapes to learn which way the list runs; turning the same
@@ -289,10 +308,10 @@ export const ClosedAccountsPage = () => {
         }`}
         aria-hidden='true'
        />
-       <span className='closed-accounts__order-text'>
+       <span className='closed-accounts__order-text' aria-hidden='true'>
         {query.order === 'desc'
-         ? t('closedAccountsOrderDesc')
-         : t('closedAccountsOrderAsc')}
+         ? t('closedAccountsOrderDescShort')
+         : t('closedAccountsOrderAscShort')}
        </span>
       </button>
      </div>
@@ -394,7 +413,9 @@ export const ClosedAccountsPage = () => {
          </span>
          <span className='closed-accounts__type'>
           {row.accountTypeName
-           ? row.accountTypeName.replace(/_/g, ' ')
+           ? ACCOUNT_TYPE_LABEL_KEYS[row.accountTypeName]
+            ? t(ACCOUNT_TYPE_LABEL_KEYS[row.accountTypeName])
+            : row.accountTypeName.replace(/_/g, ' ')
            : t('closedAccountsTypeUnknown')}
          </span>
         </span>
@@ -458,15 +479,25 @@ export const ClosedAccountsPage = () => {
    )}
 
    {/* 📄 THE PAGER. Hidden on a single page rather than shown disabled: a
-       control that can never do anything is noise. The count stays, because it
-       answers a question the list does not. */}
-   {!isLoading && !error && total > 0 && (
-    <footer className='closed-accounts__pager'>
-     <span className='closed-accounts__count'>
-      {t('closedAccountsTotal').replace('{total}', String(total))}
-     </span>
+       control that can never do anything is noise. Back on the left and the
+       pager on the right, one row, as in the proposal; the footer always
+       renders because the back button lives in it. */}
+   <footer className='closed-accounts__pager'>
+    <button
+     type='button'
+     className='closed-accounts__back'
+     onClick={() => navigate(ACCOUNTING_DASHBOARD_ROUTE)}
+    >
+     {t('closedAccountsBackButton')}
+    </button>
 
-     {pageCount > 1 && (
+    {/* The count moved to ClosedAccountsCountBadge above the list; a second
+        copy here repeated it.
+    <span className='closed-accounts__count'>
+     {t('closedAccountsTotal').replace('{total}', String(total))}
+    </span> */}
+
+     {!isLoading && !error && pageCount > 1 && (
       <div className='closed-accounts__pager-controls'>
        <button
         type='button'
@@ -477,10 +508,20 @@ export const ClosedAccountsPage = () => {
         {t('closedAccountsPreviousPage')}
        </button>
 
+       {/* The two numbers in bold, as in the proposal. The sentence is split on
+           its placeholders so each language keeps its own word order. */}
        <span className='closed-accounts__page-status'>
         {t('closedAccountsPageStatus')
-         .replace('{page}', String(query.page))
-         .replace('{pageCount}', String(pageCount))}
+         .split(/(\{page\}|\{pageCount\})/)
+         .map((part, index) =>
+          part === '{page}' ? (
+           <strong key={index}>{query.page}</strong>
+          ) : part === '{pageCount}' ? (
+           <strong key={index}>{pageCount}</strong>
+          ) : (
+           part
+          ),
+         )}
        </span>
 
        <button
@@ -493,16 +534,7 @@ export const ClosedAccountsPage = () => {
        </button>
       </div>
      )}
-    </footer>
-   )}
-
-   <button
-    type='button'
-    className='closed-accounts__back'
-    onClick={() => navigate(ACCOUNTING_DASHBOARD_ROUTE)}
-   >
-    {t('closedAccountsBackButton')}
-   </button>
+   </footer>
   </main>
  );
 };

@@ -129,6 +129,9 @@ reportTitleWithImpact:string;
  debtor:string;
  investment:string;
  bank:string;
+ // The two closable types the list above lacked, for the closed-account pill.
+ cash:string;
+ pocket_saving:string;
 
  //auto close in
  autoCloseIn:string;
@@ -183,6 +186,9 @@ reportTitleWithImpact:string;
  closedAccountsOrderToggle: string;
  closedAccountsOrderAsc: string;
  closedAccountsOrderDesc: string;
+ // What the order button shows; the two sentences above become its aria-label.
+ closedAccountsOrderAscShort: string;
+ closedAccountsOrderDescShort: string;
  closedAccountsColumnName: string;
  closedAccountsColumnType: string;
  closedAccountsColumnClosedAt: string;
@@ -408,6 +414,8 @@ reportTitleWithImpact:"Impact on Affected Accounts",
  debtor:"Debtor/Lender",
  investment:"Investment",
  bank:"Bank",
+ cash:"Cash",
+ pocket_saving:"Pocket",
 
  //auto close in
  autoCloseIn:'Auto Close in ',
@@ -491,6 +499,8 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   closedAccountsOrderToggle: "Reverse the order",
   closedAccountsOrderAsc: "Oldest first",
   closedAccountsOrderDesc: "Newest first",
+  closedAccountsOrderAscShort: "ASC",
+  closedAccountsOrderDescShort: "DESC",
   closedAccountsColumnName: "Account",
   closedAccountsColumnType: "Type",
   closedAccountsColumnClosedAt: "Closed",
@@ -639,6 +649,8 @@ totalNetAdjustment: 'Ajuste Neto Total:',
  debtor:"Préstamo",
  investment:"Inversión",
  bank:"Banco",
+ cash:"Efectivo",
+ pocket_saving:"Bolsillo",
 
  //auto close in
  autoCloseIn:"Cierre automático en ",
@@ -722,6 +734,8 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   closedAccountsOrderToggle: "Invertir el orden",
   closedAccountsOrderAsc: "Más antiguas primero",
   closedAccountsOrderDesc: "Más recientes primero",
+  closedAccountsOrderAscShort: "ASC",
+  closedAccountsOrderDescShort: "DESC",
   closedAccountsColumnName: "Cuenta",
   closedAccountsColumnType: "Tipo",
   closedAccountsColumnClosedAt: "Cerrada",
