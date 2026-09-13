@@ -730,14 +730,23 @@ export function PocketBoardReadings() {
             does not tell a reader the universe changed under it. */}
         Lifetime &middot; all{' '}
         <b className='pocketHero__num'>{summary.pocketCount}</b> pockets
-        &middot; {amount(summary.totalAllocated)} allocated of{' '}
-        {amount(summary.totalTarget)} total target &mdash;{' '}
+        {/* The figures take the count's ink and no colour: green and violet
+            belong to the schedule reading above, and this line divides by the
+            goals. */}
+        &middot;{' '}
+        <b className='pocketHero__num'>{amount(summary.totalAllocated)}</b>{' '}
+        allocated of{' '}
+        <b className='pocketHero__num'>{amount(summary.totalTarget)}</b> total
+        target &middot;{' '}
         {/* The ratio is NAMED. Two percentages measure different things on this
             board — the bar divides by the schedule, this divides by the goals —
             and an unnamed one asks the reader to work out which. The word is
             the served field's own name, not a coinage. */}
         <span className='pocketHero__ratioName'>
-         {percent(summary.overallProgress)} overall progress
+         <b className='pocketHero__num'>
+          {percent(summary.overallProgress)}
+         </b>{' '}
+         overall progress
         </span>
        </p>
         </>

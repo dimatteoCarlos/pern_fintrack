@@ -1689,7 +1689,7 @@ button.line__container {
  margin: 0;
  padding-top: var(--space-2);
  border-top: var(--border-width-thin) dashed var(--color-border-subtle);
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  line-height: 1.5;
  color: var(--color-content-on-dark-subtle);
 }
