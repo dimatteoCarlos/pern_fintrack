@@ -21,7 +21,10 @@ import { CardTitle } from '../../general_components/CardTitle';
 import { Pagination } from '../../general_components/pagination/Pagination';
 import LastMovements, { LastMovementType } from './components/LastMovements';
 import PanelState from './components/PanelState';
-import { useOverviewDomain } from './hooks/useOverviewDomain';
+import {
+ FullAnalysisStatus,
+ useOverviewDomain,
+} from './hooks/useOverviewDomain';
 import { currencyFormat } from '../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../helpers/constants';
 import { monthLabel } from './helpers/monthLabel';
@@ -76,11 +79,13 @@ type DomainViewProps<D extends OverviewDomainName> = {
  answer: GetOverviewDomainData;
  analysis: OverviewAnalysis | null;
  isLoading: boolean;
+ fullStatus: FullAnalysisStatus;
  selectedCategory: string | null;
  goToPage: (next: number) => void;
  setPageSize: (next: number) => void;
  narrowToCategory: (next: string | null) => void;
  refetch: () => void;
+ requestFullAnalysis: () => void;
 };
 
 // Generic over the domain so the registry entry, the card and the analysis are
@@ -91,11 +96,13 @@ function DomainView<D extends OverviewDomainName>({
  answer,
  analysis,
  isLoading,
+ fullStatus,
  selectedCategory,
  goToPage,
  setPageSize,
  narrowToCategory,
  refetch,
+ requestFullAnalysis,
 }: DomainViewProps<D>) {
  const screen: DomainScreen<D> = DOMAIN_SCREENS[domain];
  const { Composition } = screen;
@@ -137,6 +144,8 @@ function DomainView<D extends OverviewDomainName>({
     answer={answer}
     isLoading={isLoading}
     onRetry={refetch}
+    fullStatus={fullStatus}
+    onRequestFullAnalysis={requestFullAnalysis}
     selectedCategory={selectedCategory}
     onSelectCategory={narrowToCategory}
    />
@@ -183,10 +192,12 @@ function OverviewDomain() {
   analysis,
   isLoading,
   error,
+  fullStatus,
   goToPage,
   setPageSize,
   narrowToCategory,
   refetch,
+  requestFullAnalysis,
  } = useOverviewDomain(domainName, monthParam);
 
  if (!isDomain(domain)) {
@@ -246,11 +257,13 @@ function OverviewDomain() {
    answer={data}
    analysis={analysis}
    isLoading={isLoading}
+   fullStatus={fullStatus}
    selectedCategory={query.category}
    goToPage={goToPage}
    setPageSize={setPageSize}
    narrowToCategory={narrowToCategory}
    refetch={refetch}
+   requestFullAnalysis={requestFullAnalysis}
   />
  );
 }

@@ -42,3 +42,258 @@
 .overviewLayout .trendChart__axis--sparse span:last-child {
  justify-content: flex-end;
 }
+
+/* An analysis section on the cream panel (P5-6): data panels are cream with
+   dark ink, while the series above stays on the dark ground. */
+.overviewLayout .domainAnalysis {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ padding: var(--space-4);
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-panel);
+ color: var(--color-content-primary);
+}
+
+.overviewLayout .domainAnalysis__head {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+}
+
+.overviewLayout .domainAnalysis__title {
+ margin: 0;
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ line-height: var(--line-height-figure);
+}
+
+.overviewLayout .domainAnalysis__figure {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: baseline;
+ gap: var(--space-2);
+ margin: 0;
+}
+
+.overviewLayout .domainAnalysis__figureValue {
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .domainAnalysis__figureUnit {
+ font-size: var(--font-size-xs);
+ color: var(--color-content-secondary);
+}
+
+/* One grid for the whole list, so amounts and shares line up down the rows;
+   each item and its row take the four tracks through subgrid. */
+.overviewLayout .domainAnalysis__rows {
+ display: grid;
+ grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+ margin: 0;
+ padding: 0;
+ list-style: none;
+}
+
+.overviewLayout .domainAnalysis__item {
+ display: grid;
+ grid-column: 1 / -1;
+ grid-template-columns: subgrid;
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle-on-panel);
+}
+
+.overviewLayout .domainAnalysis__item:last-child {
+ border-bottom: none;
+}
+
+/* The same two lines of copy PanelState uses, left-aligned inside the panel. */
+.overviewLayout .domainAnalysis__state {
+ display: flex;
+ flex-direction: column;
+ align-items: flex-start;
+ gap: var(--space-3);
+}
+
+.overviewLayout .domainAnalysis__stateText,
+.overviewLayout .domainAnalysis__empty {
+ margin: 0;
+ font-size: var(--font-size-sm);
+}
+
+.overviewLayout .domainAnalysis__empty {
+ color: var(--color-content-secondary);
+}
+
+/* A server notice qualifying the section, at its foot (P5-6). */
+.overviewLayout .domainAnalysis__foot {
+ margin: 0;
+ font-size: var(--font-size-xs);
+ font-style: italic;
+ color: var(--color-content-secondary);
+}
+
+/* The retry on cream. .panelState__retry is drawn for the dark ground, where
+   its white border and ink would vanish on this panel. */
+.overviewLayout .domainAnalysis__retry {
+ padding: var(--space-1) var(--space-4);
+ line-height: var(--line-height-heading);
+ border: var(--border-width-thin) solid var(--color-border-strong);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-primary);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.overviewLayout .domainAnalysis__retry:hover {
+ background-color: var(--color-content-primary);
+ color: var(--color-surface-panel);
+}
+
+.overviewLayout .domainAnalysis__retry:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.overviewLayout .domainAnalysis__retry:active {
+ background-color: var(--color-content-secondary);
+ color: var(--color-surface-panel);
+}
+
+.overviewLayout .domainAnalysis__retry:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The skeleton of a full section, sized to what replaces it so the panel does
+   not change height when the answer lands. */
+.overviewLayout .domainAnalysis__skeleton {
+ display: block;
+ border-radius: var(--radius-xs);
+ background-color: var(--color-surface-loading-on-panel);
+}
+
+.overviewLayout .domainAnalysis__skeleton--figure {
+ width: 40%;
+ height: var(--font-size-lg);
+}
+
+/* One row: its vertical padding twice, plus one line of its text. */
+.overviewLayout .domainAnalysis__skeleton--row {
+ height: calc(var(--space-2) * 2 + var(--font-size-sm) * var(--line-height-body));
+ margin-bottom: var(--border-width-thin);
+}
+
+/* A level-3 row. It takes the list's tracks, so a long name ellipsises and the
+   figures beside it keep their column. */
+.overviewLayout .levelThreeRow {
+ display: grid;
+ grid-column: 1 / -1;
+ grid-template-columns: subgrid;
+ align-items: center;
+ column-gap: var(--space-2);
+ padding: var(--space-2) var(--space-1);
+ border-radius: var(--radius-xs);
+ color: inherit;
+ font-size: var(--font-size-sm);
+ text-decoration: none;
+}
+
+.overviewLayout .levelThreeRow__swatch {
+ width: var(--size-status-square);
+ height: var(--size-status-square);
+ border-radius: var(--radius-xs);
+ background-color: var(--color-content-secondary);
+}
+
+/* Inline elements restate the size: index.css sets it on the universal selector. */
+.overviewLayout .levelThreeRow__name {
+ min-width: 0;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+ font-size: inherit;
+ text-decoration: underline transparent var(--border-width-thin);
+ text-underline-offset: var(--space-1);
+ transition: text-decoration-color var(--motion-fast);
+}
+
+.overviewLayout .levelThreeRow__amount {
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ font-variant-numeric: tabular-nums;
+ text-align: right;
+ white-space: nowrap;
+}
+
+.overviewLayout .levelThreeRow__share {
+ font-size: var(--font-size-xs);
+ font-variant-numeric: tabular-nums;
+ text-align: right;
+ white-space: nowrap;
+ color: var(--color-content-secondary);
+}
+
+.overviewLayout .levelThreeRow__go {
+ width: var(--space-4);
+ height: var(--space-4);
+ color: var(--color-content-secondary);
+ transition: color var(--motion-fast), transform var(--motion-fast);
+}
+
+.overviewLayout .levelThreeRow__nogo {
+ width: var(--space-4);
+ font-size: var(--font-size-xs);
+ text-align: center;
+ color: var(--color-content-secondary);
+}
+
+/* The five states belong to the linked row only: a static row is valid content
+   with nowhere to go, not a disabled control. */
+.overviewLayout .levelThreeRow--linked {
+ cursor: pointer;
+ transition: background-color var(--motion-fast);
+}
+
+.overviewLayout .levelThreeRow--linked:hover {
+ background-color: var(--color-surface-hover-on-panel);
+}
+
+.overviewLayout .levelThreeRow--linked:hover .levelThreeRow__name {
+ text-decoration-color: currentColor;
+}
+
+.overviewLayout .levelThreeRow--linked:hover .levelThreeRow__go {
+ color: var(--color-content-primary);
+ transform: translateX(var(--border-width-thick));
+}
+
+.overviewLayout .levelThreeRow--linked:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.overviewLayout .levelThreeRow--linked:active {
+ background-color: var(--color-surface-active-on-panel);
+}
+
+/* An anchor has no :disabled; aria-disabled is the state it can carry. */
+.overviewLayout .levelThreeRow--linked[aria-disabled='true'] {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .overviewLayout .domainAnalysis__retry,
+ .overviewLayout .levelThreeRow--linked,
+ .overviewLayout .levelThreeRow__name,
+ .overviewLayout .levelThreeRow__go {
+  transition: none;
+ }
+}

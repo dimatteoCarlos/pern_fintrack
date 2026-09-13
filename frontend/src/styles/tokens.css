@@ -98,6 +98,13 @@
 
     First consumer: accountDeletionPage.css, which had it as a page-local. */
  --color-border-subtle-on-inverse: #e5e7eb;
+ /* The hairline between rows on the cream panel, where --color-border-subtle is
+    cream on cream. Divides rows and carries no meaning, so not held to 3:1. */
+ --color-border-subtle-on-panel: rgba(20, 20, 20, 0.12);
+ /* The ground of a pointed and a pressed row on the cream panel. Ink at low
+    alpha, so the row darkens the panel instead of painting a second colour. */
+ --color-surface-hover-on-panel: rgba(20, 20, 20, 0.06);
+ --color-surface-active-on-panel: rgba(20, 20, 20, 0.12);
 
  /* COLOR - FEEDBACK AND THE FINANCIAL SEMAPHORE
     The status square is the signature indicator: teal when a figure is healthy,

@@ -6,6 +6,7 @@
 
 import { ComponentType } from 'react';
 
+import { FullAnalysisStatus } from '../hooks/useOverviewDomain';
 import {
  GetOverviewDomainData,
  OverviewAnalysis,
@@ -34,6 +35,10 @@ export type DomainCompositionProps<D extends OverviewDomain> = {
  // True while any request of the screen is on the wire, the first one included.
  isLoading: boolean;
  onRetry: () => void;
+ // The screen's one full request (P5-6): its state, and the call every full
+ // section's viewport trigger and retry make.
+ fullStatus: FullAnalysisStatus;
+ onRequestFullAnalysis: () => void;
  selectedCategory: string | null;
  onSelectCategory: (next: string | null) => void;
 };
