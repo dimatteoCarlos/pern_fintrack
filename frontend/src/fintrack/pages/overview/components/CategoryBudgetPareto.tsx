@@ -19,6 +19,7 @@ import {
 import { monthLabel } from '../helpers/monthLabel';
 import { countNoun, percent } from '../helpers/rankedBreakdown';
 import {
+ OverviewCategoryBudgetExecution,
  OverviewExpenseCard,
  OverviewExpenseCategory,
 } from '../../../types/overviewTypes';
@@ -64,6 +65,8 @@ const categoryLabel = (category: OverviewExpenseCategory) =>
 
 type CategoryBudgetParetoProps = {
  categories: OverviewExpenseCategory[];
+ // Null from a backend older than the field: the rate is then not shown.
+ execution: OverviewCategoryBudgetExecution | null;
  card: OverviewExpenseCard;
  // 'YYYY-MM-01', the month the title names.
  referenceMonth: string | null;
@@ -71,6 +74,7 @@ type CategoryBudgetParetoProps = {
 
 function CategoryBudgetPareto({
  categories,
+ execution,
  card,
  referenceMonth,
 }: CategoryBudgetParetoProps) {
@@ -157,19 +161,21 @@ function CategoryBudgetPareto({
  const budgetTotal = last.cumulativeBudget;
  const overCount = categories.filter((c) => c.isOverBudget === true).length;
 
- // PROVISIONAL: the rate and the gap are client arithmetic over the two figures
- // the head prints. They move to server fields once the reading is settled.
- const executionRate =
-  budgetTotal > 0 ? (spentTotal / budgetTotal) * 100 : null;
+ // Served: categorized spending over the same categories' budget.
+ const executionRate = execution?.executionPercentage ?? null;
  // The same three levels and threshold the budget screens paint.
- const rateLevel = budgetStatusLevel(executionRate, spentTotal > budgetTotal);
+ const rateLevel = budgetStatusLevel(
+  executionRate,
+  execution?.isOverBudget ?? false,
+ );
+ const remaining = execution?.remainingBudget ?? 0;
 
  const finding =
   rateLevel === 'over'
-   ? `Spending passed the month's budget by ${money(spentTotal - budgetTotal)}.`
+   ? `Categorized spending passed the month's budget by ${money(-remaining)}.`
    : rateLevel === 'near'
-    ? `Spending reached ${BUDGET_NEAR_LIMIT_PERCENT}% or more of the budget, with ${money(budgetTotal - spentTotal)} left.`
-    : `Spending is within the budget, with ${money(budgetTotal - spentTotal)} left.`;
+    ? `Categorized spending reached ${BUDGET_NEAR_LIMIT_PERCENT}% or more of the budget, with ${money(remaining)} left.`
+    : `Categorized spending is within the budget, with ${money(remaining)} left.`;
 
  const uncategorized = card.hasUncategorizedExpense
   ? currencyFormat(

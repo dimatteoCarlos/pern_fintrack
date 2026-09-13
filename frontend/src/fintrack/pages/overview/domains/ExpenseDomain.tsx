@@ -203,6 +203,7 @@ function ExpenseDomain({
    {answer.categories && (
     <CategoryBudgetPareto
      categories={answer.categories}
+     execution={answer.categoryExecution ?? null}
      card={card}
      referenceMonth={answer.window.referenceMonth}
     />

@@ -735,7 +735,20 @@ export type GetOverviewDomainData = {
  transactions: OverviewTransactionPage | OverviewAllocationPage;
  trend: OverviewTrendPoint[];
  categories?: OverviewExpenseCategory[];
+ // Expense only. Categorized spending over the same categories' budget; null
+ // when the user has no category.
+ categoryExecution?: OverviewCategoryBudgetExecution | null;
  analysis?: OverviewAnalysis;
+};
+
+export type OverviewCategoryBudgetExecution = {
+ spentAmount: number;
+ budgetAmount: number;
+ // 0-100 and above when overspent; null when no budget is set.
+ executionPercentage: number | null;
+ // Negative by the overrun when overspent.
+ remainingBudget: number;
+ isOverBudget: boolean;
 };
 
 export type GetOverviewDomainResponse = {

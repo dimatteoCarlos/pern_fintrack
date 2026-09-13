@@ -30,6 +30,7 @@ import {
 import { makeExpenseCard, NO_BUDGET_NOTICE } from '../core/makeExpenseCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
 import { makeCategoryBreakdown } from '../core/makeCategoryBreakdown.js';
+import { makeCategoryBudgetExecution } from '../core/makeCategoryBudgetExecution.js';
 import { makeExpenseAnalysis } from '../core/makeExpenseAnalysis.js';
 import { wantsAnalysis } from '../core/analysisLevels.js';
 import { TREND_MONTHS } from '../core/monthArithmetic.js';
@@ -210,6 +211,8 @@ export const overviewExpenseService = {
    notices,
   });
 
+  const categories = makeCategoryBreakdown(budgetStatus.categories);
+
   return {
    card,
    transactions: {
@@ -225,7 +228,10 @@ export const overviewExpenseService = {
    // Whole for a different reason: the Pareto's running total is only correct
    // over the complete set, so a page of it would carry a cumulative figure
    // that means nothing.
-   categories: makeCategoryBreakdown(budgetStatus.categories),
+   categories,
+   // Categorized spending over the same categories' budget, off the last
+   // running figures above (owner decision 2026-09-13).
+   categoryExecution: makeCategoryBudgetExecution(categories),
    ...(withAnalysis
     ? {
        analysis: makeExpenseAnalysis({
