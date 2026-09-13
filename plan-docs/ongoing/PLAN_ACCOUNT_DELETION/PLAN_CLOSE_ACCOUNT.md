@@ -39,11 +39,13 @@ design can advance; they can still move.
 | Close operation | **written and merged** on 2026-09-08, all three blocks |
 | Frontend | **written and merged** on 2026-09-08 by this session, not by the design session; closed-account registry screen added 2026-09-11 (14.15) |
 | Exercised against a database | **yes, on `fintrack_dev`, rolled back**: `scripts/verifyClose.js` closes a probe account it creates, 26 assertions (14.11). Never exercised against production data |
-| Other deletion methods | SOFT refused by the server since 2026-09-13; RTA and HARD reachable through the API only. Their state and warnings live in `PLAN_DELETION_METHODS.md` beside this file |
+| Other deletion methods | SOFT, RTA and HARD all refused by the server with 403 since 2026-09-13 (`deleteAccountService.js:1639-1657`), so CLOSE is the only method the API accepts. Their state and warnings live in `PLAN_DELETION_METHODS.md` beside this file |
 
 Corrected 2026-09-13. The two rows above read "applied to no production
 database" and "exercised: no" until that day; both were true when written and
-had stopped being true on 2026-09-11 and 2026-09-09.
+had stopped being true on 2026-09-11 and 2026-09-09. The last row said RTA and
+HARD were still reachable through the API; that stopped being true with
+`f9a94ba0` the same day.
 
 ---
 
@@ -346,6 +348,14 @@ and after. Nothing in this module runs it or may run it.
 
 ### Fourteen queries wait on the production chain run
 
+**Status, 2026-09-13.** The event this section waits on happened: `035` is on
+production since 2026-09-11. The nine dashboard joins no longer name
+`user_accounts` directly; they read `accountReadSource`, behind the
+environment flag `INCLUDE_CLOSED_ACCOUNTS` (`closedAccountReads.js:33-34`), which
+is off unless the backend's environment sets it to `true`. Whether production's
+environment sets it cannot be read from this session. Until it does, the closed
+account's own movements still leave those nine answers.
+
 Two modules break the same promise for the same reason and are unblocked by the
 same event. Recording it once here, at Overview's request, rather than in two
 documents each naming its own half.
@@ -492,7 +502,11 @@ running it would be that permission decision bypassed rather than met.
   belongs in the schema rather than in the form, for the reason the frontend
   field was left uncapped in the first place: a limit the schema does not
   enforce is one a second writer does not honour. The constraint and its
-  length belong to the migration session.
+  length belong to the migration session. **Done:** 255 characters, as
+  `chk_close_reason_length` (`036_cap_close_reason_length.sql`, restated in
+  `createTables.js:1120-1121`), applied to production on 2026-09-11
+  (`production-runs/2026-09-11-after.txt:22`); the service refuses a longer
+  reason first (`deleteAccountService.js:913`).
 
 ### Left as measured, not repaired
 
@@ -4570,7 +4584,11 @@ of `PLAN_DELETION_METHODS.md` is what it needs in order to be worth turning on.
   account per user.
 - **The press-offset token** (14.15) gets its own name in `tokens.css` once the
   Overview session's pending change to that file lands; until then the buttons
-  keep `var(--border-width-thin)`.
+  keep `var(--border-width-thin)`. **Done the same day** (`16779d17`): the
+  hover lift is `--motion-lift-sm` (-1px) and `--motion-lift-md` (-2px) in the
+  MOTION block of `tokens.css`, names approved by Carlos, and the nine lifts in
+  the deletion stylesheets read them. No button offsets by a border width any
+  more.
 
 **RTA and HARD refused too, the same day.** Asked whether they should get the
 same server-side refusal, Carlos answered *"si"*. Both were hidden on the screen,
