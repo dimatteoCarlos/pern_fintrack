@@ -1,4 +1,4 @@
-import { capitalize } from '../../helpers/functions';
+import { capitalize, currencyMinorUnit } from '../../helpers/functions';
 
 //src/helpers/functions.ts
 export function validationData<T extends Record<string, unknown>>(
@@ -45,10 +45,12 @@ export function validationData<T extends Record<string, unknown>>(
 //---------------------------------
 // ✅ función helper reutilizable para validar el campo 'amount' /validat speceifically amount field
 //used by custom validation of amount. ex.Debts.tsx. It does not accept zero
-export function validateAmount(value: string): string | null {
+export function validateAmount(value: string, currency?: string): string | null {
   if (value === '' || value === undefined) return 'Amount is required';
 
-  const result = checkNumberFormatValue(value);
+  // The currency, when given, rounds the amount to its own decimals, so a yen
+  // amount of 0,4 reads as zero and is refused here rather than on the server.
+  const result = checkNumberFormatValue(value, currency);
 
   if (result.isError) {
     return `* ${result.formatMessage}`;
@@ -107,7 +109,31 @@ export function validateField(
 //-----------------------------
 //-----check number format ----
 //used in input number format validation
-export function checkNumberFormatValue(value: string): {
+// The currency's own decimals are applied to the value to save when the caller
+// names the currency: the yen has none, so 1500,75 JPY is saved as 1501. Without
+// a currency the parsed value is returned exactly as before.
+export function checkNumberFormatValue(
+  value: string,
+  currency?: string,
+): {
+  formatMessage: string;
+  valueNumber: string | undefined;
+  valueToSave: number | undefined;
+  isError: boolean;
+} {
+  const result = parseNumberFormatValue(value);
+
+  if (!currency || result.valueToSave === undefined) return result;
+
+  const digits = currencyMinorUnit(currency);
+  return {
+    ...result,
+    valueToSave: Number(result.valueToSave.toFixed(digits)),
+  };
+}
+
+// The format parser itself, unchanged; checkNumberFormatValue wraps it.
+function parseNumberFormatValue(value: string): {
   formatMessage: string;
   valueNumber: string | undefined;
   valueToSave: number | undefined;

@@ -1,6 +1,6 @@
 //src/validations/schemas/expenseSchema.ts
 import {z} from 'zod';
-import { currencySchema, noteSchema, numberSchema, requiredStringSchema } from './commonSchemas';
+import { currencySchema, noteSchema, numberSchema, requiredStringSchema, roundAmountToCurrency } from './commonSchemas';
 //zod schema validation for ExpenseInputDataType
 //amount, account, category, note, currency
 
@@ -12,7 +12,7 @@ export const expenseSchema = z.object(
   category:requiredStringSchema,
   note:noteSchema,
   currency:currencySchema,
-  });
+  }).transform(roundAmountToCurrency);
 
 // Income schema
 export const incomeSchema = z.object(
@@ -23,7 +23,7 @@ export const incomeSchema = z.object(
   note:noteSchema,
   currency:currencySchema,
   }
-  );
+  ).transform(roundAmountToCurrency);
 
 //Transfer schema
 export const transferSchema = z.object({
@@ -63,4 +63,5 @@ export const transferSchema = z.object({
     return true;
   }
 )
+.transform(roundAmountToCurrency)
   

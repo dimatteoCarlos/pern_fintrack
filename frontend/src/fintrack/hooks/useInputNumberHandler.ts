@@ -16,11 +16,14 @@ function useInputNumberHandler<T>(
   setMessageToUser?: React.Dispatch<
     React.SetStateAction<string | null | undefined>
   >,
+  // The currency the amount is typed in. The saved number takes its decimals:
+  // none for the yen.
+  currency?: string,
 ) {
   const inputNumberHandlerFn = useCallback(
     (name: string, value: string) => {
       const { formatMessage, isError, valueToSave, valueNumber } =
-        checkNumberFormatValue(value);
+        checkNumberFormatValue(value, currency);
       //UPDATE formDta with original string per display
       setFormData((formData) => ({
         ...formData,
@@ -69,6 +72,7 @@ function useInputNumberHandler<T>(
       setStateData,
       setIsAmountError,
       setMessageToUser,
+      currency,
     ],
   );
 

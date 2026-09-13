@@ -112,6 +112,10 @@ function NewPocket() {
     setFormData,
     setValidationMessages,
     setPocketData,
+    undefined,
+    undefined,
+    // The target takes the chosen currency's decimals: none for the yen.
+    pocketData.currency ?? defaultCurrency,
   );
   //---------------------------------------
   // ✨ INPUT HANDLERS

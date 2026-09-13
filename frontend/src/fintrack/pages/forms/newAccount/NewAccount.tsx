@@ -548,6 +548,7 @@ function NewAccount() {
                   formData={formData}
                   setFormData={setFormData}
                   setStateData={setAccountData}
+                  currency={currency}
                   // disabled={isFormDisabled}
                 />
            

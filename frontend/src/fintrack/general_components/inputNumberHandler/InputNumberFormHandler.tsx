@@ -23,6 +23,8 @@ type InputNumberFormHandlerPropType<T> = {
   //<Partial<T>>>;
   setStateData: React.Dispatch<React.SetStateAction<T>>;
   onChangeHandler?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  // The currency the amount is typed in; the saved number takes its decimals.
+  currency?: string;
 };
 
 //------
@@ -34,6 +36,7 @@ function InputNumberFormHandler<T>({
   setFormData,
   setStateData,
   onChangeHandler,
+  currency,
 }: InputNumberFormHandlerPropType<T>) {
   const { inputNumberHandlerFn } = useInputNumberHandler(
     setFormData as React.Dispatch<
@@ -41,6 +44,9 @@ function InputNumberFormHandler<T>({
     >, // Aserción general
     setValidationMessages,
     setStateData as React.Dispatch<React.SetStateAction<T>>,
+    undefined,
+    undefined,
+    currency,
   );
 
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {

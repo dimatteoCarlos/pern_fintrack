@@ -177,6 +177,10 @@ function EditPocket() {
     setFormData,
     setValidationMessages,
     setLoadedPocketData,
+    undefined,
+    undefined,
+    // The target takes the chosen currency's decimals: none for the yen.
+    pocketData?.currency ?? pocket?.currency ?? DEFAULT_CURRENCY,
   );
 
   // ✨ INPUT HANDLERS

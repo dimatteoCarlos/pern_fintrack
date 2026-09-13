@@ -248,6 +248,10 @@ function NewCategory() {
     setFormData,
     setValidationMessages,
     setCategoryData,
+    undefined,
+    undefined,
+    // The budget takes the chosen currency's decimals: none for the yen.
+    selectedCurrency,
   );
  // Helper function to validate a text field (category or subcategory)
   const validateTextInRealTime = (fieldName: 'category' | 'subcategory', value: string) => {

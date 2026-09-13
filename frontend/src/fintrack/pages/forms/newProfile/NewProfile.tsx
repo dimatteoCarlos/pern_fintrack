@@ -474,6 +474,7 @@ function NewProfile() {
                   formData={formData}
                   setFormData={setFormData}
                   setStateData={setProfileData}
+                  currency={selectedCurrency}
                 />
 
                 <CurrencyBadge

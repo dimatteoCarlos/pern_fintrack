@@ -7,6 +7,18 @@ import {ERROR_MESSAGES,
 } from '../utils/constants.ts'
 import { SUPPORTED_CURRENCIES } from "../../helpers/currencyConstants.ts";
 import { CurrencyType } from "../../types/types.ts";
+import { currencyMinorUnit } from "../../helpers/functions.ts";
+
+// Rounds the parsed amount to its currency's decimals (1500,75 JPY -> 1501);
+// object-level because numberSchema cannot see the currency field.
+export function roundAmountToCurrency<T extends { amount: number; currency: string }>(
+  data: T,
+): T {
+  return {
+    ...data,
+    amount: Number(data.amount.toFixed(currencyMinorUnit(data.currency))),
+  };
+}
 
 //------------
 // Esquema de Zod para validar y transformar entradas numéricas / Zod schema to validate and transform numeric data

@@ -326,6 +326,7 @@ function Debts(): JSX.Element {
     setDataTrack, //setStateData with valueToSave in db
     setIsAmountError,
     setMessageToUser,
+    currency,
   );
   // Form field update handler
   //--update input data
@@ -354,7 +355,7 @@ function Debts(): JSX.Element {
       if (isAmountError) {
         return;
       }
-      const errorValidationAmount = validateAmount(value);
+      const errorValidationAmount = validateAmount(value, currency);
 
       console.log(
         '🚀 ~ updateTrackerData ~ errorValidationAmount:',
@@ -426,7 +427,7 @@ function Debts(): JSX.Element {
     //Amount validation
     const amountString = formData.amount;
     // console.log('amount on save',formData.amount, datatrack.amount, 'errorMsgs', validationMessages )
-    const amountChecked = checkNumberFormatValue(amountString);
+    const amountChecked = checkNumberFormatValue(amountString, currency);
     //  console.log(amountChecked)
 
     if (amountChecked.isError && !amountChecked.valueToSave) {
