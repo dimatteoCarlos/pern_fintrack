@@ -9,6 +9,7 @@ import axios from 'axios';
 
 import { useAuthStore } from '../stores/useAuthStore';
 import { authFetch } from '../auth_utils/authFetch';
+import { getRefreshedToken } from '../auth_utils/authRefreshManager';
 
 import {
   AuthSuccessResponseType,
@@ -171,11 +172,22 @@ const useAuth = () => {
     let isMounted = true;
 
     const checkAuthStatus = async () => {
-      const accessToken = sessionStorage.getItem('accessToken');
+      let accessToken = sessionStorage.getItem('accessToken');
 
       if (!accessToken) {
-        setIsCheckingAuth(false);
-        return;
+        try {
+          // No token in this tab — try the refresh cookie once (a new tab,
+          // or the browser reopened, within the 7-day refresh window)
+          accessToken = await getRefreshedToken();
+        } catch {
+          if (isMounted) {
+            // No cookie, or the cookie is spent — an anonymous visitor,
+            // not an expired session, so no 'expired' reason here
+            invalidateSession();
+            setIsCheckingAuth(false);
+          }
+          return;
+        }
       }
 
       if (accessToken && !isAuthenticated) {
@@ -219,14 +231,8 @@ const useAuth = () => {
     return () => {
       isMounted = false;
     };
-  }, [
-    setIsAuthenticated,
-    setIsCheckingAuth,
-    error,
-    isLoading,
-    setUserData,
-    isAuthenticated,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // boot check runs once, on mount — Zustand setters are stable references
   //-------------
   // console.log("user data:", userData)
 
