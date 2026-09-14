@@ -71,6 +71,25 @@ export const eraseAccountTail = async (
   // a tail that assumes its caller checked is a tail that detaches nothing the
   // day someone calls it without checking.
 
+  // debtor_accounts.selected_account_name: the designated-counterparty ruling
+  // (DEBTS_DOMAIN_CONTRACT.md, "The designated counterparty - resolved
+  // 2026-09-14"). The column is a free-text copy of another account's name,
+  // written once at debtor creation, and it has no FK to enforce agreement
+  // with the account it names - so it survives that account's deletion unless
+  // scrubbed here. selected_account_id itself needs no UPDATE: both schema
+  // builds declare it `REFERENCES user_accounts(account_id) ON DELETE SET
+  // NULL` (002_accounts.sql:179-180; createTables.js:114, added 2026-09-02),
+  // so the DELETE FROM user_accounts below already nulls it as part of the
+  // same statement. Run before that DELETE, while selected_account_id still
+  // names the target - once the FK cascade fires this WHERE would match
+  // nothing.
+  await dbClient.query(
+    `UPDATE debtor_accounts
+        SET selected_account_name = NULL
+      WHERE selected_account_id = $1`,
+    [targetAccountId],
+  );
+
   // pocket_allocations.source_account_id is NOT NULL and RESTRICTs (unlike
   // transactions' two nullable FKs above), so it cannot be detached the same
   // way - the row itself has to go. This is the explicit, out-loud deletion
