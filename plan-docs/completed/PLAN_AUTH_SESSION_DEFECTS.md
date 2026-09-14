@@ -1,6 +1,8 @@
 # PLAN_AUTH_SESSION_DEFECTS — five defects on the frontend session pipeline
 
-**State: open, 2026-09-14.** Scope is the developer's own selection: defects 1,
+**State: closed 2026-09-14.** All five defects landed the same day, `main` at
+`9d64ad91` — see §9 for the commit per defect. Scope was the developer's own
+selection: defects 1,
 3 and 4 from the 2026-09-14 authentication audit, plus 6 and 7, which this
 document adds because they sit in the same frontend files and the same
 session-lifecycle path. Defects 2 (the refresh cookie is third-party in
@@ -256,3 +258,123 @@ valid up to an hour after logout, because `verifyToken` does not query the
 database) is not a defect and is not touched. The disabled `returnTo` redirect
 after re-login (`AuthPage.tsx:86-91`) is a parked decision, not a defect this
 plan resolves.
+
+---
+
+## 7. Workflow — before the fix
+
+Traced from the five files in scope, in the order a session actually hits
+them: boot, an authenticated call, the refresh it triggers, and logout.
+
+```
+App loads (new tab, or the browser reopened)
+  -> useAuth.ts:170 boot effect fires
+    -> read sessionStorage.getItem('accessToken')
+      +- found      -> validate session -> done
+      +- NOT found  [DEFECT 1, useAuth.ts:176-179]
+                    -> setIsCheckingAuth(false); return
+                       the 7-day refresh cookie is never tried
+  -> boot effect dependency array [DEFECT 7, useAuth.ts:222-228]
+     [setIsAuthenticated, setIsCheckingAuth, error, isLoading, setUserData, isAuthenticated]
+     -> re-fires on every error/isLoading change from this same hook's
+        own sign-in/sign-up paths (15 importers)
+
+Authenticated user calls a protected endpoint
+  -> authFetch.ts response interceptor
+    -> 401 received
+      +- url is /sign-in or /sign-up          -> skip refresh (correct)
+      +- url is update-user or change-password
+      |  [DEFECT 3, authFetch.ts:124-125]      -> skip refresh
+      |                                        -> invalidateSession()
+      |                                           logged out mid-edit
+      +- any other url                        -> getRefreshedToken()
+
+getRefreshedToken() -> authRefreshManager.ts single-flight refresh
+  -> axios call to /refresh-token (10s timeout, authRefreshManager.ts:43)
+    +- success              -> new accessToken -> retry original request
+    +- failure, ANY kind
+       [DEFECT 4, authRefreshManager.ts:159-163]
+       401/403, timeout, 500 or network error all take this branch
+       -> invalidateSession('expired') -> throw
+
+User logs out with "remember me" ON
+  -> logoutCleanup.ts:52-61, shouldKeepData = true
+    -> clearIdentity() / localStorage.removeItem  SKIPPED (correct)
+    -> setUserData(null)  SKIPPED
+       [DEFECT 6, logoutCleanup.ts:199-206]
+       userData stays in the Zustand store after logout
+
+Next person signs up, same tab
+  -> signup response carries no user_contact (authController.js:177-186)
+  -> safeMergeUser merges the stale userData with the fresh response
+     -> the previous user's contact fields land on the new account
+```
+
+---
+
+## 8. Workflow — after the fix (target)
+
+Same trace, with each fix in place. This is the design already specified in
+`Right` blocks above (§1-4); it becomes the actual flow only once every block
+in §9 is committed — until then it documents intent, not shipped behavior.
+
+```
+App loads (new tab, or the browser reopened)
+  -> useAuth.ts boot effect fires
+    -> read sessionStorage.getItem('accessToken')
+      +- found      -> validate session -> done
+      +- NOT found  [FIXED — Block A, defect 1]
+                    -> await getRefreshedToken()
+                      +- success -> fall through to validate-session branch
+                      +- failure -> invalidateSession()  (NO 'expired' arg)
+                                    -> setIsCheckingAuth(false); return
+  -> boot effect dependency array  [FIXED — Block A, defect 7]
+     []  -> runs once, on mount only
+
+Authenticated user calls a protected endpoint
+  -> authFetch.ts response interceptor
+    -> 401 received
+      +- url is /sign-in or /sign-up            -> skip refresh (unchanged)
+      +- any other url, INCLUDING update-user
+         and change-password  [FIXED — Block B, defect 3]
+                                                  -> getRefreshedToken()
+
+getRefreshedToken() -> authRefreshManager.ts single-flight refresh
+  -> axios call to /refresh-token (10s timeout)
+    +- success                    -> new accessToken -> retry original request
+    +- failure, status 401/403    -> invalidateSession('expired') -> throw
+    +- failure, timeout/5xx/network
+       [FIXED — Block C, defect 4]
+       -> session left as-is, no invalidation -> throw (caller may retry)
+
+User logs out, any "remember me" setting
+  -> logoutCleanup.ts
+    -> setUserData(null)  [FIXED — Block D, defect 6]  ALWAYS runs
+    -> shouldKeepData?
+       +- true  -> identity kept in localStorage (unchanged)
+       +- false -> clearIdentity() + localStorage cleanup (unchanged)
+
+Next person signs up, same tab
+  -> userData is already null, nothing stale for safeMergeUser to merge
+     the defect 6 leak has no state left to leak
+```
+
+---
+
+## 9. Correction log
+
+One row per defect, filled in with the commit sha when its block lands —
+`pending` until then. This table is the record of how each defect was
+actually corrected, not just how it was designed to be.
+
+| defect | block | file | fix | status | commit |
+| :-- | :-- | :--- | :--- | :--- | :--- |
+| 6 | D | `logoutCleanup.ts` | `setUserData(null)` moved outside `!shouldKeepData` | done | `d615d35b` |
+| 3 | B | `authFetch.ts` | removed the `update-user`/`change-password` refresh exclusion | done | `0b0e221d` |
+| 4 | C | `authRefreshManager.ts` | invalidate only on 401/403; timeout/5xx/network re-throw without invalidating | done | `bf9212f1` |
+| 1 | A | `useAuth.ts` | missing token tries `getRefreshedToken()` once before giving up | done | `9d64ad91` |
+| 7 | A | `useAuth.ts` | boot effect dependency array emptied, runs once on mount | done | `9d64ad91` |
+
+Order matches §5 (D, B, C, A). All five defects landed 2026-09-14, `main` at
+`9d64ad91`, `npx tsc -p tsconfig.app.json --noEmit` clean after each block.
+The §8 "after" workflow is no longer a target — it is the current code.
