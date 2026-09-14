@@ -1302,3 +1302,23 @@ history query filters the deactivation stamp, only the transaction form's accoun
 picker does. The series half survives inside it, and the list half survives as
 the picker. Do not offer Carlos both versions — the superseded one reads as an
 argument against the rule.
+
+## deletion-work-lives-in-its-own-worktree
+
+
+From 2026-09-07 to 2026-09-13 the account-deletion work lived in the
+`pern_fintrack_deletion` worktree on branch `feat/deletion`. Carlos closed the
+deletion session on 2026-09-13 and had the worktree removed; its local
+`backend/.env` and `backend/.env.local` went with it, by his decision.
+
+**What survives:** the branch `feat/deletion` at `c773a241`, the same commit as
+`main` at removal, and the findings in
+`plan-docs/ongoing/PLAN_ACCOUNT_DELETION/` (section 14.23 of
+`PLAN_CLOSE_ACCOUNT.md` is the closing state). The shared checkout's
+`node_modules` counts were unchanged by the removal (frontend 222, backend 361).
+
+**How to apply:** new deletion work starts from `main`; recreate a worktree off
+`feat/deletion` only if Carlos asks for one, and copy an `.env` into it only with
+his say. Before concluding files were destroyed in any checkout, run
+`git worktree list`. Related: [[worktree-removal-emptied-node-modules]],
+[[push-by-sha-not-by-branch]], [[delivery-point-is-main]].
