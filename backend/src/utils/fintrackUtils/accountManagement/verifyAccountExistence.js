@@ -6,7 +6,6 @@ import { pool } from '../../../db/config/configDB.js';
 //-------------------------
 //VERIFY EXISTENCE OF ACCOUNT BY ACCOUNT_NAME AND ACCOUNT TYPE
 //------------------------
-//adaptar a accountId y deleted_at
 export const verifyAccountExistence = async (
   dbClient = null,
   userId,
@@ -16,6 +15,14 @@ export const verifyAccountExistence = async (
   // Exact match, not `ILIKE '%name%'`. The substring form matched any stored
   // name CONTAINING this one, so creating 'mini/frutas/need' was rejected by
   // an existing 'mercadomini/frutas/need'. Case is folded on both sides.
+  //
+  // Name ownership, not circulation, so closed is the opposite of deleted
+  // here: a soft-deleted account does not hold its name, but a CLOSED one
+  // does, because its history is kept and the erasure tail rewrites
+  // descriptions by matching the account name as a substring — freeing a
+  // closed account's name would let a later namesake's deletion rewrite the
+  // closed account's own preserved rows. Same predicate as the rename check
+  // in accountEditController.js.
   const accountExistQuery = {
     text: `SELECT 1
     FROM user_accounts ua
@@ -23,6 +30,7 @@ export const verifyAccountExistence = async (
     WHERE ua.user_id = $1
      AND LOWER(ua.account_name) = LOWER($2)
      AND LOWER(act.account_type_name) = LOWER($3)
+     AND (ua.closed_at IS NOT NULL OR ua.deleted_at IS NULL)
     LIMIT 1`,
     values: [userId, account_name, account_type_name],
   };
