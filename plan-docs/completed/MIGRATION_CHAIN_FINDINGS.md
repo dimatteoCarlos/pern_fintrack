@@ -19,8 +19,10 @@ target exists.
 **Status when moved.** The 031-038 chain ran clean against production on
 2026-09-11 and the standing restrictions it discharges are recorded in the
 entry below. This file is a closed investigation record, not an open task
-list — see `plan-docs/ongoing/PLAN_MIGRATION_CHAIN_031_035.md` for what, if
-anything, is still open on the chain itself.
+list — see `plan-docs/completed/PLAN_MIGRATION_CHAIN_031_035.md` §0 for the
+same closing fact against the pre-run register, and its section 6 for the two
+process gaps the run left open: no checksum on an executed file, and no
+defined behavior for a chain that fails midway.
 
 ## Index
 

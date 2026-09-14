@@ -1,13 +1,29 @@
 # PLAN_MIGRATION_CHAIN_031_035 — five written, 035 applied locally
 
-**State: open, 2026-09-08.** This is a live register of the queued half of the
-migration chain. It exists because five migration files were written for the
-account closure work and no document tracked what applying them requires; the
-facts were scattered across `PLAN_CLOSE_ACCOUNT.md`, which belongs to a feature,
-and `PLAN_MIGRATION_CHAIN.md`, which was closed on 2026-09-06.
+**State: closed 2026-09-11, corrected 2026-09-14.** Every claim below was
+measured on 2026-09-08 and 2026-09-09, while the chain was still queued. It no
+longer is: production ran it.
 
-Every claim below was measured on 2026-09-08 against `main` at `0d5c41a6`. Where
-a claim is a reading rather than a measurement, it says so.
+## 0. Correction — 2026-09-14
+
+**The chain this document tracks as queued is applied.** Production ran
+`031` through `038` on 2026-09-11, ledger at 39 rows, last executed
+`038_constrain_transaction_status.sql`, measured and recorded in
+`plan-docs/completed/MIGRATION_CHAIN_FINDINGS.md` under
+`production-chain-031-038-is-applied`. That run answers section 6's first two
+open decisions: which runner applies the chain (`db:migrate`, run by hand
+against a database `DB_EXPECTED` named, per
+[[each-production-run-needs-authorization]]) and in what order relative to the
+code deploy (`main` fast-forwarded `feat/vercel-serverless` from `20de666d` to
+`e3dee3e8` on 2026-09-11, after the schema). Questions 3 and 4 — no checksum on
+an executed file, and a mid-chain failure leaving an early file committed — were
+not exercised by that run and stand as open process gaps, not as claims this
+correction can close.
+
+**The body below is left as it was written.** It is a measurement record of the
+chain while queued — three local databases, the alignment's idempotence, the
+boot-path counterpart gap at 035 — and stays accurate as history. Read it for
+how the chain was verified before the run, not for whether it has run.
 
 ---
 
