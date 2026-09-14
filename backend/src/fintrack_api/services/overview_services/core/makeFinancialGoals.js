@@ -35,9 +35,11 @@ export const PARTIAL_GOAL_COVERAGE_NOTICE =
  * count only the pockets that have a real target, which is why the two can cover
  * different sets and why that difference is announced.
  *
- * goalsTotalRemaining is floored at nothing — it is a plain subtraction, so a
- * goal already exceeded contributes a negative and reduces what is left overall.
- * Clamping it would report more work outstanding than there is.
+ * goalsTotalRemaining clamps EACH goal's own gap to zero before summing (decided
+ * 2026-09-14, OVERVIEW_DECISIONS.md §2): a goal already exceeded contributes
+ * nothing, rather than a negative that offsets another goal's shortfall. Same
+ * rule pocketBoardService.js:117-125 applies at board level — money committed
+ * above one goal does not fund another.
  *
  * @param {object} input
  * @param {Array<{balance: number, target: number|null}>} input.goals - one entry per pocket
@@ -71,11 +73,17 @@ export const makeFinancialGoals = ({ goals, currency, notices = [] }) => {
   // Measured against the balance of the pockets that HAVE a target, not against
   // every pocket. Subtracting a targetless pocket's savings from the goal would
   // report progress toward a goal that money was never aimed at.
+  //
+  // Clamped per goal before summing: a goal's own gap only counts while it is
+  // still short. Without the clamp, one goal exceeded by $100 would cancel
+  // another goal $100 short, and the total would report nothing missing —
+  // which is false, since that excess is committed to the first goal.
   goalsTotalRemaining: totalTarget === null
    ? null
-   : toAmount(totalTarget.minus(
-    withTarget.reduce((sum, goal) => sum.plus(goal.balance), money(0)),
-   )),
+   : toAmount(withTarget.reduce((sum, goal) => {
+    const gap = money(goal.target).minus(goal.balance);
+    return gap.isPositive() ? sum.plus(gap) : sum;
+   }, money(0))),
   currency,
   meta: Object.freeze({
    notices: Object.freeze(sectionNotices),
