@@ -492,10 +492,11 @@ un bolsillo excedido en 500 y otro atrasado en 500, bolsillos informa 500 por
 asignar y Overview informa 0. **Un dueño que mire las dos pantallas ve dos
 respuestas a la misma pregunta.**
 
-**Decisión abierta, y es del desarrollador.** No se cierra aquí y no se recomienda a
-la ligera, porque las dos posturas responden preguntas legítimamente distintas: el
-recorte responde *cuánto falta poner*, la resta plana responde *cuánto falta en
-neto*. Lo que no puede sostenerse es que las dos se llamen igual en pantalla.
+**Decidido, 2026-09-14 (Carlos): gana el recorte por bolsillo.** Un bolsillo
+excedido no compensa a otro atrasado — la misma regla que ya rige en Bolsillos.
+`makeFinancialGoals.js:74-78` queda mal: la resta plana permite que una meta
+superada baje el faltante de otra, y debe recortar por meta antes de sumar,
+igual que `pocketBoardService.js:117-125`. Pendiente de implementar.
 
 ### 3. De la forma, la que ya estaba anotada — y una parte se resolvió sola
 
