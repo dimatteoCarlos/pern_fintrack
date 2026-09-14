@@ -10,7 +10,8 @@
  ✅ Responsibilities:
  - Share a single refresh promise across concurrent 401s
  - On success: store new token, clear returnTo flags
- - On failure: save returnTo in sessionStorage, call invalidateSession('expired')
+ - On 401/403 (rejected refresh token): save returnTo, call invalidateSession('expired')
+ - On timeout/5xx/network error: leave the session as-is, let the caller retry
  
  ❌ Never:
  - Navigate or show UI messages
@@ -57,13 +58,22 @@ export const getRefreshedToken = async (): Promise<string> => {
 
         return newAccessToken;
       } catch (error) {
-        // 🚨 Refresh failed – session is irrecoverable
-        // 📍 Save current location to redirect after login (context, not signal)
-        const currentPath = window.location.pathname + window.location.search; //return route page + query string parameters
-        sessionStorage.setItem('returnTo', currentPath);
+        // 🚨 Refresh failed – only a rejected/expired refresh token means the
+        // session is irrecoverable; a timeout, a 5xx or a network error is a
+        // transient failure the caller may retry.
+        const status = axios.isAxiosError(error)
+          ? error.response?.status
+          : undefined;
 
-        // 🧹 Centralized session cleanup (storage + store, keeps remembered identity)
-        invalidateSession('expired');
+        if (status === 401 || status === 403) {
+          // 📍 Save current location to redirect after login (context, not signal)
+          const currentPath =
+            window.location.pathname + window.location.search; //return route page + query string parameters
+          sessionStorage.setItem('returnTo', currentPath);
+
+          // 🧹 Centralized session cleanup (storage + store, keeps remembered identity)
+          invalidateSession('expired');
+        }
 
         // Re-throw so callers know refresh failed
         throw error;
