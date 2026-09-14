@@ -71,12 +71,15 @@ function DebtsLayout() {
     {
       // The direction is a claim about the owner's position, so it needs a
       // figure to stand on. Without one the headline names the section instead.
+      // A balance of exactly zero is not owed either way — it is settled.
       title:
         total_debt_balance === null
           ? 'debts'
-          : total_debt_balance >= 0
+          : total_debt_balance > 0
             ? "you're owed"
-            : 'you owe',
+            : total_debt_balance < 0
+              ? 'you owe'
+              : 'settled',
       amount: total_debt_balance,
     },
     {
