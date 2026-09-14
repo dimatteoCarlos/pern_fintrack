@@ -4,6 +4,14 @@ import {
   currencyFormat,
   formatDateToDDMMYYYY,
 } from '../../../../helpers/functions';
+import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../../helpers/currencyConstants';
+import { CurrencyType } from '../../../../types/types';
+
+// The API types this component reads carry currency as a plain `string`
+// (server-validated, not narrowed on the wire), so the lookup is cast and
+// falls back to the default locale for a code CURRENCY_OPTIONS does not list.
+const localeFor = (currency: string) =>
+  CURRENCY_OPTIONS[currency as CurrencyType] ?? CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
 import './styles/accountBalanceSummary-styles.css';
 
@@ -23,7 +31,7 @@ const AccountBalanceSummary = ({
       <div className='balance-summary__item'>
         <span className='balance-summary__label'>Initial Balance</span>
         <span className='balance-summary__value'>
-          {currencyFormat(initialBalance.currency, initialBalance.amount)}
+          {currencyFormat(initialBalance.currency, initialBalance.amount, localeFor(initialBalance.currency))}
         </span>
         <span className='balance-summary__date'>
           ({formatDateToDDMMYYYY(initialBalance.date)})
@@ -33,7 +41,7 @@ const AccountBalanceSummary = ({
       <div className='balance-summary__item border-left '>
         <span className='balance-summary__label'>Final Balance</span>
         <span className='balance-summary__value'>
-          {currencyFormat(finalBalance.currency, finalBalance.amount)}
+          {currencyFormat(finalBalance.currency, finalBalance.amount, localeFor(finalBalance.currency))}
         </span>
         <span className='balance-summary__date'>
           ({formatDateToDDMMYYYY(finalBalance.date)})

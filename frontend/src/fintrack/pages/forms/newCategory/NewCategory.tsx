@@ -31,7 +31,7 @@ import {
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
 
-import { getCurrentBudgetMonthLabel, numberFormatCurrency } from '../../../helpers/functions.ts';
+import { getCurrentBudgetMonthLabel } from '../../../helpers/functions.ts';
 
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
@@ -147,7 +147,7 @@ function NewCategory() {
   const currentBudgetMonth = getCurrentBudgetMonthLabel(userData?.timezone);
 
   // Reads the rates already held in the store, so it issues no request.
-  const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+  const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
     formData[formDataNumber.keyName],
     selectedCurrency,
   );
@@ -160,7 +160,7 @@ function NewCategory() {
 
   const rateTooltipText =
     rate && direction
-      ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}`
+      ? `${direction}\nrate: ${formattedRate}`
       : '';
 
   // Helper message for duplicate account name

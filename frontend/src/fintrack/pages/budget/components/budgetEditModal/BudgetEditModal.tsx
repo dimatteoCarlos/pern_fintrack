@@ -287,14 +287,14 @@ function BudgetEditModal({
  // The amount sent is the one typed, NOT the converted figure: that is what
  // NewCategory, NewPocket, NewAccount and NewProfile all do, and a fifth form
  // converting on its own would make the same input mean two different things.
- const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+ const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
   amount,
   originCurrency,
  );
 
  const rateTooltip =
   rate && direction
-   ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}`
+   ? `${direction}\nrate: ${formattedRate}`
    : '';
 
  // What Left becomes if this amount is saved, recomputed on every keystroke.

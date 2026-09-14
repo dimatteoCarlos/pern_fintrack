@@ -29,7 +29,6 @@ import { validationData } from '../../../validations/utils/custom_validation.ts'
 import { normalizeError } from '../../../helpers/normalizeError.ts';
 import {
   fromCalendarDay,
-  numberFormatCurrency,
   toCalendarDay,
 } from '../../../helpers/functions.ts';
 import { editPocket } from '../../../api/pocketApi.ts';
@@ -212,7 +211,7 @@ function EditPocket() {
 
   // States what the backend will store as the target. Reads the rates already
   // held in the store, so it issues no request.
-  const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+  const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
     formData[formDataNumber.keyName],
     selectedCurrency,
   );
@@ -225,7 +224,7 @@ function EditPocket() {
 
   const rateTooltipText =
     rate && direction
-      ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}`
+      ? `${direction}\nrate: ${formattedRate}`
       : '';
 
   // 📤 FORM SUBMISSION LOGIC

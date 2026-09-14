@@ -35,6 +35,7 @@ import {
 import {
   ACCOUNT_OPTIONS_DEFAULT,
   CATEGORY_OPTIONS_DEFAULT,
+  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
@@ -309,12 +310,12 @@ function Expense(): JSX.Element {
       const spent = currencyFormat(
         account.currency,
         account.actualSpent,
-        'en-US',
+        CURRENCY_OPTIONS[account.currency],
       );
       const budget = currencyFormat(
         account.currency,
         account.budgetAmount,
-        'en-US',
+        CURRENCY_OPTIONS[account.currency],
       );
 
       return {

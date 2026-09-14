@@ -4,7 +4,8 @@
 import { useModalDialog } from '../../../../../hooks/useModalDialog';
 import { numberFormatCurrency, formatDate, capitalize, currencyMinorUnit } from '../../../../helpers/functions';
 import { MOVEMENT_TYPES } from '../../../../helpers/constants';
-import { DEFAULT_CURRENCY } from '../../../../helpers/currencyConstants';
+import { DEFAULT_CURRENCY, CURRENCY_OPTIONS } from '../../../../helpers/currencyConstants';
+import { CurrencyType } from '../../../../types/types';
 import { TransactionDetailType } from '../../../../types/responseApiTypes';
 import './transactionDetailModal.css';
 
@@ -52,13 +53,16 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
   // const formattedConvertedAbs = numberFormatCurrency(absConvertedAmount, 2, DEFAULT_CURRENCY, 'es-ES');
 
   // Each figure carries its own currency's decimals: printed raw, a JPY row
-  // written before per-currency rounding read "JPY 157.57".
+  // written before per-currency rounding read "JPY 157.57". The locale follows
+  // the same currency, not a fixed 'es-ES'.
   const originalCurrency = transaction.original_currency_code || DEFAULT_CURRENCY;
-  const formattedOriginalAbs = numberFormatCurrency(absOriginalAmount, currencyMinorUnit(originalCurrency), undefined, 'es-ES');
-  const formattedConvertedAbs = numberFormatCurrency(absConvertedAmount, currencyMinorUnit(DEFAULT_CURRENCY), undefined, 'es-ES');
+  const originalLocale =
+    CURRENCY_OPTIONS[originalCurrency as CurrencyType] ?? CURRENCY_OPTIONS[DEFAULT_CURRENCY];
+  const formattedOriginalAbs = numberFormatCurrency(absOriginalAmount, currencyMinorUnit(originalCurrency), undefined, originalLocale);
+  const formattedConvertedAbs = numberFormatCurrency(absConvertedAmount, currencyMinorUnit(DEFAULT_CURRENCY), undefined, CURRENCY_OPTIONS[DEFAULT_CURRENCY]);
 
   // Monto con signo para el hero
-  const formattedAmountSigned = numberFormatCurrency(transaction.amount, 2, DEFAULT_CURRENCY, 'es-ES');
+  const formattedAmountSigned = numberFormatCurrency(transaction.amount, 2, DEFAULT_CURRENCY, CURRENCY_OPTIONS[DEFAULT_CURRENCY]);
   const isPositive = transaction.amount >= 0;
   const amountClass = isPositive ? 'fx-amount-positive' : 'fx-amount-negative';
   const amountPrefix = isPositive ? '+' : '';
@@ -70,7 +74,7 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
   // A rate is a ratio, not money: four decimals cut 0.00650195 to 0,0065, which
   // no longer reproduces the 153,80 shown above it. Six significant digits do.
   const formattedExchangeRate = transaction.exchange_rate
-    ? new Intl.NumberFormat('es-ES', { maximumSignificantDigits: 6 }).format(transaction.exchange_rate)
+    ? new Intl.NumberFormat(CURRENCY_OPTIONS[DEFAULT_CURRENCY], { maximumSignificantDigits: 6 }).format(transaction.exchange_rate)
     : 'N/A';
 
   // Movement & Transaction Types
@@ -110,7 +114,7 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
   let directRateFormatted = '';
   if (showFXCard && transaction.exchange_rate && transaction.exchange_rate > 0) {
     const directRate = 1 / transaction.exchange_rate;
-    directRateFormatted = numberFormatCurrency(directRate, 2, undefined, 'es-ES');
+    directRateFormatted = numberFormatCurrency(directRate, 2, undefined, CURRENCY_OPTIONS[DEFAULT_CURRENCY]);
   }
 
   // Badges text in uppercase

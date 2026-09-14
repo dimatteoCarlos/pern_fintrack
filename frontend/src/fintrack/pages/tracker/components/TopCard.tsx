@@ -12,6 +12,8 @@ import {
  toCalendarDay,
 } from '../../../helpers/functions';
 
+import { CURRENCY_OPTIONS } from '../../../helpers/constants';
+
 import {
  CurrencyType,
  DropdownOptionType,
@@ -188,7 +190,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
 
   const previewText =
     conversion.convertedAmount !== null
-      ? `≈ ${numberFormatCurrency(conversion.convertedAmount, 2, undefined, 'es-ES')} ${accountingCurrency}`
+      ? `≈ ${numberFormatCurrency(conversion.convertedAmount, 2, undefined, CURRENCY_OPTIONS[accountingCurrency])} ${accountingCurrency}`
       : '';
 
   // The QUOTE, never the conversion's own rate. Converting a peso to a dollar
@@ -204,7 +206,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
         conversion.quote.rate,
         Math.abs(conversion.quote.rate) < 10 ? 4 : 2,
         undefined,
-        'es-ES',
+        CURRENCY_OPTIONS[accountingCurrency],
       )
     : '';
 

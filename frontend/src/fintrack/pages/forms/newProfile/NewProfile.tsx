@@ -21,7 +21,7 @@ import { useFetch } from '../../../hooks/useFetch.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 //UTILITIES
-import { capitalize, numberFormatCurrency } from '../../../helpers/functions.ts';
+import { capitalize } from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
 
@@ -195,7 +195,7 @@ function NewProfile() {
   // States what the backend will store as the loan value, which is also the
   // figure checked against the bank account's funds. Reads the rates already
   // held in the store, so it issues no request.
-  const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+  const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
     formData[formDataNumber.keyName],
     selectedCurrency,
   );
@@ -208,7 +208,7 @@ function NewProfile() {
 
   const rateTooltipText =
     rate && direction
-      ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}`
+      ? `${direction}\nrate: ${formattedRate}`
       : '';
 
   //---functions------------

@@ -36,7 +36,6 @@ import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTyp
 import {
   capitalize,
   earliestDatableDay,
-  numberFormatCurrency,
 } from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 
@@ -300,7 +299,7 @@ function NewAccount() {
   //---------
   // States what the backend will actually store for the opening balance. Reads
   // the rates already held in the store, so it issues no request.
-  const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+  const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
     formData[formDataNumber.keyName],
     currency,
   );
@@ -313,7 +312,7 @@ function NewAccount() {
 
   const rateTooltipText =
     rate && direction
-      ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}`
+      ? `${direction}\nrate: ${formattedRate}`
       : '';
 
    //--FORM SUBMISSION ------------

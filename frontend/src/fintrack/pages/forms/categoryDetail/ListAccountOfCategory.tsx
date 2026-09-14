@@ -13,7 +13,7 @@ import {
   withMonthParam,
 } from '../../../helpers/functions.ts';
 
-import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { DEFAULT_CURRENCY, CURRENCY_OPTIONS } from '../../../helpers/constants.ts';
 import {
   budgetRemainWord,
   budgetSquareState,
@@ -218,6 +218,7 @@ function ListAccountOfCategory({
           } = account;
 
           const currency_code = currency ?? DEFAULT_CURRENCY;
+          const formatNumberCountry = CURRENCY_OPTIONS[currency_code];
 
           // RETIRED by commit 9b — remove in the cleanup block (V1 §9.4, D8).
           // Three client-side formulas over a dashboard balance, replaced by
@@ -279,9 +280,9 @@ function ListAccountOfCategory({
                     would navigate instead of opening the panel. */}
                 <div className='budgetDetail__rowAmounts'>
                   <div className='box__title--spent'>
-                    {currencyFormat(currency_code, actualSpent, 'en-US')}
+                    {currencyFormat(currency_code, actualSpent, formatNumberCountry)}
                     &nbsp;/&nbsp;
-                    {currencyFormat(currency_code, budgetAmount, 'en-US')}
+                    {currencyFormat(currency_code, budgetAmount, formatNumberCountry)}
                   </div>
 
                   {/* Absent, not hidden, in a past month: a hidden button kept
@@ -321,7 +322,7 @@ function ListAccountOfCategory({
                       Math.abs(remainingBudget),
                       2,
                       currency_code,
-                      'en-US',
+                      formatNumberCountry,
                     )}
                     &nbsp;
                     <span className='categoryRow__remainWord'>

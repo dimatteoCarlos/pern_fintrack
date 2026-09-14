@@ -10,7 +10,7 @@ import {
   withMonthParam,
 } from '../../../helpers/functions.ts';
 
-import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { DEFAULT_CURRENCY, CURRENCY_OPTIONS } from '../../../helpers/constants.ts';
 import {
   budgetRemainWord,
   budgetSquareState,
@@ -209,6 +209,7 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
           } = category;
 
           const currency_code = currency ?? DEFAULT_CURRENCY;
+          const formatNumberCountry = CURRENCY_OPTIONS[currency_code];
 
           // RETIRED by commit 9 — remove in the cleanup block (V1 §9.4, D8).
           // Four client-side formulas over a dashboard balance, replaced by
@@ -241,12 +242,12 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
           const spentText =
             actualSpent === null
               ? DASH
-              : currencyFormat(currency_code, actualSpent, 'en-US');
+              : currencyFormat(currency_code, actualSpent, formatNumberCountry);
 
           const budgetText =
             budgetAmount === null
               ? DASH
-              : currencyFormat(currency_code, budgetAmount, 'en-US');
+              : currencyFormat(currency_code, budgetAmount, formatNumberCountry);
 
           const remainText =
             remainingBudget === null
@@ -255,7 +256,7 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                   Math.abs(remainingBudget),
                   2,
                   currency_code,
-                  'en-US',
+                  formatNumberCountry,
                 );
 
           const remainWord = budgetRemainWord(

@@ -29,6 +29,7 @@ import {
 
 import {
   DEFAULT_CURRENCY,
+  CURRENCY_OPTIONS,
   ACCOUNT_OPTIONS_DEFAULT,
   PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
@@ -280,11 +281,11 @@ function Transfer(): JSX.Element {
 
       // The currency travels once: currencyFormat emits the symbol itself, so
       // the loose currency code the other branch prefixes would say it twice.
-      const spent = currencyFormat(status.currency, status.actualSpent, 'en-US');
+      const spent = currencyFormat(status.currency, status.actualSpent, CURRENCY_OPTIONS[status.currency]);
       const budget = currencyFormat(
         status.currency,
         status.budgetAmount,
-        'en-US',
+        CURRENCY_OPTIONS[status.currency],
       );
 
       return `${acc.account_name} (${spent} / ${budget})`;
