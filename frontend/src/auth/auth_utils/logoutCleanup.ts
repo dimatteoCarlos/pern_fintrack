@@ -50,8 +50,10 @@ export const logoutCleanup = (): void => {
   const identity = getIdentity();
   const shouldKeepData = identity?.rememberMe === true;
 
+  // Always clear the in-memory profile; "remember me" keeps identity, not userData
+  setUserData(null);
+
   if (!shouldKeepData) {
-    setUserData(null);
     clearIdentity(); // Remove the identity entirely
     localStorage.removeItem(LOCAL_STORAGE_KEY.USER_DATA);
     console.log('🔧 Full cleanup: all persistent data removed');
