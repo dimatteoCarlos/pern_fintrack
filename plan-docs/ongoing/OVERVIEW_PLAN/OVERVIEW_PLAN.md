@@ -99,7 +99,7 @@ times against 4.
 | P2 | repoint Pocket to the plan model | **DONE**, `f4b999d9` and `f0388039` |
 | P3 | complete and correct the level-1 indicators | **DONE** 2026-09-07 |
 | P4 | the API contract, the served window and the activity page | **DONE**, `4b99fffa` and `7ba6761e` |
-| P5 | frontend | **IN PROGRESS** (re-measured 2026-09-13 on `main`). Level 1 built and on production. **Level 2 built for all six domains:** the five analysis screens draw their sections through `AnalysisPanel.tsx` (mounted at `IncomeDomain.tsx:56`, `InvestmentDomain.tsx:187,217,246`, `DebtDomain.tsx:73,104`, `PocketDomain.tsx:124,170`, `PnlDomain.tsx:57`), with the single `full` request fired on viewport entry by `useFullAnalysisTrigger.ts:10` (`AnalysisPanel.tsx:76`); expense draws the spend-against-budget Pareto `CategoryBudgetPareto.tsx` at `ExpenseDomain.tsx:232-237` (`d898c7c0`, `f516f1ec`). **Level-3 links: all five wired** — debt `DebtDomain.tsx:97`, investment `InvestmentDomain.tsx:239`, income `IncomeDomain.tsx:92-96`, pocket `PocketDomain.tsx:163`, and expense from the category selected in the level-2 filter, `categoryLink` at `ExpenseDomain.tsx:185-191` (`79eb08d0`, 2026-09-13). The running month's picker label reads "· to date" (`c7e80bda`; `MonthPicker.tsx:206`, fed at `OverviewLayout.tsx:39-41` and `:141`). Open P5 item: the consolidated card, variant A, `ConsolidatedCard`, being built 2026-09-13 |
+| P5 | frontend | **DONE** (re-measured 2026-09-14 on `main`). Level 1 built and on production. **Level 2 built for all six domains:** the five analysis screens draw their sections through `AnalysisPanel.tsx` (mounted at `IncomeDomain.tsx:56`, `InvestmentDomain.tsx:187,217,246`, `DebtDomain.tsx:73,104`, `PocketDomain.tsx:124,170`, `PnlDomain.tsx:57`), with the single `full` request fired on viewport entry by `useFullAnalysisTrigger.ts:10` (`AnalysisPanel.tsx:76`); expense draws the spend-against-budget Pareto `CategoryBudgetPareto.tsx` at `ExpenseDomain.tsx:232-237` (`d898c7c0`, `f516f1ec`). **Level-3 links: all five wired** — debt `DebtDomain.tsx:97`, investment `InvestmentDomain.tsx:239`, income `IncomeDomain.tsx:92-96`, pocket `PocketDomain.tsx:163`, and expense from the category selected in the level-2 filter, `categoryLink` at `ExpenseDomain.tsx:185-191` (`79eb08d0`, 2026-09-13). The running month's picker label reads "· to date" (`c7e80bda`; `MonthPicker.tsx:206`, fed at `OverviewLayout.tsx:39-41` and `:141`). The consolidated card, variant A, `ConsolidatedCard.tsx`, landed the same day (`224ed05f`, `c61fef0c`) |
 | P6 | level 2 | **DONE** — backend `7ba6761e`; renderer and analysis sections on `main`, as the P5 row measures |
 
 ### The three endpoints
@@ -416,7 +416,7 @@ by a ruling or by the code.
   - income and expense tagged as flows;
   - net debt ("owed to you" or "you owe" by sign) and pockets tagged as positions;
   - a footer with the month's movement count (`transactionCountAll`) and "transfers are not counted".
-- **Pending work, in progress 2026-09-13:** a `ConsolidatedCard` component reading `all` from the overview store. The `all` type and store field were added that day.
+- **Done, 2026-09-13:** `ConsolidatedCard.tsx` reads `all` from the overview store, mounted at `Overview.tsx:17,606` (`224ed05f`, `c61fef0c`).
 
 ### Still open for Carlos
 
