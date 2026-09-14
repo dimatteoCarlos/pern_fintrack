@@ -10,7 +10,7 @@
 - Inject Bearer token
 - On 401, trigger single‑flight refresh and retry once
 - Prevent infinite loops with _retry flag
-- Exclude login/update/change-password endpoints from auto-refresh
+- Exclude login/signup endpoints from auto-refresh (they carry no token)
 
 ❌ Never:
  - Navigate or show modals
@@ -21,7 +21,6 @@
 
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getRefreshedToken } from './authRefreshManager';
-import { url_update_user, url_change_password } from '../../urlConfig';
 
 /* 🔐 Authenticated fetch utility*/
 /**
@@ -59,9 +58,7 @@ export const authFetch = async <T>(
       //✅ Exclude from refresh attempt
       !requestConfig._retry && // Prevents endless loops
       !url.includes('/sign-in') && // Login endpoint has no token
-      !url.includes('/sign-up') && // Signup endpoint has no token
-      !url.includes(url_update_user) && // Update profile handles 401 itself
-      !url.includes(url_change_password) // Change password handles 401 itself
+      !url.includes('/sign-up') // Signup endpoint has no token
     ) {
       // Mark this request as already retried to prevent infinite loops.
       requestConfig._retry = true;
