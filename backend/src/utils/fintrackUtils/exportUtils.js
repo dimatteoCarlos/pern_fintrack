@@ -23,12 +23,17 @@ const COLUMNS = [
 const FREQUENCY = 'monthly';
 
 /**
- * Escape one CSV field per RFC 4180.
+ * Escape one CSV text field per RFC 4180.
  *
  * A field is quoted only when it contains a delimiter, a quote, CR or LF;
  * embedded quotes are doubled. Skipping this turns any account name with a
  * comma into extra columns, which shifts every value to its right — a
  * corruption that produces a readable file rather than an error.
+ *
+ * For text fields only: a number is never routed through this function
+ * (see escapeCsvNumberField) because a formatted amount cannot carry a
+ * formula, and the guard below would otherwise turn a negative amount into
+ * text by mistaking its leading "-" for a formula prefix.
  */
 const escapeCsvField = (value) => {
  const raw = value === null || value === undefined ? '' : String(value);
@@ -42,6 +47,13 @@ const escapeCsvField = (value) => {
 
  return /[",\r\n]/.test(guarded) ? `"${guarded.replace(/"/g, '""')}"` : guarded;
 };
+
+// A formatted amount never contains a delimiter, a quote or CR/LF, so it
+// never needs quoting; and it never needs the formula-injection guard either,
+// since it is produced by toFixed, not read from user input. Routing it
+// through escapeCsvField would prefix a negative value with "'", turning a
+// numeric cell into text in Excel and Sheets.
+const escapeCsvNumberField = (value) => value;
 
 // toFixed on a non-number throws; the values are validated upstream by
 // makeBudgetAccountStatus, but export must not be the place a bad value surfaces.
@@ -74,20 +86,18 @@ export function convertSeriesToCSV(accountsSeries) {
      // The name rides on the series object. It used to come from a Map the
      // controller built alongside it, which meant two sources for one fact and
      // a blank cell whenever they disagreed.
-     account.accountName ?? '',
+     escapeCsvField(account.accountName ?? ''),
      // Read from category_budget_accounts. It used to be read off budgetPolicy,
      // which never carried it, so this column shipped empty on every export.
-     account.subcategory ?? '',
-     account.currency ?? '',
-     FREQUENCY,
-     m.month,
-     formatAmount(m.budgetAmount),
-     formatAmount(m.actualSpent),
-     formatAmount(m.remainingBudget),
-     formatAmount(m.executionPercentage),
-    ]
-     .map(escapeCsvField)
-     .join(','),
+     escapeCsvField(account.subcategory ?? ''),
+     escapeCsvField(account.currency ?? ''),
+     escapeCsvField(FREQUENCY),
+     escapeCsvField(m.month),
+     escapeCsvNumberField(formatAmount(m.budgetAmount)),
+     escapeCsvNumberField(formatAmount(m.actualSpent)),
+     escapeCsvNumberField(formatAmount(m.remainingBudget)),
+     escapeCsvNumberField(formatAmount(m.executionPercentage)),
+    ].join(','),
    ),
  );
 
