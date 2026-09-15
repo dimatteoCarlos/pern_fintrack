@@ -70,3 +70,25 @@ export const ACTIVITY_READER_FILTER = `
 // twice and skip another without the second key.
 export const ACTIVITY_ORDER = `
   ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC`;
+
+/**
+ * Every movement_type_name the catalog holds, in catalog order.
+ *
+ * Moved out of overview_services/db/movementTypes.js, which re-exports it, so
+ * a validator outside overview_services (the export module's movementType
+ * filter) can read the same catalog ACTIVITY_READER_FILTER's $6 compares
+ * against, without importing overview_services to get it.
+ */
+export const MOVEMENT_TYPE_NAMES = [
+ 'expense',
+ 'income',
+ 'investment',
+ 'debt',
+ 'pocket',
+ 'transfer',
+ 'receive',
+ 'account-opening',
+ 'pnl',
+ 'account-closure',
+ 'balance-reversal',
+];

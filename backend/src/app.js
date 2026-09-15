@@ -16,6 +16,7 @@ import useragent from 'express-useragent';
 import routes from './auth_api/routes/index.js';
 import { verifyToken } from './auth_api/middlewares/authMiddleware.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
+import export_routes from './export_api/routes/index.js';
 
 //db test
 import { pool } from './db/config/configDB.js';
@@ -185,6 +186,11 @@ app.use('/api', routes); //main app routes
 // One counter measured a dashboard paint with the same ruler as a password guess,
 // so a normal session exhausted it.
 app.use('/api/fintrack', verifyToken, fintrack_routes);
+
+// Sibling of /api/fintrack, not nested under it: the Data Export module reads
+// FinTrack's data but is a separate module by folder and by route (PLAN_EXPORT.md
+// §2). Removing it is deleting this line and the export_api folder.
+app.use('/api/export', verifyToken, export_routes);
 
 // app.use('/api/cronjob', cronRoutes);
 
