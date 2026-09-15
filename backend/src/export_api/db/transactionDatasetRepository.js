@@ -84,17 +84,23 @@ export async function getCategoryAccountIds(pool, userId, categoryName) {
 // ones it shares (overviewPageRepository.js).
 const TRANSACTIONS_DATASET_QUERY = `
   SELECT${transactionRowColumns('$4')}
-    , COALESCE(arsrc.account_name, '') AS source_account_name
-    , COALESCE(ardst.account_name, '') AS destination_account_name
+    -- account_registry.account_name is stamped only at closure (035:348-360);
+    -- a live source/destination account has it null there and its real name on
+    -- user_accounts, same two-step resolution transactionRowColumns already
+    -- does for tr.account_id at transactionRowShape.js:82.
+    , COALESCE(uasrc.account_name, arsrc.account_name, '') AS source_account_name
+    , COALESCE(uadst.account_name, ardst.account_name, '') AS destination_account_name
     , tr.original_amount
     , ocr.currency_code AS original_currency_code
     , tr.exchange_rate
     , tr.exchange_rate_source
     , tr.exchange_rate_timestamp
   ${TRANSACTION_ROW_SOURCE}
-  -- Scoped to ar.user_id = $1: another user's account id resolves to an empty
+  -- Scoped to $1 on both joins: another user's account id resolves to an empty
   -- cell, never their name (PLAN_EXPORT.md §4, §15.9).
+  LEFT JOIN user_accounts uasrc ON uasrc.account_id = tr.source_account_id AND uasrc.user_id = $1
   LEFT JOIN account_registry arsrc ON arsrc.account_id = tr.source_account_id AND arsrc.user_id = $1
+  LEFT JOIN user_accounts uadst ON uadst.account_id = tr.destination_account_id AND uadst.user_id = $1
   LEFT JOIN account_registry ardst ON ardst.account_id = tr.destination_account_id AND ardst.user_id = $1
   LEFT JOIN currencies ocr ON ocr.currency_id = tr.original_currency_id
   ${ACTIVITY_FILTER}
