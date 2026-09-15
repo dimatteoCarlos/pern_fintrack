@@ -128,11 +128,15 @@ export const NO_DEBT_LEGS_NOTICE =
  * positive, so isPositive() admits the division by zero this guard exists to
  * refuse.
  *
+ * Exported so makeYearToDateFlow.js (PLAN_EXPORT.md commit 5a) applies the
+ * same zero/negative-denominator guard to the calendar year's income and net
+ * flow instead of carrying a second copy of this rule at the year's scope.
+ *
  * @param {Decimal} income - the month's income total
  * @param {Decimal} netFlow - income minus expense, already computed
  * @returns {number|null} the rate, or null when income cannot be a denominator
  */
-const savingsRateOf = (income, netFlow) =>
+export const savingsRateOf = (income, netFlow) =>
  income.greaterThan(0) ? toRate(netFlow.dividedBy(income)) : null;
 
 /**
