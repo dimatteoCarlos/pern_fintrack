@@ -78,12 +78,16 @@ function buildAnnulmentDescription(
   affectedAccountName,
   targetAccountName,
 ) {
-  const action = isProfit ? 'DEPOSIT' : 'WITHDRAW';
+  // The affected account's own leg cancels a NET prior loss or gain the
+  // target account caused, not one original transaction of the type below -
+  // "DEPOSIT"/"WITHDRAW" here named this leg's own type and was read as the
+  // type of whatever it reverts, which is the opposite claim.
+  const priorNetEffect = isProfit ? 'net loss' : 'net gain';
   const sign = isProfit ? '+' : '-';
   const prefix = `${RTA_ANNULMENT_TARGET_PREFIX}${targetAccountName}).`;
   return perspective === PERSPECTIVE_AFFECTED
-    ? `${prefix}Correction in ${affectedAccountName}: ${sign}${amount} ${currencyCode} to revert original "${action}". For Deletion of ${targetAccountName} account.`
-    : `${prefix}Counterpart Adjustment: ${isProfit ? '-' : '+'}${amount} ${currencyCode} from ${affectedAccountName}. For Deletion of ${targetAccountName} account.`; //The Slack account registers the opposite sign
+    ? `${prefix}Correction in ${affectedAccountName}: ${sign}${amount} ${currencyCode}, canceling the prior ${priorNetEffect} caused by ${targetAccountName}. For deletion of ${targetAccountName} account.`
+    : `${prefix}Counterpart Adjustment: ${isProfit ? '-' : '+'}${amount} ${currencyCode} from ${affectedAccountName}. For deletion of ${targetAccountName} account.`; //The Slack account registers the opposite sign
 }
 /**
 * 💾 Records the two entries (Affected Account & Slack Account) to annul the 
