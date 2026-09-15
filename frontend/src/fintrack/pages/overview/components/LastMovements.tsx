@@ -42,6 +42,11 @@ type LastMovementsProps = {
   // is a control - it belongs with the search and the filter above, not fifty
   // rows below them.
   listHeader?: ReactNode;
+  // Pinned beside the title, not inside listHeader: an action on the whole
+  // list (export) is not a narrowing (search, kind, period), and fighting the
+  // search field for room in the same bordered row is what collapsed it.
+  // Absent by default, so OverviewDomain's five callers render unchanged.
+  titleAction?: ReactNode;
 };
 
 function LastMovements({
@@ -49,6 +54,7 @@ function LastMovements({
   title,
   subtitle = 'Last 30 days',
   listHeader,
+  titleAction,
 }: LastMovementsProps) {
   //Last Movements
 
@@ -62,8 +68,14 @@ function LastMovements({
     <>
       {/*LAST MOVEMENTS  */}
       <article className='goals__last__movements'>
-        <div className='presentation__card__title__container'>
+        <div
+          className={`presentation__card__title__container${
+            titleAction ? ' flx-row-sb' : ''
+          }`}
+        >
           <CardTitle>{title}</CardTitle>
+
+          {titleAction}
         </div>
 
         <div className='main__subtitle'>{subtitle}</div>

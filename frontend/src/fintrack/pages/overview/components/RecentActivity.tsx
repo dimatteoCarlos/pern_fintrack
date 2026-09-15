@@ -310,51 +310,56 @@ function ActivityList({ currentMonth }: { currentMonth: string }) {
 
      <ChevronDownSvg className='recentActivity__icon recentActivity__icon--trailing' />
     </div>
+   </div>
+ );
 
-    <div className='recentActivity__export' ref={exportRef}>
-     <button
-      type='button'
-      className='recentActivity__exportTrigger'
-      onClick={() => setIsExportMenuOpen((open) => !open)}
-      disabled={isExporting}
-      aria-haspopup='true'
-      aria-expanded={isExportMenuOpen}
-     >
-      <span className='recentActivity__exportLabel'>
-       {isExporting ? 'Exporting…' : 'Export'}
-      </span>
-     </button>
+ // Beside the title and not inside the bordered row above: an export acts on
+ // the whole list, it does not narrow it, and it was the fourth segment that
+ // collapsed the search field against the other three (Carlos, 2026-09-15).
+ const exportControl = (
+   <div className='recentActivity__export' ref={exportRef}>
+    <button
+     type='button'
+     className='recentActivity__exportTrigger'
+     onClick={() => setIsExportMenuOpen((open) => !open)}
+     disabled={isExporting}
+     aria-haspopup='true'
+     aria-expanded={isExportMenuOpen}
+    >
+     <span className='recentActivity__exportLabel'>
+      {isExporting ? 'Exporting…' : 'Export'}
+     </span>
 
      <ChevronDownSvg className='recentActivity__icon recentActivity__icon--trailing' />
+    </button>
 
-     {isExportMenuOpen && (
-      <div className='recentActivity__exportMenu' role='menu'>
-       <button
-        type='button'
-        className='recentActivity__exportOption'
-        role='menuitem'
-        onClick={() => {
-         setIsExportMenuOpen(false);
-         handleExport('csv');
-        }}
-       >
-        CSV
-       </button>
+    {isExportMenuOpen && (
+     <div className='recentActivity__exportMenu' role='menu'>
+      <button
+       type='button'
+       className='recentActivity__exportOption'
+       role='menuitem'
+       onClick={() => {
+        setIsExportMenuOpen(false);
+        handleExport('csv');
+       }}
+      >
+       CSV
+      </button>
 
-       <button
-        type='button'
-        className='recentActivity__exportOption'
-        role='menuitem'
-        onClick={() => {
-         setIsExportMenuOpen(false);
-         handleExport('xlsx');
-        }}
-       >
-        XLSX
-       </button>
-      </div>
-     )}
-    </div>
+      <button
+       type='button'
+       className='recentActivity__exportOption'
+       role='menuitem'
+       onClick={() => {
+        setIsExportMenuOpen(false);
+        handleExport('xlsx');
+       }}
+      >
+       XLSX
+      </button>
+     </div>
+    )}
    </div>
  );
 
@@ -381,6 +386,7 @@ function ActivityList({ currentMonth }: { currentMonth: string }) {
      data={rows}
      title='Recent activity'
      subtitle={subtitle}
+     titleAction={exportControl}
      /* Above the rows and not below them. The narrowing frames the list before
         it is read, and the page-size control belongs with the search and the
         filter rather than fifty rows under them. It goes through the list
