@@ -193,11 +193,109 @@
  outline-offset: calc(-1 * var(--border-width-thick));
 }
 
+/* The fourth segment: same border-left hairline and proportions as
+   .recentActivity__selectBox, but it opens a menu instead of a native
+   <select>, since the two choices each fire the download immediately rather
+   than narrowing the list. */
+.recentActivity__export {
+ position: relative;
+ display: flex;
+ flex: 0 0 auto;
+ border-left: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+.recentActivity__exportTrigger {
+ width: auto;
+ max-width: 100%;
+ padding: var(--space-1) var(--space-6) var(--space-1) var(--space-3);
+ background-color: transparent;
+ border: none;
+ border-radius: 0;
+ color: var(--color-content-on-dark-subtle);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ cursor: pointer;
+ transition: color var(--motion-fast), background-color var(--motion-fast);
+}
+
+.recentActivity__exportLabel {
+ white-space: nowrap;
+}
+
+.recentActivity__exportTrigger:hover {
+ color: var(--color-content-on-dark);
+}
+
+.recentActivity__exportTrigger:active {
+ color: var(--color-content-on-dark);
+ background-color: var(--color-surface-app);
+}
+
+.recentActivity__exportTrigger:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.recentActivity__exportTrigger:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
+ border-radius: var(--radius-lg);
+}
+
+/* The popover surface: cream and not sunken, same as the checked/hovered
+   option of the two selects above it, so a menu floating over the dark row
+   still reads as an interactive surface and not as another row of it. */
+.recentActivity__exportMenu {
+ position: absolute;
+ top: calc(100% + var(--space-1));
+ right: 0;
+ z-index: var(--z-dropdown);
+ display: flex;
+ flex-direction: column;
+ min-width: 100%;
+ background-color: var(--color-surface-panel);
+ border-radius: var(--radius-lg);
+ box-shadow: var(--shadow-md);
+ overflow: hidden;
+}
+
+.recentActivity__exportOption {
+ padding: var(--space-2) var(--space-3);
+ background-color: transparent;
+ border: none;
+ color: var(--color-content-primary);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ text-align: left;
+ white-space: nowrap;
+ cursor: pointer;
+ transition: background-color var(--motion-fast);
+}
+
+.recentActivity__exportOption + .recentActivity__exportOption {
+ border-top: var(--border-width-thin) solid var(--color-border-subtle-on-panel);
+}
+
+.recentActivity__exportOption:hover {
+ background-color: var(--color-surface-hover-on-panel);
+}
+
+.recentActivity__exportOption:active {
+ background-color: var(--color-surface-active-on-panel);
+}
+
+.recentActivity__exportOption:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
+}
+
 @media (prefers-reduced-motion: reduce) {
  .recentActivity__controls,
  .recentActivity__search,
  .recentActivity__select,
- .recentActivity__reset {
+ .recentActivity__reset,
+ .recentActivity__exportTrigger,
+ .recentActivity__exportOption {
   transition: none;
  }
 }

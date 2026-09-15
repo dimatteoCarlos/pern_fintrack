@@ -157,6 +157,14 @@ export const url_get_overview_activity: string =
 export const url_get_overview_domain = (domain: string): string =>
   BASE_URL_APP + 'overview/' + domain;
 
+//-------------------------
+//DATA EXPORT ROUTES ENDPOINTS
+//http://localhost:5000/api/export
+// A sibling of /api/fintrack and not nested under it: the Data Export module
+// is its own backend module by folder and by route (PLAN_EXPORT.md §2), so it
+// is mounted off BASE_URL and not BASE_URL_APP.
+export const url_export_movements: string = BASE_URL + 'export/movements';
+
 //=======================================
 //endpoints for OVERVIEWLAYOUT page
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type

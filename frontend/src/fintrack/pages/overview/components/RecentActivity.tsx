@@ -13,12 +13,15 @@
 // answers for the whole set. A client-side filter over one page would say
 // "3 of 5" while the account holds two thousand movements.
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import ChevronDownSvg from '../../../../assets/debtsSvg/ChevronDownSvg.svg?react';
 import ClearSvg from '../../../../assets/debtsSvg/ClearSvg.svg?react';
 import SearchSvg from '../../../../assets/debtsSvg/SearchSvg.svg?react';
 
+import { notifyError } from '../../../../auth/auth_utils/notification';
+import { downloadMovementsExport, ExportFormat } from '../../../api/exportApi';
+import { useClickOutside } from '../../../editionAndDeletion/hooks/useClickOutside';
 import { Pagination } from '../../../general_components/pagination/Pagination';
 import { useOverviewStore } from '../../../stores/useOverviewStore';
 import {
@@ -133,6 +136,47 @@ function RecentActivity() {
 function ActivityList({ currentMonth }: { currentMonth: string }) {
  const { query, data, isLoading, error, narrow, goToPage, refetch } =
   useOverviewActivity(periodBounds(DEFAULT_PERIOD, currentMonth));
+
+ // Export is a side action on the query already active, not a second fetch:
+ // it never touches `query` or the list's own loading state, so the rows on
+ // screen never move while a download runs.
+ const [isExporting, setIsExporting] = useState(false);
+ const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+ const exportRef = useRef<HTMLDivElement>(null);
+
+ useClickOutside(exportRef, () => setIsExportMenuOpen(false), isExportMenuOpen);
+
+ // On the document and not the menu, same reason as AccountActionsMenu: the
+ // key has to work from the moment the menu paints.
+ useEffect(() => {
+  if (!isExportMenuOpen) return;
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+   if (event.key === 'Escape') setIsExportMenuOpen(false);
+  };
+
+  document.addEventListener('keydown', handleKeyDown);
+
+  return () => document.removeEventListener('keydown', handleKeyDown);
+ }, [isExportMenuOpen]);
+
+ async function handleExport(format: ExportFormat) {
+  setIsExporting(true);
+
+  try {
+   await downloadMovementsExport({
+    search: query.search || undefined,
+    movementType: query.movementType === 'all' ? undefined : query.movementType,
+    from: query.from,
+    to: query.to,
+    format,
+   });
+  } catch (cause) {
+   notifyError(cause instanceof Error ? cause.message : 'The export could not be completed.');
+  } finally {
+   setIsExporting(false);
+  }
+ }
 
  // Read back off the bounds rather than held as a second piece of state. Two
  // states for one choice is two places for the select and the request to
@@ -265,6 +309,51 @@ function ActivityList({ currentMonth }: { currentMonth: string }) {
      </select>
 
      <ChevronDownSvg className='recentActivity__icon recentActivity__icon--trailing' />
+    </div>
+
+    <div className='recentActivity__export' ref={exportRef}>
+     <button
+      type='button'
+      className='recentActivity__exportTrigger'
+      onClick={() => setIsExportMenuOpen((open) => !open)}
+      disabled={isExporting}
+      aria-haspopup='true'
+      aria-expanded={isExportMenuOpen}
+     >
+      <span className='recentActivity__exportLabel'>
+       {isExporting ? 'Exporting…' : 'Export'}
+      </span>
+     </button>
+
+     <ChevronDownSvg className='recentActivity__icon recentActivity__icon--trailing' />
+
+     {isExportMenuOpen && (
+      <div className='recentActivity__exportMenu' role='menu'>
+       <button
+        type='button'
+        className='recentActivity__exportOption'
+        role='menuitem'
+        onClick={() => {
+         setIsExportMenuOpen(false);
+         handleExport('csv');
+        }}
+       >
+        CSV
+       </button>
+
+       <button
+        type='button'
+        className='recentActivity__exportOption'
+        role='menuitem'
+        onClick={() => {
+         setIsExportMenuOpen(false);
+         handleExport('xlsx');
+        }}
+       >
+        XLSX
+       </button>
+      </div>
+     )}
     </div>
    </div>
  );
