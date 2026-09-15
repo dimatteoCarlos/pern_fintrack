@@ -40,7 +40,7 @@ import {
 import { incomeReversalLeg } from './incomeReversalSql.js';
 import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/annulmentRowIdentity.js';
-import { transactionRowColumns, TRANSACTION_ROW_SOURCE } from './transactionRowShape.js';
+import { transactionRowColumns, TRANSACTION_ROW_SOURCE } from '../../../../utils/fintrackUtils/transactionManagement/transactionRowShape.js';
 
 const EXPENSE_PAGE_QUERY = `
   SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}

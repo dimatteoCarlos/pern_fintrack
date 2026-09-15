@@ -1,4 +1,4 @@
-// backend/src/fintrack_api/services/overview_services/db/transactionRowShape.js
+// backend/src/utils/fintrackUtils/transactionManagement/transactionRowShape.js
 /**
  * The row shape the six transaction lists of this module serve.
  *
@@ -36,9 +36,12 @@
  * The field is declared in MovementTransactionDataType, so it stays on the wire
  * and only its source changes. FLOAT and not NUMERIC because the declared type
  * is number and the driver hands NUMERIC over as a string.
+ *
+ * Moved out of overview_services/db so the Data Export module can build the
+ * same row shape without importing overview_services to reach it.
  */
 
-import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { derivedAccountBalanceSql } from '../accountDataRetrieval/derivedBalance.js';
 
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'FLOAT');
 
