@@ -157,6 +157,26 @@ const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDial
               <span className="fx-label">Account</span>
               <span className="fx-value fx-capitalize">{transaction.account_name || 'N/A'}</span>
             </div>
+
+            {/* Only a transfer has counterparts, so these two are absent on an
+                ordinary deposit or withdrawal rather than rendered empty. */}
+            {transaction.source_account_id !== null && (
+              <div className="fx-info-row">
+                <span className="fx-label">Source Account</span>
+                <span className="fx-value fx-capitalize">
+                  {transaction.source_account_name || 'N/A'} #{transaction.source_account_id}
+                </span>
+              </div>
+            )}
+
+            {transaction.destination_account_id !== null && (
+              <div className="fx-info-row">
+                <span className="fx-label">Destination Account</span>
+                <span className="fx-value fx-capitalize">
+                  {transaction.destination_account_name || 'N/A'} #{transaction.destination_account_id}
+                </span>
+              </div>
+            )}
             {transaction.description && (
               <div className="fx-info-row fx-column">
                 <span className="fx-label">Description</span>
