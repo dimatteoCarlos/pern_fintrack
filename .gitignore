@@ -121,27 +121,15 @@ scripts/
 # =============================
 #plan docs
 #
-# Excluded by default and opened per directory, never the reverse. The tree holds
-# operational material beside the planning notes — probes that read a production
-# connection string out of .env, deployment guides that name the certificate —
-# and a blanket un-ignore would put access tooling in the history, where deleting
-# it later does not remove it.
-#
-# What is opened below was audited file by file for credential VALUES rather than
-# variable names: no connection string, no key, no certificate. The screenshots
-# were opened and read; they carry placeholder figures, not a real balance.
-# The contents are excluded, NOT the directory. `plan-docs/` on its own excludes
-# the directory itself, so git never descends into it and no negation below can
-# be reached — the re-includes would silently do nothing.
+# Excluded outright, no re-includes. Decided 2026-09-16, reversing the
+# 2026-09-03 correction that tracked ongoing/, business-rules/, completed/
+# and mockups/: the whole tree holds operational material beside the
+# planning notes — probes that read a production connection string out of
+# .env, deployment guides that name the certificate — and versioning any of
+# it puts access tooling in the history, where deleting it later does not
+# remove it. Nothing under plan-docs/ produces a commit; work there is
+# local-only.
 plan-docs/*
-!plan-docs/ongoing/
-!plan-docs/business-rules/
-!plan-docs/completed/
-# The central mockups folder, added 2026-09-08. Without this line git never
-# descends into it and every mockup a session adds there is invisible - the one
-# already moved in is tracked only because `git mv` staged it explicitly, which
-# is exactly the state that hides the next file.
-!plan-docs/mockups/
 
 # =============================
 # Promo/demo video production assets (PLAN_PROMO_VIDEO.md, Q7).
