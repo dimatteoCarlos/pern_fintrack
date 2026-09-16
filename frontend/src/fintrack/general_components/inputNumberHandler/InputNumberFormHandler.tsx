@@ -1,6 +1,7 @@
 // frontend/src/general_components/inputNumberHandler/InputNumberFormHandler.tsx
 
 import useInputNumberHandler from '../../hooks/useInputNumberHandler.ts';
+import { readAmountInCurrency } from '../../helpers/amountInCurrency.ts';
 
 // 💡 Explicit type for input states, just strings for inputs.
 type StringInputMapType = {
@@ -59,10 +60,17 @@ function InputNumberFormHandler<T>({
   // 👇 Type assertion segura para el valor
   const currentValue = formData[keyName as string];
 
-  const displayValue =
+  const typedValue =
     currentValue !== undefined && currentValue !== null
       ? String(currentValue)
       : '';
+
+  // formData keeps what was typed; the yen only shows it rounded, so leaving it
+  // brings the typed decimals back.
+  const displayValue =
+    currency === undefined
+      ? typedValue
+      : readAmountInCurrency(typedValue, currency).displayedAmount;
 
   return (
     <>
