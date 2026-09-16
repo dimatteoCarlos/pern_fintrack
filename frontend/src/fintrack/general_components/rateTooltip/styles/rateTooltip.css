@@ -109,3 +109,72 @@
  padding: 0.25rem 0.875rem;
  line-height: 1.25;
 }
+
+/* Opens downward instead of upward: New Account's Value row sits directly
+   under the Currency row with only --space-4 of gap between them, so
+   anchor-left's inherited `bottom: 100%` reached past the trigger and into
+   the currency badge above -- unrelated content the chip has nothing to do
+   with. Below the trigger, in the same row's own amount input, a transient
+   overlap while the chip is open is acceptable: that input is the value the
+   chip is explaining.
+
+   No permanent layout cost: this stays position: absolute on the same
+   .tooltip__wrapper--text base (tooltip.css:11), mounted only while the
+   tooltip is shown (Tooltip.tsx), so it reserves no space when hidden.
+
+   Anchored to the ROW, not to the trigger, same technique as row-centred
+   above: .tooltip__wrapper wraps only the trigger text ("≈ $134.10"), which
+   is narrower than the row and does not reach the form's own right edge, so
+   `right: 0` against it left the chip short of that edge -- wide currency
+   text (VES, not just COP) pushed the chip's other edge past it. Anchoring
+   to .form__label-row instead, which spans the row's full width, lines the
+   chip's right edge up with every other field in the form. */
+.form__label-row:has(> .tooltip__wrapper > .rateTooltip__chip--anchor-left-below) {
+ position: relative;
+}
+
+.tooltip__wrapper:has(> .rateTooltip__chip--anchor-left-below) {
+ position: static;
+}
+
+.tooltip__wrapper--text.rateTooltip__chip--anchor-left-below {
+ /* Base .tooltip__wrapper--text sets bottom: 100% (tooltip.css:12); this
+    flips the edge the chip grows from, now measured from the row's own
+    bottom edge instead of the trigger's. */
+ top: 100%;
+ bottom: auto;
+ right: 0;
+ left: auto;
+ transform: none;
+ /* Base .rateTooltip__chip sets margin-bottom: 0.625rem (line 14) for
+    breathing room above the trigger; mirrored here on the opposite edge,
+    now that the chip opens toward the bottom instead. */
+ margin-bottom: 0;
+ margin-top: 0.625rem;
+}
+
+/* Same idea as anchor-left-below, for a row whose .form__amount-row ends in a
+   CurrencyBadge (New Category's Budget field, and any other form__label-row
+   paired with an amount row that carries the badge): flush right the chip
+   would land ON the badge, since the label-row and the amount-row below it
+   share the same right edge. Shifted left by the badge's own footprint --
+   its width plus the row's gap (forms-styles.css .form__amount-row) -- so the
+   chip's right edge lines up with the badge's LEFT edge, in the gap between
+   it and the entered value, instead of covering it. */
+.form__label-row:has(> .tooltip__wrapper > .rateTooltip__chip--anchor-left-below-badge) {
+ position: relative;
+}
+
+.tooltip__wrapper:has(> .rateTooltip__chip--anchor-left-below-badge) {
+ position: static;
+}
+
+.tooltip__wrapper--text.rateTooltip__chip--anchor-left-below-badge {
+ top: 100%;
+ bottom: auto;
+ right: calc(var(--size-badge) + var(--space-2));
+ left: auto;
+ transform: none;
+ margin-bottom: 0;
+ margin-top: 0.625rem;
+}

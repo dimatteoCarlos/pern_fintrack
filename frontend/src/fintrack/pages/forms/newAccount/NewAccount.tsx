@@ -571,7 +571,7 @@ function NewAccount() {
                     <RateTooltip
                       tipText={rateTooltipText}
                       surface='dark'
-                      placement='anchor-left'
+                      placement='anchor-left-below'
                     >
                       <span className='form__fx-preview'>
                         {convertedText}

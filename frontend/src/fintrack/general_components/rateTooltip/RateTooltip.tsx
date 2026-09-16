@@ -18,7 +18,22 @@ type RateTooltipPropType = {
  // sits in the blank space the row's own space-between leaves in the middle:
  // for a row so close to the top of its card that a chip placed above the
  // trigger has nowhere to go but over whatever sits above the card.
- placement?: 'above' | 'anchor-left' | 'row-centred';
+ // 'anchor-left-below' is 'anchor-left' opening downward instead of upward:
+ // for a trigger whose row sits directly under another row's own content
+ // (not just card padding), where "above the trigger" reaches into that
+ // unrelated content. It may briefly cover what sits below the trigger
+ // instead, which is acceptable when that is the same field the chip
+ // explains.
+ // 'anchor-left-below-badge' is 'anchor-left-below' shifted clear of a
+ // CurrencyBadge sitting at the end of the row below (the amount input's own
+ // .form__amount-row): the chip lands in the gap between the entered value
+ // and the badge instead of covering the badge.
+ placement?:
+  | 'above'
+  | 'anchor-left'
+  | 'row-centred'
+  | 'anchor-left-below'
+  | 'anchor-left-below-badge';
  children: React.ReactNode;
 };
 
