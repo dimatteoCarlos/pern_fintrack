@@ -57,6 +57,17 @@ export const CURRENCY_OPTIONS: Record<CurrencyType, string> = {
  jpy: 'ja-JP',
 };
 
+// Decimal places per ISO 4217. Written out because browser Intl disagrees with
+// it: Chromium reports 0 for the peso (its cash digits), Node reports 2.
+export const CURRENCY_MINOR_UNITS: Record<CurrencyType, number> = {
+ usd: 2,
+ eur: 2,
+ cop: 2,
+ ves: 2,
+ mxn: 2,
+ jpy: 0,
+};
+
 const currencyNames = new Intl.DisplayNames(['en'], { type: 'currency' });
 
 // Generated from SUPPORTED_CURRENCIES rather than written out, so a currency

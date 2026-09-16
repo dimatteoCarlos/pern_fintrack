@@ -18,13 +18,18 @@ import {
   DATE_TIME_FORMAT_DEFAULT,
 } from './constants';
 
-import { CURRENCY_CYCLE, DEFAULT_CURRENCY } from './constants';
+import {
+  CURRENCY_CYCLE,
+  CURRENCY_MINOR_UNITS,
+  DEFAULT_CURRENCY,
+} from './constants';
 
-// How many decimal places a currency actually has, asked of Intl rather than
-// listed here. The dollar and the peso have two, the yen has none, the Kuwaiti
-// dinar has three. Returns 2 for a code Intl cannot resolve, which is the width
-// the backend stores.
+// How many decimal places a currency has: CURRENCY_MINOR_UNITS for a supported
+// code, Intl for any other. Returns 2 for a code Intl cannot resolve, which is
+// the width the backend stores.
 export function currencyMinorUnit(chosenCurrency: string): number {
+  const listed = CURRENCY_MINOR_UNITS[chosenCurrency as CurrencyType];
+  if (listed !== undefined) return listed;
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
