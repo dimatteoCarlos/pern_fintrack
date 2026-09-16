@@ -18,6 +18,7 @@ function TrackerInvestmentButton() {
             in an aria-label: the accessible name is then the visible text. */}
         <NavLink
           to='pnl'
+          viewTransition
           aria-labelledby='trackerTabLabel-pnl'
           className={classNavLink}
         >

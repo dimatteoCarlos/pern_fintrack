@@ -66,6 +66,31 @@ body,
   animation-duration: var(--motion-route-transition-duration);
 }
 
+/* The tab bars are identical on both sides of a tab change, yet captured into
+   root they fade out and back in. Named apart and not animated, they swap at
+   once while the page underneath still fades. */
+.mainNavbar__container {
+  view-transition-name: main-navbar;
+}
+
+.trackerNavbar__container {
+  view-transition-name: tracker-navbar;
+}
+
+::view-transition-group(main-navbar),
+::view-transition-new(main-navbar),
+::view-transition-group(tracker-navbar),
+::view-transition-new(tracker-navbar) {
+  animation: none;
+}
+
+/* Hidden, not just unanimated: both images opaque and stacked would still
+   blend, and a bar only on the old page must leave at once. */
+::view-transition-old(main-navbar),
+::view-transition-old(tracker-navbar) {
+  display: none;
+}
+
 /* The reader asked the system for no animation, and a glide is one. */
 @media (prefers-reduced-motion: reduce) {
   :root {
