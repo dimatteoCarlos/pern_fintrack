@@ -18,12 +18,26 @@ const keyGenerator = (req) => {
 // =========================================
 // 🎯 HELPER FUNCTION: STANDARD 429 RESPONSE
 // =========================================
-const createRateLimitResponse =(errorType, userMessage, windowMs)=>({
-success:false,
-error:errorType,
-message:userMessage,
-retryAfter:Math.ceil(windowMs/1000)//in seconds
-});
+// retryAfter used to always report the configured window length (e.g. every
+// signUpLimiter 429 said "3600 seconds", even to a caller one second away
+// from their own reset) - the wrong number by design, not a typo: it read
+// like the 1-hour access-token lifetime (authFn.js:70-73's `expiresIn: '1h'`)
+// rather than a rate-limit window reasoned about on its own. express-rate-
+// limit (standardHeaders: true, set on every limiter below) already computes
+// the caller's real reset time and attaches it at req.rateLimit.resetTime -
+// this now reports that, falling back to windowMs only if a store ever omits it.
+const createRateLimitResponse = (errorType, userMessage, resetTime, windowMs) => {
+ const secondsRemaining = resetTime
+  ? Math.max(0, Math.ceil((resetTime.getTime() - Date.now()) / 1000))
+  : Math.ceil(windowMs / 1000);
+
+ return {
+  success: false,
+  error: errorType,
+  message: userMessage,
+  retryAfter: secondsRemaining, // in seconds
+ };
+};
 
 // =================================
 // 🎯 PROFILE UPDATE RATE LIMITER
@@ -47,6 +61,7 @@ export const profileUpdateLimiter = rateLimit({
      createRateLimitResponse(
       'RateLimitExceeded',
       `Security: Too many UPDATE attempts. Try again in ${PROFILE_WINDOW_MINUTES} minutes.`,
+      req.rateLimit?.resetTime,
       options.windowMs, // Use 'options': windowMs is not attached to the returned middleware
      )
    );
@@ -76,6 +91,7 @@ export const passwordChangeLimiter = rateLimit(
     createRateLimitResponse(
     'PasswordChangeRateLimitExceeded',
     `Security: Too many password change attempts. Try again in ${WINDOW_MINUTES} minutes.`,
+    req.rateLimit?.resetTime,
     options.windowMs // Use 'options' to safely access config values
     // passwordChangeLimiter.windowMs
     )
@@ -86,11 +102,17 @@ export const passwordChangeLimiter = rateLimit(
 // =====================================
 // 🔐 AUTHENTICATION RATE LIMITER (for login/register)
 // ======================================
-// Limits: 5 login attempts per 15 minutes per IP
+// Limits: 5 login attempts per 2 minutes per IP
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 2 * 60 * 1000, // 2 minutes
   limit: 5,// 5 authentication attempts per window
-  message: { 
+  // Dead: the custom `handler` below overrides express-rate-limit's default
+  // handler entirely, so this `message` is never sent - it already disagreed
+  // with the real window (said 5 minutes while windowMs was 15) before this
+  // change and would have kept disagreeing after it. Left in rather than
+  // removed here: a call express-rate-limit's own default-handler behavior
+  // makes for it, not this window-length fix.
+  message: {
     success: false,
     error: 'AuthRateLimitExceeded',
     message: 'Too many authentication attempts. Please try again in 5 minutes.'
@@ -109,6 +131,7 @@ export const authLimiter = rateLimit({
    createRateLimitResponse(
     'AuthRateLimitExceeded',
     'Too many login attempts. Please wait before trying again.',
+    req.rateLimit?.resetTime,
     options.windowMs
    ));
   }
@@ -119,9 +142,19 @@ export const authLimiter = rateLimit({
 // =====================================
 // Counts successes: a completed sign-up is the request this limit exists to cap.
 // authLimiter cannot serve here, it skips them so a correct password costs nothing.
+// 5/2min is the production figure, set 2026-09-16 alongside authLimiter's own
+// window - the previous 1 hour matched authFn.js's access-token `expiresIn:
+// '1h'` rather than any reasoned abuse-rate window (see createRateLimitResponse's
+// comment above). Local dev recreates the same demo account over and over
+// while iterating (docs/VIDEO/promo-30s/data/seed-demo-account.js cleans up
+// and signs it back up on every rerun), which trips the production limit
+// inside a single work session - not the abuse pattern this exists to stop.
+// Raised only outside production; the window itself applies in both.
+const SIGN_UP_LIMIT = process.env.NODE_ENV === 'production' ? 5 : 1000;
+
 export const signUpLimiter = rateLimit({
- windowMs: 60 * 60 * 1000, // 1 hour
- limit: 5, // 5 accounts per hour per IP
+ windowMs: 2 * 60 * 1000, // 2 minutes
+ limit: SIGN_UP_LIMIT, // 5 accounts per 2 minutes per IP in production
  standardHeaders: true,
  legacyHeaders: false,
  skipSuccessfulRequests: false,
@@ -132,6 +165,7 @@ export const signUpLimiter = rateLimit({
    createRateLimitResponse(
     'SignUpRateLimitExceeded',
     'Too many accounts created from this network. Please wait before trying again.',
+    req.rateLimit?.resetTime,
     options.windowMs,
    ),
   );
@@ -154,6 +188,7 @@ export const globalLimiter = rateLimit({
       createRateLimitResponse(
         'GlobalRateLimitExceeded',
         'Too many requests to our API. Please slow down.',
+        req.rateLimit?.resetTime,
         options.windowMs
       )
     );
