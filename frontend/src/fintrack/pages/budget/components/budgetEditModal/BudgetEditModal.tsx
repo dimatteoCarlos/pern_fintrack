@@ -437,7 +437,7 @@ function BudgetEditModal({
  const amountNote = isSubCent
   ? 'An amount under one cent would be stored as zero.'
   : previewRemaining !== null
-    ? `${previewRemaining < 0 ? 'Over' : 'Left'} after saving ${asMoney(Math.abs(previewRemaining))}`
+    ? `${previewRemaining < 0 ? 'Over' : 'Left'} with new budget: ${asMoney(Math.abs(previewRemaining))}`
     : null;
 
  // One box above the buttons, for every answer to the same question: what did,
