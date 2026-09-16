@@ -30,7 +30,7 @@
  color: var(--color-content-primary);
  font-family: inherit;
  font-size: var(--font-size-xs);
- font-weight: var(--font-weight-medium);
+ font-weight: var(--font-weight-bold);
  line-height: var(--line-height-heading);
  white-space: nowrap;
  cursor: pointer;

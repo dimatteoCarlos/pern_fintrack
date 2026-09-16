@@ -75,6 +75,22 @@
  color: var(--color-accent-content);
 }
 
+/* Cream never got its own inversion: --light and --dark each define one and
+   this surface fell through to nothing when it was added 2026-09-15. Same
+   direction as its sibling on this row, .statementTrigger:hover — cream fill
+   to dark fill, dark ink to cream ink. */
+.month-badge--cream.month-badge--trigger:hover {
+ background-color: var(--color-content-primary);
+ border-color: var(--color-content-primary);
+ color: var(--color-accent);
+}
+
+.month-badge--cream.month-badge--trigger:active {
+ background-color: var(--color-content-secondary);
+ border-color: var(--color-content-secondary);
+ color: var(--color-accent);
+}
+
 .month-badge--trigger:focus-visible {
  outline: var(--border-width-thick) solid var(--color-content-primary);
  outline-offset: var(--border-width-thick);
@@ -199,9 +215,11 @@
 }
 
 /* The inverse of the rule above: dark ink, because the fill is the cream that
-   rule uses as its ink. */
+   rule uses as its ink. Bold rather than the base badge's medium, so the ink
+   reads solid against the cream fill instead of grey. */
 .monthStepper--cream .month-badge {
  color: var(--color-content-primary);
+ font-weight: var(--font-weight-bold);
 }
 
 /* The drawn box is smaller than the tap target it sits inside — see the
@@ -228,7 +246,7 @@
  border-radius: var(--radius-full);
  background-color: transparent;
  cursor: pointer;
- transition: color var(--motion-fast);
+ transition: color var(--motion-fast), background-color var(--motion-fast);
 }
 
 /* The tappable area the smaller box above gives up. Unpainted and
@@ -303,9 +321,18 @@
  color: var(--color-content-secondary);
 }
 
-.monthStepper--cream .monthStepper__arrow:hover,
+/* A colour step alone read as too quiet next to the badge's own hover, which
+   inverts its whole fill: the arrow's own hit circle now fills too, on the
+   same on-panel tokens RecentActivity already uses for a hover over a light
+   row (recentActivity-styles.css:294,298). */
+.monthStepper--cream .monthStepper__arrow:hover {
+ color: var(--color-content-primary);
+ background-color: var(--color-surface-hover-on-panel);
+}
+
 .monthStepper--cream .monthStepper__arrow:active {
  color: var(--color-content-primary);
+ background-color: var(--color-surface-active-on-panel);
 }
 
 /* The focus ring is already near-black and the cream pill is light, so --light's

@@ -490,7 +490,7 @@ a.icon {
 }
 
 .overviewLayout .consolidatedCard__listLabel .consolidatedCard__scope {
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-2xs);
 }
 
 .overviewLayout .consolidatedCard__listAmount {
@@ -666,7 +666,11 @@ a.icon {
    different job from setting a caption outright. */
 .overviewLayout .domainCard__scope {
  flex-shrink: 0;
- font-size: var(--font-size-xs);
+ /* One step below domainCard__label/trendChart__label's font-size-sm - xs
+    alone still read as competing with the label next to it, since uppercase
+    plus letter-spacing carries more visual weight than the 2px difference
+    suggests. */
+ font-size: var(--font-size-2xs);
  letter-spacing: 0.65px;
  text-transform: uppercase;
  color: var(--color-content-on-dark-subtle);
