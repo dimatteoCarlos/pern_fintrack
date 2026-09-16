@@ -39,7 +39,11 @@ import {
  VARIANT_DEFAULT,
 } from '../../../../helpers/constants';
 import { numberFormatCurrency } from '../../../../helpers/functions';
-import { useCurrencyPreview } from '../../../../hooks/useCurrencyPreview';
+import { useRatePreview } from '../../../../hooks/useRatePreview';
+import {
+ readAmountInCurrency,
+ refusesDecimalSeparator,
+} from '../../../../helpers/amountInCurrency';
 import { useModalDialog } from '../../../../../hooks/useModalDialog';
 import { CurrencyType } from '../../../../types/types';
 import {
@@ -239,8 +243,15 @@ function BudgetEditModal({
  // is. That is what lets the range alone be changed and saved — retyping the
  // figure already on screen to move a boundary is work the panel invented.
  const isBlank = amount.trim() === '';
- const parsedAmount = isBlank ? currentAmount : Number(amount);
- const isNumber = isBlank || Number.isFinite(Number(amount));
+
+ // amount keeps what was typed; the currency only decides how it is read, so
+ // leaving the yen brings the typed decimals back.
+ const { amountToSave, displayedAmount } = readAmountInCurrency(
+  amount,
+  originCurrency,
+ );
+ const parsedAmount = isBlank ? currentAmount : (amountToSave ?? NaN);
+ const isNumber = isBlank || amountToSave !== undefined;
 
  // Would store as 0.00 while not being a zero the user typed. The service
  // rejects it; saying so here costs no round trip.
@@ -280,22 +291,17 @@ function BudgetEditModal({
 
  const canSave = isNumber && !isSubCent && !isUnchanged && !isSaving;
 
- // Reads the rates already held in the store, so it issues no request. Returns
- // nulls when the typed currency is the accounting one, which is the common
- // case and renders nothing.
+ // Renders nothing when the typed currency is the accounting one, which is the
+ // common case.
  //
  // The amount sent is the one typed, NOT the converted figure: that is what
  // NewCategory, NewPocket, NewAccount and NewProfile all do, and a fifth form
  // converting on its own would make the same input mean two different things.
- const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
-  amount,
+ const ratePreview = useRatePreview(
+  isBlank ? undefined : amountToSave,
   originCurrency,
  );
-
- const rateTooltip =
-  rate && direction
-   ? `${direction}\nrate: ${formattedRate}`
-   : '';
+ const needsConversion = originCurrency !== ratePreview.accountingCurrency;
 
  // What Left becomes if this amount is saved, recomputed on every keystroke.
  // Spending is already known, so the figure needs no round trip — and deciding
@@ -305,7 +311,7 @@ function BudgetEditModal({
  // accounting currency and the typed amount is not in it, so the subtraction
  // would be two units apart. The figures above stay as the server sent them.
  const previewRemaining =
-  isNumber && !isUnchanged && !targetCurrencyPreview
+  isNumber && !isUnchanged && !needsConversion
    ? parsedAmount - actualSpent
    : null;
 
@@ -562,13 +568,13 @@ function BudgetEditModal({
        New budget
       </label>
 
-      {targetCurrencyPreview && (
+      {ratePreview.status === 'resolved' && (
        <RateTooltip
-        tipText={rateTooltip}
+        tipText={ratePreview.tooltipText}
         surface='light'
         placement='anchor-left'
        >
-        <span className='budgetEdit__rate'>{targetCurrencyPreview}</span>
+        <span className='budgetEdit__rate'>{ratePreview.previewText}</span>
        </RateTooltip>
       )}
 
@@ -598,10 +604,11 @@ function BudgetEditModal({
        inputMode='decimal'
        maxLength={MAX_AMOUNT_LENGTH}
        placeholder={String(currentAmount)}
-       value={amount}
+       value={displayedAmount}
        onChange={(event) => {
         const next = event.target.value;
         if (!PLAIN_DECIMAL.test(next)) return;
+        if (refusesDecimalSeparator(next, originCurrency)) return;
         setAmount(next);
         clearSaved();
        }}
