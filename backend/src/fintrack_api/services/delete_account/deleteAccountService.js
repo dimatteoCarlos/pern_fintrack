@@ -1280,7 +1280,12 @@ export const processCloseAccount = async (
 
   if (targetTypeName === 'category_budget') {
     const timeZone = await getUserTimeZone(dbClient, userId);
-    const currentMonth = await resolveCurrentMonth(dbClient, timeZone);
+    // resolveCurrentMonth returns { month }, not the string itself
+    // (budgetAllocationRepository.js:30) - the two callers elsewhere destructure
+    // it; this one passed the whole object into writeAllocation's `from`, which
+    // binds it into a `date` column and failed with "invalid input syntax for
+    // type date" on every CLOSE of a category_budget account.
+    const { month: currentMonth } = await resolveCurrentMonth(dbClient, timeZone);
 
     await writeAllocation(dbClient, targetAccountId, 0, currentMonth, null, {
       originalAmount: 0,
