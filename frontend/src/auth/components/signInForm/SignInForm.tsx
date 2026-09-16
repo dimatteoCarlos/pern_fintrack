@@ -5,7 +5,7 @@
  Responsible for login UI and validation
  Uses useFormLogic with signInSchema
  =============================== */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { signInSchema, SignInFormDataType } from '../../../auth/validation/zod_schemas/authSchemas';
 import { getIdentity } from '../../../auth/auth_utils/localStorageHandle/authStorage';
 import { FormErrorsType, useFormLogic } from '../../hooks/useFormLogic';
@@ -43,6 +43,8 @@ type SignInFormProps = {
   clearError: () => void;
   rememberMe: boolean;
   setRememberMe: (value: boolean) => void;
+  // Told whether a field differs from its initial value, so closing can ask first.
+  onDirtyChange?: (isDirty: boolean) => void;
 };
 
 const SignInForm: React.FC<SignInFormProps> = ({
@@ -52,6 +54,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
   clearError,
   rememberMe,
   setRememberMe,
+  onDirtyChange,
 }) => {
   // Initialize from localStorage if remembered
   const rememberedIdentity = getIdentity();
@@ -86,6 +89,15 @@ const SignInForm: React.FC<SignInFormProps> = ({
       }
     },
   });
+
+  // Compared with the initial values, not read from dirtyFields: a field typed
+  // and then erased back to its prefill has nothing left to lose.
+  const isDirty =
+    formData.identity !== initialValues.identity || formData.password !== '';
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   // The client's own message wins; the server's is the fallback.
   const getFieldError = (field: SignInFieldNameType): string | undefined =>

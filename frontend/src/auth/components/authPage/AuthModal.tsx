@@ -10,6 +10,7 @@
 // Portalled into document.body, like the four pocket modals. useModalDialog
 // sets `inert` on #root, and a dialog left inside #root would go inert with it.
 
+import { useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import AuthUI, { AuthUIPropsType } from './AuthUI';
@@ -23,8 +24,32 @@ type AuthModalPropsType = Omit<AuthUIPropsType, 'titleId'> & {
 };
 
 function AuthModal({ onClose, isDarkTheme, ...authUIProps }: AuthModalPropsType) {
+ // A ref and not state: the form reports on every change of its dirtiness, and
+ // nothing here renders from it.
+ const isDirtyRef = useRef(false);
+ const handleDirtyChange = useCallback((isDirty: boolean) => {
+  isDirtyRef.current = isDirty;
+ }, []);
+
+ // Where the backdrop, Escape and the Close button all land, so a stray click
+ // outside the panel no longer throws away what the user typed.
+ const requestClose = useCallback(() => {
+  if (
+   isDirtyRef.current &&
+   !window.confirm('You have unsaved changes. Are you sure you want to close?')
+  ) {
+   return;
+  }
+  onClose();
+ }, [onClose]);
+
+ // A press that starts inside the panel and is released on the backdrop (a text
+ // selection dragged past the edge) fires its click on the backdrop; only a
+ // press that also started there counts as a click outside.
+ const pressStartedOnBackdropRef = useRef(false);
+
  const { titleId, dialogProps } = useModalDialog({
-  onClose,
+  onClose: requestClose,
   // The first field and not the panel, which would otherwise put the header's
   // theme toggle one Tab away from the caret. Queried and not named because
   // AuthUI swaps sign-in for sign-up and the first field changes with it:
@@ -33,9 +58,20 @@ function AuthModal({ onClose, isDarkTheme, ...authUIProps }: AuthModalPropsType)
  });
 
  return createPortal(
-  // The backdrop closes on click, as it always did. The panel stops the
-  // bubble so a click inside it is not read as a click on the backdrop.
-  <div className={styles.modalOverlay} onClick={onClose}>
+  // The backdrop still closes on click, now through the unsaved-changes
+  // confirm. The panel stops the bubble so a click inside it is not read as a
+  // click on the backdrop.
+  <div
+   className={styles.modalOverlay}
+   onMouseDown={(event) => {
+    pressStartedOnBackdropRef.current = event.target === event.currentTarget;
+   }}
+   onClick={(event) => {
+    if (event.target === event.currentTarget && pressStartedOnBackdropRef.current) {
+     requestClose();
+    }
+   }}
+  >
    <div
     className={`${styles.modalContent}${isDarkTheme ? ' theme-dark' : ''}`}
     onClick={(event) => event.stopPropagation()}
@@ -44,7 +80,8 @@ function AuthModal({ onClose, isDarkTheme, ...authUIProps }: AuthModalPropsType)
     <AuthUI
      {...authUIProps}
      isDarkTheme={isDarkTheme}
-     onClose={onClose}
+     onClose={requestClose}
+     onDirtyChange={handleDirtyChange}
      titleId={titleId}
     />
    </div>

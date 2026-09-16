@@ -5,7 +5,7 @@
 Responsible for registration UI and validation
 Uses useFormLogic with signUpSchema
 =============================== */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { signUpSchema, SignUpFormDataType } from '../../../auth/validation/zod_schemas/authSchemas';
 import { useFormLogic } from '../../hooks/useFormLogic';
 import InputField from '../formUIComponents/InputField';
@@ -17,6 +17,8 @@ type SignUpFormProps = {
   externalLoading: boolean;
   error: string | null;
   clearError: () => void;
+  // Told whether any field holds a value, so closing can ask first.
+  onDirtyChange?: (isDirty: boolean) => void;
 };
 
 const SignUpForm: React.FC<SignUpFormProps> = ({
@@ -24,6 +26,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
   externalLoading,
   error,
   clearError,
+  onDirtyChange,
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
@@ -52,6 +55,13 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
       await onSignUp(data);
     },
   });
+
+  // Every initial value is empty, so any filled field is something to lose.
+  const isDirty = Object.values(formData).some((value) => value !== '');
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   const isLoading = externalLoading || isSubmitting;
 
