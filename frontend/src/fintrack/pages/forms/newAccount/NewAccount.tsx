@@ -36,7 +36,6 @@ import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTyp
 import {
   capitalize,
   earliestDatableDay,
-  numberFormatCurrency,
   toCalendarDay,
 } from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
@@ -45,8 +44,8 @@ import {
   RequestFailureType,
   useFetchLoad,
 } from '../../../hooks/useFetchLoad.ts';
-import { useServerCurrencyConversion } from '../../../hooks/useServerCurrencyConversion.ts';
-import { useCurrencyStore } from '../../../stores/useCurrencyStore.ts';
+import { useRatePreview } from '../../../hooks/useRatePreview.ts';
+import { readAmountInCurrency } from '../../../helpers/amountInCurrency.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 
@@ -308,47 +307,16 @@ function NewAccount() {
   // the stored balance was already correct.
   const openingDay = toCalendarDay(accountData.date);
 
-  const conversion = useServerCurrencyConversion(
+  // formData keeps what was typed; the amount sent is read under the currency
+  // selected at save time.
+  const { amountToSave } = readAmountInCurrency(
     formData[formDataNumber.keyName],
     currency,
-    openingDay,
   );
 
-  const accountingCurrency = useCurrencyStore(
-    (state) => state.accountingCurrency,
-  );
+  const conversion = useRatePreview(amountToSave, currency, openingDay);
 
-  const isAmountError = !!validationMessages[formDataNumber.keyName]
-    ?.trim()
-    .startsWith('*');
-
-  const convertedText =
-    conversion.convertedAmount !== null
-      ? `≈ ${numberFormatCurrency(conversion.convertedAmount, 2, accountingCurrency)}`
-      : null;
-
-  const showRatePreview =
-    conversion.status === 'resolved' && !!convertedText && !isAmountError;
-
-  // The quote behind the rate, not the multiplier alone: a currency worth a
-  // fraction of an accounting unit rounds the multiplier to zero, which reads
-  // as no rate at all.
-  const quoteLine = conversion.quote
-    ? `1 ${accountingCurrency.toUpperCase()} = ${numberFormatCurrency(
-        conversion.quote.rate,
-        Math.abs(conversion.quote.rate) < 10 ? 4 : 2,
-      )} ${conversion.quote.currency.toUpperCase()}`
-    : '';
-
-  // The day the rate was actually in force, only when it walked back from the
-  // opening day asked for — a market closed on a Saturday is valued by the
-  // Friday it quoted.
-  const valuedDayLine =
-    conversion.effectiveDate && conversion.effectiveDate !== openingDay
-      ? `in force since ${conversion.effectiveDate}`
-      : '';
-
-  const rateTooltipText = [quoteLine, valuedDayLine].filter(Boolean).join('\n');
+  const showRatePreview = conversion.status === 'resolved';
 
    //--FORM SUBMISSION ------------
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
@@ -362,7 +330,11 @@ function NewAccount() {
     }
 
     // ✅ DATA FORM VALIDATION
-    const newValidationMessages = { ...validationData(accountData) };
+    // An income source carries no value field; its amount stays the 0 it was given.
+    const amount = isDisabledValue ? accountData.amount : (amountToSave ?? '');
+    const newValidationMessages = {
+      ...validationData({ ...accountData, amount }),
+    };
     // console.log('message validation:', { newValidationMessages });
 
     if (Object.values(newValidationMessages).length > 0) {
@@ -372,7 +344,7 @@ function NewAccount() {
     //-------------------------------------
     //POST TO THE ENDPOINT FOR ACCOUNT DATA
     try {
-      const { name, type, currency, amount, date } = accountData;
+      const { name, type, currency, date } = accountData;
 
       const payload: AccountDataType = {
         name,
@@ -561,25 +533,19 @@ function NewAccount() {
                     variant={VARIANT_FORM}
                   />
 
-                  {conversion.status === 'querying' && !isAmountError && (
-                    <span className='form__fx-preview' aria-live='polite'>
-                      Converting…
-                    </span>
-                  )}
-
                   {showRatePreview && (
                     <RateTooltip
-                      tipText={rateTooltipText}
+                      tipText={conversion.tooltipText}
                       surface='dark'
                       placement='anchor-left-below'
                     >
                       <span className='form__fx-preview'>
-                        {convertedText}
+                        {conversion.previewText}
                       </span>
                     </RateTooltip>
                   )}
 
-                  {conversion.status === 'failed' && !isAmountError && (
+                  {conversion.status === 'failed' && (
                     <span className='form__fx-preview' role='status'>
                       No rate available yet
                     </span>
