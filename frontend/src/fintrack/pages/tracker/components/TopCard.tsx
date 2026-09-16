@@ -6,13 +6,11 @@ import RadioInput, {
 } from '../../../general_components/radioInput/RadioInput';
 import RateTooltip from '../../../general_components/rateTooltip/RateTooltip';
 
+import { capitalize, toCalendarDay } from '../../../helpers/functions';
 import {
- capitalize,
- numberFormatCurrency,
- toCalendarDay,
-} from '../../../helpers/functions';
-
-import { CURRENCY_OPTIONS } from '../../../helpers/constants';
+ readAmountInCurrency,
+ refusesDecimalSeparator,
+} from '../../../helpers/amountInCurrency';
 
 import {
  CurrencyType,
@@ -23,8 +21,7 @@ import {
 import { ValidationMessagesType } from '../../../validations/types';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
 
-import { useServerCurrencyConversion } from '../../../hooks/useServerCurrencyConversion';
-import { useCurrencyStore } from '../../../stores/useCurrencyStore';
+import { useRatePreview } from '../../../hooks/useRatePreview';
 import TransactionDateTrigger, {
  TransactionDatePropsType,
 } from '../../../general_components/transactionDateTrigger/TransactionDateTrigger';
@@ -166,98 +163,24 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
     day ??
     (transactionDateProps ? toCalendarDay(transactionDateProps.date) : undefined);
 
-  // Asked of the SERVER, not divided on the client. The client-side preview read
-  // the live in-memory rate, so a form dated three weeks back showed today's
-  // figure while the row stored the one the server resolved for that day — the
-  // owner was shown a number the row would not carry. This asks the same service
-  // the write path uses, for the same day, so the two cannot disagree.
-  const conversion = useServerCurrencyConversion(
-    topCardElements.value,
-    currency,
-    chosenDay,
-  );
+  // The parent keeps the typed text; the currency only decides how it is read,
+  // so leaving the yen brings the typed decimals back. Every tracker view reads
+  // the text again under the current currency when it saves.
+  const { amountToSave, displayedAmount } = readAmountInCurrency(value, currency);
 
-  // The currency the amount is stored in, as the server declares it.
-  const accountingCurrency = useCurrencyStore((state) => {
-    return state.accountingCurrency;
-  });
+  // Asked of the SERVER for the day the row is dated on, the same service the
+  // write path uses, so the figure shown is the figure stored.
+  const conversion = useRatePreview(amountToSave, currency, chosenDay);
+  const { accountingCurrency, previewText, tooltipText } = conversion;
 
-  //  Only treat messages starting with '*' as validation errors
-  const isAmountError =
-    validationMessages.amount && validationMessages.amount.trim().startsWith('*');
+  const showPreview = conversion.status !== 'inactive';
 
-  const showPreview = conversion.status !== 'inactive' && !isAmountError;
-
-  const previewText =
-    conversion.convertedAmount !== null
-      ? `≈ ${numberFormatCurrency(conversion.convertedAmount, 2, undefined, CURRENCY_OPTIONS[accountingCurrency])} ${accountingCurrency}`
-      : '';
-
-  // The QUOTE, never the conversion's own rate. Converting a peso to a dollar
-  // gives a rate of 0.00031, which two decimals render as 0,00 — the owner is
-  // told there is no rate when there is one. The quote is the same figure the
-  // provider published, in the direction it published it.
-  //
-  // Four decimals below ten, because a currency worth less than an accounting
-  // unit carries its information after the second place: the euro quotes around
-  // 0.8470, which two decimals flatten to 0,85.
-  const quotedRate = conversion.quote
-    ? numberFormatCurrency(
-        conversion.quote.rate,
-        Math.abs(conversion.quote.rate) < 10 ? 4 : 2,
-        undefined,
-        CURRENCY_OPTIONS[accountingCurrency],
-      )
-    : '';
-
-  // Numeric only (day/month/year, es-ES order and separators), not
-  // formatCalendarDate's word-month default: that default is en-US on
-  // purpose (helpers/constants.ts:57-59) so a spelled-out month doesn't read
-  // as the interface itself switching language. Built from the parts and not
-  // from new Date(effectiveDate), for the same UTC-midnight reason
-  // formatCalendarDate is.
-  const effectiveDateLabel = conversion.effectiveDate
-    ? (() => {
-        const [year, month, day] = conversion.effectiveDate!
-          .split('-')
-          .map(Number);
-        if (!year || !month || !day) return '';
-        return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        });
-      })()
-    : '';
-
-  // The day the rate reaches, and only when it is not the day already on the
-  // trigger beside the field. A rate carries a validity rather than belonging to
-  // one day: the TRM published on a Saturday is in force that Saturday, the
-  // Sunday and the Monday, so an entry dated Monday the 24th is valued by the
-  // 22nd.
-  //
-  // "for <day>" said that badly — it read as "the rate is of the 22nd", which is
-  // the question the owner was asking, not the answer. "in force since" states
-  // the validity that reaches their day.
-  //
-  // Compared against today's calendar day when the view passes no day of its
-  // own: that view records on the day of the request, so today is the day the
-  // rate has to reach.
-  const valuedDayLine =
-    effectiveDateLabel &&
-    conversion.effectiveDate !== (chosenDay ?? toCalendarDay(new Date()))
-      ? `in force since ${effectiveDateLabel}`
-      : '';
-
-  const tooltipText = [
-    conversion.quote
-      ? `${accountingCurrency}→${conversion.quote.currency}`
-      : '',
-    quotedRate ? `rate: ${quotedRate}` : '',
-    valuedDayLine,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  function amountChangeHandler(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
+    if (refusesDecimalSeparator(e.target.value, currency)) return;
+    updateTrackerData(e);
+  }
 // =======================
 // 🧩 RENDER
 // =======================
@@ -340,8 +263,8 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
                amount field already carries. */
             autoComplete='off'
             placeholder={trackerName}
-            value={value} //amountValue
-            onChange={updateTrackerData} //onAmountChange
+            value={displayedAmount}
+            onChange={amountChangeHandler}
             aria-invalid={Boolean(validationMessages[title1])}
             aria-describedby={
               validationMessages[title1] ? `${title1}-validation` : undefined
