@@ -1,5 +1,5 @@
 //frontend/src/pages/forms/newCategory/NewCategory.tsx
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
@@ -10,7 +10,10 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx';
 
-import { validationData } from '../../../validations/utils/custom_validation.ts';
+import {
+  checkNumberFormatValue,
+  validationData,
+} from '../../../validations/utils/custom_validation.ts';
 
 import '../styles/forms-styles.css';
 import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
@@ -18,7 +21,8 @@ import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
-import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
+import { useServerCurrencyConversion } from '../../../hooks/useServerCurrencyConversion.ts';
+import { useCurrencyStore } from '../../../stores/useCurrencyStore.ts';
 import { notifyAccountChanged } from '../../../stores/transactionEvents.ts';
 
 import { url_create_category_budget_account } from '../../../../urlConfig.ts';
@@ -26,12 +30,17 @@ import { url_create_category_budget_account } from '../../../../urlConfig.ts';
 import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
 
 import {
+  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   TILE_LABELS,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
 
-import { getCurrentBudgetMonthLabel } from '../../../helpers/functions.ts';
+import {
+  currencyMinorUnit,
+  getCurrentBudgetMonthLabel,
+  numberFormatCurrency,
+} from '../../../helpers/functions.ts';
 
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
@@ -146,22 +155,80 @@ function NewCategory() {
   // month the account starts in, and an account starts when it is created.
   const currentBudgetMonth = getCurrentBudgetMonthLabel(userData?.timezone);
 
-  // Reads the rates already held in the store, so it issues no request.
-  const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
-    formData[formDataNumber.keyName],
+  // formData keeps what was typed; the currency only decides how it is read,
+  // so leaving the yen brings the typed decimals back.
+  const typedAmount = formData[formDataNumber.keyName];
+  const isZeroDecimalCurrency = currencyMinorUnit(selectedCurrency) === 0;
+
+  const amountToSave = useMemo(
+    () => checkNumberFormatValue(typedAmount, selectedCurrency).valueToSave,
+    [typedAmount, selectedCurrency],
+  );
+
+  const displayedAmount =
+    isZeroDecimalCurrency && /[.,]/.test(typedAmount) && amountToSave !== undefined
+      ? String(amountToSave)
+      : typedAmount;
+
+  const hasAmount = amountToSave !== undefined && amountToSave > 0;
+
+  const accountingCurrency = useCurrencyStore((state) => state.accountingCurrency);
+
+  // One unit stands in for a missing amount, so the rate and its date are
+  // quoted before anything is typed.
+  const conversion = useServerCurrencyConversion(
+    hasAmount ? amountToSave : 1,
     selectedCurrency,
   );
 
-  const isAmountError = !!validationMessages[formDataNumber.keyName]
-    ?.trim()
-    .startsWith('*');
+  // Kept while a new request is in flight, so the chip does not blink per keystroke.
+  const lastResolvedConversion = useRef(conversion);
+  if (conversion.status !== 'querying') lastResolvedConversion.current = conversion;
+  const shownConversion =
+    conversion.status === 'querying' ? lastResolvedConversion.current : conversion;
 
-  const showRatePreview = !!targetCurrencyPreview && !isAmountError;
+  const showRatePreview = shownConversion.status === 'resolved';
 
-  const rateTooltipText =
-    rate && direction
-      ? `${direction}\nrate: ${formattedRate}`
-      : '';
+  const accountingLocale = CURRENCY_OPTIONS[accountingCurrency];
+
+  const convertedAmountText =
+    hasAmount && shownConversion.convertedAmount !== null
+      ? numberFormatCurrency(
+          shownConversion.convertedAmount,
+          currencyMinorUnit(accountingCurrency),
+          undefined,
+          accountingLocale,
+        )
+      : '—';
+
+  const ratePreviewText = `≈ ${convertedAmountText} ${accountingCurrency}`;
+
+  const quotedRate = shownConversion.quote
+    ? numberFormatCurrency(
+        shownConversion.quote.rate,
+        Math.abs(shownConversion.quote.rate) < 10 ? 4 : 2,
+        undefined,
+        accountingLocale,
+      )
+    : '';
+
+  const rateDate = shownConversion.fetchedAt
+    ? new Date(shownConversion.fetchedAt).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+    : '';
+
+  const rateTooltipText = [
+    shownConversion.quote
+      ? `${accountingCurrency}→${shownConversion.quote.currency}`
+      : '',
+    quotedRate ? `rate: ${quotedRate}` : '',
+    rateDate ? `as of ${rateDate}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   // Helper message for duplicate account name
   const [duplicateHelperMessage, setDuplicateHelperMessage] = useState<string>('');
@@ -253,6 +320,7 @@ function NewCategory() {
     // The budget takes the chosen currency's decimals: none for the yen.
     selectedCurrency,
   );
+
  // Helper function to validate a text field (category or subcategory)
   const validateTextInRealTime = (fieldName: 'category' | 'subcategory', value: string) => {
     const trimmed = value.trim();
@@ -355,10 +423,13 @@ function NewCategory() {
       return;
     }
     // ✅ DATA FORM VALIDATION
+    // The amount is read under the currency selected now, not the one it was typed under.
+    const amount = amountToSave ?? '';
     const newValidationMessages = {
-      ...validationData(categoryData, {
-        nonZeroFields: ['amount'],
-      }),
+      ...validationData(
+        { ...categoryData, amount },
+        { nonZeroFields: ['amount'] },
+      ),
     };
     // console.log('mensajes de validacion:', { newValidationMessages });
 
@@ -377,7 +448,7 @@ function NewCategory() {
         name: categoryData.category.toLowerCase().trim(),
         type: 'category_budget',
         currency: categoryData?.currency ?? defaultCurrency, //default
-        budget: formData.amount ?? categoryData.amount,
+        budget: amount,
         date: new Date().toISOString(), // ISO format
         nature: categoryData.nature,
         subcategory: categoryData.subcategory || undefined,
@@ -564,7 +635,7 @@ function NewCategory() {
                     placement='anchor-left-below-badge'
                   >
                     <span className='form__fx-preview'>
-                      {targetCurrencyPreview}
+                      {ratePreviewText}
                     </span>
                   </RateTooltip>
                 )}
@@ -577,7 +648,7 @@ function NewCategory() {
                   id={formDataNumber.keyName}
                   name={formDataNumber.keyName}
                   placeholder={formDataNumber.title}
-                  value={formData[formDataNumber.keyName]}
+                  value={displayedAmount}
                   onChange={inputHandler}
                   autoComplete='off'
                 />

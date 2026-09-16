@@ -109,25 +109,6 @@ export function validateField(
 //-----------------------------
 //-----check number format ----
 //used in input number format validation
-// Blocks an over-precise keystroke before it ever reaches the input, rather
-// than accepting it and rounding the saved number behind the reader's back.
-// maxDigits 0 (the yen) drops the decimal separator itself -- there is no
-// valid partial state to preserve, unlike "10." while typing "10.5" for a
-// two-decimal currency, which this leaves untouched. The LAST separator in
-// the string is treated as the decimal one, so a thousands separator earlier
-// (1,500.75) is never mistaken for it.
-export function clampTypedDecimals(value: string, maxDigits: number): string {
-  const match = value.match(/^(.*?)([.,])(\d*)$/);
-  if (!match) return value;
-
-  const [, whole, separator, fraction] = match;
-  if (maxDigits === 0) return whole;
-
-  return fraction.length > maxDigits
-    ? `${whole}${separator}${fraction.slice(0, maxDigits)}`
-    : value;
-}
-
 // The currency's own decimals are applied to the value to save when the caller
 // names the currency: the yen has none, so 1500,75 JPY is saved as 1501. Without
 // a currency the parsed value is returned exactly as before.
