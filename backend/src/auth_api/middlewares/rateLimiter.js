@@ -142,19 +142,25 @@ export const authLimiter = rateLimit({
 // =====================================
 // Counts successes: a completed sign-up is the request this limit exists to cap.
 // authLimiter cannot serve here, it skips them so a correct password costs nothing.
-// 5/2min is the production figure, set 2026-09-16 alongside authLimiter's own
-// window - the previous 1 hour matched authFn.js's access-token `expiresIn:
-// '1h'` rather than any reasoned abuse-rate window (see createRateLimitResponse's
-// comment above). Local dev recreates the same demo account over and over
-// while iterating (docs/VIDEO/promo-30s/data/seed-demo-account.js cleans up
-// and signs it back up on every rerun), which trips the production limit
-// inside a single work session - not the abuse pattern this exists to stop.
-// Raised only outside production; the window itself applies in both.
-const SIGN_UP_LIMIT = process.env.NODE_ENV === 'production' ? 5 : 1000;
+// 4/15min is the production figure, set 2026-09-16 - the happy medium between
+// the original 1-hour window (which matched authFn.js's access-token
+// `expiresIn: '1h'` rather than any reasoned abuse-rate window, see
+// createRateLimitResponse's comment above, and forced a legitimate caller to
+// wait a full hour after one burst) and an earlier, too-permissive 2-minute
+// window (5/2min allows a theoretical 150/hour, easily scripted). 4 accounts
+// per 15 minutes caps a single IP at 16/hour - tight enough to blunt scripted
+// abuse, short enough that a real signer-upper who fat-fingered a field twice
+// is never locked out for more than 15 minutes. Local dev recreates the same
+// demo account over and over while iterating
+// (docs/VIDEO/promo-30s/data/seed-demo-account.js cleans up and signs it back
+// up on every rerun), which trips the production limit inside a single work
+// session - not the abuse pattern this exists to stop. Raised only outside
+// production; the window itself applies in both.
+const SIGN_UP_LIMIT = process.env.NODE_ENV === 'production' ? 4 : 1000;
 
 export const signUpLimiter = rateLimit({
- windowMs: 2 * 60 * 1000, // 2 minutes
- limit: SIGN_UP_LIMIT, // 5 accounts per 2 minutes per IP in production
+ windowMs: 15 * 60 * 1000, // 15 minutes
+ limit: SIGN_UP_LIMIT, // 4 accounts per 15 minutes per IP in production
  standardHeaders: true,
  legacyHeaders: false,
  skipSuccessfulRequests: false,
