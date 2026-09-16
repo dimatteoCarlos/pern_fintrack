@@ -12,7 +12,6 @@ function TrackerDebtsButton() {
             in an aria-label: the accessible name is then the visible text. */}
         <NavLink
           to={'debts'}
-          viewTransition
           aria-labelledby='trackerTabLabel-debts'
           className={`flx-col-center trackerStateIconButton  ${(isActive: {
             isActive: boolean;

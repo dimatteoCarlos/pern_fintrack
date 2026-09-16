@@ -19,7 +19,6 @@ function TrackerTransferButton() {
             in an aria-label: the accessible name is then the visible text. */}
         <NavLink
           to='transfer'
-          viewTransition
           aria-labelledby='trackerTabLabel-transfer'
           className={classNavLink}
         >

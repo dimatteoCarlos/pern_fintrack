@@ -13,7 +13,6 @@ function TrackerIncomeButton() {
               word in an aria-label: the accessible name is the visible text. */}
           <NavLink
             to={'income'}
-            viewTransition
             aria-labelledby='trackerTabLabel-income'
             className={`trackerStateIconButton flx-col-center ${(isActive: {
               isActive: boolean;
