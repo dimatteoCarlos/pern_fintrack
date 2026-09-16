@@ -158,6 +158,11 @@ const MONTHLY_BALANCE_BY_ACCOUNT_QUERY = `
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   CROSS JOIN user_accounts ua
   WHERE ua.account_id = ANY($1::int[])
+    -- A month before the account's own start month has no balance to report,
+    -- not a settled one: without this floor the cross join manufactures a
+    -- $0 row from subtracting every transaction back out, which reads as a
+    -- real settled debt instead of an account that did not exist yet.
+    AND m.month >= date_trunc('month', ua.account_start_date AT TIME ZONE $4)
   ORDER BY m.month, ua.account_id
 `;
 

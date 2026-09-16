@@ -41,6 +41,11 @@ const ACCOUNTS_AND_BALANCES_QUERY = `
     AND ua.deleted_at IS NULL
     AND ua.closed_at IS NULL
     AND act.account_type_name IN ('bank', 'cash', 'investment', 'debtor')
+    -- A referenceMonth before the account's own start month has no balance
+    -- to report, not a $0 one: without this floor the same subtraction that
+    -- prices a past close manufactures a synthetic $0 row for an account
+    -- that did not exist yet.
+    AND $2::date >= date_trunc('month', ua.account_start_date AT TIME ZONE $3)::date
   ORDER BY act.account_type_name ASC, ua.account_name ASC
 `;
 
