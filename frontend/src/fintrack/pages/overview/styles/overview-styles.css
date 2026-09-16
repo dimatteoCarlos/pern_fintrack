@@ -1089,10 +1089,13 @@ a.icon {
  font-size: var(--font-size-sm);
 }
 
+/* No text-transform: capitalize here, unlike .domainCard__label - it title-cased
+   every word of the pocket block's 'Target of every pocket', not just the first.
+   The single-word labels this class also renders ('Budget', 'Income', ...) are
+   already capitalised as typed, so dropping the transform changes nothing for them. */
 .overviewLayout .domainCard__blockLabel {
  font-size: inherit;
  font-weight: var(--font-weight-semibold);
- text-transform: capitalize;
  color: var(--color-content-on-dark-muted);
 }
 

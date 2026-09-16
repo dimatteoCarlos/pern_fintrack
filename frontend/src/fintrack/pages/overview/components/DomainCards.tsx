@@ -436,13 +436,12 @@ const pocketSquare = (card: OverviewPocketCard): SquareClass => {
  return card.uncoveredCount > 0 ? 'warning' : 'neutral';
 };
 
-// The bar takes the SAME reading the square takes, so the two marks on the
-// pocket block cannot light differently for one card. Every class pocketSquare
-// hands out is already a tone by name except 'unknown', which means no target
-// was set on any pocket - and with no target there is no denominator, no bar and
-// nothing for this to answer.
+// The bar takes the square's reading, except 'neutral': Carlos, 2026-09-15,
+// asked for the on-track fill to read as the budget scale's near-limit warning
+// colour instead of the monochrome grey, so the everyday state is no longer
+// mistakable for an unmeasured one. alert and info still match the square.
 const pocketBarTone = (square: SquareClass): ProgressTone =>
- square === 'unknown' || square === '' ? 'neutral' : square;
+ square === 'unknown' || square === '' || square === 'neutral' ? 'warning' : square;
 
 // The pocket goals, in the shape the expense card states its budget in. Carlos,
 // 2026-09-09: "se puede usar el mismo layout de la zona de Budget que usaste en
