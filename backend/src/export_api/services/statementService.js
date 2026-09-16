@@ -35,7 +35,7 @@ import { ACCOUNTING_CURRENCY_CODE } from '../../fintrack_api/config/fintrackConf
 // called against a second time. Derived from the reference month's own year,
 // not from today, so a statement run for a past month still compares against
 // THAT year's prior December.
-const priorDecemberOf = (referenceMonth) =>
+export const priorDecemberOf = (referenceMonth) =>
  `${Number(referenceMonth.slice(0, 4)) - 1}-12-01`;
 
 /**
@@ -93,6 +93,7 @@ const getPriorYearClose = async (pool, userId, priorMonth, timeZone) => {
   receivable: debtFields.receivable,
   payable: debtFields.payable,
   pocketsCommitted: board.summary.totalAllocated ?? 0,
+  investmentBalance: investmentFigures.ledgerBalance,
  };
 };
 
@@ -159,10 +160,42 @@ export const composeExecutiveSummaryRows = (overview, priorClose) => {
    domainCards.pocket.totalAmount,
    makeYearStartChange(domainCards.pocket.totalAmount, priorClose.pocketsCommitted),
   ),
+  makeRow(
+   'investments',
+   domainCards.investment.ledgerBalance,
+   makeYearStartChange(domainCards.investment.ledgerBalance, priorClose.investmentBalance),
+  ),
  ]);
 };
 
 export const statementService = {
+ /**
+  * overviewPageService's full result for the reference month, plus the
+  * Executive Summary rows composed over it — one overview read serving both
+  * the XLSX sheet (rows only) and the PDF (the whole overview, for the
+  * figures the Executive Summary does not carry, e.g. domainCards.investment,
+  * charts, financialGoals).
+  *
+  * @param {object} pool - Database pool
+  * @param {string} userId - UUID from the token
+  * @param {{window: object}} request - the resolved reporting window
+  * @param {string} timeZone - IANA zone of the account owner
+  * @returns {Promise<{overview: object, executiveSummaryRows: object[]}>}
+  */
+ async getStatementCore(pool, userId, { window }, timeZone = 'UTC') {
+  const priorMonth = priorDecemberOf(window.referenceMonth);
+
+  const [overview, priorClose] = await Promise.all([
+   overviewPageService.getOverviewPage(pool, userId, { window }, timeZone),
+   getPriorYearClose(pool, userId, priorMonth, timeZone),
+  ]);
+
+  return {
+   overview,
+   executiveSummaryRows: composeExecutiveSummaryRows(overview, priorClose),
+  };
+ },
+
  /**
   * The Executive Summary for one user and one reference month.
   *
@@ -174,13 +207,7 @@ export const statementService = {
   * @returns {Promise<object[]>} frozen Executive Summary rows
   */
  async getExecutiveSummary(pool, userId, { window }, timeZone = 'UTC') {
-  const priorMonth = priorDecemberOf(window.referenceMonth);
-
-  const [overview, priorClose] = await Promise.all([
-   overviewPageService.getOverviewPage(pool, userId, { window }, timeZone),
-   getPriorYearClose(pool, userId, priorMonth, timeZone),
-  ]);
-
-  return composeExecutiveSummaryRows(overview, priorClose);
+  const { executiveSummaryRows } = await statementService.getStatementCore(pool, userId, { window }, timeZone);
+  return executiveSummaryRows;
  },
 };

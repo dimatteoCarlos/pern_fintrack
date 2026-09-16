@@ -96,9 +96,13 @@ const respondWithZodIssues = (res, error) =>
  * Returns null after writing the 422 — the same shape as requireUserId, so both
  * guards read alike at the call site.
  *
+ * Exported so export_api/controllers/statementController.js (PLAN_EXPORT.md
+ * commit 5d) answers the same "future month" 422 with the same message,
+ * rather than a second copy of the ceiling check.
+ *
  * @returns {Promise<object|null>} the window, or null when a 422 was sent
  */
-const resolveWindowOr422 = async (res, timeZone, month) => {
+export const resolveWindowOr422 = async (res, timeZone, month) => {
  const currentMonth = await getCurrentMonth(pool, timeZone);
 
  // 422 and not 400: the request parsed and the month is well formed, it is

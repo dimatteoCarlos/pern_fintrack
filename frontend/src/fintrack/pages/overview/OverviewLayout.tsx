@@ -18,6 +18,7 @@ import { Outlet, useSearchParams } from 'react-router-dom';
 
 import { BigBoxResult } from './components/BigBoxResult.tsx';
 import HeroIndicators from './components/HeroIndicators.tsx';
+import PeriodStatementButton from './components/PeriodStatementButton.tsx';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import MonthPicker from '../../general_components/monthPicker/MonthPicker.tsx';
 import ScrollJump from '../../general_components/scrollJump/ScrollJump';
@@ -131,16 +132,25 @@ function OverviewLayout() {
          The arrows are the shared component's, behind its opt-in prop, so the
          bounds are held in one place. currentMonth is the ceiling the server
          raises its 422 against — a local wrapper holding a second copy of it
-         is how a forward arrow comes to step past the month that exists. */}
-     <MonthPicker
-      month={referenceMonth}
-      currentMonth={currentMonth}
-      surface='cream'
-      withSteppers
-      isLoading={isLoading}
-      isMonthToDate={isMonthToDate}
-      onSelect={selectMonth}
-     />
+         is how a forward arrow comes to step past the month that exists.
+
+         .statementBar wraps the pill and the new download trigger as one row,
+         carrying the position CSS the pill used to hold alone
+         (overview-styles.css) — the pill is no longer .headerContent__container's
+         direct child, so the absolute placement moved to this wrapper with it. */}
+     <div className='statementBar'>
+      <MonthPicker
+       month={referenceMonth}
+       currentMonth={currentMonth}
+       surface='cream'
+       withSteppers
+       isLoading={isLoading}
+       isMonthToDate={isMonthToDate}
+       onSelect={selectMonth}
+      />
+
+      <PeriodStatementButton month={referenceMonth} disabled={isLoading || referenceMonth === null} />
+     </div>
     </div>
    </div>
 

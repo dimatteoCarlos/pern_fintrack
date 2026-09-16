@@ -164,6 +164,8 @@ export const url_get_overview_domain = (domain: string): string =>
 // is its own backend module by folder and by route (PLAN_EXPORT.md §2), so it
 // is mounted off BASE_URL and not BASE_URL_APP.
 export const url_export_movements: string = BASE_URL + 'export/movements';
+// The period statement, one reference month per request (PLAN_EXPORT.md §9).
+export const url_export_statement: string = BASE_URL + 'export/statement';
 
 //=======================================
 //endpoints for OVERVIEWLAYOUT page

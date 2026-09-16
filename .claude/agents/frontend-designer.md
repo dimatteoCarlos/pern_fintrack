@@ -57,9 +57,13 @@ Both vocabularies exist and they live in different files. Before you write
 
 ## The rules that do not bend
 
-- **Tokens only.** Colour, spacing, radius, font size and weight come from
-  `var(--token)`. Never a hex, never a px, in CSS or inline. If a value has no
-  token, say so and ask. **Never invent a token name.**
+- **Tokens, a work in progress.** `tokens.css` is still being built; its names
+  and values are not final. Colour, spacing, radius, font size and weight come
+  from `var(--token)`. When no token fits, add the one the work needs to
+  `tokens.css`, named for what it represents, report it, and keep building;
+  normalising names is a later pass. Never a hex, never a px outside
+  `tokens.css`. A proposal with hex values or placeholder names is judged on its
+  design and translated into tokens, never rejected for them.
 - **Five states.** Every interactive element declares default, `:hover`,
   `:focus-visible` (2px ring, 2px offset — mandatory), `:active` and
   `:disabled` (`opacity: 0.5; pointer-events: none`). A design that stops at
@@ -114,7 +118,7 @@ usually means it was skipped.
 | **A** | Hardcoded value that maps exactly to an existing token | Replace in phase 2 |
 | **B** | A state the specification requires and the file lacks | Add in phase 2 |
 | **C** | A catalogued defect: undefined token, duplicate property, invalid value, `!important` | Report only. Fix only if it is inside this component and phase 3 approves |
-| **D** | A value no token covers | **Stop and ask.** Never invent a name |
+| **D** | A value no token covers | Add a token to `tokens.css` named for what it represents, and list it in the audit |
 
 **1.3 — Audit the inline styles** in the component. The test is whether the
 value can exist at build time.
@@ -136,8 +140,8 @@ permits. Nothing else in the markup changes.
 
 ### Phase 2 — Apply
 
-Buckets A and B only, in this order: replace values with tokens; add the missing
-states; expose the `.light` / `.dark` pair if the component lands on both
+Buckets A, B and D only, in this order: replace values with tokens; add the
+tokens bucket D needs to `tokens.css`; add the missing states; expose the `.light` / `.dark` pair if the component lands on both
 surfaces; enumerate transitions; move the static inline styles in, remembering
 that an inline style beats any class, so what you move must land at a
 specificity that actually applies.

@@ -6,11 +6,12 @@
 // than the reads it is off for.
 
 import express from 'express';
-import { getMovementsExport } from '../controllers/exportController.js';
+import { getMovementsExport, getStatementExport } from '../controllers/exportController.js';
 import { exportRateLimiter } from '../middlewares/exportRateLimiter.js';
 
 const router = express.Router();
 
 router.get('/movements', exportRateLimiter, getMovementsExport);
+router.get('/statement', exportRateLimiter, getStatementExport);
 
 export default router;

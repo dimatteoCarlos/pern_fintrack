@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { exportMovementsQuerySchema } from '../../src/export_api/validation/exportValidators.js';
+import { exportMovementsQuerySchema, exportStatementQuerySchema } from '../../src/export_api/validation/exportValidators.js';
 
 test('format defaults to csv', () => {
  const result = exportMovementsQuerySchema.parse({});
@@ -43,4 +43,28 @@ test('an unknown format answers a validation error naming the field', () => {
 
 test('a retired parameter is rejected by the strict schema', () => {
  assert.throws(() => exportMovementsQuerySchema.parse({ page: 2 }), { name: 'ZodError' });
+});
+
+test('the statement format defaults to xlsx', () => {
+ const result = exportStatementQuerySchema.parse({});
+ assert.equal(result.format, 'xlsx');
+});
+
+test('the statement schema accepts pdf alongside xlsx', () => {
+ const result = exportStatementQuerySchema.parse({ format: 'pdf' });
+ assert.equal(result.format, 'pdf');
+});
+
+test('the statement schema rejects a format neither writer produces', () => {
+ try {
+  exportStatementQuerySchema.parse({ format: 'csv' });
+  assert.fail('expected a ZodError');
+ } catch (error) {
+  assert.equal(error.name, 'ZodError');
+  assert.ok(error.issues.some((issue) => issue.path.includes('format')));
+ }
+});
+
+test('the statement schema takes month, not from/to', () => {
+ assert.throws(() => exportStatementQuerySchema.parse({ from: '2026-01' }), { name: 'ZodError' });
 });

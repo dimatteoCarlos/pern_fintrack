@@ -5,11 +5,13 @@
 // then a Zod parse, then the service, so a rejection reads alike across every
 // module.
 
-import { exportMovementsQuerySchema } from '../validation/exportValidators.js';
+import { exportMovementsQuerySchema, exportStatementQuerySchema } from '../validation/exportValidators.js';
 import { exportTransactions } from '../services/transactionExportService.js';
+import { exportStatement } from '../services/statementExportService.js';
 import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { resolveWindowOr422 } from '../../fintrack_api/controllers/overviewController.js';
 
 /**
  * Same shape as overviewController.js's respondWithZodIssues: Zod 4 renamed
@@ -60,6 +62,53 @@ export async function getMovementsExport(req, res, next) {
    movementType: movementType ?? null,
    category: category ?? null,
    accountIds: accountIds ?? null,
+   rowCount,
+   generatedAt: new Date().toISOString(),
+  });
+
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.status(200).send(buffer);
+ } catch (error) {
+  if (error.name === 'ZodError') {
+   return respondWithZodIssues(res, error);
+  }
+  if (error.status) {
+   return res.status(error.status).json({ status: error.status, message: error.message });
+  }
+  next(error);
+ }
+}
+
+/** GET /api/export/statement */
+export async function getStatementExport(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const { month, format } = exportStatementQuerySchema.parse(req.query);
+
+  const timeZone = await getUserTimeZone(pool, userId);
+
+  // Same ceiling GET /overview applies to the same field: a future month
+  // parses fine and is refused here, on its relationship to the owner's
+  // calendar, not on shape.
+  const window = await resolveWindowOr422(res, timeZone, month);
+  if (!window) return;
+
+  const { buffer, filename, contentType, rowCount } = await exportStatement(
+   pool,
+   userId,
+   { window },
+   timeZone,
+   format,
+  );
+
+  console.log('[export] statement', {
+   userId,
+   dataset: 'statement',
+   format,
+   referenceMonth: window.referenceMonth,
    rowCount,
    generatedAt: new Date().toISOString(),
   });

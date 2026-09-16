@@ -1,7 +1,8 @@
 // backend/src/export_api/validation/exportValidators.js
 //
-// GET /api/export/movements — Zod schema, strict like every other schema in
-// this codebase: a retired parameter answers 400 naming the key.
+// GET /api/export/movements and GET /api/export/statement — Zod schemas,
+// strict like every other schema in this codebase: a retired parameter
+// answers 400 naming the key.
 //
 // monthBound is imported, not restated, for the same reason overviewValidators.js
 // imports it: a second copy of the coercion could drift from the one every
@@ -13,6 +14,9 @@ import { MOVEMENT_TYPE_NAMES } from '../../utils/fintrackUtils/transactionManage
 
 const DEFAULT_FORMAT = 'csv';
 const FORMATS = ['csv', 'xlsx'];
+
+const STATEMENT_DEFAULT_FORMAT = 'xlsx';
+const STATEMENT_FORMATS = ['xlsx', 'pdf'];
 
 // Same ceilings overviewActivityQuerySchema applies to the same fields, for
 // the same reasons: a term or a category name longer than this cannot match
@@ -69,3 +73,17 @@ export const exportMovementsQuerySchema = z.object({
   path: ['from'],
  },
 );
+
+/**
+ * GET /api/export/statement — one reference month, never a range: the
+ * statement is about one month's close, not a period of movements
+ * (PLAN_EXPORT.md §9). A future month is not rejected here - it parses fine
+ * and resolveWindowOr422 (overviewController.js) answers the 422, the same
+ * calendar-relationship check GET /overview already applies.
+ */
+export const exportStatementQuerySchema = z.object({
+ month: monthBound.optional(),
+ format: z.enum(STATEMENT_FORMATS, {
+  message: `format must be one of: ${STATEMENT_FORMATS.join(', ')}`,
+ }).default(STATEMENT_DEFAULT_FORMAT),
+}).strict();

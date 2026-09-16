@@ -62,11 +62,20 @@
    declared height, so padding to reserve the space would paint it over the hero
    instead of pushing the hero down.
 
-   z-index because the hero is painted after this in document order. */
-.overviewLayout .headerContent__container > .monthStepper {
+   z-index because the hero is painted after this in document order.
+
+   MOVED FROM .monthStepper TO .statementBar, 2026-09-15: the period statement
+   trigger sits beside the pill on the same row now (PLAN_EXPORT.md §11), so the
+   row and not the pill alone is what has to straddle the header's bottom edge.
+   .monthStepper keeps every rule of its own; only the position left with the
+   wrapper that now holds it. */
+.overviewLayout .headerContent__container > .statementBar {
  position: absolute;
  top: 100%;
  left: 50%;
+ display: flex;
+ align-items: stretch;
+ gap: var(--space-2);
  transform: translate(-50%, -50%);
  z-index: 2;
 }

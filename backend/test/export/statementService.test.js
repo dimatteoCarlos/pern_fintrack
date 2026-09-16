@@ -24,6 +24,7 @@ const baseOverview = {
   expense: { totalAmount: 4950 },
   debt: { totalAmount: 300, receivable: 500, payable: 200 },
   pocket: { totalAmount: 3000 },
+  investment: { ledgerBalance: 24000 },
  },
  monthlySnapshot: [
   { domain: 'income', yearToDate: 58000 },
@@ -43,6 +44,7 @@ const basePriorClose = {
  receivable: 300,
  payable: 150,
  pocketsCommitted: 2200,
+ investmentBalance: 21000,
 };
 
 const findRow = (rows, metric) => rows.find((row) => row.metric === metric);
@@ -56,6 +58,7 @@ test('the month value is read straight from the reference month\'s overview, unc
  assert.equal(findRow(rows, 'netWorth').month, 43250);
  assert.equal(findRow(rows, 'netDebtPosition').month, 300);
  assert.equal(findRow(rows, 'pocketsCommitted').month, 3000);
+ assert.equal(findRow(rows, 'investments').month, 24000);
 });
 
 test('year to date on a flow is the year\'s accumulated total, not a change', () => {
@@ -76,6 +79,7 @@ test('year to date on a balance is the change against the prior December close',
  assert.equal(findRow(rows, 'receivable').yearToDate, 200);
  assert.equal(findRow(rows, 'payable').yearToDate, 50);
  assert.equal(findRow(rows, 'pocketsCommitted').yearToDate, 800);
+ assert.equal(findRow(rows, 'investments').yearToDate, 3000);
 });
 
 test('a missing payable leg withholds liquid net worth\'s year to date with its own notice', () => {

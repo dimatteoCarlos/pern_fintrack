@@ -23,3 +23,15 @@ export function exportFileName({ from, to, format }) {
 
  return `fintrack-movements-${from.slice(0, 7)}_${to.slice(0, 7)}.${format}`;
 }
+
+/**
+ * The period statement's own name: one reference month, never a range
+ * (PLAN_EXPORT.md §11: `fintrack-statement-YYYY-MM.pdf|xlsx`).
+ *
+ * @param {{referenceMonth: string, format: string}} statement -
+ *  referenceMonth 'YYYY-MM-01'; format the file extension ('xlsx'|'pdf')
+ * @returns {string}
+ */
+export function statementFileName({ referenceMonth, format }) {
+ return `fintrack-statement-${referenceMonth.slice(0, 7)}.${format}`;
+}

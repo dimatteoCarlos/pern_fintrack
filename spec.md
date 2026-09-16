@@ -49,7 +49,7 @@ section is the summary; when the two disagree, `CLAUDE.md` wins.
 
 #### Purpose & Scope
 
-This specification defines mandatory web accessibility rules (WCAG 2.1 and 2.2 Level AA). Claude Code must strictly apply the application's defined color palettes, themes, and design tokens, ensuring chosen combinations satisfy the mathematical contrast thresholds required by the standard.
+This specification defines mandatory web accessibility rules (WCAG 2.1 and 2.2 Level AA). Claude Code must apply the application's color palettes, themes, and design tokens, ensuring chosen combinations satisfy the mathematical contrast thresholds required by the standard. The tokens are a work in progress, not a final set: when no token fits, add one to `tokens.css` and measure its contrast here (see `frontend/CLAUDE.md`). What stays mandatory is the contrast floor, not the current token names.
 
 #### 6.1. Contrast & Color Tokens (WCAG 1.4.3 & 1.4.11)
 

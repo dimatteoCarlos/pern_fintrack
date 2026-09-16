@@ -1068,7 +1068,7 @@ mejor SQL.
 | `all.transactionCountAll` | suma de los cinco `transactionCount` de dominio | **D31** — un `COUNT(*)` duplicaría todo movimiento de dos patas |
 | `domainCards.*` | las seis calculadoras, tal cual | §12 |
 | `monthlySnapshot[]` | MS1 de la tarjeta; MS2/MS3 de una serie de 13 puntos | **D28** para pocket |
-| `financialGoals` | consulta propia sobre `pocket_saving_accounts` | **D30** |
+| `financialGoals` | ~~consulta propia sobre `pocket_saving_accounts`~~ — **corregido 2026-09-15**: importacion de `board.pockets` via `pocketBoardService.getBoard`, igual que `domainCards` (ver nota debajo) | **D30** |
 | `recentActivity` | consulta propia, 5 filas, sin acotar al mes | §10 |
 | `charts.trend.*` | de las calculadoras de income, expense y pocket, tal cual | **D32** |
 | `charts.expenseCategories` | de la calculadora de expense, tal cual | **D32** |
@@ -1102,6 +1102,16 @@ mejor SQL.
 > abierto es si esa lectura sigue siendo una **consulta propia de la pagina** —
 > como dice esta fila— o pasa a ser una importacion mas, como `domainCards`.
 > Los tipos de §9 no cambian: D44 ya anticipo que la nulabilidad se mantiene.
+>
+> **Corregido 2026-09-15, al escribir `plan-docs/ongoing/PLAN_EXPORT.md`.** La
+> pregunta que dejaba abierto el parrafo anterior ya esta resuelta en el codigo:
+> `financialGoals` no es hoy una consulta propia de la pagina ni lee
+> `pocket_saving_accounts`. `overviewPocketService.getPocketDomainData` llama a
+> `pocketBoardService.getBoard` y republica `board.pockets` sin recalcular
+> (`overviewPocketService.js:79-80,193`); `makeFinancialGoals` agrega sobre esas
+> filas. Paso a ser una importacion mas, como `domainCards` — la segunda mitad
+> de la pregunta de 2026-08-30, no la primera. El modelo retirado
+> (`pocket_saving_accounts`) queda fuera de la lectura por completo.
 
 **Las tres lecturas propias** que la página hace y ninguna calculadora hace son:
 el **saldo de banco** (el único stock que ninguna tarjeta publica, porque no hay
@@ -1421,6 +1431,15 @@ named *liquid* that appeared to omit cash would be read as excluding it.
 This is a convention, not an implementation claim. §13 already records the code
 side: the real-account set and the cash position exclude `cash` today and by D45
 must include it.
+
+**Corrected 2026-09-15, while writing `plan-docs/ongoing/PLAN_EXPORT.md`.** "Today"
+above is stale: the code now includes `cash` in every formula that reads "bank",
+matching D45. `overviewPageRepository.js:136` sums the `bank` and `cash` types
+together, and the same inclusion holds in `cashPosition`
+(`makeHeroSection.js:211`) and in the per-account `freeCash` walk
+(`overviewPageRepository.js:175-199`). The convention this section states was
+already correct; the implementation claim beside it was the part still
+describing the pre-D45 code.
 
 ---
 ## Registro de correcciones — 2026-08-30
