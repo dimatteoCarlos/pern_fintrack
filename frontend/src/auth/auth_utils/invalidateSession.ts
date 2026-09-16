@@ -49,10 +49,16 @@ export const invalidateSession = (reason?: 'expired'): void => {
   authStore.setIsLoading(false);
   authStore.setIsCheckingAuth(false);
 
- // This flag is used by ProtectedRoute to differentiate expiration from normal unauthenticated state
-if (reason === 'expired') {
-    authStore.setSessionExpired(true);
-  }
+ // This flag is used by ProtectedRoute to differentiate expiration from normal
+ // unauthenticated state. Set explicitly either way - not only on 'expired' -
+ // because useAuth.ts's mount check calls this a second time with no reason
+ // specifically to correct a prior 'expired' call from the same boot sequence
+ // (an anonymous visitor's silent refresh attempt 401s the same way an actually
+ // expired session's does). Leaving the flag untouched here left it stuck true
+ // from that first call, so every anonymous first visit read as a real
+ // expiration and AuthPage.tsx showed "Your session has expired" to someone
+ // who never had one.
+ authStore.setSessionExpired(reason === 'expired');
 
   console.log('🧹 Session invalidated:', {reason});
 };
