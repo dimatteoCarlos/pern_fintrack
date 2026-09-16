@@ -484,7 +484,7 @@ export const ClosedAccountsPage = () => {
     <button
      type='button'
      className='closed-accounts__back'
-     onClick={() => navigate(ACCOUNTING_DASHBOARD_ROUTE)}
+     onClick={() => navigate(ACCOUNTING_DASHBOARD_ROUTE, { viewTransition: true })}
     >
      {t('closedAccountsBackButton')}
     </button>

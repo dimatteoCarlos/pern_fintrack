@@ -48,7 +48,7 @@ function LogoMenuIcon() {
         gap: '0.5rem',
       }}
       >
-     <Link to='accounting' className='' state={{ originRoute: pathname }}>
+     <Link to='accounting' className='' state={{ originRoute: pathname }} viewTransition>
        <div className='iconContainer edit  '>
        {/* <MenuIcon /> */}
         <MdOutlineEditNote

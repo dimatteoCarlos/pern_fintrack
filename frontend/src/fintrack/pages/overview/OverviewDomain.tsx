@@ -171,7 +171,7 @@ function DomainView<D extends OverviewDomainName>({
   <section className='overviewDomain'>
    {/* First on the screen, so the level the reader is on is named before the
        figures. */}
-   <Link className='overviewDomain__back' to='/fintrack/overview'>
+   <Link className='overviewDomain__back' to='/fintrack/overview' viewTransition>
     <span className='overviewDomain__backArrow' aria-hidden='true'>
      ←
     </span>
@@ -262,7 +262,7 @@ function OverviewDomain() {
  if (!isDomain(domain)) {
   return (
    <section className='overviewDomain'>
-    <Link className='overviewDomain__back' to='/fintrack/overview'>
+    <Link className='overviewDomain__back' to='/fintrack/overview' viewTransition>
      <span className='overviewDomain__backArrow' aria-hidden='true'>
       ←
      </span>

@@ -522,6 +522,9 @@
  --motion-normal: 200ms ease;
  --motion-slow: 300ms ease;
  --motion-press: 100ms ease-out;
+ /* animation-duration only (that property takes no easing function) for the
+    ::view-transition-old/new(root) pair index.css drives on route changes. */
+ --motion-route-transition-duration: 400ms;
  /* Hover lift: how far a pressable rises under the cursor, for translateY. */
  --motion-lift-sm: -1px;
  --motion-lift-md: -2px;

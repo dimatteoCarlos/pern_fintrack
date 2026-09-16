@@ -20,7 +20,7 @@ function NavbarButton({ section, to, icon }: NavbarButtonPropType) {
  const isBtnActive = Boolean(useMatch(`/fintrack/${section}/*`));
 
  return (
-  <NavLink to={to} className={`mainNavbarButton ${isBtnActive ? 'active' : ''}`}>
+  <NavLink to={to} viewTransition className={`mainNavbarButton ${isBtnActive ? 'active' : ''}`}>
    <Tooltip tipText={capitalize(section)} isActive={isBtnActive}>
     <div className='iconContainer flx-col-center'>{icon}</div>
    </Tooltip>

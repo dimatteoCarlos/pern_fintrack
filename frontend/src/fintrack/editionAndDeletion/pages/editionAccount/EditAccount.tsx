@@ -360,7 +360,7 @@ export function EditAccount(): JSX.Element {
       notifyAccountChanged();
       setUserMessage({ message: 'Account updated successfully!', status: 200 });
       setTimeout(() => {
-        navigateTo(previousRoute, { state: returnState });
+        navigateTo(previousRoute, { state: returnState, viewTransition: true });
       }, 500);
     }
   };

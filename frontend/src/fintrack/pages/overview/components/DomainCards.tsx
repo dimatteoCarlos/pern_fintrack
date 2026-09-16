@@ -608,6 +608,7 @@ const DomainCard = ({
    <Link
     className='domainCard__drill'
     to={{ pathname: `/fintrack/overview/${domain}`, search }}
+    viewTransition
    >
     View {label.toLowerCase()} movements
     <span className='domainCard__drillArrow' aria-hidden='true'>

@@ -181,7 +181,7 @@ const UserProfileMenu = () => {
       e.preventDefault();
       e.stopPropagation();
       setModalState('none');
-      navigate(CLOSED_ACCOUNTS_ROUTE);
+      navigate(CLOSED_ACCOUNTS_ROUTE, { viewTransition: true });
     },
     [navigate],
   );

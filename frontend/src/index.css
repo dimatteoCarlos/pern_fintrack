@@ -59,10 +59,22 @@ body,
   background-color: var(--color-surface-app);
 }
 
+/* Route cross-fade driven by React Router's View Transitions integration
+   (NavLink/navigate with `viewTransition`). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-route-transition-duration);
+}
+
 /* The reader asked the system for no animation, and a glide is one. */
 @media (prefers-reduced-motion: reduce) {
   :root {
     scroll-behavior: auto;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
   }
 }
 

@@ -300,7 +300,7 @@ function EditPocket() {
       usePocketDetailStore.getState().setDetail(detail);
       usePocketBoardStore.getState().invalidate();
 
-      navigateTo(returnRoute);
+      navigateTo(returnRoute, { viewTransition: true });
     } catch (error) {
       // One path for every failure. The client throws on a refused request as
       // well as on a network fault, so a 400 from the strict schema and a lost

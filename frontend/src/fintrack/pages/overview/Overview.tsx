@@ -596,7 +596,7 @@ function Overview() {
             <p className='boardState__text'>
               No movements recorded in {monthLabel(referenceMonth)}.
             </p>
-            <Link className='boardState__action' to='/fintrack/tracker/expense'>
+            <Link className='boardState__action' to='/fintrack/tracker/expense' viewTransition>
               Record a movement
             </Link>
           </div>

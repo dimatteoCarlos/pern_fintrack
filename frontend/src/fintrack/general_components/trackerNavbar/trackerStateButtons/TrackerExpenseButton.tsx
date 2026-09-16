@@ -12,6 +12,7 @@ function TrackerExpenseButton() {
             in an aria-label: the accessible name is then the visible text. */}
         <NavLink
           to='/fintrack/tracker/expense'
+          viewTransition
           aria-labelledby='trackerTabLabel-expense'
           className={`flx-col-center trackerStateIconButton  ${(isActive: {
             isActive: boolean;
