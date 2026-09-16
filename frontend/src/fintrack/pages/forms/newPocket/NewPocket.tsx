@@ -6,7 +6,8 @@ import '../styles/forms-styles.css';
 
 // 🛠️ CUSTOM HOOKS & UTILITIES
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
-import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
+import { useRatePreview } from '../../../hooks/useRatePreview.ts';
+import { readAmountInCurrency } from '../../../helpers/amountInCurrency.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
@@ -145,24 +146,17 @@ function NewPocket() {
     setPocketData((data) => ({ ...data, currency }));
   }
 
-  // States what the backend will store as the target, which is the figure the
-  // pocket detail compares against the balance. Reads the rates already held in
-  // the store, so it issues no request.
-  const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
+  // formData keeps what was typed; the currency only decides how it is read,
+  // so leaving the yen brings the typed decimals back.
+  const { amountToSave, displayedAmount } = readAmountInCurrency(
     formData[formDataNumber.keyName],
     selectedCurrency,
   );
 
-  const isAmountError = !!validationMessages[formDataNumber.keyName]
-    ?.trim()
-    .startsWith('*');
-
-  const showRatePreview = !!targetCurrencyPreview && !isAmountError;
-
-  const rateTooltipText =
-    rate && direction
-      ? `${direction}\nrate: ${formattedRate}`
-      : '';
+  // States what the backend will store as the target, which is the figure the
+  // pocket detail compares against the balance.
+  const ratePreview = useRatePreview(amountToSave, selectedCurrency);
+  const showRatePreview = ratePreview.status === 'resolved';
 
   // 📤 FORM SUBMISSION LOGIC (onSubmitForm)
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
@@ -177,10 +171,13 @@ function NewPocket() {
     }
 
     // ✅ DATA FORM VALIDATION
+    // The amount is read under the currency selected now, not the one it was typed under.
+    const amount = amountToSave ?? '';
     const newValidationMessages = {
-      ...validationData(pocketData, {
-        nonZeroFields: ['amount'],
-      }),
+      ...validationData(
+        { ...pocketData, amount },
+        { nonZeroFields: ['amount'] },
+      ),
     };
     // console.log('mensajes de validacion:', { newValidationMessages });
 
@@ -200,7 +197,7 @@ function NewPocket() {
       const payload: CreatePocketBody = {
         name: pocketData.name.toLowerCase().trim(),
         currency: pocketData.currency ?? defaultCurrency,
-        targetAmount: Number(pocketData.amount),
+        targetAmount: Number(amount),
         // The day the user pointed at, on the user's own calendar. Converted
         // exactly once, here, and never sent as an instant.
         desiredDate: toCalendarDay(pocketData.desiredDate),
@@ -388,12 +385,12 @@ function NewPocket() {
 
               {showRatePreview && (
                 <RateTooltip
-                  tipText={rateTooltipText}
+                  tipText={ratePreview.tooltipText}
                   surface='dark'
                   placement='anchor-left'
                 >
                   <span className='form__fx-preview'>
-                    {targetCurrencyPreview}
+                    {ratePreview.previewText}
                   </span>
                 </RateTooltip>
               )}
@@ -406,7 +403,7 @@ function NewPocket() {
                 id={formDataNumber.keyName}
                 name={formDataNumber.keyName}
                 placeholder={formDataNumber.keyName}
-                value={formData[formDataNumber.keyName]}
+                value={displayedAmount}
                 onChange={inputHandler}
                 maxLength={15}
                 autoComplete='off'
