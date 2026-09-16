@@ -23,7 +23,8 @@ import '../styles/forms-styles.css';
 
 // 🛠️ CUSTOM HOOKS & UTILITIES
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
-import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
+import { useRatePreview } from '../../../hooks/useRatePreview.ts';
+import { readAmountInCurrency } from '../../../helpers/amountInCurrency.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
@@ -209,23 +210,16 @@ function EditPocket() {
     setPocketData((data) => (data ? { ...data, currency } : data));
   }
 
-  // States what the backend will store as the target. Reads the rates already
-  // held in the store, so it issues no request.
-  const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
+  // formData keeps what was typed; the currency only decides how it is read,
+  // so leaving the yen brings the typed decimals back.
+  const { amountToSave, displayedAmount } = readAmountInCurrency(
     formData[formDataNumber.keyName],
     selectedCurrency,
   );
 
-  const isAmountError = !!validationMessages[formDataNumber.keyName]
-    ?.trim()
-    .startsWith('*');
-
-  const showRatePreview = !!targetCurrencyPreview && !isAmountError;
-
-  const rateTooltipText =
-    rate && direction
-      ? `${direction}\nrate: ${formattedRate}`
-      : '';
+  // States what the backend will store as the target.
+  const ratePreview = useRatePreview(amountToSave, selectedCurrency);
+  const showRatePreview = ratePreview.status === 'resolved';
 
   // 📤 FORM SUBMISSION LOGIC
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
@@ -238,10 +232,12 @@ function EditPocket() {
 
     if (pocket === null || pocketData === null) return;
 
+    // The amount is read under the currency selected now, not the one it was typed under.
     const newValidationMessages = {
-      ...validationData(pocketData, {
-        nonZeroFields: ['amount'],
-      }),
+      ...validationData(
+        { ...pocketData, amount: amountToSave ?? '' },
+        { nonZeroFields: ['amount'] },
+      ),
     };
 
     if (Object.values(newValidationMessages).length > 0) {
@@ -266,7 +262,7 @@ function EditPocket() {
       payload.note = note === '' ? null : note;
     }
 
-    const targetAmount = Number(formData[formDataNumber.keyName]);
+    const targetAmount = Number(amountToSave);
     if (targetAmount !== pocket.target) {
       payload.targetAmount = targetAmount;
       // Required whenever the amount is sent. A figure without its unit is not
@@ -477,12 +473,12 @@ function EditPocket() {
 
               {showRatePreview && (
                 <RateTooltip
-                  tipText={rateTooltipText}
+                  tipText={ratePreview.tooltipText}
                   surface='dark'
                   placement='anchor-left'
                 >
                   <span className='form__fx-preview'>
-                    {targetCurrencyPreview}
+                    {ratePreview.previewText}
                   </span>
                 </RateTooltip>
               )}
@@ -495,7 +491,7 @@ function EditPocket() {
                 id={formDataNumber.keyName}
                 name={formDataNumber.keyName}
                 placeholder={formDataNumber.keyName}
-                value={formData[formDataNumber.keyName]}
+                value={displayedAmount}
                 onChange={inputHandler}
                 maxLength={15}
                 autoComplete='off'
