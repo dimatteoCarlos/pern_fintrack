@@ -110,6 +110,11 @@ app.use(
     },
     credentials: true, // Allow to send cookies
     allowedHeaders: ['Content-Type', 'Authorization'],
+    // Frontend and backend are separate origins (two Vercel projects), so
+    // downloadFile.ts's filenameFrom() cannot read Content-Disposition from
+    // the response unless it is explicitly exposed - without this, every
+    // cross-origin download falls back to the caller's hardcoded name.
+    exposedHeaders: ['Content-Disposition'],
   }),
 );
 
