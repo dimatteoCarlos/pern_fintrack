@@ -187,6 +187,7 @@ const CategoryFilter = ({
      className='categoryFilter__link'
      to={categoryLink(selected, month).to}
      aria-disabled={isBusy}
+     viewTransition
     >
      {`Open ${selected} budget detail`}
      <svg

@@ -13,6 +13,7 @@ function Pocket() {
  const createNewPocket = (originRoute: string) => {
   navigateTo(originRoute + '/new_pocket', {
    state: { previousRoute: originRoute },
+   viewTransition: true,
   });
  };
  //--------

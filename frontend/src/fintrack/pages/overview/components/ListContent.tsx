@@ -89,6 +89,7 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
        className='listContent__item'
        to={item.link.to}
        state={item.link.state}
+       viewTransition
       >
        {cells}
       </Link>

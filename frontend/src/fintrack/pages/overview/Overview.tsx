@@ -277,6 +277,7 @@ function Overview() {
   function createNewAccount(originRoute: string) {
     navigateTo(originRoute + '/new_account', {
       state: { previousRoute: originRoute },
+      viewTransition: true,
     });
   }
 

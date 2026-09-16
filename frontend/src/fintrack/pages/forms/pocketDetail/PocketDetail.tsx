@@ -633,6 +633,7 @@ function PocketDetail() {
      setIsMenuOpen(false);
      navigate(`/fintrack/pocket/pockets/${pocket.pocketId}/edit`, {
       state: { previousRoute: location.pathname },
+      viewTransition: true,
      });
     }}
     onDeleteAccount={() => {

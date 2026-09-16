@@ -145,7 +145,7 @@ function InvestmentAccountBalance({
        >
         Investment Accounts
        </CardTitle>
-        <Link className='flx-col-center icon ' to={'edit'}></Link>
+        <Link className='flx-col-center icon ' to={'edit'} viewTransition></Link>
       </div>
 
       <article className='goals__investment'>
@@ -184,6 +184,7 @@ function InvestmentAccountBalance({
                 state={{ previousRoute, detailedData: account }}
                 className='tile__container tile__container--account flx-col-sb'
                 key={`account-${account_id}`}
+                viewTransition
               >
                 <div className='tile__container tile__container--investment flx-row-sb'>
                   <div className='tile__container__col tile__container__col--investment col--investment'>

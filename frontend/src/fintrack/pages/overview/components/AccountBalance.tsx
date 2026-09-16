@@ -142,7 +142,7 @@ function AccountBalance({
         >
           Account Balance
         </CardTitle>
-        <Link className='flx-col-center icon ' to={'edit'}></Link>
+        <Link className='flx-col-center icon ' to={'edit'} viewTransition></Link>
       </div>
 
       <article className='goals__account'>
@@ -162,6 +162,7 @@ function AccountBalance({
                 state={{ previousRoute, detailedData: account }}
                 className='tile__container tile__container--account flx-col-sb'
                 key={`account-${account_id}`}
+                viewTransition
               >
                 <div className='tile__subtitle tile__subtitle--account'>
                   {account_name} ({account_type_name})

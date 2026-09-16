@@ -417,6 +417,7 @@ const AccountingDashboard = () => {
 
     navigateTo(detailRoute, {
       state: { previousRoute: returnRoute, detailedData: account },
+      viewTransition: true,
     });
   };
   //---
@@ -439,6 +440,7 @@ const AccountingDashboard = () => {
     // 🧭 NAVIGATE TO CATEGORY DETAIL
     navigateTo(categoryDetailRoute, {
       state: { detailedData: null, previousRoute: returnRoute },
+      viewTransition: true,
     });
   };
   //------------------------------------
@@ -467,6 +469,7 @@ const AccountingDashboard = () => {
         previousRoute: buildReturnRoute(account.account_id),
         originRoute: originRoute,
       },
+      viewTransition: true,
     });
   };
   //----------------------------------

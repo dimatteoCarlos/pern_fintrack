@@ -14,6 +14,7 @@ function Budget() {
   const createNewCategory = (originRoute: string) => {
     navigateTo(originRoute + '/new_category', {
       state: { previousRoute: originRoute },
+      viewTransition: true,
     });
   };
 

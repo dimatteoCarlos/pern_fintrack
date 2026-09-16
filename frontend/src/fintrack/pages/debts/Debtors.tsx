@@ -19,6 +19,7 @@ function Debtors() {
   const createNewProfile = (originRoute: string) => {
     navigateTo(NEW_DEBTOR_ROUTE, {
       state: { previousRoute: originRoute },
+      viewTransition: true,
     });
   };
 

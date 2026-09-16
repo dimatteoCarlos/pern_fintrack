@@ -123,6 +123,7 @@ function LevelThreeRow({
    className={`levelThreeRow levelThreeRow--linked${variant}`}
    to={link.to}
    state={link.state}
+   viewTransition
   >
    {cells}
    <svg
