@@ -1,7 +1,7 @@
 //useInputNumberHandler.ts
 import React, { useCallback } from 'react';
 import { checkNumberFormatValue } from '../validations/utils/custom_validation';
-import { currencyMinorUnit } from '../helpers/functions';
+import { refusesDecimalSeparator } from '../helpers/amountInCurrency';
 
 //UPDATE NUMERIC STATE AND VALIDATION MESSAGES
 function useInputNumberHandler<T>(
@@ -23,13 +23,8 @@ function useInputNumberHandler<T>(
 ) {
   const inputNumberHandlerFn = useCallback(
     (name: string, value: string) => {
-      // A currency with no decimals (the yen) refuses the separator keystroke
-      // outright; stripping it instead would merge the digits on either side.
-      if (
-        currency !== undefined &&
-        currencyMinorUnit(currency) === 0 &&
-        /[.,]/.test(value)
-      ) {
+      // Stripping the separator instead would merge the digits on either side.
+      if (currency !== undefined && refusesDecimalSeparator(value, currency)) {
         return;
       }
 

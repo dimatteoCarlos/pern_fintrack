@@ -1,5 +1,5 @@
 //frontend/src/pages/forms/newCategory/NewCategory.tsx
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
@@ -10,10 +10,7 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx';
 
-import {
-  checkNumberFormatValue,
-  validationData,
-} from '../../../validations/utils/custom_validation.ts';
+import { validationData } from '../../../validations/utils/custom_validation.ts';
 
 import '../styles/forms-styles.css';
 import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
@@ -21,8 +18,8 @@ import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
-import { useServerCurrencyConversion } from '../../../hooks/useServerCurrencyConversion.ts';
-import { useCurrencyStore } from '../../../stores/useCurrencyStore.ts';
+import { useRatePreview } from '../../../hooks/useRatePreview.ts';
+import { readAmountInCurrency } from '../../../helpers/amountInCurrency.ts';
 import { notifyAccountChanged } from '../../../stores/transactionEvents.ts';
 
 import { url_create_category_budget_account } from '../../../../urlConfig.ts';
@@ -30,17 +27,12 @@ import { url_create_category_budget_account } from '../../../../urlConfig.ts';
 import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
 
 import {
-  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   TILE_LABELS,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
 
-import {
-  currencyMinorUnit,
-  getCurrentBudgetMonthLabel,
-  numberFormatCurrency,
-} from '../../../helpers/functions.ts';
+import { getCurrentBudgetMonthLabel } from '../../../helpers/functions.ts';
 
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
@@ -157,78 +149,14 @@ function NewCategory() {
 
   // formData keeps what was typed; the currency only decides how it is read,
   // so leaving the yen brings the typed decimals back.
-  const typedAmount = formData[formDataNumber.keyName];
-  const isZeroDecimalCurrency = currencyMinorUnit(selectedCurrency) === 0;
-
-  const amountToSave = useMemo(
-    () => checkNumberFormatValue(typedAmount, selectedCurrency).valueToSave,
-    [typedAmount, selectedCurrency],
-  );
-
-  const displayedAmount =
-    isZeroDecimalCurrency && /[.,]/.test(typedAmount) && amountToSave !== undefined
-      ? String(amountToSave)
-      : typedAmount;
-
-  const hasAmount = amountToSave !== undefined && amountToSave > 0;
-
-  const accountingCurrency = useCurrencyStore((state) => state.accountingCurrency);
-
-  // One unit stands in for a missing amount, so the rate and its date are
-  // quoted before anything is typed.
-  const conversion = useServerCurrencyConversion(
-    hasAmount ? amountToSave : 1,
+  const { amountToSave, displayedAmount } = readAmountInCurrency(
+    formData[formDataNumber.keyName],
     selectedCurrency,
   );
 
-  // Kept while a new request is in flight, so the chip does not blink per keystroke.
-  const lastResolvedConversion = useRef(conversion);
-  if (conversion.status !== 'querying') lastResolvedConversion.current = conversion;
-  const shownConversion =
-    conversion.status === 'querying' ? lastResolvedConversion.current : conversion;
-
-  const showRatePreview = shownConversion.status === 'resolved';
-
-  const accountingLocale = CURRENCY_OPTIONS[accountingCurrency];
-
-  const convertedAmountText =
-    hasAmount && shownConversion.convertedAmount !== null
-      ? numberFormatCurrency(
-          shownConversion.convertedAmount,
-          currencyMinorUnit(accountingCurrency),
-          undefined,
-          accountingLocale,
-        )
-      : '—';
-
-  const ratePreviewText = `≈ ${convertedAmountText} ${accountingCurrency}`;
-
-  const quotedRate = shownConversion.quote
-    ? numberFormatCurrency(
-        shownConversion.quote.rate,
-        Math.abs(shownConversion.quote.rate) < 10 ? 4 : 2,
-        undefined,
-        accountingLocale,
-      )
-    : '';
-
-  const rateDate = shownConversion.fetchedAt
-    ? new Date(shownConversion.fetchedAt).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-    : '';
-
-  const rateTooltipText = [
-    shownConversion.quote
-      ? `${accountingCurrency}→${shownConversion.quote.currency}`
-      : '',
-    quotedRate ? `rate: ${quotedRate}` : '',
-    rateDate ? `as of ${rateDate}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
+  // Undated: the category opens today and its budget takes today's rate.
+  const ratePreview = useRatePreview(amountToSave, selectedCurrency);
+  const showRatePreview = ratePreview.status === 'resolved';
 
   // Helper message for duplicate account name
   const [duplicateHelperMessage, setDuplicateHelperMessage] = useState<string>('');
@@ -630,12 +558,12 @@ function NewCategory() {
 
                 {showRatePreview && (
                   <RateTooltip
-                    tipText={rateTooltipText}
+                    tipText={ratePreview.tooltipText}
                     surface='dark'
                     placement='anchor-left-below-badge'
                   >
                     <span className='form__fx-preview'>
-                      {ratePreviewText}
+                      {ratePreview.previewText}
                     </span>
                   </RateTooltip>
                 )}
