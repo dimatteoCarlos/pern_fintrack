@@ -40,8 +40,11 @@ import {
 } from '../../../../helpers/functions.ts';
 import CurrencyBadge from '../../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import RateTooltip from '../../../../general_components/rateTooltip/RateTooltip.tsx';
-import { useServerCurrencyConversion } from '../../../../hooks/useServerCurrencyConversion.ts';
-import { useCurrencyStore } from '../../../../stores/useCurrencyStore.ts';
+import { useRatePreview } from '../../../../hooks/useRatePreview.ts';
+import {
+ readAmountInCurrency,
+ refusesDecimalSeparator,
+} from '../../../../helpers/amountInCurrency.ts';
 import PocketSourcePicker, {
  PocketSourceOption,
 } from './PocketSourcePicker.tsx';
@@ -286,8 +289,14 @@ function PocketAllocationModal({
   (option) => option.accountId === selectedAccountId,
  );
 
- const amount = Number(amountText);
- const isAmountUsable = amountText.trim() !== '' && amount > 0;
+ // amountText keeps what was typed; the currency only decides how it is read,
+ // so leaving the yen brings the typed decimals back.
+ const { amountToSave, displayedAmount } = readAmountInCurrency(
+  amountText,
+  typedCurrency,
+ );
+ const amount = amountToSave ?? 0;
+ const isAmountUsable = amount > 0;
 
  // The ceiling is shown and never enforced here. It is stated in the pocket's
  // accounting currency while the figure may be typed in another, so comparing
@@ -304,75 +313,7 @@ function PocketAllocationModal({
  // cached rate: what is shown here is what the row will carry. It still does
  // not arm the ceiling above, which stays unenforced for the reason stated
  // there — the server checks the real bound inside its row lock.
- const conversion = useServerCurrencyConversion(
-  amountText,
-  typedCurrency,
-  chosenDay,
- );
-
- const accountingCurrency = useCurrencyStore((state) => {
-  return state.accountingCurrency;
- });
-
- const convertedText =
-  conversion.convertedAmount !== null
-   ? `≈ ${numberFormatCurrency(conversion.convertedAmount, 2, accountingCurrency)}`
-   : null;
-
- // The QUOTE the provider published, and not the multiplier read off the two
- // figures the server sent. Dividing them states the conversion backwards --
- // 1 COP = 0,0003 USD -- a direction no rate table publishes and a number whose
- // information sits past the fourth decimal. The quote is the accounting rate,
- // one accounting unit expressed in the typed currency, and it cannot be
- // derived here: a cross conversion composes two of them.
- //
- // Four decimals below ten, because a currency worth less than an accounting
- // unit carries its information after the second place.
- //
- // Grouped the way every other amount on this screen is: comma for thousands,
- // point for decimals. Two conventions in one tooltip would have the rate and
- // the figure it produced disagreeing about what a separator means.
- const quoteLine = conversion.quote
-  ? `1 ${accountingCurrency.toUpperCase()} = ${numberFormatCurrency(
-     conversion.quote.rate,
-     Math.abs(conversion.quote.rate) < 10 ? 4 : 2,
-    )} ${conversion.quote.currency.toUpperCase()}`
-  : '';
-
- // Why THIS rate values the chosen day, and only when there is something to
- // explain. A rate carries a validity rather than belonging to one day: the TRM
- // published on a Saturday is in force that Saturday, the Sunday and the Monday,
- // so a decision dated Monday the 24th is valued by the 22nd.
- //
- // "for <day>" said that badly — it read as "the rate is of the 22nd", which is
- // the question the owner was asking, not the answer. "in force since" states
- // the validity that reaches their day. Nothing prints when the two agree: the
- // day is already on the trigger beside the field.
- //
- // It replaces the reading time this line used to state. When the store
- // downloaded a figure is an internal fact, and a whole month pulled in one
- // warm-up call carries the same download stamp on every day of it — so the
- // owner read a date that had nothing to do with the rate in front of them.
- const valuedDayLine =
-  conversion.effectiveDate && conversion.effectiveDate !== chosenDay
-   ? `in force since ${formatCalendarDate(conversion.effectiveDate)}`
-   : '';
-
- // The rate and the day it belongs to. The provider's identifier is kept
- // commented rather than deleted: the provenance is still owed to the owner,
- // and where it belongs is the open decision — a string like
- // banrep-trm@2026-08-29 names a source the reader has no way to check from
- // here, which is what put it in question.
- const rateTooltipText =
-  conversion.convertedAmount !== null && amount > 0
-   ? [
-      quoteLine,
-      // conversion.source ? `source: ${conversion.source}` : '',
-      valuedDayLine,
-     ]
-      .filter(Boolean)
-      .join('\n')
-   : '';
+ const conversion = useRatePreview(amountToSave, typedCurrency, chosenDay);
 
  async function onSubmit() {
   if (selectedAccountId === null || !isAmountUsable) return;
@@ -547,18 +488,11 @@ function PocketAllocationModal({
           which is the one case where the owner most needs to be told. The
           failure is not here, because it is a sentence with a button after it
           and would not fit a label's line. */}
-      {conversion.status === 'querying' && (
-       <span
-        className='pocketAllocation__fxPreview pocketAllocation__fxPreview--querying'
-        aria-live='polite'
-       >
-        Converting to {accountingCurrency.toUpperCase()}…
-       </span>
-      )}
-
-      {conversion.status === 'resolved' && convertedText && (
-       <RateTooltip tipText={rateTooltipText} surface='light'>
-        <span className='pocketAllocation__fxPreview'>{convertedText}</span>
+      {conversion.status === 'resolved' && (
+       <RateTooltip tipText={conversion.tooltipText} surface='light'>
+        <span className='pocketAllocation__fxPreview'>
+         {conversion.previewText}
+        </span>
        </RateTooltip>
       )}
      </div>
@@ -577,8 +511,12 @@ function PocketAllocationModal({
        inputMode='decimal'
        autoComplete='off'
        maxLength={15}
-       value={amountText}
-       onChange={(event) => setAmountText(event.target.value)}
+       value={displayedAmount}
+       onChange={(event) => {
+        const next = event.target.value;
+        if (refusesDecimalSeparator(next, typedCurrency)) return;
+        setAmountText(next);
+       }}
        disabled={isSubmitting}
        ref={amountRef}
       />
