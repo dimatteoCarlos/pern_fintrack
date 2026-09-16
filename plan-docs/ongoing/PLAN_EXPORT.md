@@ -364,7 +364,7 @@ handler that receives ids (`overviewController.js:12-15`).
 | 9 | FX resolution | not applicable in V1 |
 | 10 | Export validation | row `LIMIT + 1` present -> 422 "narrow the period" |
 | 11 | Writer | `writeCsv` / `writeXlsx` |
-| 12 | File | `Content-Type`, `Content-Disposition` with `fintrack-movements-YYYY-MM.csv\|xlsx`; a multi-month range uses `fintrack-movements-YYYY-MM_YYYY-MM.csv\|xlsx` |
+| 12 | File | `Content-Type`, `Content-Disposition` with `fintrack-movements-{username}-YYYY-MM.csv\|xlsx`; a multi-month range uses `fintrack-movements-{username}-YYYY-MM_YYYY-MM.csv\|xlsx` |
 | 13 | Result | buffer in the response |
 | 14 | Audit | one log line: user, dataset, format, filters, rows, `generatedAt` |
 
@@ -646,10 +646,13 @@ the report uses this classification, which reproduces the net-worth formula:
   arrives as a `Blob`: read it with `await blob.text()`, `JSON.parse` it, and
   send its `message` to `toast.error()`; the JSON is never downloaded as a
   file.
-- **File names.** V1 `fintrack-movements-YYYY-MM.csv|xlsx`, a range
-  `fintrack-movements-YYYY-MM_YYYY-MM.csv|xlsx`, no period bounds
-  `fintrack-movements-all-time.csv|xlsx`; V2
-  `fintrack-statement-YYYY-MM.pdf|xlsx`. The server fixes all of them.
+- **File names.** V1 `fintrack-movements-{username}-YYYY-MM.csv|xlsx`, a range
+  `fintrack-movements-{username}-YYYY-MM_YYYY-MM.csv|xlsx`, no period bounds
+  `fintrack-movements-{username}-all-time.csv|xlsx`; V2
+  `fintrack-statement-{username}-YYYY-MM.pdf|xlsx`. `{username}` is
+  `users.username`, sanitized to `[a-z0-9-]` (`exportFileName.js`,
+  `e87a9ba1`) so two accounts don't overwrite each other's download. The
+  server fixes all of them.
 - **Filters during download.** Search, type and period stay active; changing
   them does not cancel an in-flight download, which already carries its own
   filters in the request. Only the Export button is disabled until it
@@ -684,9 +687,11 @@ the report uses this classification, which reproduces the net-worth formula:
 | 2 | `feat(export): add csv and xlsx writers` | `export_api/core/writers/` + tests in `backend/test/export/`; adds `exceljs` | **landed**, `815a9a18`, on `main` and fast-forwarded to `feat/vercel-serverless` |
 | 3 | `feat(export): serve transactions export` | repository, service, controller, route, validator, ownership control, cap, rate limit, log; moved `MOVEMENT_TYPE_NAMES` to `activityFilters.js`, re-exported from `movementTypes.js` | **landed**, `26983f47`, on `main` and fast-forwarded to `feat/vercel-serverless` |
 | 4 | `feat(overview): download movements from activity` | `downloadFile.ts`, `exportApi.ts`, `url_export_movements` + the `RecentActivity` export control (built by frontend-designer, no mockup) | **landed**, `1cda0356`, on `main` and fast-forwarded to `feat/vercel-serverless` |
-| 5a | `feat(overview): add year-to-date figures` | V2: `makeYearToDateFlow.js` and `makeYearStartChange.js` + tests; export `savingsRateOf`; no change to Overview's response | pending |
-| 5 | `feat(export): serve period statement report` | V2: `pdfkit`, `writePdf.js`, the four-sheet workbook from the Analytics Domain with Month and Year to date columns, `statement` route | pending |
-| 6 | `feat(overview): download period statement` | the button beside `MonthPicker` | pending |
+| 5a | `feat(overview): add year-to-date figures` | V2: `makeYearToDateFlow.js` and `makeYearStartChange.js` + tests; export `savingsRateOf`; no change to Overview's response | **landed**, `a7014ec9` |
+| 5 | `feat(export): serve period statement report` | V2: `pdfkit`, `writePdf.js`, the four-sheet workbook from the Analytics Domain with Month and Year to date columns, `statement` route | **landed**, split into `0e2c7eae` (dataset assembly) and `d8c332db` (PDF render) |
+| 6 | `feat(overview): download period statement` | the button beside `MonthPicker` | **landed** — `PeriodStatementButton.tsx`, mounted at `OverviewLayout.tsx:152` |
+
+**Corrected 2026-09-15, this file was stale.** All nine commits of this sequence are on `main` and merged to `feat/vercel-serverless` (per `git log`, head `8d323ce1`). V1 and V2 of this plan are both complete. What remains is only V3 (the JSON backup dataset, §4/§9) and the movements-export mockup noted in §11 as "not yet built" — everything else in §15's verification list is exercised by shipped code, not a plan.
 
 ## 14. Closed decisions
 
