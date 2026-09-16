@@ -700,11 +700,15 @@ function pageFooter(doc, { generatedLabel, timeZone, pageNumber, pageCount }) {
  doc.page.margins.bottom = originalBottom;
 }
 
-const PAGE_COUNT = 7;
-
+// Pages 5-7 are each one section's own data (debts by counterparty, pockets)
+// and are skipped outright when that data is empty, so the page count is not
+// fixed at 7 - it is only known once rendering finishes. bufferPages keeps
+// every page addressable afterwards so the footer can be drawn once per page
+// with the real total, instead of a number decided before the last page
+// existed.
 export async function writeStatementPdf(data, { generatedAt, timeZone }) {
  return new Promise((resolve, reject) => {
-  const doc = new PDFDocument({ size: 'A4', margin: M, bufferPages: false });
+  const doc = new PDFDocument({ size: 'A4', margin: M, bufferPages: true });
   const chunks = [];
   doc.on('data', (chunk) => chunks.push(chunk));
   doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -744,13 +748,12 @@ function renderDocument(doc, data, { generatedAt, timeZone }) {
  const CW = doc.page.width - 2 * M;
  const metric = (name) => rowByMetric(executiveSummaryRows, name);
 
- let pageNumber = 0;
+ // Footers are drawn in a second pass, once bufferedPageRange() knows how
+ // many pages actually got created (renderDocument below), so this only
+ // draws the header and never touches pageNumber/pageCount.
  const startPage = (section, isFirst = false) => {
   if (!isFirst) doc.addPage();
-  pageNumber += 1;
-  const bodyTop = pageHeader(doc, { periodLabel, section, isFirst, generatedLabel, timeZone, yearToDateRangeLabel });
-  pageFooter(doc, { generatedLabel, timeZone, pageNumber, pageCount: PAGE_COUNT });
-  return bodyTop;
+  return pageHeader(doc, { periodLabel, section, isFirst, generatedLabel, timeZone, yearToDateRangeLabel });
  };
 
  // =====================================================================
@@ -919,9 +922,13 @@ function renderDocument(doc, data, { generatedAt, timeZone }) {
  y = drawSectionHeading(doc, M, y + 8, CW, '4. Expenses by category', `${periodLabel}, USD`);
  const expenseTotal = expenseRow.month ?? categories.reduce((sum, c) => sum + (c.actualSpent ?? 0), 0);
  const rankedCategories = categories.slice(0, 12);
- y = drawRankedCategoryChart(doc, { x: M, y, width: CW, rows: rankedCategories, total: expenseTotal });
- if (categories.length > rankedCategories.length) {
-  drawNote(doc, M, y + 2, CW, `${categories.length - rankedCategories.length} more categories not shown.`);
+ if (categories.length === 0) {
+  y = drawNote(doc, M, y, CW, 'No categorized expense this month.');
+ } else {
+  y = drawRankedCategoryChart(doc, { x: M, y, width: CW, rows: rankedCategories, total: expenseTotal });
+  if (categories.length > rankedCategories.length) {
+   drawNote(doc, M, y + 2, CW, `${categories.length - rankedCategories.length} more categories not shown.`);
+  }
  }
 
  // =====================================================================
@@ -929,39 +936,43 @@ function renderDocument(doc, data, { generatedAt, timeZone }) {
  // =====================================================================
  y = startPage('Categories and balances');
  y = drawSectionHeading(doc, M, y, CW, '5. Category detail', 'The month against the year to date, USD');
- const detailCategories = categories.slice(0, 14);
- const ytdUnavailable = footnotes.mark('Year to date is not reported per category in this release.');
- y = drawTable(doc, {
-  x: M,
-  y,
-  width: CW,
-  columns: [
-   { label: 'Category', width: CW - 5 * 60 },
-   { label: periodLabel.split(' ')[0], width: 60, align: 'right' },
-   { label: 'Share', width: 60, align: 'right' },
-   { label: 'Cumulative', width: 60, align: 'right' },
-   { label: 'Year to date', width: 60, align: 'right' },
-   { label: 'Share', width: 60, align: 'right' },
-  ],
-  rows: [
-   ...detailCategories.map((c) => ({
-    cells: [
-     c.categoryName,
-     fmtNumber(c.actualSpent ?? 0),
-     fmtRate(expenseTotal ? (c.actualSpent ?? 0) / expenseTotal : 0),
-     fmtRate(c.cumulativePercentage ?? 0),
-     `— (${ytdUnavailable})`,
-     `— (${ytdUnavailable})`,
-    ],
-    mutedCols: [4, 5],
-   })),
-   {
-    cells: ['Total expenses', fmtNumber(expenseTotal), '100.0%', '100.0%', `— (${ytdUnavailable})`, `— (${ytdUnavailable})`],
-    mutedCols: [4, 5],
-    variant: 'total',
-   },
-  ],
- });
+ if (categories.length === 0) {
+  y = drawNote(doc, M, y, CW, 'No categorized expense this month.');
+ } else {
+  const detailCategories = categories.slice(0, 14);
+  const ytdUnavailable = footnotes.mark('Year to date is not reported per category in this release.');
+  y = drawTable(doc, {
+   x: M,
+   y,
+   width: CW,
+   columns: [
+    { label: 'Category', width: CW - 5 * 60 },
+    { label: periodLabel.split(' ')[0], width: 60, align: 'right' },
+    { label: 'Share', width: 60, align: 'right' },
+    { label: 'Cumulative', width: 60, align: 'right' },
+    { label: 'Year to date', width: 60, align: 'right' },
+    { label: 'Share', width: 60, align: 'right' },
+   ],
+   rows: [
+    ...detailCategories.map((c) => ({
+     cells: [
+      c.categoryName,
+      fmtNumber(c.actualSpent ?? 0),
+      fmtRate(expenseTotal ? (c.actualSpent ?? 0) / expenseTotal : 0),
+      fmtRate(c.cumulativePercentage ?? 0),
+      `— (${ytdUnavailable})`,
+      `— (${ytdUnavailable})`,
+     ],
+     mutedCols: [4, 5],
+    })),
+    {
+     cells: ['Total expenses', fmtNumber(expenseTotal), '100.0%', '100.0%', `— (${ytdUnavailable})`, `— (${ytdUnavailable})`],
+     mutedCols: [4, 5],
+     variant: 'total',
+    },
+   ],
+  });
+ }
 
  y = drawSectionHeading(doc, M, y + 8, CW, '6. Accounts and balances', 'Ledger balances, grouped by account type, USD');
  const GROUPS = [
@@ -1013,38 +1024,43 @@ function renderDocument(doc, data, { generatedAt, timeZone }) {
  y = drawParetoChart(doc, { x: M + donutW + 16, y: chartsTop, width: paretoW, height: 164, rows: categories });
  y = Math.max(y, chartsTop + 164) + 6;
 
- const noBudgetNote = footnotes.mark('Budget, remaining and used % are not reported because no budget is set for this category.');
- const budgetTotalSpent = categories.reduce((sum, c) => sum + (c.actualSpent ?? 0), 0);
- const budgetTotalBudget = categories.reduce((sum, c) => sum + (c.budgetAmount ?? 0), 0);
- const budgetTotalRemaining = categories.reduce((sum, c) => sum + (c.remainingBudget ?? 0), 0);
- y = drawTable(doc, {
-  x: M,
-  y,
-  width: CW,
-  columns: [
-   { label: 'Category', width: CW - 3 * 70 - 60 },
-   { label: 'Budget (USD)', width: 70, align: 'right' },
-   { label: 'Spent (USD)', width: 70, align: 'right' },
-   { label: 'Remaining (USD)', width: 70, align: 'right' },
-   { label: 'Used %', width: 60, align: 'right' },
-  ],
-  rows: [
-   ...categories.map((c) => ({
-    cells: [
-     c.categoryName,
-     c.budgetAmount === null || c.budgetAmount === undefined ? dashCell(footnotes, 'Budget, remaining and used % are not reported because no budget is set for this category.') : fmtNumber(c.budgetAmount),
-     fmtNumber(c.actualSpent ?? 0),
-     c.remainingBudget === null || c.remainingBudget === undefined ? `— (${noBudgetNote})` : fmtNumber(c.remainingBudget),
-     c.executionPercentage === null || c.executionPercentage === undefined ? `— (${noBudgetNote})` : fmtRate(c.executionPercentage),
-    ],
-    mutedCols: c.budgetAmount === null || c.budgetAmount === undefined ? [1, 3, 4] : [],
-   })),
-   {
-    cells: ['Total', fmtNumber(budgetTotalBudget), fmtNumber(budgetTotalSpent), fmtNumber(budgetTotalRemaining), fmtRate(budgetTotalBudget ? budgetTotalSpent / budgetTotalBudget : 0)],
-    variant: 'total',
-   },
-  ],
- });
+ // The Pareto chart above already prints "No categorized expense this
+ // month." when categories is empty; a second copy of the same line under
+ // an empty table would say it twice on one page.
+ if (categories.length > 0) {
+  const noBudgetNote = footnotes.mark('Budget, remaining and used % are not reported because no budget is set for this category.');
+  const budgetTotalSpent = categories.reduce((sum, c) => sum + (c.actualSpent ?? 0), 0);
+  const budgetTotalBudget = categories.reduce((sum, c) => sum + (c.budgetAmount ?? 0), 0);
+  const budgetTotalRemaining = categories.reduce((sum, c) => sum + (c.remainingBudget ?? 0), 0);
+  y = drawTable(doc, {
+   x: M,
+   y,
+   width: CW,
+   columns: [
+    { label: 'Category', width: CW - 3 * 70 - 60 },
+    { label: 'Budget (USD)', width: 70, align: 'right' },
+    { label: 'Spent (USD)', width: 70, align: 'right' },
+    { label: 'Remaining (USD)', width: 70, align: 'right' },
+    { label: 'Used %', width: 60, align: 'right' },
+   ],
+   rows: [
+    ...categories.map((c) => ({
+     cells: [
+      c.categoryName,
+      c.budgetAmount === null || c.budgetAmount === undefined ? dashCell(footnotes, 'Budget, remaining and used % are not reported because no budget is set for this category.') : fmtNumber(c.budgetAmount),
+      fmtNumber(c.actualSpent ?? 0),
+      c.remainingBudget === null || c.remainingBudget === undefined ? `— (${noBudgetNote})` : fmtNumber(c.remainingBudget),
+      c.executionPercentage === null || c.executionPercentage === undefined ? `— (${noBudgetNote})` : fmtRate(c.executionPercentage),
+     ],
+     mutedCols: c.budgetAmount === null || c.budgetAmount === undefined ? [1, 3, 4] : [],
+    })),
+    {
+     cells: ['Total', fmtNumber(budgetTotalBudget), fmtNumber(budgetTotalSpent), fmtNumber(budgetTotalRemaining), fmtRate(budgetTotalBudget ? budgetTotalSpent / budgetTotalBudget : 0)],
+     variant: 'total',
+    },
+   ],
+  });
+ }
 
  const splitColW = (CW - 20) / 2;
  const splitTop = y + 8;
@@ -1086,240 +1102,258 @@ function renderDocument(doc, data, { generatedAt, timeZone }) {
  // =====================================================================
  // Page 5 — debts by counterparty
  // =====================================================================
- y = startPage('Debts by counterparty');
- y = drawSectionHeading(doc, M, y, CW, '10. Debts by counterparty', `${closeLabel}, USD; ranked by balance, receivable then payable`);
  const byCounterparty = debtAnalysis?.byCounterparty ?? [];
- const receivableTotal = byCounterparty.filter((r) => r.direction === 'receivable').reduce((s, r) => s + r.balance, 0);
- const payableTotal = byCounterparty.filter((r) => r.direction === 'payable').reduce((s, r) => s + Math.abs(r.balance), 0);
- // Same account-keyed prior balance section 6 already uses for its own
- // per-account change column: a closed account has no prior close and reads
- // "opened this year", the same convention, covered by known limit 1
- // (mockup:2854/2859) rather than a counterparty-only footnote.
- y = drawTable(doc, {
-  x: M,
-  y,
-  width: CW,
-  columns: [
-   { label: 'Rank', width: 34, align: 'right' },
-   { label: 'Counterparty', width: CW - 34 - 90 - 90 - 80 - 90 },
-   { label: 'Balance (USD)', width: 90, align: 'right' },
-   { label: 'Change since Jan 1', width: 90, align: 'right' },
-   { label: 'Direction', width: 80 },
-   { label: 'Share', width: 90, align: 'right' },
-  ],
-  rows: byCounterparty.map((row) => {
-   const share =
-    row.direction === 'receivable'
-     ? `${fmtRate(receivableTotal ? row.balance / receivableTotal : 0)} of receivable`
-     : row.direction === 'payable'
-      ? `${fmtRate(payableTotal ? Math.abs(row.balance) / payableTotal : 0)} of payable`
-      : '—';
-   const prior = priorBalanceByAccountId.get(row.accountId);
-   const changeCell = prior === undefined ? 'opened this year' : fmtNumber(row.balance - prior, { signed: true });
-   return {
-    cells: [
-     String(row.rank),
-     row.accountName,
-     fmtNumber(row.balance),
-     changeCell,
-     row.direction === 'receivable' ? 'Receivable' : row.direction === 'payable' ? 'Payable' : 'Settled',
-     share,
-    ],
-    mutedCols: [3],
-   };
-  }),
- });
-
- const owesYou = byCounterparty.filter((r) => r.direction === 'receivable');
- const youOwe = byCounterparty.filter((r) => r.direction === 'payable');
- const splitTop2 = y + 8;
- const half = (CW - 20) / 2;
- doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink).text('Who owes you', M, splitTop2);
- let leftY2 = doc.y + 3;
- owesYou.forEach((row) => {
-  doc.font('Helvetica').fontSize(7).fillColor(PALETTE.success).text(`${row.accountName} · ${fmtNumber(row.balance)}`, M, leftY2, { width: half });
-  leftY2 = doc.y + 2;
- });
- doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink).text('Who you owe', M + half + 20, splitTop2);
- let rightY2 = doc.y + 3;
- youOwe.forEach((row) => {
-  doc.font('Helvetica').fontSize(7).fillColor(PALETTE.error).text(`${row.accountName} · ${fmtNumber(Math.abs(row.balance))}`, M + half + 20, rightY2, { width: half });
-  rightY2 = doc.y + 2;
- });
- y = Math.max(leftY2, rightY2) + 8;
-
- y = drawTable(doc, {
-  x: M,
-  y,
-  width: CW,
-  columns: [
-   { label: 'Figure', width: CW - 240 },
-   { label: `${closeLabel} (USD)`, width: 120, align: 'right' },
-   { label: 'Change since Jan 1 (USD)', width: 120, align: 'right' },
-  ],
-  rows: [
-   { cells: ['Receivable', fmtNumber(receivableRow.month), fmtNumber(receivableRow.yearToDate, { signed: true })], mutedCols: [2] },
-   { cells: ['Payable', fmtNumber(payableRow.month), fmtNumber(payableRow.yearToDate, { signed: true })], mutedCols: [2] },
-   { cells: ['Net debt position', fmtNumber(netDebtRow.month, { signed: true }), fmtNumber(netDebtRow.yearToDate, { signed: true })], mutedCols: [2], variant: 'total' },
-  ],
- });
- y = drawNote(doc, M, y + 3, CW, `Matches section 6's Debtors group: ${fmtNumber(receivableRow.month)} owed to you, ${fmtNumber(payableRow.month)} you owe, net ${fmtNumber(netDebtRow.month)}.`);
-
- const legs = debtAnalysis?.legsOverTime ?? [];
- if (legs.length) {
-  const legMonths = legs.map((p) => ({ label: fmtMonthShort(`${p.month}-01`), receivable: p.receivable, payable: p.payable }));
-  const debtChartHeight = Math.min((CW * 226) / 704, 130);
-  doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink)
-   .text('Receivable and payable balances by month, USD', M, y + 6);
-  y = doc.y + 3;
-  y = drawSeriesChart(doc, { x: M, y, width: CW, height: debtChartHeight, months: legMonths, mode: 'debt' });
-  // A fixed label column plus an even split of what is left, the same shape
-  // buildMonthlyBreakdown's own table uses — CW - legs.length * 60 went
-  // negative once legsOverTime carried more than ~8 months, which pdfkit
-  // rendered as every cell stacked at x, the year and "Jan" merging into
-  // "2026Jan" and each value overlapping the row label after it.
-  const legLabelColW = 70;
-  const legColW = (CW - legLabelColW) / legs.length;
+ // No debtor or lender account exists this period - section 10 would be a
+ // heading over an empty table, and its own summary below is the same zero
+ // section 6 already reports for the Debtors group.
+ if (byCounterparty.length > 0) {
+  y = startPage('Debts by counterparty');
+  y = drawSectionHeading(doc, M, y, CW, '10. Debts by counterparty', `${closeLabel}, USD; ranked by balance, receivable then payable`);
+  const receivableTotal = byCounterparty.filter((r) => r.direction === 'receivable').reduce((s, r) => s + r.balance, 0);
+  const payableTotal = byCounterparty.filter((r) => r.direction === 'payable').reduce((s, r) => s + Math.abs(r.balance), 0);
+  // Same account-keyed prior balance section 6 already uses for its own
+  // per-account change column: a closed account has no prior close and reads
+  // "opened this year", the same convention, covered by known limit 1
+  // (mockup:2854/2859) rather than a counterparty-only footnote.
   y = drawTable(doc, {
    x: M,
-   y: y + 4,
+   y,
    width: CW,
-   compact: true,
    columns: [
-    { label: referenceMonth.slice(0, 4), width: legLabelColW },
-    ...legs.map((p) => ({ label: fmtMonthShort(`${p.month}-01`), width: legColW, align: 'right' })),
+    { label: 'Rank', width: 34, align: 'right' },
+    { label: 'Counterparty', width: CW - 34 - 90 - 90 - 80 - 90 },
+    { label: 'Balance (USD)', width: 90, align: 'right' },
+    { label: 'Change since Jan 1', width: 90, align: 'right' },
+    { label: 'Direction', width: 80 },
+    { label: 'Share', width: 90, align: 'right' },
+   ],
+   rows: byCounterparty.map((row) => {
+    const share =
+     row.direction === 'receivable'
+      ? `${fmtRate(receivableTotal ? row.balance / receivableTotal : 0)} of receivable`
+      : row.direction === 'payable'
+       ? `${fmtRate(payableTotal ? Math.abs(row.balance) / payableTotal : 0)} of payable`
+       : '—';
+    const prior = priorBalanceByAccountId.get(row.accountId);
+    const changeCell = prior === undefined ? 'opened this year' : fmtNumber(row.balance - prior, { signed: true });
+    return {
+     cells: [
+      String(row.rank),
+      row.accountName,
+      fmtNumber(row.balance),
+      changeCell,
+      row.direction === 'receivable' ? 'Receivable' : row.direction === 'payable' ? 'Payable' : 'Settled',
+      share,
+     ],
+     mutedCols: [3],
+    };
+   }),
+  });
+
+  const owesYou = byCounterparty.filter((r) => r.direction === 'receivable');
+  const youOwe = byCounterparty.filter((r) => r.direction === 'payable');
+  const splitTop2 = y + 8;
+  const half = (CW - 20) / 2;
+  doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink).text('Who owes you', M, splitTop2);
+  let leftY2 = doc.y + 3;
+  owesYou.forEach((row) => {
+   doc.font('Helvetica').fontSize(7).fillColor(PALETTE.success).text(`${row.accountName} · ${fmtNumber(row.balance)}`, M, leftY2, { width: half });
+   leftY2 = doc.y + 2;
+  });
+  doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink).text('Who you owe', M + half + 20, splitTop2);
+  let rightY2 = doc.y + 3;
+  youOwe.forEach((row) => {
+   doc.font('Helvetica').fontSize(7).fillColor(PALETTE.error).text(`${row.accountName} · ${fmtNumber(Math.abs(row.balance))}`, M + half + 20, rightY2, { width: half });
+   rightY2 = doc.y + 2;
+  });
+  y = Math.max(leftY2, rightY2) + 8;
+
+  y = drawTable(doc, {
+   x: M,
+   y,
+   width: CW,
+   columns: [
+    { label: 'Figure', width: CW - 240 },
+    { label: `${closeLabel} (USD)`, width: 120, align: 'right' },
+    { label: 'Change since Jan 1 (USD)', width: 120, align: 'right' },
    ],
    rows: [
-    { cells: ['Receivable', ...legs.map((p) => fmtNumber(p.receivable))] },
-    { cells: ['Payable', ...legs.map((p) => fmtNumber(p.payable))] },
+    { cells: ['Receivable', fmtNumber(receivableRow.month), fmtNumber(receivableRow.yearToDate, { signed: true })], mutedCols: [2] },
+    { cells: ['Payable', fmtNumber(payableRow.month), fmtNumber(payableRow.yearToDate, { signed: true })], mutedCols: [2] },
+    { cells: ['Net debt position', fmtNumber(netDebtRow.month, { signed: true }), fmtNumber(netDebtRow.yearToDate, { signed: true })], mutedCols: [2], variant: 'total' },
    ],
   });
+  y = drawNote(doc, M, y + 3, CW, `Matches section 6's Debtors group: ${fmtNumber(receivableRow.month)} owed to you, ${fmtNumber(payableRow.month)} you owe, net ${fmtNumber(netDebtRow.month)}.`);
+
+  const legs = debtAnalysis?.legsOverTime ?? [];
+  if (legs.length) {
+   const legMonths = legs.map((p) => ({ label: fmtMonthShort(`${p.month}-01`), receivable: p.receivable, payable: p.payable }));
+   const debtChartHeight = Math.min((CW * 226) / 704, 130);
+   doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink)
+    .text('Receivable and payable balances by month, USD', M, y + 6);
+   y = doc.y + 3;
+   y = drawSeriesChart(doc, { x: M, y, width: CW, height: debtChartHeight, months: legMonths, mode: 'debt' });
+   // A fixed label column plus an even split of what is left, the same shape
+   // buildMonthlyBreakdown's own table uses — CW - legs.length * 60 went
+   // negative once legsOverTime carried more than ~8 months, which pdfkit
+   // rendered as every cell stacked at x, the year and "Jan" merging into
+   // "2026Jan" and each value overlapping the row label after it.
+   const legLabelColW = 70;
+   const legColW = (CW - legLabelColW) / legs.length;
+   y = drawTable(doc, {
+    x: M,
+    y: y + 4,
+    width: CW,
+    compact: true,
+    columns: [
+     { label: referenceMonth.slice(0, 4), width: legLabelColW },
+     ...legs.map((p) => ({ label: fmtMonthShort(`${p.month}-01`), width: legColW, align: 'right' })),
+    ],
+    rows: [
+     { cells: ['Receivable', ...legs.map((p) => fmtNumber(p.receivable))] },
+     { cells: ['Payable', ...legs.map((p) => fmtNumber(p.payable))] },
+    ],
+   });
+  }
  }
 
  // =====================================================================
  // Page 6 — pockets status
  // =====================================================================
- y = startPage('Pockets status');
- y = drawSectionHeading(doc, M, y, CW, '11. Pockets status', `${closeLabel}, USD; a remaining in parentheses is an over-funded pocket`);
  const pockets = pocketBoard?.pockets ?? [];
- y = drawPocketBars(doc, { x: M, y, width: CW, pockets });
- y = drawNote(doc, M, y + 4, CW, 'The filled portion is committed; the light track is the remainder of target. Colour repeats the Status column and is never the only cue.');
+ // No pocket exists this period - pages 6 and 7 are section 11 end to end,
+ // so with nothing to report there is nothing left on either page.
+ if (pockets.length > 0) {
+  y = startPage('Pockets status');
+  y = drawSectionHeading(doc, M, y, CW, '11. Pockets status', `${closeLabel}, USD; a remaining in parentheses is an over-funded pocket`);
+  y = drawPocketBars(doc, { x: M, y, width: CW, pockets });
+  y = drawNote(doc, M, y + 4, CW, 'The filled portion is committed; the light track is the remainder of target. Colour repeats the Status column and is never the only cue.');
 
- y = drawPocketTargetDonut(doc, { x: M, y: y + 4, width: CW, pockets });
- y += 6;
+  y = drawPocketTargetDonut(doc, { x: M, y: y + 4, width: CW, pockets });
+  y += 6;
 
- const totalTarget = pockets.reduce((s, p) => s + (p.target ?? 0), 0);
- const totalAllocated = pockets.reduce((s, p) => s + (p.allocated ?? 0), 0);
- const totalRemaining = pockets.reduce((s, p) => s + (p.remaining ?? 0), 0);
- y = drawTable(doc, {
-  x: M,
-  y,
-  width: CW,
-  columns: [
-   { label: 'Pocket', width: CW - 4 * 70 - 60 },
-   { label: 'Target (USD)', width: 70, align: 'right' },
-   { label: 'Committed (USD)', width: 70, align: 'right' },
-   { label: 'Committed YTD', width: 70, align: 'right' },
-   { label: 'Remaining (USD)', width: 70, align: 'right' },
-   { label: 'Status', width: 60 },
-  ],
-  rows: [
-   ...pockets.map((pocket) => {
-    const prior = priorAllocatedByPocketId.get(pocket.pocketId);
-    const ytdCell = prior === undefined ? 'opened this year' : fmtNumber(pocket.allocated - prior, { signed: true });
+  const totalTarget = pockets.reduce((s, p) => s + (p.target ?? 0), 0);
+  const totalAllocated = pockets.reduce((s, p) => s + (p.allocated ?? 0), 0);
+  const totalRemaining = pockets.reduce((s, p) => s + (p.remaining ?? 0), 0);
+  y = drawTable(doc, {
+   x: M,
+   y,
+   width: CW,
+   columns: [
+    { label: 'Pocket', width: CW - 4 * 70 - 60 },
+    { label: 'Target (USD)', width: 70, align: 'right' },
+    { label: 'Committed (USD)', width: 70, align: 'right' },
+    { label: 'Committed YTD', width: 70, align: 'right' },
+    { label: 'Remaining (USD)', width: 70, align: 'right' },
+    { label: 'Status', width: 60 },
+   ],
+   rows: [
+    ...pockets.map((pocket) => {
+     const prior = priorAllocatedByPocketId.get(pocket.pocketId);
+     const ytdCell = prior === undefined ? 'opened this year' : fmtNumber(pocket.allocated - prior, { signed: true });
+     return {
+      cells: [
+       pocket.name,
+       pocket.target === null || pocket.target === undefined ? '—' : fmtNumber(pocket.target),
+       fmtNumber(pocket.allocated ?? 0),
+       ytdCell,
+       fmtNumber(pocket.remaining ?? 0),
+       POCKET_LEVEL_LABELS[pocket.level] ?? pocket.level,
+      ],
+      mutedCols: [3],
+     };
+    }),
+    {
+     cells: ['Total', fmtNumber(totalTarget), fmtNumber(totalAllocated), '', fmtNumber(totalRemaining), ''],
+     variant: 'total',
+    },
+   ],
+  });
+  y = drawNote(doc, M, y + 3, CW, `${pocketBoard?.summary?.fundedCount ?? 0} funded · ${pocketBoard?.summary?.overdueCount ?? 0} overdue`);
+  drawNote(
+   doc,
+   M,
+   y,
+   CW,
+   "Funded is committed at or above target; overdue is a passed date with the target unmet. The board's third count, pockets whose source account no longer covers what is committed to it, is not reported here.",
+   { italic: true },
+  );
+
+  // =====================================================================
+  // Page 7 — pockets status, continued
+  // =====================================================================
+  y = startPage('Pockets status');
+  y = drawSectionHeading(doc, M, y, CW, '11. Pockets status', 'continued, USD');
+
+  doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink).text('Funding accounts', M, y);
+  y = doc.y + 3;
+  y = drawNote(doc, M, y, CW, "Committed is a point-in-time balance at month close, the same convention section 6 uses for account balances - not a monthly movement.");
+
+  const fundingRows = [];
+  let totalCommitted = 0;
+  pockets.forEach((pocket) => {
+   const sources = pocketSourcesByPocket.get(pocket.pocketId) ?? [];
+   fundingRows.push({ cells: [pocket.name, fmtNumber(pocket.allocated ?? 0), ''], variant: 'group' });
+   totalCommitted += pocket.allocated ?? 0;
+   sources.forEach((source) => {
+    fundingRows.push({
+     cells: [
+      source.accountName ?? 'Account no longer available',
+      fmtNumber(source.heldByThisPocket),
+      pocket.target ? fmtRate(source.heldByThisPocket / pocket.target) : '—',
+     ],
+     variant: 'indent',
+    });
+   });
+  });
+  fundingRows.push({ cells: ['Total committed', fmtNumber(totalCommitted), ''], variant: 'total' });
+  y = drawTable(doc, {
+   x: M,
+   y,
+   width: CW,
+   columns: [
+    { label: 'Pocket / account', width: CW - 200 },
+    { label: 'Committed (USD)', width: 100, align: 'right' },
+    { label: '% of target', width: 100, align: 'right' },
+   ],
+   rows: fundingRows,
+  });
+  y = drawNote(doc, M, y + 3, CW, "Each pocket's own committed figure is the sum of the accounts that fund it; the total matches section 6's committed-in-pockets line.");
+
+  doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink).text('Timing and required monthly', M, y + 4);
+  y = doc.y + 3;
+  y = drawTable(doc, {
+   x: M,
+   y,
+   width: CW,
+   compact: true,
+   columns: [
+    { label: 'Pocket', width: CW - 3 * 100 },
+    { label: 'Desired date', width: 100, align: 'right' },
+    { label: 'Days remaining', width: 100, align: 'right' },
+    { label: 'Required monthly (USD)', width: 100, align: 'right' },
+   ],
+   rows: pockets.map((pocket) => {
+    const passed = typeof pocket.daysRemaining === 'number' && pocket.daysRemaining < 0;
     return {
      cells: [
       pocket.name,
-      pocket.target === null || pocket.target === undefined ? '—' : fmtNumber(pocket.target),
-      fmtNumber(pocket.allocated ?? 0),
-      ytdCell,
-      fmtNumber(pocket.remaining ?? 0),
-      POCKET_LEVEL_LABELS[pocket.level] ?? pocket.level,
+      pocket.desiredDate ?? '—',
+      passed ? 'passed' : (pocket.daysRemaining ?? '—'),
+      passed ? 'Date passed' : pocket.requiredMonthly === null || pocket.requiredMonthly === undefined ? '—' : fmtNumber(pocket.requiredMonthly),
      ],
-     mutedCols: [3],
     };
    }),
-   {
-    cells: ['Total', fmtNumber(totalTarget), fmtNumber(totalAllocated), '', fmtNumber(totalRemaining), ''],
-    variant: 'total',
-   },
-  ],
- });
- y = drawNote(doc, M, y + 3, CW, `${pocketBoard?.summary?.fundedCount ?? 0} funded · ${pocketBoard?.summary?.overdueCount ?? 0} overdue`);
- drawNote(
-  doc,
-  M,
-  y,
-  CW,
-  "Funded is committed at or above target; overdue is a passed date with the target unmet. The board's third count, pockets whose source account no longer covers what is committed to it, is not reported here.",
-  { italic: true },
- );
-
- // =====================================================================
- // Page 7 — pockets status, continued
- // =====================================================================
- y = startPage('Pockets status');
- y = drawSectionHeading(doc, M, y, CW, '11. Pockets status', 'continued, USD');
-
- doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink).text('Funding accounts', M, y);
- y = doc.y + 3;
- y = drawNote(doc, M, y, CW, "Committed is a point-in-time balance at month close, the same convention section 6 uses for account balances - not a monthly movement.");
-
- const fundingRows = [];
- let totalCommitted = 0;
- pockets.forEach((pocket) => {
-  const sources = pocketSourcesByPocket.get(pocket.pocketId) ?? [];
-  fundingRows.push({ cells: [pocket.name, fmtNumber(pocket.allocated ?? 0), ''], variant: 'group' });
-  totalCommitted += pocket.allocated ?? 0;
-  sources.forEach((source) => {
-   fundingRows.push({
-    cells: [
-     source.accountName ?? 'Account no longer available',
-     fmtNumber(source.heldByThisPocket),
-     pocket.target ? fmtRate(source.heldByThisPocket / pocket.target) : '—',
-    ],
-    variant: 'indent',
-   });
   });
- });
- fundingRows.push({ cells: ['Total committed', fmtNumber(totalCommitted), ''], variant: 'total' });
- y = drawTable(doc, {
-  x: M,
-  y,
-  width: CW,
-  columns: [
-   { label: 'Pocket / account', width: CW - 200 },
-   { label: 'Committed (USD)', width: 100, align: 'right' },
-   { label: '% of target', width: 100, align: 'right' },
-  ],
-  rows: fundingRows,
- });
- y = drawNote(doc, M, y + 3, CW, "Each pocket's own committed figure is the sum of the accounts that fund it; the total matches section 6's committed-in-pockets line.");
+  drawNote(doc, M, y + 3, CW, 'Required monthly is undefined once the desired date has passed with the target unmet; "Date passed" states that directly rather than showing 0.00 or an unexplained dash.', { italic: true });
+ }
 
- doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PALETTE.ink).text('Timing and required monthly', M, y + 4);
- y = doc.y + 3;
- y = drawTable(doc, {
-  x: M,
-  y,
-  width: CW,
-  compact: true,
-  columns: [
-   { label: 'Pocket', width: CW - 3 * 100 },
-   { label: 'Desired date', width: 100, align: 'right' },
-   { label: 'Days remaining', width: 100, align: 'right' },
-   { label: 'Required monthly (USD)', width: 100, align: 'right' },
-  ],
-  rows: pockets.map((pocket) => {
-   const passed = typeof pocket.daysRemaining === 'number' && pocket.daysRemaining < 0;
-   return {
-    cells: [
-     pocket.name,
-     pocket.desiredDate ?? '—',
-     passed ? 'passed' : (pocket.daysRemaining ?? '—'),
-     passed ? 'Date passed' : pocket.requiredMonthly === null || pocket.requiredMonthly === undefined ? '—' : fmtNumber(pocket.requiredMonthly),
-    ],
-   };
-  }),
- });
- drawNote(doc, M, y + 3, CW, 'Required monthly is undefined once the desired date has passed with the target unmet; "Date passed" states that directly rather than showing 0.00 or an unexplained dash.', { italic: true });
+ // Second pass: every page now exists, so the total is known and each
+ // footer can state it correctly, instead of the fixed 7 this document
+ // used before pages 5-7 could be skipped.
+ const pageRange = doc.bufferedPageRange();
+ for (let i = 0; i < pageRange.count; i += 1) {
+  doc.switchToPage(pageRange.start + i);
+  pageFooter(doc, { generatedLabel, timeZone, pageNumber: i + 1, pageCount: pageRange.count });
+ }
 }
