@@ -23,7 +23,8 @@ import useAuth from '../../../../auth/hooks/useAuth.ts';
 //UTILITIES
 import { capitalize } from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
-import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
+import { useRatePreview } from '../../../hooks/useRatePreview.ts';
+import { readAmountInCurrency } from '../../../helpers/amountInCurrency.ts';
 
 // 🏷️ ENPOINTS
 import {
@@ -192,24 +193,17 @@ function NewProfile() {
     setProfileData((data) => ({ ...data, currency }));
   }
 
-  // States what the backend will store as the loan value, which is also the
-  // figure checked against the bank account's funds. Reads the rates already
-  // held in the store, so it issues no request.
-  const { targetCurrencyPreview, rate, direction, formattedRate } = useCurrencyPreview(
+  // formData keeps what was typed; the amount sent is read under the currency
+  // selected at save time.
+  const { amountToSave } = readAmountInCurrency(
     formData[formDataNumber.keyName],
     selectedCurrency,
   );
 
-  const isAmountError = !!validationMessages[formDataNumber.keyName]
-    ?.trim()
-    .startsWith('*');
-
-  const showRatePreview = !!targetCurrencyPreview && !isAmountError;
-
-  const rateTooltipText =
-    rate && direction
-      ? `${direction}\nrate: ${formattedRate}`
-      : '';
+  // States what the backend will store as the loan value, which is also the
+  // figure checked against the bank account's funds.
+  const ratePreview = useRatePreview(amountToSave, selectedCurrency);
+  const showRatePreview = ratePreview.status === 'resolved';
 
   //---functions------------
   // ✨ INPUT HANDLERS
@@ -266,7 +260,8 @@ function NewProfile() {
     e.preventDefault();
     // console.log('onSubmitForm');
     //--data form validation
-    const newValidationMessages = validationData(profileData);
+    const amount = amountToSave ?? '';
+    const newValidationMessages = validationData({ ...profileData, amount });
     // console.log('mensajes:', { newValidationMessages });
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
@@ -274,10 +269,7 @@ function NewProfile() {
     }
     //-----------------
     try {
-      const finalAmount =
-        profileData.amount === ''
-          ? 0 // Si es cadena vacía, pasa cadena vacía (compatible)
-          : Number(profileData.amount); // Si es string de número, conviértelo a number
+      const finalAmount = amount === '' ? 0 : amount;
 
       const payload: ProfilePayloadType = {
         account_type,
@@ -454,12 +446,12 @@ function NewProfile() {
 
                 {showRatePreview && (
                   <RateTooltip
-                    tipText={rateTooltipText}
+                    tipText={ratePreview.tooltipText}
                     surface='dark'
                     placement='anchor-left'
                   >
                     <span className='form__fx-preview'>
-                      {targetCurrencyPreview}
+                      {ratePreview.previewText}
                     </span>
                   </RateTooltip>
                 )}
