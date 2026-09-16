@@ -106,6 +106,9 @@
 .budgetCategoryBoard .budgetDetail__content {
  flex: 1;
  min-height: 0;
+ /* Full width of the panel, not 88% of it again: at 375px the second step
+    left ~296px and a row with its nature tag and edit button was clipped. */
+ width: 100%;
 }
 
 /* The one link of that handoff that had to be taken back. Below an 800px
