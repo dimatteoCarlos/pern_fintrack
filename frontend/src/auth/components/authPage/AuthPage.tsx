@@ -22,7 +22,7 @@ import { useCallback, useEffect, useState , useRef} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import AuthModal from './AuthModal';
-import { AUTH_UI_STATES } from '../../auth_constants/constants';
+import { AUTH_ROUTE, AUTH_UI_STATES } from '../../auth_constants/constants';
 import Logo from '../../../assets/logo.svg';
 
 import { useAuthUIStore } from '../../stores/useAuthUIStore';
@@ -234,8 +234,17 @@ useEffect(() => {
   useEffect(() => {
     if (authEvent) return;
     const savedReturnTo = sessionStorage.getItem('returnTo');
+    // A returnTo naming a route that renders this page ('/' or the auth route)
+    // was written by the boot refresh failing here: an anonymous visit or a
+    // sign-out, not a session that expired inside the app, so the modal stays
+    // closed until the user opens it.
+    const returnToPath = savedReturnTo?.split('?')[0];
+    const expiredElsewhere =
+      returnToPath !== undefined &&
+      returnToPath !== '/' &&
+      !returnToPath.startsWith(AUTH_ROUTE);
 
-    if (savedReturnTo && sessionExpired) {
+    if (expiredElsewhere && sessionExpired) {
       returnToRef.current = savedReturnTo;
       setUIState(AUTH_UI_STATES.SIGN_IN);
       setMessage('Your session has expired. Please sign in again.');
