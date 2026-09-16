@@ -180,6 +180,18 @@ const useAuth = () => {
           // or the browser reopened, within the 7-day refresh window)
           accessToken = await getRefreshedToken();
         } catch {
+          // Drop 'returnTo' unconditionally, not gated on isMounted below:
+          // authRefreshManager.ts's own catch block wrote it before
+          // rethrowing, on the same 401 this catch is correcting, and that
+          // write isn't gated on this component's mount state either. Under
+          // StrictMode's dev double-invoke, the first (already-cleaned-up)
+          // run still reaches this catch with isMounted false — gating the
+          // removal the same way left 'returnTo' behind for AuthPage.tsx's
+          // reload-fallback effect to read, which shows "session expired" to
+          // an anonymous visitor even after invalidateSession() below (or
+          // this same corrective call from the other, still-mounted run)
+          // resets the store's own sessionExpired flag.
+          sessionStorage.removeItem('returnTo');
           if (isMounted) {
             // No cookie, or the cookie is spent — an anonymous visitor,
             // not an expired session, so no 'expired' reason here

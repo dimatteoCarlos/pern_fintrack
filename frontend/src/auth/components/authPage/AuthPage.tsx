@@ -62,7 +62,7 @@ export default function AuthPage() {
   
   const { uiState, message, setUIState,setMessage,  setPrefilledData, resetUI } = useAuthUIStore();
 
-  const { setSessionExpired } = useAuthStore();
+  const { setSessionExpired, sessionExpired } = useAuthStore();
 
 // ref for storing return path (session_expired)
    const returnToRef = useRef<string | null>(null)
@@ -218,10 +218,24 @@ useEffect(() => {
 
 //====================================
 // ✅ Restore from sessionStorage if location.state is empty (page reload fallback)
+// Gated on the store's sessionExpired flag, not merely on 'returnTo''s
+// presence: useAuth.ts's boot check runs in every consumer of useAuth() (one
+// mount effect per hook call), and under React 18 StrictMode's dev
+// double-invoke each one briefly writes 'returnTo' + an 'expired' flag before
+// self-correcting on an anonymous/never-logged-in visit. That correction
+// lands as its own store update slightly later than this effect's first
+// pass, so reading raw sessionStorage alone caught the transient value and
+// latched a false "session expired" message that the later correction never
+// undid (confirmed live 2026-09-16 via console tracing: the store's flag
+// settles to false, yet the message stayed shown). Reacting to sessionExpired
+// itself keeps this effect in sync with that same corrected value, and the
+// else-branch withdraws the message if a later cycle corrects it after
+// this effect already showed it.
   useEffect(() => {
+    if (authEvent) return;
     const savedReturnTo = sessionStorage.getItem('returnTo');
 
-    if (savedReturnTo && !authEvent) {
+    if (savedReturnTo && sessionExpired) {
       returnToRef.current = savedReturnTo;
       setUIState(AUTH_UI_STATES.SIGN_IN);
       setMessage('Your session has expired. Please sign in again.');
@@ -234,8 +248,12 @@ useEffect(() => {
 
     // Clean only returnTo (session_expired is gone)
       sessionStorage.removeItem('returnTo');
+    } else if (!sessionExpired && message === 'Your session has expired. Please sign in again.') {
+      // A later cycle corrected the flag after this effect already latched
+      // the message onto an earlier, transient true reading - withdraw it.
+      setMessage(null);
     }
-  }, [authEvent, setUIState, setMessage, setPrefilledData]);
+  }, [authEvent, sessionExpired, message, setUIState, setMessage, setPrefilledData]);
 
 // ======================
 // 🎯 EVENT HANDLERS
