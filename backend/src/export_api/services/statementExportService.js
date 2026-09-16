@@ -172,16 +172,17 @@ const buildPdf = async (pool, userId, { window }, timeZone, generatedAt) => {
  *  (makeReportingWindow's shape; only `referenceMonth` is read here)
  * @param {string} timeZone - IANA zone of the account owner
  * @param {'xlsx'|'pdf'} format
+ * @param {string} username - name of the account owner, for the filename
  * @returns {Promise<{buffer: Buffer, filename: string, contentType: string, rowCount: number}>}
  */
-export async function exportStatement(pool, userId, { window }, timeZone, format = 'xlsx') {
+export async function exportStatement(pool, userId, { window }, timeZone, format = 'xlsx', username) {
  const generatedAt = new Date();
 
  const { buffer, rowCount } = format === 'pdf'
   ? await buildPdf(pool, userId, { window }, timeZone, generatedAt)
   : await buildXlsx(pool, userId, { window }, timeZone, generatedAt);
 
- const filename = statementFileName({ referenceMonth: window.referenceMonth, format });
+ const filename = statementFileName({ referenceMonth: window.referenceMonth, format, username });
 
  return {
   buffer,

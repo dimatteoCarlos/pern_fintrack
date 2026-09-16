@@ -37,9 +37,10 @@ const intersect = (a, b) => {
  * @param {string} userId - UUID from the token
  * @param {{from, to, search, movementType, category, accountIds, format}} request
  * @param {string} timeZone - IANA zone of the account owner
+ * @param {string} username - name of the account owner, for the filename
  * @returns {Promise<{buffer: (string|Buffer), filename: string, contentType: string, rowCount: number}>}
  */
-export async function exportTransactions(pool, userId, request, timeZone) {
+export async function exportTransactions(pool, userId, request, timeZone, username) {
  const { from, to, search, movementType, category, accountIds: requestedIds, format } = request;
 
  const owned = await getOwnedAccountIds(pool, userId);
@@ -91,7 +92,7 @@ export async function exportTransactions(pool, userId, request, timeZone) {
  };
 
  const dataset = toTransactionDataset(rows, meta);
- const filename = exportFileName({ from, to, format });
+ const filename = exportFileName({ from, to, format, username });
  const contentType = CONTENT_TYPES[format];
 
  const buffer = format === 'xlsx'

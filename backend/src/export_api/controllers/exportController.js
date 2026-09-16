@@ -10,6 +10,7 @@ import { exportTransactions } from '../services/transactionExportService.js';
 import { exportStatement } from '../services/statementExportService.js';
 import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+import { getUsername } from '../../utils/authUtils/getUsername.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import { resolveWindowOr422 } from '../../fintrack_api/controllers/overviewController.js';
 
@@ -40,13 +41,17 @@ export async function getMovementsExport(req, res, next) {
   const { from, to, search, movementType, category, accountIds, format } =
    exportMovementsQuerySchema.parse(req.query);
 
-  const timeZone = await getUserTimeZone(pool, userId);
+  const [timeZone, username] = await Promise.all([
+   getUserTimeZone(pool, userId),
+   getUsername(pool, userId),
+  ]);
 
   const { buffer, filename, contentType, rowCount } = await exportTransactions(
    pool,
    userId,
    { from, to, search, movementType, category, accountIds, format },
    timeZone,
+   username,
   );
 
   // One line per export: who, what dataset, what format, which filters, how
@@ -88,7 +93,10 @@ export async function getStatementExport(req, res, next) {
 
   const { month, format } = exportStatementQuerySchema.parse(req.query);
 
-  const timeZone = await getUserTimeZone(pool, userId);
+  const [timeZone, username] = await Promise.all([
+   getUserTimeZone(pool, userId),
+   getUsername(pool, userId),
+  ]);
 
   // Same ceiling GET /overview applies to the same field: a future month
   // parses fine and is refused here, on its relationship to the owner's
@@ -102,6 +110,7 @@ export async function getStatementExport(req, res, next) {
    { window },
    timeZone,
    format,
+   username,
   );
 
   console.log('[export] statement', {
