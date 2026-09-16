@@ -8,10 +8,18 @@
  * Maximum lengths for different field types
  */
 export const NAME_MAX_LENGTHS = {
-  /** Category name (10 chars) */
-  category_name: 11,
-  /** Subcategory name (10 chars)*/
-  subcategory: 12,
+  /** Category name (30 chars - the input's own visible width at the
+   * narrowest supported breakpoint, NewCategory.tsx's `.input__container`;
+   * the category_budget_accounts column allows up to 50, but capping to a
+   * number nobody can see defeats the point of a max length. Raised
+   * 2026-09-16: 11 silently truncated 'Transportation' to 'transportat',
+   * confirmed live via docs/VIDEO/promo-30s/data/seed-demo-account.js. */
+  category_name: 30,
+  /** Subcategory name (25 chars - the category_budget_accounts column's own
+   * VARCHAR(25) ceiling, itself well under what the input can display, so
+   * the DB is the binding limit here rather than visible width). Raised
+   * 2026-09-16, same incident as category_name above. */
+  subcategory: 25,
   /** Note/description field (155 chars, matching the server) */
   note: 155,
   /** Account name (28 chars) */
