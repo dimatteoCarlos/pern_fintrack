@@ -119,6 +119,16 @@ const fmtRate = (value) => {
  return `${(Number(value) * 100).toFixed(1)}%`;
 };
 
+// BudgetCategoryStatus.executionPercentage already arrives 0-100 (money.js's
+// toRate only rounds it, confirmed against ListAccountOfCategory.tsx's own
+// `.toFixed(1) + '%'`), unlike every other figure fmtRate formats in this
+// file, which is a genuine 0-1 ratio. Routing it through fmtRate scaled it
+// again and printed "7070.0%" for a real 70.7% category.
+const fmtPercentValue = (value) => {
+ if (value === null || value === undefined) return null;
+ return `${Number(value).toFixed(1)}%`;
+};
+
 const monthPartsOf = (yyyyMmDd) => {
  const [year, month] = yyyyMmDd.split('-').map(Number);
  return { year, month };
@@ -286,10 +296,14 @@ function drawExecutionDonut(doc, { x, y, width, categoryExecution }) {
  doc.circle(cx, cy, innerR).fill('#ffffff');
 
  if (categoryExecution && categoryExecution.executionPercentage !== null) {
-  const ratio = Math.min(1, Math.max(0, categoryExecution.executionPercentage));
-  drawRingArc(doc, cx, cy, outerR, innerR, 0, ratio, executionColorFor(categoryExecution.executionPercentage));
+  // executionColorFor and the ring's own fill both expect a 0-1 ratio
+  // (BUDGET_NEAR_LIMIT_PERCENT is 0.75) - the served figure is 0-100, so it is
+  // scaled down once, here, rather than at each of the two readers below.
+  const executionRatio = categoryExecution.executionPercentage / 100;
+  const ratio = Math.min(1, Math.max(0, executionRatio));
+  drawRingArc(doc, cx, cy, outerR, innerR, 0, ratio, executionColorFor(executionRatio));
   doc.font('Helvetica-Bold').fontSize(14).fillColor(PALETTE.ink)
-   .text(fmtRate(categoryExecution.executionPercentage), cx - 40, cy - 8, { width: 80, align: 'center' });
+   .text(fmtPercentValue(categoryExecution.executionPercentage), cx - 40, cy - 8, { width: 80, align: 'center' });
   doc.font('Helvetica').fontSize(7).fillColor(PALETTE.secondary)
    .text('executed', cx - 40, cy + 8, { width: 80, align: 'center' });
  } else {
@@ -1050,7 +1064,7 @@ function renderDocument(doc, data, { generatedAt, timeZone }) {
       c.budgetAmount === null || c.budgetAmount === undefined ? dashCell(footnotes, 'Budget, remaining and used % are not reported because no budget is set for this category.') : fmtNumber(c.budgetAmount),
       fmtNumber(c.actualSpent ?? 0),
       c.remainingBudget === null || c.remainingBudget === undefined ? `— (${noBudgetNote})` : fmtNumber(c.remainingBudget),
-      c.executionPercentage === null || c.executionPercentage === undefined ? `— (${noBudgetNote})` : fmtRate(c.executionPercentage),
+      c.executionPercentage === null || c.executionPercentage === undefined ? `— (${noBudgetNote})` : fmtPercentValue(c.executionPercentage),
      ],
      mutedCols: c.budgetAmount === null || c.budgetAmount === undefined ? [1, 3, 4] : [],
     })),
