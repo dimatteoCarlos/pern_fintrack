@@ -1,6 +1,10 @@
 //useInputNumberHandler.ts
 import React, { useCallback } from 'react';
-import { checkNumberFormatValue } from '../validations/utils/custom_validation';
+import {
+  checkNumberFormatValue,
+  clampTypedDecimals,
+} from '../validations/utils/custom_validation';
+import { currencyMinorUnit } from '../helpers/functions';
 
 //UPDATE NUMERIC STATE AND VALIDATION MESSAGES
 function useInputNumberHandler<T>(
@@ -22,12 +26,23 @@ function useInputNumberHandler<T>(
 ) {
   const inputNumberHandlerFn = useCallback(
     (name: string, value: string) => {
+      // Blocked before validation runs, so a decimal point on a currency that
+      // has none (the yen) never reaches the input at all -- the reader sees
+      // the correction as they type, instead of a value that only turns out
+      // rounded once it is saved. Scoped to zero-decimal currencies only: one
+      // with real decimals (dollar, peso) still accepts whatever precision
+      // the reader types, unrounded until save, same as before this change.
+      const clampedValue =
+        currency !== undefined && currencyMinorUnit(currency) === 0
+          ? clampTypedDecimals(value, 0)
+          : value;
+
       const { formatMessage, isError, valueToSave, valueNumber } =
-        checkNumberFormatValue(value, currency);
+        checkNumberFormatValue(clampedValue, currency);
       //UPDATE formDta with original string per display
       setFormData((formData) => ({
         ...formData,
-        [name]: value, //always string for input
+        [name]: clampedValue, //always string for input
       }));
 
       setValidationMessages((prev) => ({
