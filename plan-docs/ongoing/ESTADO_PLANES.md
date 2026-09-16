@@ -1200,3 +1200,29 @@ decisiones abiertas de `DECISIONS_OPEN.md` no se cerró ninguna, pero **una est�
 desfasada respecto del código**: el alto de la cabecera del tablero de bolsillos
 (D9) dice que no se toca nada de `pocket-styles.css` hasta que cierre, y el techo
 del contenedor ya está escrito en `pocket-styles.css:48`.
+
+---
+
+## Sexto pase, 2026-09-15 — sobre `main`, cabeza `8d323ce1`
+
+**Advertencia de alcance.** Este pase tampoco re-audita las secciones 2, 3, 5,
+7 y 9 línea por línea. Verifica lo que cerró desde el quinto pase (`cea01cd9`,
+2026-09-06) y dos documentos nuevos que ese pase no nombra.
+
+**Árbol de trabajo:** limpio salvo dos archivos sin seguimiento, ninguno de los
+dos código — `PLAN_DEBTS/DEBTS_DOMAIN_CONTRACT.md` y `PLAN_PROMO_VIDEO.md`.
+Ambos son planes sustantivos, no borradores vacíos: el primero cierra siete
+bloques de decisión con regla congelada y anclas al código de hoy; el segundo
+tiene guion, presupuesto de escenas y bloqueadores medidos, listo para
+ejecución manual (captura de video), no para commit.
+
+| sección | qué se corrigió |
+|---|---|
+| Export (nueva, sin sección propia hasta hoy) | `PLAN_EXPORT.md` quedó desactualizado por horas: su tabla de commits marcaba `pending` los tres últimos —(5a) cifras interanuales, (5) el reporte de período, (6) el botón junto a `MonthPicker`— y los tres están en `main`, fusionados a `feat/vercel-serverless`: `a7014ec9`, `0e2c7eae` + `d8c332db`, y `PeriodStatementButton.tsx` montado en `OverviewLayout.tsx:152`. Corregido en el propio documento. V1 y V2 del plan están completos; sólo falta V3 (paquete de respaldo JSON) y el mockup de exportación de movimientos, marcado *not yet built* en su §11 |
+| 6 — Debts | `PLAN_DEBTS/DEBTS_DOMAIN_CONTRACT.md`, escrito el 2026-09-14 y sin commitear, cierra la especificación de los siete bloques que esta sección daba por "enteros y debidos". No es lo mismo que cerrar el trabajo: el bloque A (estado `receivable`/`payable`/`settled`) y el C (modelo de lectura canónico) se **declinan a propósito** —ruling del desarrollador, no implementación pendiente— porque falta el diseño de qué muestra un deudor saldado; el bloque B (clasificación de movimiento por cruce de cero) queda congelado como regla y sin código; los dos rulings de la contraparte designada (preferencia editable, y el nombre se limpia al borrar la cuenta) están decididos y sin código; el bloque D midió el filtro de ciclo de vida en las cinco lecturas de deudor y encontró **una de cinco** filtrada (`getAccountController.js:562`, `LIVE_ACCOUNT`) — cabecera, lista, detalle y extracto no; el bloque E confirma el escritor único (`setAccountBalanceFromLedger.js:47-60`); el bloque F cierra el lado de lectura y declara **no reabierta** la suspensión del gate de admin en borrado (ruling del 2026-09-07). Esto no cierra la sección 6 de este archivo — el titular que se voltea por signo (`DebtsLayout.tsx:75-82`) y el resto de "lo demás vivo" siguen sin remedir — pero sí reemplaza su frase "los siete bloques de contrato se deben enteros" por una más precisa: cuatro se debían por falta de decisión y ya no, tres siguen debiéndose por falta de código |
+| 8 — Overview | Fix cosmético `8d323ce1`, *color the pocket bar and fix its label casing*, en `overview-domain-styles.css` y `DomainCards.tsx`. No toca ninguna de las tres decisiones abiertas de la sección 8 ni el choque de definición del faltante de metas (`OVERVIEW_DECISIONS.md`); es presentación de un componente ya construido |
+| Promo video (nueva) | `PLAN_PROMO_VIDEO.md`, reanudado 2026-09-15 desde `on-hold/`. El bloqueador que lo tenía parado —el presupuesto no se refrescaba tras un movimiento del tracker (R53)— ya cerró (`d7cd81d`). Queda un bloqueador de código sin remedir en este pase, citado por el propio plan con línea: `console.log` activos en `transactionController.js` (líneas 69, 183, 264, 300, 335, 724, 743-748, 981, 1127), que ensucian cualquier captura hecha con devtools abierto. Es trabajo de captura y edición manual, no de commit — el propio documento lo dice en su cabecera |
+
+**Se dejó intacto a propósito.** Todas las decisiones abiertas de todas las
+secciones: ninguna se cerró. Las secciones 2, 3, 5, 7 y 9 no se re-midieron;
+lo que dicen sigue siendo lo del cuarto pase (2026-09-04) o más viejo.
