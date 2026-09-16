@@ -20,6 +20,12 @@ import {
   withDerivedBalance,
 } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 
+// Same predicate as getAccountController.js's LIVE_ACCOUNT. Unlike that
+// controller's read-by-id route, this one has no deliberate exception: a
+// closed or deleted account's own statement is only reachable through
+// /account/closed, not by requesting its id directly.
+const LIVE_ACCOUNT = 'AND ua.deleted_at IS NULL AND ua.closed_at IS NULL';
+
 // A month, as YYYY-MM or YYYY-MM-DD. The day is accepted and discarded.
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/;
 
@@ -101,7 +107,9 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     JOIN
      currencies cr ON ua.currency_id = cr.currency_id
     WHERE
-     ua.account_id = $1 AND ua.user_id = $2 LIMIT 1`,
+     ua.account_id = $1 AND ua.user_id = $2
+     ${LIVE_ACCOUNT}
+     LIMIT 1`,
       values: [accountId, userId],
     };
 
