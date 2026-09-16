@@ -70,6 +70,19 @@
  right: 0;
 }
 
+/* Under the converted figure, right edges aligned, growing left over the field
+   it explains: the budget editor's label row has its heading and the panel
+   edge above it. */
+.tooltip__wrapper--text.rateTooltip__chip--below {
+ top: 100%;
+ bottom: auto;
+ right: 0;
+ left: auto;
+ transform: none;
+ margin-bottom: 0;
+ margin-top: 0.375rem;
+}
+
 /* Anchored to the trigger's ROW, not to the trigger. The tracker's amount row
    sits one --space-4 below the card's top edge, and the chip needs some 55px:
    anchored to the preview span at the row's right end there is nowhere for it

@@ -572,7 +572,7 @@ function BudgetEditModal({
        <RateTooltip
         tipText={ratePreview.tooltipText}
         surface='light'
-        placement='anchor-left'
+        placement='below'
        >
         <span className='budgetEdit__rate'>{ratePreview.previewText}</span>
        </RateTooltip>

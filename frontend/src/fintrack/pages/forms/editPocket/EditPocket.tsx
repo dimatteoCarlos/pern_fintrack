@@ -475,7 +475,7 @@ function EditPocket() {
                 <RateTooltip
                   tipText={ratePreview.tooltipText}
                   surface='dark'
-                  placement='anchor-left'
+                  placement='anchor-left-below-badge'
                 >
                   <span className='form__fx-preview'>
                     {ratePreview.previewText}

@@ -33,7 +33,10 @@ type RateTooltipPropType = {
   | 'anchor-left'
   | 'row-centred'
   | 'anchor-left-below'
-  | 'anchor-left-below-badge';
+  | 'anchor-left-below-badge'
+  // 'below' opens under the trigger itself, right edges aligned: for a preview
+  // with nothing below it but its own field (the budget editor).
+  | 'below';
  children: React.ReactNode;
 };
 
