@@ -1063,6 +1063,18 @@ function renderDocument(doc, data, { generatedAt, timeZone }) {
  }
 
  const splitColW = (CW - 20) / 2;
+ // pdfkit auto-paginates any .text() call whose position crosses the bottom
+ // margin regardless of explicit x/y (see pageFooter's comment above). A
+ // long category list can leave section 7's table ending close enough to
+ // the bottom that the goals table or the notes list below gets split
+ // mid-row onto a bare, unheaded page instead of moving as a whole. The
+ // block's content is bounded - a 3-row table, at most 2 known footnote
+ // texts, and the fixed 3-item KNOWN_LIMITS list - so 160pt is enough room
+ // for both columns in every case; start a fresh page if it will not fit.
+ const budgetNotesBlockHeight = 160;
+ if (y + 8 + budgetNotesBlockHeight > doc.page.height - doc.page.margins.bottom) {
+  y = startPage('Budget and notes');
+ }
  const splitTop = y + 8;
  let leftY = drawSectionHeading(doc, M, splitTop, splitColW, '8. Saving goals', 'All pockets, USD');
  leftY = drawTable(doc, {
