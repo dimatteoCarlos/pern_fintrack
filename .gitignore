@@ -142,6 +142,13 @@ plan-docs/*
 # already moved in is tracked only because `git mv` staged it explicitly, which
 # is exactly the state that hides the next file.
 !plan-docs/mockups/
+
+# =============================
+# Promo/demo video production assets (PLAN_PROMO_VIDEO.md, Q7).
+# Raw captures, intermediate scene clips, and rendered MP4s are large binary
+# output, not source. The final MP4 that ships is uploaded to the README as a
+# GitHub attachment (its own CDN URL), never committed here.
+docs/VIDEO/
 # Crash dumps left behind when the Git Bash shell faults. Junk, and a hazard
 # in a tree several sessions commit from: one careless "git add ." sweeps it in.
 *.stackdump
