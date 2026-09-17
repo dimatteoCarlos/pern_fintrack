@@ -1,5 +1,14 @@
 git add # FinTrack_app
 
+## Demo
+
+A 30-second walkthrough of the app's core loop: signing up, creating an
+account, recording an expense in a foreign currency at its historical rate,
+funding a savings pocket, tracking a debt, and exporting a PDF report —
+every figure shown is computed live by the app, not staged.
+
+<video src="https://github.com/user-attachments/assets/d84eb8a4-5385-41f1-8812-2cee07743265" controls width="480"></video>
+
 ## Objective
 
 **finTrack** is a personal "accounting" application, built as a "double-entry accounting system" but under a "cash-flow approach", offering a comprehensive and intuitive solution for managing your money.
