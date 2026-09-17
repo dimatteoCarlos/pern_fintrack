@@ -1,4 +1,4 @@
-# FinTrack_app
+# fintrack_app
 
 ## At a glance
 
