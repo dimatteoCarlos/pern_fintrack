@@ -170,8 +170,13 @@ function DomainView<D extends OverviewDomainName>({
  return (
   <section className='overviewDomain'>
    {/* First on the screen, so the level the reader is on is named before the
-       figures. */}
-   <Link className='overviewDomain__back' to='/fintrack/overview' viewTransition>
+       figures. It carries the search because the month lives there: a bare path
+       would land on level 1 with no month and refetch the current one. */}
+   <Link
+    className='overviewDomain__back'
+    to={{ pathname: '/fintrack/overview', search }}
+    viewTransition
+   >
     <span className='overviewDomain__backArrow' aria-hidden='true'>
      ←
     </span>
@@ -239,6 +244,8 @@ function OverviewDomain() {
  const { domain } = useParams();
  const [searchParams] = useSearchParams();
  const monthParam = searchParams.get('month') ?? undefined;
+ // The way back out of a mistyped segment keeps the month too.
+ const { search } = useLocation();
 
  // Narrowed before the hook, so the request is never composed from a segment
  // the registry does not know. The fallback is never rendered: a hook cannot be
@@ -262,7 +269,11 @@ function OverviewDomain() {
  if (!isDomain(domain)) {
   return (
    <section className='overviewDomain'>
-    <Link className='overviewDomain__back' to='/fintrack/overview' viewTransition>
+    <Link
+     className='overviewDomain__back'
+     to={{ pathname: '/fintrack/overview', search }}
+     viewTransition
+    >
      <span className='overviewDomain__backArrow' aria-hidden='true'>
       ←
      </span>
