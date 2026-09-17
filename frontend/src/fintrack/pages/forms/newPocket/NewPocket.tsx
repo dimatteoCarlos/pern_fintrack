@@ -48,23 +48,24 @@ type PocketDataType = {
 
 // ⚙️ CONSTANTS & INITIAL STATES
 const defaultCurrency = DEFAULT_CURRENCY;
-const initialNewPocketData: PocketDataType = {
+// The first day the calendar offers, read from the device. It is ergonomics, not
+// the rule: the server refuses today or earlier on the OWNER's calendar
+// (pocketController.js), so offering today only led to a rejection.
+const startOfTomorrow = (): Date => {
+  const tomorrow = new Date();
+  tomorrow.setHours(0, 0, 0, 0);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow;
+};
+
+// A function, so a form opened or reset after midnight proposes the new tomorrow.
+const initialNewPocketData = (): PocketDataType => ({
   name: '',
   note: '',
   amount: '',
-  desiredDate: new Date(),
+  desiredDate: startOfTomorrow(),
   currency: defaultCurrency,
-};
-
-// The floor the calendar offers, read from the device. It is ergonomics, not
-// the rule: the server refuses a past deadline on the OWNER's calendar, which
-// is the only calendar that can settle it. Today itself is offered, because a
-// goal due this month is a real goal.
-const startOfToday = (): Date => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return today;
-};
+});
 
 const formDataNumber = { keyName: 'amount', title: 'target' };
 const initialFormData: FormNumberInputType = {
@@ -213,7 +214,7 @@ function NewPocket() {
       // 🔄 RESET FORM ON SUCCESS
       setValidationMessages({});
       setFormData(initialFormData);
-      setPocketData(initialNewPocketData);
+      setPocketData(initialNewPocketData());
 
       // The 201 carried the whole detail payload, so the screen it opens is
       // already answered and asks for nothing. The board is only marked stale:
@@ -429,7 +430,7 @@ function NewPocket() {
                 changeDate={changeDesiredDate} //onChange
                 date={pocketData.desiredDate}
                 variant={'form'}
-                minDate={startOfToday()}
+                minDate={startOfTomorrow()}
                 popperClassName='pocket-datepicker-popper'
               />
             </div>

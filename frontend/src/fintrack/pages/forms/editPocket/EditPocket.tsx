@@ -70,14 +70,15 @@ type LocationStateType = {
 // ⚙️ CONSTANTS & INITIAL STATES
 const formDataNumber = { keyName: 'amount', title: 'target' };
 
-// The floor the calendar offers, read from the device. It is ergonomics, not
-// the rule: the server refuses a past deadline on the OWNER's calendar, which
-// is the only calendar that can settle it. Today itself is offered, because a
-// goal due this month is a real goal.
-const startOfToday = (): Date => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return today;
+// The first day the calendar offers, read from the device. It is ergonomics, not
+// the rule: the server refuses a new date of today or earlier on the OWNER's
+// calendar (pocketController.js). An unchanged date is never sent, so an
+// overdue pocket still saves its other fields.
+const startOfTomorrow = (): Date => {
+  const tomorrow = new Date();
+  tomorrow.setHours(0, 0, 0, 0);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow;
 };
 
 // =============================
@@ -144,7 +145,7 @@ function EditPocket() {
       currency: pocket.currency,
       // Built from the parts of the calendar label. new Date() on one of these
       // is UTC midnight and opens the picker on the previous day west of UTC.
-      desiredDate: fromCalendarDay(pocket.desiredDate) ?? startOfToday(),
+      desiredDate: fromCalendarDay(pocket.desiredDate) ?? startOfTomorrow(),
       // Seeded as well as shown, because the validator reads the amount off
       // this object and not off the input's own string. Left unset it would
       // report the target as missing on a pocket that has one.
@@ -517,7 +518,7 @@ function EditPocket() {
                 changeDate={changeDesiredDate}
                 date={pocketData.desiredDate}
                 variant={'form'}
-                minDate={startOfToday()}
+                minDate={startOfTomorrow()}
                 popperClassName='pocket-datepicker-popper'
               />
             </div>

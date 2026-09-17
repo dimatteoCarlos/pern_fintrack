@@ -170,7 +170,7 @@ export async function createPocket(req, res, next) {
   if (body.desiredDate <= today) {
    return res.status(422).json({
     status: 422,
-    message: `desired date ${body.desiredDate} cannot be today or in the past`,
+    message: 'Desired date must be in the future',
    });
   }
 
@@ -205,12 +205,25 @@ export async function editPocket(req, res, next) {
   const { pocketId } = pocketParamsSchema.parse(req.params);
   const body = updatePocketBodySchema.parse(req.body);
 
+  // Same rule as creation, checked only when a date is sent: the client omits
+  // an unchanged one, so an overdue pocket can still be renamed.
+  const timeZone = await getUserTimeZone(pool, userId);
+
+  if (body.desiredDate !== undefined) {
+   const today = await getCalendarToday(pool, timeZone);
+   if (body.desiredDate <= today) {
+    return res.status(422).json({
+     status: 422,
+     message: 'Desired date must be in the future',
+    });
+   }
+  }
+
   await pocketWriteService.editPocket(userId, pocketId, body);
 
   // The recomputed figures come back with the write. A new target moves the gap
   // and the monthly pace it implies, and that pace is the figure the owner is
   // actually choosing — derived here, never on the client.
-  const timeZone = await getUserTimeZone(pool, userId);
   const detail = await pocketDetailService.getDetail(
    pool,
    userId,
