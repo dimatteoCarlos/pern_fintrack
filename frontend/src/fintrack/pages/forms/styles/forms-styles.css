@@ -172,6 +172,7 @@ label,
   height: 2.625em;
   border-radius: 1rem;
   color: var(--creme);
+  background-color: transparent;
   padding: 0.25rem;
   box-sizing: border-box;
 }
