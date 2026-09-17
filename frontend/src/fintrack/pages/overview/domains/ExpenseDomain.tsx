@@ -59,9 +59,17 @@ const CategoryFilter = ({
  const topNames = new Set(
   categories.slice(0, VISIBLE_CATEGORIES).map((c) => c.categoryName),
  );
- // The selected one is pinned first so the state never hides behind More.
- const pinned = categories.find((c) => c.categoryName === selected);
- const unpinned = categories.filter((c) => c.categoryName !== selected);
+ // Pinned first ONLY when it would otherwise be folded behind More, which is
+ // the case the pin exists for. One already among the visible six keeps the
+ // place the ranking gave it, so picking a chip does not shift the whole strip
+ // sideways under the reader's hand.
+ const pinned =
+  selected !== null && !topNames.has(selected)
+   ? categories.find((c) => c.categoryName === selected)
+   : undefined;
+ const unpinned = pinned
+  ? categories.filter((c) => c.categoryName !== selected)
+  : categories;
  const shown = unpinned.filter((c) => topNames.has(c.categoryName));
  const folded = unpinned.filter((c) => !topNames.has(c.categoryName));
  const hasMore = folded.length >= MIN_FOLDED_FOR_MORE;
