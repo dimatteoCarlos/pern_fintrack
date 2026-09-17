@@ -534,7 +534,7 @@ If a change to this core data is required, the application enforces the use of a
 
 * Creating new direct or reversal transactions (Transfers or PnL adjustments).
 
-* Or Using the Atomic Hard Delete feature to safely remove an erroneous account and recreate it correctly.
+* Or closing the erroneous account (see Account Deletion below) and recreating it correctly.
  
   
 ## ACCOUNT DELETION.
@@ -611,36 +611,26 @@ Disadvantage: High Risk of Double Counting. This creates extreme complexity in r
 Best Practice / Role: Database Admin/Maintenance. (Only for specific legal retention requirements).
 ---
 # ACCOUNT DELETION METHOD APPLIED
-For this app, the method number 4, Retrospective Total Annulment (RTA) was chosen, following the criteria of deletion of account only for critical data correction or emergency use cases.
+The first method implemented was number 4, Retrospective Total Annulment (RTA), chosen for critical data correction: it erased the account and its transactions and wrote one annulment entry per counterpart account, against the compensation account, so current balances reflected the account never having existed.
 
-## ACCOUNT DELETION IMPLEMENTED
+After several rounds of testing, RTA proved too risky for an ordinary user action. Undoing the movements of the deleted account also undid them on every account that had interacted with it, changing the balances and the history of accounts the user never touched. Each of those accounts had interacted with others in turn, so the annulment risked becoming an event that expanded recursively, tending to wipe out most of the historical transactions. It also erased the account's own history for good, a problem hard delete shares.
 
-Feature: Account deletion developed using the "Total Retrospective Annulment" strategy.
+RTA was therefore replaced by the account closure method. Hard delete and soft delete were withdrawn with it; all three remain in the code but are refused by the API, and CLOSE is the only deletion type it accepts.
 
-Strategy: Total Retrospective Annulment
-This method invalidates a bank account and associated transactions from its origin date, removing the account record from the system.
+## ACCOUNT CLOSURE IMPLEMENTED
 
-Implementation Details:
-Account Annulment: Permanent deletion of the account record and its associated history.
-Permanent erasure of the complete account record; "not a standard closure process".
+Principle: closing an account is a lifecycle event, not an accounting one. It removes the account and keeps its identity and its history. It settles nothing, transfers nothing and writes no transaction on the user's behalf.
 
-Retroactive Effect: Data removal impacts all operations from opening date to annulment time.
+What a close does, in order, inside one database transaction (all of it commits or none of it does):
 
-Annulment Log: Retention of a procedural record that documents the annulment event and the final reconciliation steps.
+1. **Lock and assess.** The account is locked and its balance is derived from the ledger, not read from the stored column.
+2. **Zero-balance rule.** Bank, cash, investment and debtor accounts must be at zero. A close on one holding money is refused, and the user either moves the balance out with an ordinary transfer, or chooses **reverse the balance and close** (below).
+3. **Pockets released.** Every commitment the account was backing is released through the pocket module, so no pocket stays funded by an account that no longer exists.
+4. **Budget stopped.** A category budget account gets a zero allocation on the current month; past months keep their amounts and nothing carries forward.
+5. **Identity recorded.** The account's name, type, currency, starting amount, dates, category fields, closing date, who closed it and the mandatory **close reason** (up to 255 characters) are written to `account_registry`.
+6. **Account removed.** The type's extension row and the `user_accounts` row are deleted. The name is free again for a new account.
 
-Balance Conciliation: Systematic adjustment of the balances of all related accounts that interacted with the annulled account to ensure current net worth remains accurate.
+Reverse the balance and close: the one option offered when the balance blocks a close. The user chooses only whether to use it; the amount is the negation of the balance and the counterpart is the system compensation account. Two ledger legs (movement type 11, both naming the closed account in `reversal_of_account_id`) bring the account to zero, the balance is derived again, and the close proceeds only if it is exactly zero.
 
-Data Scope: Removal of all historical transaction details, replaced by a single summary entry for each affected counterpart account.
-
-Rationale:
-This approach addresses data privacy compliance requirements (e.g., "Right to be Forgotten" under GDPR(*) ) and corrects account opening errors, providing a comprehensive erasure mechanism beyond typical standard closure processes. 
-
-Data Privacy:Applied approach method facilitates the "Right to be Forgotten" under GDPR Article 17 by erasing personal or sensitive financial history.
-
-Ledger Integrity: Prevents "gaps" or discrepancies in the remaining accounts by using account reconciliation to account for the missing historical transfers.
-
-Error Correction: Provides a method to remove accounts created in error without leaving legacy data that would otherwise require manual closing entries. 
-
-(*) GDPR stands for the General Data Protection Regulation (RGPD in Spanish).
-It is the fundamental regulation of the European Union (EU) that establishes the rules on how organizations must process the personal data of citizens residing in the EU and the European Economic Area (EEA). It entered into force on May 25, 2018, and replaced previous directives.
+Why history survives: every transaction, pocket allocation and budget month points at `account_registry` rather than at `user_accounts`, so they still resolve after the account row is gone. Balances of other accounts are never rewritten.
 
