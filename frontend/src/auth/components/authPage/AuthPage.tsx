@@ -39,11 +39,8 @@ import { useAuthStore } from '../../stores/useAuthStore';
 
 import styles from './styles/authPage.module.css';
 
-// Placeholder until the 16:9 master (docs/VIDEO/promo-30s/output/
-// fintrack-promo-30s-16x9.mp4) is uploaded through GitHub's own web editor -
-// that step mints the real user-images.githubusercontent.com link
-// (PLAN_PROMO_VIDEO.md §7 Q7). Points nowhere real until then.
-const DEMO_VIDEO_URL = '#';
+// The 16:9 promo uploaded to GitHub; the same link the README embeds.
+const DEMO_VIDEO_URL = 'https://github.com/user-attachments/assets/d45e1596-f126-49f6-84b0-b23d390a7ef2';
 
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
 export default function AuthPage() {
