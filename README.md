@@ -17,7 +17,7 @@ account, recording an expense in a foreign currency at its historical rate,
 committing money to a savings pocket, tracking a debt, and exporting a PDF report —
 every figure shown is computed live by the app, not staged.
 
-<video src="https://github.com/user-attachments/assets/d84eb8a4-5385-41f1-8812-2cee07743265" controls width="480"></video>
+<video src="https://github.com/user-attachments/assets/d45e1596-f126-49f6-84b0-b23d390a7ef2" controls width="480"></video>
 
 ## Objective
 
