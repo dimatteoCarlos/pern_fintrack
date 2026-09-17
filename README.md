@@ -8,7 +8,7 @@ reads the month in KPI cards and in a Pareto of spending against budget by
 category; the pocket board ranks the pockets that still need money each month.
 The image is a composition built from the app's own screens.
 
-![FinTrack: KPI cards, savings pockets and spending against budget by category](.github/assets/fintrack-showcase-pareto-level_02.png)
+![fintrack: KPI cards, savings pockets and spending against budget by category](.github/assets/fintrack-showcase-pareto-level_02.png)
 
 ## Demo
 
@@ -21,11 +21,11 @@ every figure shown is computed live by the app, not staged.
 
 ## Objective
 
-**finTrack** is a personal "accounting" application, built as a "double-entry accounting system" but under a "cash-flow approach", offering a comprehensive and intuitive solution for managing your money.
+**fintrack** is a personal "accounting" application, built as a "double-entry accounting system" but under a "cash-flow approach", offering a comprehensive and intuitive solution for managing your money.
 
 Its primary goal is to provide users with effective tools to track expenses, incomes, investments, debts and bank accounts; keeping records of the interactions among the different accounts and keeping all balances updated and reconciled.
 
-finTrack also helps users track investments and plan their savings with **pockets**: a target amount and a desired date, backed by money that stays in the user's bank accounts.
+fintrack also helps users track investments and plan their savings with **pockets**: a target amount and a desired date, backed by money that stays in the user's bank accounts.
 
 **A WORD FOR DEVELOPERS** 
 Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of gradually learning; it functioned as a sandbox.
@@ -190,15 +190,15 @@ This project is licensed under the terms of the [MIT License](LICENSE). 📄⚖�
 
 ---
 
-**FinTrack**: Your intelligent ally for taking control of your personal finances. 💡💼📊
+**fintrack**: Your intelligent ally for taking control of your personal finances. 💡💼📊
 
 7. **A WORD FOR DEVELOPERS**:
 ## Overview
 In developing this app, different alternatives were used to do similiar tasks, for the sake of learning, from customized native methods were used up to methods using common libraries, to perform the same tasks.
 
-For account movement tracker, FinTrack consists of 9 form pages, each one developed with different alternative methods, which will be described as follows:
+For account movement tracker, fintrack consists of 9 form pages, each one developed with different alternative methods, which will be described as follows:
 
-# FINTRACK FORM ARCHITECTURE:
+# fintrack FORM ARCHITECTURE:
  DEBTS.tsx
   IMPLEMENTATION CUSTOMIZED WITH NO THIRD PARTY LIBRARIES.
 
@@ -256,7 +256,7 @@ graph LR
 
 This implementation shows a self-contained validation system integrated with React's state management, using manual checks instead of validation libraries.
 
-# FinTrack Form Architecture:
+# fintrack Form Architecture:
 # PnL.tsx Implementation with Custom Validation
 
 ## Core Implementation
@@ -336,7 +336,7 @@ graph LR
 This implementation demonstrates a robust form handling system with custom validation logic, seamless API integration, and responsive user feedback, all while maintaining type safety and clean component separation.
 
 
-# FINTRACK FORM ARCHITECTURE:
+# fintrack FORM ARCHITECTURE:
 ## Expense.tsx
  CASE STUDY (Zod validation)
 
@@ -398,7 +398,7 @@ The component represents a pragmatic hybrid architecture where:
 This documentation shows how I evolved from a monolithic implementation to a structured yet practical architecture, serving as a reference pattern for other forms in the application.
 
 
-# FINTRACK:
+# fintrack:
 ## INCOME COMPONENT (ZOD VALIDATION)
 
 ## Core Implementation
@@ -451,7 +451,7 @@ graph LR
 This implementation effectively combines Zod's schema validation with custom form management logic.
 --- -----------------------------------
 
-# FINTRACK FORM ARCHITECTURE: `TRANSFER.TSX`
+# fintrack FORM ARCHITECTURE: `TRANSFER.TSX`
  ## CASE STUDY
 
 ## Overview
