@@ -132,11 +132,16 @@ scripts/
 plan-docs/*
 
 # =============================
-# Promo/demo video production assets (PLAN_PROMO_VIDEO.md, Q7).
-# Raw captures, intermediate scene clips, and rendered MP4s are large binary
-# output, not source. The final MP4 that ships is uploaded to the README as a
-# GitHub attachment (its own CDN URL), never committed here.
-docs/VIDEO/
+# docs/ - extended 2026-09-16 from docs/VIDEO/ alone (PLAN_PROMO_VIDEO.md, Q7)
+# to the whole folder, on Carlos's own instruction. Raw captures, intermediate
+# scene clips, and rendered MP4s under docs/VIDEO/ are large binary output, not
+# source - the final MP4 that ships is uploaded to the README as a GitHub
+# attachment (its own CDN URL), never committed here. docs/budget/,
+# docs/charts/ and docs/design-system/ each already carry one tracked .md;
+# this rule does not untrack them (git still diffs a file it already tracks
+# regardless of .gitignore) - it only stops any new file added under docs/
+# from being picked up by a future "git add .".
+docs/
 # Crash dumps left behind when the Git Bash shell faults. Junk, and a hazard
 # in a tree several sessions commit from: one careless "git add ." sweeps it in.
 *.stackdump
