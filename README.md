@@ -198,9 +198,10 @@ In developing this app, different alternatives were used to do similiar tasks, f
 
 For account movement tracker, fintrack consists of 9 form pages, each one developed with different alternative methods, which will be described as follows:
 
-# fintrack FORM ARCHITECTURE:
- DEBTS.tsx
-  IMPLEMENTATION CUSTOMIZED WITH NO THIRD PARTY LIBRARIES.
+# fintrack Form Architecture
+
+## Debts.tsx
+ IMPLEMENTATION CUSTOMIZED WITH NO THIRD PARTY LIBRARIES.
 
 ## Core Implementation
 
@@ -256,8 +257,8 @@ graph LR
 
 This implementation shows a self-contained validation system integrated with React's state management, using manual checks instead of validation libraries.
 
-# fintrack Form Architecture:
-# PnL.tsx Implementation with Custom Validation
+## PnL.tsx
+ Implementation with custom validation.
 
 ## Core Implementation
 
@@ -336,7 +337,6 @@ graph LR
 This implementation demonstrates a robust form handling system with custom validation logic, seamless API integration, and responsive user feedback, all while maintaining type safety and clean component separation.
 
 
-# fintrack FORM ARCHITECTURE:
 ## Expense.tsx
  CASE STUDY (Zod validation)
 
@@ -398,8 +398,8 @@ The component represents a pragmatic hybrid architecture where:
 This documentation shows how I evolved from a monolithic implementation to a structured yet practical architecture, serving as a reference pattern for other forms in the application.
 
 
-# fintrack:
-## INCOME COMPONENT (ZOD VALIDATION)
+## Income.tsx
+ CASE STUDY (Zod validation)
 
 ## Core Implementation
 
@@ -451,8 +451,8 @@ graph LR
 This implementation effectively combines Zod's schema validation with custom form management logic.
 --- -----------------------------------
 
-# fintrack FORM ARCHITECTURE: `TRANSFER.TSX`
- ## CASE STUDY
+## Transfer.tsx
+ CASE STUDY
 
 ## Overview
 
