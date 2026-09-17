@@ -36,9 +36,9 @@ function AuthModal({ onClose, isDarkTheme, ...authUIProps }: AuthModalPropsType)
   isSignInRef.current = isSignIn;
  }, []);
 
- // Where the backdrop, Escape and the Close button all land, so a stray click
- // outside the panel no longer throws away what the user typed. An empty form
- // asks too, with its own message: there is nothing unsaved to name.
+ // Where the backdrop and Escape land, the two exits a user takes by accident.
+ // The Close button is deliberate and closes at once. An empty form asks too,
+ // with its own message: there is nothing unsaved to name.
  const requestClose = useCallback(() => {
   const message = isDirtyRef.current
    ? 'You have unsaved changes. Are you sure you want to close?'
@@ -84,7 +84,7 @@ function AuthModal({ onClose, isDarkTheme, ...authUIProps }: AuthModalPropsType)
     <AuthUI
      {...authUIProps}
      isDarkTheme={isDarkTheme}
-     onClose={requestClose}
+     onClose={onClose}
      onDirtyChange={handleDirtyChange}
      onModeChange={handleModeChange}
      titleId={titleId}

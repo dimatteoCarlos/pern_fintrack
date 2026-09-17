@@ -65,9 +65,9 @@ function AuthUI({
 
  const [formKey, setFormKey] = useState(0); // ✅ For forced remount
 
-  // The unsaved-changes guard lives in AuthModal, which also owns the backdrop
-  // and Escape, so the Close button asks through the same confirm. The mode is
-  // reported so an empty form's question names sign in or sign up.
+  // The close confirm lives in AuthModal, which owns the backdrop and Escape;
+  // the Close button here closes without asking. The mode is reported so an
+  // empty form's question names sign in or sign up.
   useEffect(() => {
    onModeChange?.(isSignIn);
   }, [isSignIn, onModeChange]);
