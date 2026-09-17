@@ -40,6 +40,8 @@ export type AuthUIPropsType = {
   titleId?: string;
   // Passed down to the active form, which reports whether it holds typed values.
   onDirtyChange?: (isDirty: boolean) => void;
+  // Told which form is showing, so closing an empty form names it.
+  onModeChange?: (isSignIn: boolean) => void;
 };
 //MAIN COMPONENT: AuthUI.tsx
 function AuthUI({
@@ -55,6 +57,7 @@ function AuthUI({
   onToggleTheme,
   titleId,
   onDirtyChange,
+  onModeChange,
 }: AuthUIPropsType): JSX.Element {
  //STATES
   const [isSignIn, setIsSignIn] = useState(isSignInInitial);
@@ -63,8 +66,11 @@ function AuthUI({
  const [formKey, setFormKey] = useState(0); // ✅ For forced remount
 
   // The unsaved-changes guard lives in AuthModal, which also owns the backdrop
-  // and Escape, so the Close button asks through the same confirm. It asks on
-  // typed values only: switching mode or "remember me" loses nothing written.
+  // and Escape, so the Close button asks through the same confirm. The mode is
+  // reported so an empty form's question names sign in or sign up.
+  useEffect(() => {
+   onModeChange?.(isSignIn);
+  }, [isSignIn, onModeChange]);
 
   // ===============================
   // 🔄 REINITIALIZATION

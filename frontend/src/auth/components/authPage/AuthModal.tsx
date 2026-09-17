@@ -31,15 +31,19 @@ function AuthModal({ onClose, isDarkTheme, ...authUIProps }: AuthModalPropsType)
   isDirtyRef.current = isDirty;
  }, []);
 
+ const isSignInRef = useRef(authUIProps.isSignInInitial);
+ const handleModeChange = useCallback((isSignIn: boolean) => {
+  isSignInRef.current = isSignIn;
+ }, []);
+
  // Where the backdrop, Escape and the Close button all land, so a stray click
- // outside the panel no longer throws away what the user typed.
+ // outside the panel no longer throws away what the user typed. An empty form
+ // asks too, with its own message: there is nothing unsaved to name.
  const requestClose = useCallback(() => {
-  if (
-   isDirtyRef.current &&
-   !window.confirm('You have unsaved changes. Are you sure you want to close?')
-  ) {
-   return;
-  }
+  const message = isDirtyRef.current
+   ? 'You have unsaved changes. Are you sure you want to close?'
+   : `Leave sign ${isSignInRef.current ? 'in' : 'up'}? You can come back to it anytime.`;
+  if (!window.confirm(message)) return;
   onClose();
  }, [onClose]);
 
@@ -82,6 +86,7 @@ function AuthModal({ onClose, isDarkTheme, ...authUIProps }: AuthModalPropsType)
      isDarkTheme={isDarkTheme}
      onClose={requestClose}
      onDirtyChange={handleDirtyChange}
+     onModeChange={handleModeChange}
      titleId={titleId}
     />
    </div>
