@@ -40,7 +40,7 @@ import { useAuthStore } from '../../stores/useAuthStore';
 import styles from './styles/authPage.module.css';
 
 // The 16:9 promo uploaded to GitHub; the same link the README embeds.
-const DEMO_VIDEO_URL = 'https://github.com/user-attachments/assets/d45e1596-f126-49f6-84b0-b23d390a7ef2';
+const DEMO_VIDEO_URL = 'https://github.com/user-attachments/assets/1c60624b-139d-4ca1-9c59-2a909bd9c19d';
 
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
 export default function AuthPage() {
