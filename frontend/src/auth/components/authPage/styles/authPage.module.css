@@ -11,6 +11,14 @@ button {
   background-color: var(--color-surface-app);
 }
 
+/* index.css reserves the scrollbar track on every route (scrollbar-gutter:
+   stable), and on this page nothing can paint into it: the photo stopped short
+   of the right edge beside a dark strip. The landing page fills one viewport
+   and has no centred layout to hold still, so the reservation goes here only. */
+:global(html):has(.authPageContainer) {
+  scrollbar-gutter: auto;
+}
+
 /* Scoped exception to CLAUDE.md's "headers and navbars are white" rule: this
    navbar sits directly on .authPageContainer's own dark ground
    (--color-surface-app), not inside the app shell the rule describes, so a
