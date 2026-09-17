@@ -2,19 +2,19 @@
 
 ## At a glance
 
-Accounts, budgets and savings goals in one place. An expense typed in another
+Accounts, budgets and savings pockets in one place. An expense typed in another
 currency is converted to your accounting currency at that day's rate; Overview
 reads the month in KPI cards and in a Pareto of spending against budget by
-category; the pocket board ranks the goals that still need money each month.
+category; the pocket board ranks the pockets that still need money each month.
 The image is a composition built from the app's own screens.
 
-![FinTrack: KPI cards, pocket goals and spending against budget by category](.github/assets/fintrack-showcase-pareto-level_02.png)
+![FinTrack: KPI cards, savings pockets and spending against budget by category](.github/assets/fintrack-showcase-pareto-level_02.png)
 
 ## Demo
 
 A 30-second walkthrough of the app's core loop: signing up, creating an
 account, recording an expense in a foreign currency at its historical rate,
-funding a savings pocket, tracking a debt, and exporting a PDF report —
+committing money to a savings pocket, tracking a debt, and exporting a PDF report —
 every figure shown is computed live by the app, not staged.
 
 <video src="https://github.com/user-attachments/assets/d84eb8a4-5385-41f1-8812-2cee07743265" controls width="480"></video>
@@ -25,7 +25,7 @@ every figure shown is computed live by the app, not staged.
 
 Its primary goal is to provide users with effective tools to track expenses, incomes, investments, debts and bank accounts; keeping records of the interactions among the different accounts and keeping all balances updated and reconciled.
 
-finTrack also helps users monitor savings goals and investments. 
+finTrack also helps users track investments and plan their savings with **pockets**: a target amount and a desired date, backed by money that stays in the user's bank accounts.
 
 **A WORD FOR DEVELOPERS** 
 Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of gradually learning; it functioned as a sandbox.
@@ -58,12 +58,14 @@ This system utilizes arithmetic logic to record the movement of funds:
 #### Mechanism
 The system records transfers by performing a simultaneous subtraction from the source and an addition to the destination. This tracks the path of funds between accounts for auditing purposes.
 
-#### Transfer Example: Savings to Checking ($500)
+#### Transfer Example: Main Bank to Second Bank ($500)
 
 | Account | Operation | Sign | Amount | Impact |
 | :--- | :--- | :---: | :--- | :--- |
-| **Savings** | Withdrawal | **–** | $500 | Outflow from source |
-| **Checking** | Deposit | **+** | $500 | Inflow to destination |
+| **Main Bank** | Withdrawal | **–** | $500 | Outflow from source |
+| **Second Bank** | Deposit | **+** | $500 | Inflow to destination |
+
+A savings pocket never takes part in a transfer: it is not an account and holds no money (see Savings Pockets below).
 
 ### Integration of Dual Accounting Methodologies
 
@@ -109,10 +111,13 @@ This dual approach allows the system to maintain professional-grade ledger books
    - View updated balances for all your financial accounts.
    - Compare income and expenses in real-time.
 
-4. **Savings Goals**:
+4. **Savings Pockets**:
 
-   - Set up personalized savings goals.
-   - Monitor progress toward achieving goals.
+   - A pocket is a savings plan, not an account: a target amount and a desired date in the future.
+   - Money is **committed** to a pocket from bank accounts and **released** back; nothing moves, the money stays in the bank account and its balance is unchanged.
+   - Each commit or release is recorded, with its date, as a new entry; past entries are never edited or deleted.
+   - The pocket board shows what is allocated against what the plans require to date, a status level per pocket (ahead, on track, behind, at risk, overdue, completed, above target), and **Next target**: the pockets that still need money, ranked by what they require per month.
+   - A pocket is flagged **uncovered** when its funding accounts no longer hold what was committed to it.
 
 5. **Income Sources**:
    - Record and manage multiple income sources.
@@ -518,7 +523,7 @@ The system employs a Hybrid Data Fetching Pattern
   
   All detail components use the same consumption logic (StateData || FetchResult) to handle both the instant load from state and the slower, resilient fetch from the API when state data is absent (e.g., after a page refresh).
 
-  In PocketDetail, the account id is passed via parameters, and info account is always fetch using useFetch hook. 
+  In PocketDetail, the pocket id is passed via route parameters, and the detail (pocket, funding accounts and commit/release history) is fetched through its own store, `usePocketDetailStore`. A pocket is not an account, so it has no entry in the accounting dashboard.
 
   
 ## ACCOUNT DATA EDITION.
