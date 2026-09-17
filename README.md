@@ -1,4 +1,29 @@
-# fintrack_app
+# fintrack 💻
+
+![Built By](https://img.shields.io/badge/Built%20By-CADR-purple)
+![License](https://img.shields.io/badge/License-MIT-blue)
+![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen)
+
+> A web application for tracking personal finances and managing budgets effectively.
+
+
+## 🤝 Contributing & Support
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](../../issues) if you want to report a bug or suggest a feature.
+
+To contribute:
+
+1. Fork the repository.
+2. Create a branch for your feature: `git checkout -b new-feature`.
+3. Make the changes and commit with descriptive messages.
+4. Submit a Pull Request.
+
+If you find this project helpful, please consider leaving a ⭐ to support it!
+
+Made with 💜 by **CADR**
+
+---
+
 
 ## At a glance
 
@@ -83,7 +108,7 @@ The primary difference between the two integrated layers lies in how transaction
     *   **Minus Sign (–):** Applied to all **Withdrawals** or outflows, regardless of account classification.
     *   **Plus Sign (+):** Applied to all **Deposits** or inflows, regardless of account classification.
 
-#### Comparative Logic of the cohexistence of these two approaches
+#### Comparative Logic of the coexistence of these two approaches
 
 | Feature | Standard Accounting Logic | Cash-Flow Logic (Integrated) |
 | :--- | :--- | :--- |
@@ -93,6 +118,24 @@ The primary difference between the two integrated layers lies in how transaction
 
 #### Implementation Mechanism
 This dual approach allows the system to maintain professional-grade ledger books while guiding the user through an intuitive interface. When a transaction occurs, the system simultaneously records the classification-specific Withdrawal/Deposit for the accounting books and the direction-specific Plus/Minus sign for the user’s cash-flow tracking.
+
+### Account Classes: Positions and Flows
+
+A figure is either a position or a flow, the accounting distinction between stocks and flows:
+
+| Class | What it measures | Question it answers | fintrack types |
+| :--- | :--- | :--- | :--- |
+| **Position** (real / permanent accounts: assets and liabilities) | What you hold or owe at a date | "How much do I have or owe?" | `bank`, `cash`, `investment`, `debtor` |
+| **Flow** (nominal / temporary accounts: income, expenses, gains and losses) | What came in or went out over a period | "How much came in or went out for this concept?" | `income_source`, `category_budget` |
+
+Every movement joins both classes: a $1,000 salary is `bank` +1,000 and `income_source` −1,000; a $50 grocery payment is `bank` −50 and `category_budget` +50.
+
+- **Net worth** adds positions only (assets less liabilities); a flow has already changed the positions it touched, so adding it would count the same money twice.
+- **An income source reads negative** because it is the source (credit) leg of every income, not because it is a debt.
+- **Flow accounts are never closed per period**: unlike formal bookkeeping, their balance accumulates since opening. Overview reads a flow for the month and a position at its close.
+- **Every position also has a flow**: its change over the period, such as the month's net cash flow.
+- **A pocket commitment is a position, but not of money**: it earmarks part of the bank balances without moving it, so net worth does not add it again.
+- **PnL is a flow** read by movement type, not an account type.
 
 ## Key Features
 
@@ -125,87 +168,120 @@ This dual approach allows the system to maintain professional-grade ledger books
 
 ## System Requirements
 
-- Node.js >= 18
-- Vite as the development server
-- React >= 18.3
-- TypeScript
+- Node.js 22.x (the backend declares it in `engines`)
+- PostgreSQL
+- npm
 
-🌐💻📋
+## Project Structure
+
+fintrack is a PERN application with two independent packages, each with its own `package.json`:
+
+- `frontend/`: React + TypeScript single-page app, built with Vite.
+- `backend/`: Node.js + Express API over PostgreSQL, also deployable as Vercel serverless functions.
 
 ## Installation
 
-1. Clone this repository:
+1. Clone this repository and enter it:
 
-   bash
-   git clone https://github.com/your-username/fintrack.git
-   
+   ```bash
+   git clone https://github.com/dimatteoCarlos/pern_fintrack.git
+   cd pern_fintrack
+   ```
 
-2. Navigate to the project directory:
+2. Install the dependencies of each package:
 
-   bash
-   cd fintrack
-   
+   ```bash
+   cd backend && npm install
+   cd ../frontend && npm install
+   ```
 
-3. Install dependencies:
-   bash
-   npm install
-   
+3. Configure the environment. Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `frontend/.env.local`, then fill in the values. Each example file documents its variables; never commit a real credential.
 
-📥🛠️🚀
+4. Create the database schema and its base data from `backend/`:
+
+   ```bash
+   npm run db:migrate
+   npm run db:seed:base
+   ```
+
+   The full database lifecycle (creation, reset, seeds, admin user) is described in [README_DATABASE.md](README_DATABASE.md).
+
+5. Start both servers, each in its own terminal:
+
+   ```bash
+   cd backend && npm run dev
+   cd frontend && npm run dev
+   ```
 
 ## Available Scripts
 
-- `npm run dev`: Starts the development server.
+Frontend (`frontend/`):
+
+- `npm run dev`: Starts the Vite development server.
 - `npm run build`: Builds the production version.
+- `npm run typecheck`: Type-checks the app without emitting files.
 - `npm run lint`: Runs the linter to ensure clean code.
 - `npm run preview`: Previews the built application.
 
-⚙️✅🔧
+Backend (`backend/`):
+
+- `npm run dev`: Starts the API with nodemon.
+- `npm start`: Starts the API.
+- `npm test`: Runs the test suite.
+- `npm run db:migrate`: Applies the SQL migrations.
+- `npm run db:seed:base` / `npm run db:seed:admin`: Loads the base catalogs / the admin user.
 
 ## Technologies Used
+
+Frontend:
 
 - **React**: To build the user interface.
 - **TypeScript**: To ensure robust and typed code.
 - **Vite**: As an ultra-fast bundler and development server.
 - **React Router**: To handle navigation.
+- **Zustand**: For global state.
+- **Zod**: For schema validation in some of the forms.
 - **React Select and Datepicker**: To enhance the user experience with interactive components.
-- **date-fns**: For date manipulation and formatting.
+- **React Toastify**: For notifications.
 
-🖥️📦✨
+Backend:
 
-## Contribution
+- **Node.js and Express**: The REST API.
+- **PostgreSQL** through **pg**: The ledger, accounts, budgets and pockets.
+- **JSON Web Tokens and bcrypt**: Authentication.
+- **Zod**: Request validation.
+- **decimal.js**: Exact decimal arithmetic for amounts.
+- **PDFKit and ExcelJS**: Period statement exports.
+- **serverless-http**: Deployment as Vercel serverless functions.
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository.
-2. Create a branch for your feature: `git checkout -b new-feature`.
-3. Make the changes and commit with descriptive messages.
-4. Submit a Pull Request.
-
-🤝📜🛠️
+Authentication is described in [README_AUTH.md](README_AUTH.md).
 
 ## License
 
-This project is licensed under the terms of the [MIT License](LICENSE). 📄⚖️🆓
+This project is licensed under the terms of the [MIT License](LICENSE).
 
 ---
 
 **fintrack**: Your intelligent ally for taking control of your personal finances. 💡💼📊
 
-7. **A WORD FOR DEVELOPERS**:
-## Overview
-In developing this app, different alternatives were used to do similiar tasks, for the sake of learning, from customized native methods were used up to methods using common libraries, to perform the same tasks.
-
-For account movement tracker, fintrack consists of 9 form pages, each one developed with different alternative methods, which will be described as follows:
-
 # fintrack Form Architecture
+
+fintrack has 17 forms, developed with different alternative methods:
+
+- **Movement tracker (5):** `Expense.tsx`, `Income.tsx`, `Transfer.tsx`, `PnL.tsx`, `Debts.tsx`.
+- **Creation (4):** `NewAccount.tsx`, `NewCategory.tsx`, `NewPocket.tsx`, `NewProfile.tsx`.
+- **Edition and closure (3):** `EditAccount.tsx`, `EditPocket.tsx`, `AccountDeletionPage.tsx`.
+- **Modal forms (2):** `PocketAllocationModal.tsx` (commit and release money on a pocket), `BudgetEditModal.tsx` (the budget amount for a month and how far forward it applies).
+- **Authentication and profile (3):** `AuthUI.tsx` (sign in and sign up), `ChangePasswordForm.tsx`, `UpdateProfileForm.tsx`.
+
+The movement tracker forms are described as follows:
 
 ## Debts.tsx
  IMPLEMENTATION CUSTOMIZED WITH NO THIRD PARTY LIBRARIES.
 
-## Core Implementation
+### Core Implementation
 
-### Key Structural Blocks
+#### Key Structural Blocks
 1. **State Management**  
    - Local state for form data (`datatrack`, `formData`)  
    - Validation state (`validationMessages`, `showValidation`)  
@@ -221,15 +297,15 @@ For account movement tracker, fintrack consists of 9 form pages, each one develo
    - `DropDownSelection`: Account picker  
    - `CardNoteSave`: Note field + submit button  
 
-### Validation Approach
+#### Validation Approach
 - **Custom validation functions**:  
   `validateAmount`, `checkNumberFormatValue`, `validationData`  
 - **Two-phase validation**:  
   1. Field-level during input  
   2. Full-form on submission  
 
-### Key Data Flows
-mermaid
+#### Key Data Flows
+```mermaid
 graph TD
     A[User Input] --> B[Field Validation]
     B --> C[State Update]
@@ -237,15 +313,16 @@ graph TD
     D -->|Valid| E[API POST]
     D -->|Invalid| F[Error Display]
     E --> G[Global State Update]
+```
 
 
-## Technical Notes
+### Technical Notes
 - **No external validation libraries** used - all validation logic is custom  
 - State updates trigger dependent validations through `useEffect`  
 - Form reset logic handles both UI and data states  
 
-## Component Relationships
-mermaid
+### Component Relationships
+```mermaid
 graph LR
     UI[Form Components] -->|Events| H[Handlers]
     H --> V[Validation]
@@ -253,6 +330,7 @@ graph LR
     V -->|Valid Data| A[API]
     A --> S[Global State]
     S --> UI
+```
 
 
 This implementation shows a self-contained validation system integrated with React's state management, using manual checks instead of validation libraries.
@@ -260,9 +338,9 @@ This implementation shows a self-contained validation system integrated with Rea
 ## PnL.tsx
  Implementation with custom validation.
 
-## Core Implementation
+### Core Implementation
 
-### Key Structural Blocks
+#### Key Structural Blocks
 1. **State Management**  
    - Local state for form data (`formInputData`, `formValidatedData`)  
    - Validation state (`validationMessages`, `showValidation`)  
@@ -278,14 +356,14 @@ This implementation shows a self-contained validation system integrated with Rea
    - `Datepicker`: Date selection component  
    - `CardNoteSave`: Note field + submit button  
 
-### Validation Approach
+#### Validation Approach
 - **Custom validation hook**: `useFormManagerPnL` handles all validation logic
 - **Two-phase validation**:
   1. Field-level validation during input
   2. Full-form validation on submission
-- **Zod integration** for schema validation (implied by component names)
+- **No Zod**: `PnLValidationSchema` is a plain rules object (type, required) read by the hook's own checks
 
-### Key Data Flows
+#### Key Data Flows
 
 ```mermaid
 graph TD
@@ -298,24 +376,24 @@ graph TD
     E --> H[Form Reset]
 ```
 
-## Technical Implementation Details
+### Technical Implementation Details
 
-### Form Management
+#### Form Management
 - Custom `useFormManagerPnL` hook centralizes all form state and validation
 - Handler factories (`createInputNumberHandler`, `createDropdownHandler`) for consistent input handling
 - Type-safe validation with TypeScript interfaces
 
-### API Integration
+#### API Integration
 - Fetches account data for dropdown options
 - Posts transaction data to `movement_transaction_record` endpoint
 - Updates global balance store after successful transactions
 
-### Component Architecture
+#### Component Architecture
 - **TopCard**: Handles amount input, account selection, and currency selection
 - **Datepicker**: Custom date selection component
 - **CardNoteSave**: Manages note input and submit functionality
 
-## Component Relationships
+### Component Relationships
 
 ```mermaid
 graph LR
@@ -327,7 +405,7 @@ graph LR
     S --> UI[Form Reset]
 ```
 
-## Key Features
+### Key Features
 - Custom validation system without external validation libraries
 - Real-time feedback for user inputs
 - Automated form reset after successful submission
@@ -340,11 +418,11 @@ This implementation demonstrates a robust form handling system with custom valid
 ## Expense.tsx
  CASE STUDY (Zod validation)
 
-## Overview
+### Overview
  The `Expense.tsx` component demonstrates an organic evolution pattern that balances reusability with context-specific needs.
 
-## Development Approach
-### Evolutionary Pattern
+### Development Approach
+#### Evolutionary Pattern
 
 Initial Version (all in component)  
   │  
@@ -352,7 +430,7 @@ Initial Version (all in component)
   └─→ Ad-hoc Logic (context-specific parts)
 
 
-### Key Characteristics
+#### Key Characteristics
 1. **Foundational Implementation**:
    - Started with declarative functions solving immediate needs
    - Basic state management and validation built directly in component
@@ -366,9 +444,9 @@ Initial Version (all in component)
      - Data transformation logic
      - UI coordination
 
-## Architectural Flow
+### Architectural Flow
 
-mermaid
+```mermaid
 graph TD
     A[User Input] --> B[Handlers]
     B --> C[Validation]
@@ -377,8 +455,9 @@ graph TD
     D --> F[Global State]
     F --> G[UI Update]
     B -->|Direct Updates| G
+```
 
-## Key Design Decisions
+### Key Design Decisions
 
 | Feature | Implementation | Rationale |
 |---------|---------------|-----------|
@@ -387,7 +466,7 @@ graph TD
 | **Optimizations** | `useMemo` + precise `useEffect` | Performance-critical sections |
 | **Validation** | Zod schema + debounced checks | Real-time feedback without lag |
 
-## Current State
+### Current State
 The component represents a pragmatic hybrid architecture where:
 - Reusable logic is properly abstracted
 - Context-sensitive operations remain visible
@@ -401,9 +480,9 @@ This documentation shows how I evolved from a monolithic implementation to a str
 ## Income.tsx
  CASE STUDY (Zod validation)
 
-## Core Implementation
+### Core Implementation
 
-### Validation Architecture
+#### Validation Architecture
 1. **Zod Integration**
    - Schema definition in `incomeSchema`
    - Type-safe validation with `IncomeValidatedDataType`
@@ -417,14 +496,14 @@ This documentation shows how I evolved from a monolithic implementation to a str
        B -->|Invalid| D[Error Display]
    ```
 
-### Key Components
+#### Key Components
 | Component | Responsibility | Zod Usage |
 |-----------|----------------|-----------|
 | `useFormManager` | Central validation handler | Wraps Zod validation |
 | `TopCard` | Input handling | Uses Zod-validated fields |
 | `onSaveHandler` | Submission logic | Calls Zod `validateAll()` |
 
-## Technical Highlights
+### Technical Highlights
 1. **Hybrid Validation**
    - Zod for schema validation
    - Custom logic for:
@@ -439,7 +518,7 @@ This documentation shows how I evolved from a monolithic implementation to a str
    // dataValidated is typed as IncomeValidatedDataType
    ```
 
-## Data Flow
+### Data Flow
 ```mermaid
 graph LR
     UI[Form] -->|Update| H[useFormManager]
@@ -449,17 +528,16 @@ graph LR
 ```
 
 This implementation effectively combines Zod's schema validation with custom form management logic.
---- -----------------------------------
 
 ## Transfer.tsx
  CASE STUDY
 
-## Overview
+### Overview
 
 The `Transfer.tsx` component is designed to manage asset transfers between different account types. Its architecture demonstrates a structured approach that separates responsibilities and leverages reusable logic.
 
-## Development Approach
-### Architectural Pattern
+### Development Approach
+#### Architectural Pattern
 
 The component implements a **hybrid architecture** that combines a central state management hook with context-specific logic.
 
@@ -468,7 +546,7 @@ Initial Implementation
   ├─→ Extracted Hooks (reusable logic)
   └─→ Ad-hoc Logic (specialized component logic)
 
-### Key Characteristics
+#### Key Characteristics
 1. **Logic Centralization**:
     * Core form logic, including state management and validation, is housed in the custom hook **`useFormManager.ts`**.
     * The `Transfer.tsx` component maintains logic specific to its unique requirements, such as handling account type changes and filtering account options.
@@ -477,7 +555,7 @@ Initial Implementation
     * The **`transferSchema`** from Zod defines the validation rules for all form fields.
     * The schema includes a custom **`.refine`** method to ensure the origin and destination accounts are not the same.
 
-## Architectural Flow
+### Architectural Flow
 ```mermaid
 graph TD
     A[User Input] --> B[Handlers]
@@ -489,8 +567,10 @@ graph TD
     B -->|Direct Updates| G
 ```
 
-## I would use in the future either PnL.tsx for custom validated approach or Transfer.tsx for zod validation usage.
-this was already accomplished, considering different approachs for the sake of learning different techniques.
+## Which approach to keep
+
+I would use in the future either PnL.tsx for the custom validated approach or Transfer.tsx for Zod validation usage.
+This was already accomplished, considering different approaches for the sake of learning different techniques.
 
 Theoretically, all the operations of tracking could be performed just using "Transfer.tsx"  from tracker menu, in conjunction to "Debts.tsx" with just little adjustments, without the need of the others tracker movement options.
 
@@ -543,7 +623,7 @@ It was very interesting to evaluate the different methods that could be applied 
 As a case of study, following is a comparative table of deletion methods evaluated.
 
 📖 ACCOUNT DELETION METHODS: DOUBLE-ENTRY Accounting Implications
-This document describes the various approaches reviewd for deleting accounts, classifying their impact on the integrity of the double-entry bookkeeping system and the balance of active accounts (account_balance).
+This document describes the various approaches reviewed for deleting accounts, classifying their impact on the integrity of the double-entry bookkeeping system and the balance of active accounts (account_balance).
 
 ## 1. SOFT DELETE (Logical Deletion)
 The Soft Delete is the safest and least destructive approach. Instead of physical removal, the account row is simply marked with a deleted_at timestamp.
@@ -624,7 +704,7 @@ Principle: closing an account is a lifecycle event, not an accounting one. It re
 What a close does, in order, inside one database transaction (all of it commits or none of it does):
 
 1. **Lock and assess.** The account is locked and its balance is derived from the ledger, not read from the stored column.
-2. **Zero-balance rule.** Bank, cash, investment and debtor accounts must be at zero. A close on one holding money is refused, and the user either moves the balance out with an ordinary transfer, or chooses **reverse the balance and close** (below).
+2. **Zero-balance rule.** Bank, cash, investment and debtor accounts must be at zero. A close on one holding money is refused, and the user either moves the balance out with an ordinary transfer, or chooses **reverse the balance and close** (below). Income source, category budget and pocket saving accounts close at any balance: their figure is what flowed through them, not money they hold (see Account Classes above).
 3. **Pockets released.** Every commitment the account was backing is released through the pocket module, so no pocket stays funded by an account that no longer exists.
 4. **Budget stopped.** A category budget account gets a zero allocation on the current month; past months keep their amounts and nothing carries forward.
 5. **Identity recorded.** The account's name, type, currency, starting amount, dates, category fields, closing date, who closed it and the mandatory **close reason** (up to 255 characters) are written to `account_registry`.
