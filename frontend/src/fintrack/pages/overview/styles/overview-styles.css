@@ -1704,7 +1704,7 @@ a.icon {
 }
 
 .overviewLayout .budgetPareto__swatch--budget {
- border: var(--border-width-thin) solid var(--color-accent);
+ border: var(--border-width-thin) solid var(--color-scale-category-2);
 }
 
 .overviewLayout .budgetPareto__stroke {
@@ -1714,11 +1714,11 @@ a.icon {
 }
 
 .overviewLayout .budgetPareto__stroke--spent {
- background: var(--color-scale-category-2);
+ background: var(--color-amount-negative);
 }
 
 .overviewLayout .budgetPareto__stroke--budget {
- background: var(--color-scale-category-7);
+ background: var(--color-scale-category-2);
 }
 
 /* The only box that may be wider than the screen. */
@@ -1754,7 +1754,7 @@ a.icon {
 
 .overviewLayout .budgetPareto__bar--budget {
  fill: none;
- stroke: var(--color-accent);
+ stroke: var(--color-scale-category-2);
  stroke-width: var(--border-width-thin);
 }
 
@@ -1765,19 +1765,19 @@ a.icon {
 }
 
 .overviewLayout .budgetPareto__line--spent {
- stroke: var(--color-scale-category-2);
+ stroke: var(--color-amount-negative);
 }
 
 .overviewLayout .budgetPareto__line--budget {
- stroke: var(--color-scale-category-7);
+ stroke: var(--color-scale-category-2);
 }
 
 .overviewLayout .budgetPareto__point--spent {
- fill: var(--color-scale-category-2);
+ fill: var(--color-amount-negative);
 }
 
 .overviewLayout .budgetPareto__point--budget {
- fill: var(--color-scale-category-7);
+ fill: var(--color-scale-category-2);
 }
 
 /* index.css sets font-size on the universal selector, so every text element
@@ -1802,14 +1802,16 @@ a.icon {
 }
 
 .overviewLayout .budgetPareto__shareText {
- fill: var(--color-scale-category-2);
+ fill: var(--color-amount-negative);
 }
 
 .overviewLayout .budgetPareto__categoryText {
  fill: var(--color-content-on-dark-muted);
 }
 
-.overviewLayout .budgetPareto__categoryText--over {
+/* A tspan is caught by the universal 16px rule; it restates the category's size. */
+.overviewLayout .budgetPareto__overText {
+ font-size: var(--font-size-xs);
  fill: var(--color-status-alert);
 }
 

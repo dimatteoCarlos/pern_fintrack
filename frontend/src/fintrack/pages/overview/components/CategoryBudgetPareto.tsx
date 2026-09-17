@@ -344,9 +344,7 @@ function CategoryBudgetPareto({
 
             {/* A word and not a colour alone marks the overrun. */}
             <text
-             className={`budgetPareto__categoryText${
-              isOver ? ' budgetPareto__categoryText--over' : ''
-             }`}
+             className='budgetPareto__categoryText'
              x={cx}
              y={labelY}
              textAnchor={rotateLabels ? 'end' : 'middle'}
@@ -355,7 +353,11 @@ function CategoryBudgetPareto({
               rotateLabels ? `rotate(-45 ${cx} ${labelY})` : undefined
              }
             >
-             {categoryLabel(category)}
+             {category.categoryName}
+             {/* Only the word carries the alert ink; the name keeps its own. */}
+             {isOver && (
+              <tspan className='budgetPareto__overText'>{' · over'}</tspan>
+             )}
             </text>
            </g>
           );
