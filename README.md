@@ -12,7 +12,7 @@ The image is a composition built from the app's own screens.
 
 ## Demo
 
-A 30-second walkthrough of the app's core loop: signing up, creating an
+A 30-second walkthrough of fintrack's core loop: signing up, creating an
 account, recording an expense in a foreign currency at its historical rate,
 committing money to a savings pocket, tracking a debt, and exporting a PDF report —
 every figure shown is computed live by the app, not staged.
