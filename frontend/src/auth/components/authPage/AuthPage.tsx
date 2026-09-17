@@ -66,6 +66,8 @@ export default function AuthPage() {
 
 // ref for storing return path (session_expired)
    const returnToRef = useRef<string | null>(null)
+// Whether the expiry message on screen was set by the reload fallback below
+   const fallbackShowedExpiryRef = useRef(false);
 
 // ===============================
 // 🎯 PRESENTATION LAYER WRAPPERS
@@ -248,6 +250,7 @@ useEffect(() => {
       returnToRef.current = savedReturnTo;
       setUIState(AUTH_UI_STATES.SIGN_IN);
       setMessage('Your session has expired. Please sign in again.');
+      fallbackShowedExpiryRef.current = true;
 
       // Prefill identity if exists
       const identity = getIdentity();
@@ -257,9 +260,12 @@ useEffect(() => {
 
     // Clean only returnTo (session_expired is gone)
       sessionStorage.removeItem('returnTo');
-    } else if (!sessionExpired && message === 'Your session has expired. Please sign in again.') {
+    } else if (!sessionExpired && fallbackShowedExpiryRef.current) {
       // A later cycle corrected the flag after this effect already latched
       // the message onto an earlier, transient true reading - withdraw it.
+      // Only its own message: the session_expired event also clears the flag
+      // once it has shown the same text, and that one is real.
+      fallbackShowedExpiryRef.current = false;
       setMessage(null);
     }
   }, [authEvent, sessionExpired, message, setUIState, setMessage, setPrefilledData]);
