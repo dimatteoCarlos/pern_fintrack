@@ -1,4 +1,14 @@
-git add # FinTrack_app
+# FinTrack_app
+
+## At a glance
+
+Accounts, budgets and savings goals in one place. An expense typed in another
+currency is converted to your accounting currency at that day's rate; Overview
+reads the month in KPI cards and in a Pareto of spending against budget by
+category; the pocket board ranks the goals that still need money each month.
+The image is a composition built from the app's own screens.
+
+![FinTrack: KPI cards, pocket goals and spending against budget by category](.github/assets/fintrack-showcase-pareto-level_02.png)
 
 ## Demo
 
