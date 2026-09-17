@@ -78,36 +78,32 @@ const markClass = (count: number): string =>
 // lower-cased. The reading was "2 completed" inside a sentence; it is now the
 // first thing on its own row, and a row opens with a capital.
 
-// The pocket to send the owner to, which is not the same question as which
-// deadline falls first on the calendar.
-//
-// Excluding the late ones outright, as this did, blanked the card on exactly
-// the board where direction matters most: every unfinished pocket past its
-// date meant nothing upcoming, so four pockets could be raising an alert while
-// the tile said there was nothing pending. A deadline that has passed is not
-// next by the calendar, but it is very much what to do next.
-//
-// So: the nearest deadline among those still running, and only when none is
-// still running, the one furthest past its date. daysRemaining goes negative
-// once the deadline passes, so one comparison answers both.
-//
-// null when every pocket has reached its target, or there are none at all.
-// The tile is then absent rather than empty: the bands above already say
-// "in progress 0", and a card whose only message is that it has nothing to say
-// spends the width of the hero to repeat it.
-const findNextGoal = (pockets: PocketStatus[]): PocketStatus | null => {
- const unfinished = pockets.filter((pocket) => !pocket.funded);
- const running = unfinished.filter((pocket) => !pocket.overdue);
- const pool = running.length > 0 ? running : unfinished;
+// Splits the Next target list, never cuts it (business-rules/POCKET.md).
+const DUE_SOON_DAYS = 30;
 
- return pool.reduce<PocketStatus | null>(
-  (nearest, pocket) =>
-   nearest === null || pocket.daysRemaining < nearest.daysRemaining
-    ? pocket
-    : nearest,
-  null,
- );
+type TargetTiersType = { dueSoon: PocketStatus[]; later: PocketStatus[] };
+
+// The pockets that need money now, ranked (POCKET_DECISIONS.md §30).
+// requiredMonthly > 0 is the whole entry rule: the server serves 0 once funded
+// and null once overdue. Uncovered pockets enter; backing is another reading.
+const rankTargets = (pockets: PocketStatus[]): TargetTiersType => {
+ const byNeed = (a: PocketStatus, b: PocketStatus) =>
+  (b.requiredMonthly ?? 0) - (a.requiredMonthly ?? 0) ||
+  a.daysRemaining - b.daysRemaining ||
+  a.name.localeCompare(b.name);
+
+ const needing = pockets
+  .filter((pocket) => (pocket.requiredMonthly ?? 0) > 0)
+  .sort(byNeed);
+
+ return {
+  dueSoon: needing.filter((pocket) => pocket.daysRemaining <= DUE_SOON_DAYS),
+  later: needing.filter((pocket) => pocket.daysRemaining > DUE_SOON_DAYS),
+ };
 };
+
+const daysLeftText = (days: number): string =>
+ days === 0 ? 'Due today' : days === 1 ? '1 day left' : `${days} days left`;
 
 // The board mixes currencies and the server withheld the totals. The hero
 // prints the sentence instead of the figures; the readings below stand down for
@@ -577,7 +573,10 @@ export function PocketBoardReadings() {
  // while the cards read the served flags, so one board could be partitioned two
  // ways; the five counts now come from the same fold the rows come from.
  const levels = summary.levelCounts;
- const nextGoal = findNextGoal(pockets);
+ const { dueSoon, later } = rankTargets(pockets);
+ const targetCount = dueSoon.length + later.length;
+ // A tier heading over the only tier names nothing the rows do not say.
+ const hasBothTiers = dueSoon.length > 0 && later.length > 0;
  const uncoveredCount = summary.uncoveredCount;
  const targetReached = levels.completed + levels.aboveTarget;
  // Ahead joins the running band and not the finished one: a pocket in front of
@@ -994,87 +993,88 @@ export function PocketBoardReadings() {
      )}
     </div>
 
-    {/* Target and not goal. The frozen vocabulary lets the word goal name the
-        figure a pocket aims at, never the object itself — and a tile headed
-        "next goal" over a pocket's NAME says the opposite.
+    {/* Which pockets need money now, ranked. Present at zero like the
+        Uncovered row: a count of 0 says the board checked. */}
+    <div className='pocketHero__card'>
+     {/* The whole heading row is the toggle; every destination is a row. */}
+     <button
+      type='button'
+      className='pocketHero__cardHeadRow pocketHero__cardHeadRow--button'
+      onClick={() => setIsTargetOpen((open) => !open)}
+      aria-expanded={isTargetOpen}
+      aria-controls={TARGET_BODY_ID}
+     >
+      <span className='pocketHero__cardHead'>
+       <BullsEyeSvg className='pocketHero__glyph' />
 
-        Absent, not empty, when there is nothing to point at: a control that
-        can only refuse is worse than one that is absent, and the bands above
-        have already said there is nothing in progress. */}
-    {nextGoal !== null && (
-     <div className='pocketHero__card pocketHero__card--row'>
-      {/* The heading navigates and the chevron toggles: two controls, never
-          one nested in the other. A button inside the anchor would be two
-          interactive elements in one box, which no browser resolves the same
-          way; as siblings each answers for itself. */}
-      <div className='pocketHero__cardHeadRow'>
-       <Link
-        to={`pockets/${nextGoal.pocketId}`}
-        className='pocketHero__cardHead pocketHero__cardHead--link'
-       >
-        <BullsEyeSvg className='pocketHero__glyph' />
+       <span className='pocketHero__label'>
+        Next target (<b>{targetCount}</b>)
+       </span>
+      </span>
 
-        <span className='pocketHero__label'>Next target</span>
-       </Link>
-
-       <button
-        type='button'
-        className={`pocketHero__toggle${isTargetOpen ? ' is-active' : ''}`}
-        onClick={() => setIsTargetOpen((open) => !open)}
-        aria-expanded={isTargetOpen}
-        aria-controls={TARGET_BODY_ID}
-        aria-label={
-         isTargetOpen ? 'Collapse next target' : 'Expand next target'
-        }
-       >
-        <ArrowDownLightSvg className='pocketHero__toggleChevron' />
-       </button>
-      </div>
-
-      {/* The body is a link to the same pocket its heading points at, and not a
-          read-only row. Only the two words "Next target" led anywhere before,
-          so everything the reader actually looks at once the card is open — the
-          NAME of the pocket and its three readings — was inert.
-
-          Two links to one destination and not one wrapping the other: the
-          heading has to stay reachable while the body is collapsed, and an
-          anchor around both would swallow the toggle button between them. */}
-      {isTargetOpen && (
-      <Link
-       to={`pockets/${nextGoal.pocketId}`}
-       className='pocketHero__inline pocketHero__inline--link'
-       id={TARGET_BODY_ID}
+      <span
+       className={`pocketHero__toggle${isTargetOpen ? ' is-active' : ''}`}
+       aria-hidden='true'
       >
-       <span className='pocketHero__cardValue pocketHero__cardValue--name'>
-        {nextGoal.name}
-       </span>
+       <ArrowDownLightSvg className='pocketHero__toggleChevron' />
+      </span>
+     </button>
 
-       {/* The figure the owner acts ON: a percentage and a date say how it is
-           going, not how much to put in. Clamped at zero because this card
-           only ever shows a pocket short of its target. */}
-       <span className='pocketHero__inlineItem'>
-        {amount(Math.max(nextGoal.remaining, 0))} to allocate
-       </span>
+     {isTargetOpen && (
+      <div className='pocketHero__cardBody' id={TARGET_BODY_ID}>
+       {targetCount === 0 ? (
+        <p className='pocketHero__cardEmpty'>
+         No running pocket needs money now.
+        </p>
+       ) : (
+        <div className='pocketHero__targetList'>
+         {[
+          { title: `Due within ${DUE_SOON_DAYS} days`, rows: dueSoon },
+          { title: 'Later', rows: later },
+         ]
+          .filter((tier) => tier.rows.length > 0)
+          .map((tier) => (
+           <section className='pocketHero__targetTier' key={tier.title}>
+            {hasBothTiers && (
+             <h3 className='pocketHero__targetTierHead'>
+              {tier.title} <b>{tier.rows.length}</b>
+             </h3>
+            )}
 
-       <span className='pocketHero__inlineItem'>
-        {percent(nextGoal.progress)} committed
-       </span>
+            <ul className='pocketHero__targetRows'>
+             {tier.rows.map((pocket) => (
+              <li key={pocket.pocketId}>
+               <Link
+                to={`pockets/${pocket.pocketId}`}
+                className='pocketHero__target'
+               >
+                <span className='pocketHero__targetName'>{pocket.name}</span>
 
-       {/* The square is the level this pocket already computes, so the card
-           and the bands above cannot disagree about the same pocket. Late is
-           not "minus twelve days left" — the sign is spent on the word. */}
-       <span className='pocketHero__inlineItem'>
-        <StatusSquare alert={pocketSquareClass(nextGoal.level)} />
-        {nextGoal.daysRemaining < 0
-         ? `${Math.abs(nextGoal.daysRemaining)} days late`
-         : nextGoal.daysRemaining === 1
-           ? '1 day left'
-           : `${nextGoal.daysRemaining} days left`}
-       </span>
-      </Link>
-      )}
-     </div>
-    )}
+                <span className='pocketHero__targetMonthly'>
+                 {amount(pocket.requiredMonthly)}{' '}
+                 <span className='pocketHero__targetUnit'>/ month</span>
+                </span>
+
+                <span className='pocketHero__targetDue'>
+                 <StatusSquare alert={pocketSquareClass(pocket.level)} />
+                 {daysLeftText(pocket.daysRemaining)}
+                </span>
+
+                {/* Clamped: a pocket that enters is short of its target. */}
+                <span className='pocketHero__targetRemaining'>
+                 {amount(Math.max(pocket.remaining, 0))} to allocate
+                </span>
+               </Link>
+              </li>
+             ))}
+            </ul>
+           </section>
+          ))}
+        </div>
+       )}
+      </div>
+     )}
+    </div>
 
     {/* WHICH accounts are funding the pockets, and LAST of the three.
 

@@ -503,6 +503,9 @@
  /* The plot of one debt leg on level 2. Shorter than the trend plot: two stack
     at 360px and are read against each other, not alone. */
  --size-chart-debt-leg: 3.5rem;
+ /* The pocket board's Next target list at its tallest: one tier heading, three
+    rows and the top of a fourth, so the cut row says the list goes on. */
+ --size-pocket-target-list: 13rem;
  /* Minimum tappable area. In px on purpose: it is bounded by a finger, not by
     the type scale, so it must not follow --font-size-root, which clamps 14-16px
     and only reaches 16 at a 767px viewport. As 2.75rem this resolved to 38.5px

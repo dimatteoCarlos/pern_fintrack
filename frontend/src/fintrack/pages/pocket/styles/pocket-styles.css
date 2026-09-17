@@ -790,20 +790,25 @@ button.line__container {
  min-width: 0;
 }
 
-/* The heading of Next target is a link and the card around it no longer is,
-   so the states that used to live on the card live here. */
-.pocketHero__cardHead--link {
- text-decoration: none;
+/* Next target's heading row is itself the toggle button; the chevron inside is
+   a span wearing the toggle's look. */
+.pocketHero__cardHeadRow--button {
+ padding: 0;
+ border: none;
+ background: transparent;
  color: inherit;
+ font: inherit;
+ text-align: left;
+ cursor: pointer;
  border-radius: var(--radius-sm);
 }
 
-.pocketHero__cardHead--link:hover .pocketHero__label,
-.pocketHero__cardHead--link:focus-visible .pocketHero__label {
+.pocketHero__cardHeadRow--button:hover .pocketHero__label,
+.pocketHero__cardHeadRow--button:hover .pocketHero__toggle {
  color: var(--color-content-on-dark);
 }
 
-.pocketHero__cardHead--link:focus-visible {
+.pocketHero__cardHeadRow--button:focus-visible {
  outline: var(--border-width-thick) solid var(--color-border-inverse);
  outline-offset: var(--border-width-thick);
 }
@@ -888,34 +893,6 @@ button.line__container {
  }
 }
 
-.pocketHero__cardValue {
- font-size: var(--font-size-lg);
- font-weight: var(--font-weight-bold);
- letter-spacing: var(--letter-spacing-wide);
- color: var(--color-content-on-dark);
- font-variant-numeric: tabular-nums;
-}
-
-/* A NAME, not an amount, so it breaks between words and never inside one: the
-   reference split "ahorro" across two lines as "ahorr" and "o". Two lines at
-   most, and past that an ellipsis — a third line would push this card taller
-   than the one beside it. */
-.pocketHero__cardValue--name {
- display: -webkit-box;
- -webkit-line-clamp: 2;
- -webkit-box-orient: vertical;
- overflow: hidden;
- overflow-wrap: normal;
- word-break: keep-all;
- font-variant-numeric: normal;
- line-height: 1.2;
-}
-
-/* The corner chevron that used to mark "this card navigates" is gone with the
-   card-wide link: the whole card stopped being one anchor when the accordion
-   arrived, and a second chevron beside the toggle's own would have been two
-   marks pointing different ways in one corner. The heading link carries the
-   navigation now, and states it through its own hover and focus above. */
 
 /* ── The hero glyphs ───────────────────────────────────────── */
 
@@ -1490,68 +1467,142 @@ button.line__container {
  width: 22%;
 }
 
-/* ── Next Target on one line ─────────────────────────────────────────────── */
+/* ── Next target list ────────────────────────────────────────────────────── */
 
-/* Wraps rather than scrolls: a long pocket name plus three readings does not
-   fit a narrow container, and the readings then fall under the name instead of
-   pushing the page sideways. */
-.pocketHero__card--row .pocketHero__inline {
+/* A maximum, not a fixed height: a short list shrinks the card, a long one
+   scrolls inside it. The negative inline margin lets a row's hover ground
+   reach past the card's content edge. */
+.pocketHero__targetList {
+ max-height: var(--size-pocket-target-list);
+ margin: 0 calc(var(--space-2) * -1);
+ padding: 0 var(--space-2);
+ overflow-y: auto;
+ overscroll-behavior: contain;
+ scrollbar-width: thin;
+ scrollbar-color: var(--color-border-subtle) transparent;
+}
+
+.pocketHero__targetTier + .pocketHero__targetTier {
+ margin-top: var(--space-2);
+}
+
+/* Sticks while its rows pass under it, so a scrolled list still names its tier. */
+.pocketHero__targetTierHead {
+ position: sticky;
+ top: 0;
+ z-index: 1;
  display: flex;
- flex-wrap: wrap;
- align-items: center;
- gap: var(--space-2) var(--space-4);
- min-width: 0;
+ justify-content: space-between;
+ align-items: baseline;
+ margin: 0 calc(var(--space-2) * -1);
+ padding: var(--space-1) var(--space-2);
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+ background-color: var(--color-surface-raised);
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ line-height: var(--line-height-heading);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
 }
 
-/* The pocket's name takes a line of its own. It is the only field in this
-   card that is user text rather than a figure, so it is the only one that can
-   be long; sharing a row with the readings it wrapped mid-name and they
-   scattered around it. */
-.pocketHero__card--row .pocketHero__cardValue--name {
- flex: 1 0 100%;
-}
-
-/* The open body as a control. It keeps the flex row the rule above gives it and
-   only sheds what an anchor brings with it — the underline and the browser's
-   own link colour, which would repaint three readings and a pocket name in one
-   blue and lose the ink each of them carries.
-
-   The states are on the NAME rather than on the box: a fill or a border here
-   would draw a second card inside the card, and the name is both the largest
-   thing in the row and the thing the reader is aiming at. */
-.pocketHero__inline--link {
- text-decoration: none;
- color: inherit;
- border-radius: var(--radius-sm);
- cursor: pointer;
-}
-
-.pocketHero__inline--link:hover .pocketHero__cardValue--name,
-.pocketHero__inline--link:focus-visible .pocketHero__cardValue--name {
- color: var(--color-accent);
-}
-
-.pocketHero__inline--link:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
- outline-offset: var(--border-width-thick);
-}
-
-.pocketHero__inlineItem {
- display: flex;
- align-items: center;
- gap: var(--space-2);
- /* One step down from base, which is what buys the three readings a single
-    row once the name has left it: at base they measured 364px against the
-    317px the card offers at 412, and broke into two. The column gap stays at
-    --space-4, twice the gap inside a reading, because that difference is what
-    still groups them as three. */
- font-size: var(--font-size-sm);
+.pocketHero__targetTierHead b {
+ font-size: inherit;
  color: var(--color-content-on-dark);
  font-variant-numeric: tabular-nums;
 }
 
-.pocketHero__inlineItem .status__square {
+.pocketHero__targetRows {
+ margin: 0;
+ padding: 0;
+ list-style: none;
+}
+
+/* Two lines, two columns: the pocket and its date on the left, per month and
+   what is left on the right, so the monthly figures line up down the list. */
+.pocketHero__target {
+ display: grid;
+ grid-template-columns: minmax(0, 1fr) auto;
+ align-items: baseline;
+ gap: var(--space-1) var(--space-3);
+ margin: 0 calc(var(--space-2) * -1);
+ padding: var(--space-2);
+ border-radius: var(--radius-sm);
+ text-decoration: none;
+ color: inherit;
+ transition: background-color var(--motion-fast);
+}
+
+.pocketHero__target:hover,
+.pocketHero__target:focus-visible {
+ background-color: var(--color-surface-deep);
+}
+
+.pocketHero__target:hover .pocketHero__targetName,
+.pocketHero__target:focus-visible .pocketHero__targetName {
+ color: var(--color-accent);
+}
+
+.pocketHero__target:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(var(--border-width-thick) * -1);
+}
+
+.pocketHero__target:active {
+ background-color: var(--color-surface-sunken);
+}
+
+.pocketHero__targetName {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ color: var(--color-content-on-dark);
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+
+.pocketHero__targetMonthly {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+ white-space: nowrap;
+ text-align: right;
+}
+
+/* index.css sets font-size on the universal selector, so each span restates it. */
+.pocketHero__targetUnit {
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.pocketHero__targetDue {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-muted);
+ font-variant-numeric: tabular-nums;
+ white-space: nowrap;
+}
+
+.pocketHero__targetDue .status__square {
  flex-shrink: 0;
+}
+
+.pocketHero__targetRemaining {
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+ font-variant-numeric: tabular-nums;
+ white-space: nowrap;
+ text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketHero__target {
+  transition: none;
+ }
 }
 
 /* index.css sets font-size on the universal selector, so this span does not
@@ -1980,38 +2031,6 @@ button.line__container {
 
  .pocketHero__strip .pocketHero__group + .pocketHero__group {
   border-left: var(--border-width-thin) solid var(--color-border-subtle);
- }
-
- /* Next Target on one line: the label opens it and the name and its three
-    readings follow. Below this the label sits on its own line above them,
-    which is what the card does by default. */
- .pocketHero__card--row {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--space-4);
- }
-
- .pocketHero__card--row .pocketHero__label {
-  white-space: nowrap;
- }
-
- .pocketHero__card--row .pocketHero__cardValue--name {
-  font-size: var(--font-size-lg);
-  /* One line here: the card is a row, and a name breaking to two lines pushes
-     its own readings out of alignment with it. */
-  -webkit-line-clamp: 1;
- }
-
- /* Half the gap the column layout uses, and only here. Turning the card into a
-    row moves the heading to the left of it, which costs the readings about a
-    third of their width -- 309px against the 446px they had one step below --
-    while the readings themselves do not shrink. At --space-4 they need 316 and
-    break, and this band is the worst of it: wider containers give the width
-    back. The column layout keeps --space-4, where the readings have the full
-    card and the difference against the gap inside a reading still groups
-    them. */
- .pocketHero__card--row .pocketHero__inline {
-  column-gap: var(--space-2);
  }
 }
 
