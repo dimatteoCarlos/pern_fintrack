@@ -372,7 +372,7 @@ function drawSeriesChart(doc, { x, y, width, height, months, mode }) {
  } else {
   doc.rect(plotX, legendY, 8, 8).fill(PALETTE.ink);
   doc.font('Helvetica').fontSize(6.5).fillColor(PALETTE.ink).text('Income', plotX + 12, legendY + 1);
-  doc.rect(plotX + 62, legendY, 8, 8).fill(PALETTE.disabled);
+  doc.rect(plotX + 62, legendY, 8, 8).fill(PALETTE.secondary);
   doc.font('Helvetica').fontSize(6.5).fillColor(PALETTE.ink).text('Expenses', plotX + 74, legendY + 1);
   doc.moveTo(plotX + 138, legendY + 4).lineTo(plotX + 152, legendY + 4).strokeColor(PALETTE.info).lineWidth(1.5).stroke();
   doc.circle(plotX + 145, legendY + 4, 1.8).fill(PALETTE.info);
@@ -406,7 +406,7 @@ function drawSeriesChart(doc, { x, y, width, height, months, mode }) {
   months.forEach((m, i) => {
    const cx = xAt(i);
    doc.rect(cx - barW - 1, Math.min(zeroY, yAt(m.income)), barW, Math.abs(yAt(m.income) - zeroY)).fill(PALETTE.ink);
-   doc.rect(cx + 1, Math.min(zeroY, yAt(m.expense)), barW, Math.abs(yAt(m.expense) - zeroY)).fill(PALETTE.disabled);
+   doc.rect(cx + 1, Math.min(zeroY, yAt(m.expense)), barW, Math.abs(yAt(m.expense) - zeroY)).fill(PALETTE.secondary);
   });
   const points = months.map((m, i) => [xAt(i), yAt(m.netFlow)]);
   doc.moveTo(points[0][0], points[0][1]);
