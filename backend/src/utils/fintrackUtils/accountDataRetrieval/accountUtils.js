@@ -118,6 +118,12 @@ export const assertUserCreatableAccountType = (accountTypeName, field) => {
 export const NOT_BOUNDARY_ACCOUNT =
  "AND act.account_type_name IS DISTINCT FROM 'boundary'";
 
+// Both stamps, never one: they coincide only while CLOSE writes them together,
+// and a deleted_at test alone would put a closed account back in every list the
+// day that stops. Expects the account table aliased `ua`.
+export const LIVE_ACCOUNT =
+ 'AND ua.deleted_at IS NULL AND ua.closed_at IS NULL';
+
 /**
  * Get the 'slack' compensation account ID for a user.
  * @param {Object} clientOrPool - Database client or pool.

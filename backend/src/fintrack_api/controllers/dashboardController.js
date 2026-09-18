@@ -16,7 +16,10 @@ import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactio
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import { resolveZonedWindow } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { derivedAccountBalanceSql } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
-import { NOT_BOUNDARY_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
+import {
+ LIVE_ACCOUNT,
+ NOT_BOUNDARY_ACCOUNT,
+} from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 import {
  accountReadSource,
  ACCOUNT_EXTENSION_JOIN,
@@ -27,18 +30,10 @@ import {
 // figure above a list that contradicts it.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
 
-// Same predicate and alias as getAccountController.js's LIVE_ACCOUNT,
-// duplicated locally like DERIVED_BALANCE above rather than imported: this
-// file's queries are not the account listings that constant guards.
-//
-// Applied only to the debtor headline and the debtor summary list below — the
-// two debtor reads that aggregate or enumerate "active" debts. Not applied to
-// getTransactionsForAccountById.js's statement query: that query is not
-// debtor-scoped (every account type reaches it), and b7b50e9e's own rationale
-// for keeping a closed account's row around is "its transactions stay
-// readable" — filtering it here would silently take that away for every
-// account type, not just closed debtors.
-const LIVE_ACCOUNT = 'AND ua.deleted_at IS NULL AND ua.closed_at IS NULL';
+// LIVE_ACCOUNT is imported above. It reached only the debtor headline and the
+// debtor summary list — the two reads that aggregate or enumerate "active"
+// debts — while six sibling queries in the same object literals went without
+// it. Those six are corrected in the commit that follows this one.
 
 // What the nine movement queries below join to reach an account. Off, it is the
 // string 'user_accounts' and every one of them renders exactly what it rendered

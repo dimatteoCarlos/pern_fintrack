@@ -19,7 +19,10 @@ import {
   derivedAccountBalanceSql,
   withDerivedBalance,
 } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
-import { NOT_BOUNDARY_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
+import {
+  LIVE_ACCOUNT,
+  NOT_BOUNDARY_ACCOUNT,
+} from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 import { getClosedAccountRegistry } from '../services/delete_account/getClosedAccountRegistry.js';
 
 const backendColor = 'greenBright';
@@ -29,20 +32,15 @@ const errorColor = 'red';
 // One expression, so a list and the detail of the same account cannot disagree.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
 
-// Accounts that no longer circulate are dropped from every LIST this controller
-// serves — soft-deleted and closed alike. The rule is the one accountUtils.js
-// states in its header and the pocket views already obey; this file applied it
-// nowhere, so a deleted account survived in the accounting dashboard after
-// overview had stopped showing it.
-//
-// Both stamps, not deleted_at alone. They coincide only while CLOSE dual-writes
-// them; the day it stops, a closed account carries closed_at and no deleted_at,
-// and a deleted_at test on its own would put it back in the dashboard.
+// LIVE_ACCOUNT is imported above and interpolated into every LIST this
+// controller serves, dropping soft-deleted and closed accounts alike. The rule
+// is the one accountUtils.js states in its header and the pocket views already
+// obey; this file applied it nowhere, so a deleted account survived in the
+// accounting dashboard after overview had stopped showing it.
 //
 // Deliberately NOT applied to the reads by account id: the deletion flow has to
 // display the account it has just acted on, so those keep serving it and ship
 // is_deleted and is_closed beside it instead.
-const LIVE_ACCOUNT = 'AND ua.deleted_at IS NULL AND ua.closed_at IS NULL';
 
 //BASIC FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {

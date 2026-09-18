@@ -19,12 +19,14 @@ import {
   accountLedgerCte,
   withDerivedBalance,
 } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { LIVE_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 
-// Same predicate as getAccountController.js's LIVE_ACCOUNT. Unlike that
-// controller's read-by-id route, this one has no deliberate exception: a
-// closed or deleted account's own statement is only reachable through
-// /account/closed, not by requesting its id directly.
-const LIVE_ACCOUNT = 'AND ua.deleted_at IS NULL AND ua.closed_at IS NULL';
+// LIVE_ACCOUNT is imported above and guards ACCOUNT_INFO_QUERY only. Unlike
+// getAccountController.js's read-by-id route, this one has no deliberate
+// exception: a closed or deleted account's own statement is reachable through
+// /account/closed, not by requesting its id directly. The three statement
+// queries below carry no predicate of their own because that gate refuses the
+// request with a 403 before they run.
 
 // A month, as YYYY-MM or YYYY-MM-DD. The day is accepted and discarded.
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/;
