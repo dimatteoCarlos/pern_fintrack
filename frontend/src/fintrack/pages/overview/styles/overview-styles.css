@@ -2003,6 +2003,12 @@ a.icon {
  border-collapse: collapse;
 }
 
+/* A ground under the row and not a rule between rows: the tail can run to two
+   dozen accounts in a box that scrolls, and the share column is the far one. */
+.overviewLayout .restList__row:hover {
+ background: var(--color-surface-hover-on-dark);
+}
+
 .overviewLayout .restList__caption {
  padding: var(--space-2) var(--space-3);
  font-size: var(--font-size-xs);
