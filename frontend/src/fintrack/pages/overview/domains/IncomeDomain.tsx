@@ -11,6 +11,7 @@ import LevelThreeRow from './LevelThreeRow';
 import { DomainCompositionProps } from './domainScreen';
 import { accountLink } from '../helpers/levelThreeLink';
 import { NO_SHARE, percent } from '../helpers/rankedBreakdown';
+import { OverviewIncomeSourcePart } from '../../../types/overviewTypes';
 import { currencyFormat } from '../../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 
@@ -26,6 +27,18 @@ const CLOSED_ACCOUNT_LABEL = 'closed account';
 
 const shareOf = (share: number | null) =>
  share === null ? NO_SHARE : percent(share);
+
+// The name a source wears in the figure above the list and in the list itself.
+// One ladder and not two, or the same account is one word in the headline and
+// another in the row under it.
+const sourceLabel = (source: OverviewIncomeSourcePart) =>
+ source.accountId === null
+  ? UNATTRIBUTED_LABEL
+  : source.accountName === null
+   ? CLOSED_ACCOUNT_LABEL
+   : source.accountIsClosed
+    ? `${source.accountName} (closed)`
+    : source.accountName;
 
 function IncomeDomain({
  card,
@@ -63,7 +76,15 @@ function IncomeDomain({
      <p className='domainAnalysis__figure'>
       {/* A dash and never 0%: a share of nothing is not a small share. */}
       <span className='domainAnalysis__figureValue'>{shareOf(concentration)}</span>
-      <span className='domainAnalysis__figureUnit'>from the largest source</span>
+      {/* The source is NAMED and not described: the ranking is already sorted,
+          so bySource[0] IS the largest one and the word "largest" spends the
+          line on what the order alone says. Unnamed until the full answer
+          lands, which is the only state where the share has no row behind it. */}
+      <span className='domainAnalysis__figureUnit'>
+       {sources && sources.length > 0
+        ? `from ${sourceLabel(sources[0])}`
+        : 'from the largest source'}
+      </span>
      </p>
     }
     // Absent or empty at the full level means the month received nothing.
@@ -76,15 +97,7 @@ function IncomeDomain({
       // One unattributed part at most: the statement groups every null source into one.
       <li className='domainAnalysis__item' key={source.accountId ?? 'unattributed'}>
        <LevelThreeRow
-        name={
-         source.accountId === null
-          ? UNATTRIBUTED_LABEL
-          : source.accountName === null
-           ? CLOSED_ACCOUNT_LABEL
-           : source.accountIsClosed
-            ? `${source.accountName} (closed)`
-            : source.accountName
-        }
+        name={sourceLabel(source)}
         amount={currencyFormat(card.currency, source.amount, formatNumberCountry)}
         share={shareOf(source.share)}
         // A closed source's user_accounts row is gone and getAccountById answers
