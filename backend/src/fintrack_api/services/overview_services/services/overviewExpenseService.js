@@ -30,6 +30,11 @@ import {
 import { makeExpenseCard, NO_BUDGET_NOTICE } from '../core/makeExpenseCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
 import { makeCategoryBreakdown } from '../core/makeCategoryBreakdown.js';
+import {
+ accountsInCategory,
+ makeSubcategoryBreakdown,
+} from '../core/makeSubcategoryBreakdown.js';
+import { makeNatureSplit } from '../core/makeNatureSplit.js';
 import { makeCategoryBudgetExecution } from '../core/makeCategoryBudgetExecution.js';
 import { makeExpenseAnalysis } from '../core/makeExpenseAnalysis.js';
 import { wantsAnalysis } from '../core/analysisLevels.js';
@@ -213,6 +218,15 @@ export const overviewExpenseService = {
 
   const categories = makeCategoryBreakdown(budgetStatus.categories);
 
+  // THE LEVEL UNDER THE CATEGORIES, AND IT COSTS NO QUERY. budgetStatus.accounts
+  // is already in hand for the card and the fold above, so both blocks below are
+  // arithmetic over rows this request already paid for.
+  //
+  // Scoped ONCE and shared, because the ranking and the composition have to be
+  // over the same set: scoping twice is how two blocks on one screen end up
+  // describing two different populations.
+  const scopedAccounts = accountsInCategory(budgetStatus.accounts, category ?? null);
+
   return {
    card,
    transactions: {
@@ -229,6 +243,17 @@ export const overviewExpenseService = {
    // over the complete set, so a page of it would carry a cumulative figure
    // that means nothing.
    categories,
+   // Whole for the same reason as categories above: the running total of a
+   // ranking is only correct over the complete set. THE CUT IS THE CHART'S, not
+   // this service's — where a flat ranking stops drawing bars and folds the tail
+   // into one is a decision about a width, and a server that made it would have
+   // to be asked again when the screen changed.
+   //
+   // Scoped to the named category, or every expense account of the month when
+   // none was named, which is what the chart's second reading ranks.
+   subcategories: makeSubcategoryBreakdown(scopedAccounts),
+   // The same scope, as a composition rather than a ranking.
+   natureSplit: makeNatureSplit(scopedAccounts, category ?? null),
    // Categorized spending over the same categories' budget, off the last
    // running figures above (owner decision 2026-09-13).
    categoryExecution: makeCategoryBudgetExecution(categories),
