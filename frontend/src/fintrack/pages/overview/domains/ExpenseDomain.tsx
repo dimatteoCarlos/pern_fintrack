@@ -7,11 +7,20 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import CategoryBudgetPareto from '../components/CategoryBudgetPareto';
+import CategoryBudgetPareto, { ParetoRow } from '../components/CategoryBudgetPareto';
+import NatureSplit from '../components/NatureSplit';
+import SubcategoryRestList from '../components/SubcategoryRestList';
 import { categoryLink } from '../helpers/levelThreeLink';
+import { percent } from '../helpers/rankedBreakdown';
+import { currencyFormat } from '../../../helpers/functions';
+import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import DomainSeries from './DomainSeries';
 import { DomainCompositionProps } from './domainScreen';
-import { OverviewExpenseCategory } from '../../../types/overviewTypes';
+import {
+ OverviewCategoryBudgetExecution,
+ OverviewExpenseCategory,
+ OverviewExpenseSubcategory,
+} from '../../../types/overviewTypes';
 
 // THE CATEGORIES ARE THE UNFILTERED ONES AND THAT IS DELIBERATE. The server
 // narrows the transaction page and nothing else, so categories[] is still every
@@ -217,6 +226,109 @@ const CategoryFilter = ({
  );
 };
 
+// How many bars the flat ranking draws before it folds the tail into one.
+//
+// A FIXED COUNT AND NOT THE 80% LINE. Cutting at the crossing would put the
+// chart's own reference line on the last drawn bar in every month, which reports
+// the rule rather than the data. It does not move with the viewport either: a
+// cut that did would make the fold mean two different things on two screens of
+// the same month, and the two readings could not be compared.
+const FLAT_BAR_COUNT = 20;
+// A fold of one row is that row with a worse name, so the tail is folded only
+// when there is a tail.
+const MIN_FOLDED_BARS = 2;
+
+const toCategoryRows = (categories: OverviewExpenseCategory[]): ParetoRow[] =>
+ categories.map((category) => ({
+  key: category.categoryName,
+  label: category.categoryName,
+  actualSpent: category.actualSpent,
+  budgetAmount: category.budgetAmount,
+  isOverBudget: category.isOverBudget === true,
+  cumulativeActual: category.cumulativeActual,
+  cumulativePercentage: category.cumulativePercentage,
+  cumulativeBudget: category.cumulativeBudget,
+  cumulativeBudgetPercentage: category.cumulativeBudgetPercentage,
+  hasSkippedBudget: category.hasSkippedBudget,
+  // A category is a group of budget accounts, so it opens.
+  openable: true,
+ }));
+
+// The nature belongs to the name and is not a second axis: an account already is
+// the triple category / subcategory / nature, so two accounts sharing a
+// subcategory keep their own bar and this is what tells them apart.
+const subcategoryLabel = (row: OverviewExpenseSubcategory) =>
+ row.nature ? `${row.subcategoryName} (${row.nature})` : row.subcategoryName;
+
+const toSubcategoryRows = (rows: OverviewExpenseSubcategory[]): ParetoRow[] =>
+ rows.map((row) => ({
+  // The account id and not the label: two accounts can carry one label, and a
+  // key that repeats would carry one bar's state onto another's.
+  key: String(row.accountId),
+  label: subcategoryLabel(row),
+  actualSpent: row.actualSpent,
+  budgetAmount: row.budgetAmount,
+  isOverBudget: row.isOverBudget,
+  cumulativeActual: row.cumulativeActual,
+  cumulativePercentage: row.cumulativePercentage,
+  cumulativeBudget: row.cumulativeBudget,
+  cumulativeBudgetPercentage: row.cumulativeBudgetPercentage,
+  hasSkippedBudget: row.hasSkippedBudget,
+  // One account is the leaf and does not open.
+  openable: false,
+ }));
+
+/**
+ * The flat ranking's bars: the first twenty accounts, then everything else in
+ * one.
+ *
+ * THE FOLD CARRIES THE RANKING'S OWN TOTALS. It holds every row below the cut,
+ * so its running figures are the last row's and its point is the last point,
+ * 100% by definition — which is what lets the curves cover every account while
+ * the bars do not.
+ */
+const withFold = (rows: OverviewExpenseSubcategory[]) => {
+ if (rows.length < FLAT_BAR_COUNT + MIN_FOLDED_BARS) {
+  return { bars: toSubcategoryRows(rows), folded: [] };
+ }
+
+ const folded = rows.slice(FLAT_BAR_COUNT);
+ const last = rows[rows.length - 1];
+
+ const fold: ParetoRow = {
+  key: 'fold',
+  label: `rest · ${folded.length} accounts`,
+  actualSpent: folded.reduce((sum, row) => sum + row.actualSpent, 0),
+  budgetAmount: folded.reduce((sum, row) => sum + row.budgetAmount, 0),
+  // A group of accounts has no budget of its own to be over.
+  isOverBudget: false,
+  cumulativeActual: last.cumulativeActual,
+  cumulativePercentage: last.cumulativePercentage,
+  cumulativeBudget: last.cumulativeBudget,
+  cumulativeBudgetPercentage: last.cumulativeBudgetPercentage,
+  hasSkippedBudget: last.hasSkippedBudget,
+  // A bar standing for a group opens; a bar standing for one account does not.
+  openable: true,
+  isFold: true,
+ };
+
+ return { bars: [...toSubcategoryRows(rows.slice(0, FLAT_BAR_COUNT)), fold], folded };
+};
+
+// The rate block for one category, off the row the ranking already published.
+// No new server field: every term is on the category row.
+const executionOf = (
+ category: OverviewExpenseCategory,
+): OverviewCategoryBudgetExecution => ({
+ spentAmount: category.actualSpent,
+ budgetAmount: category.budgetAmount,
+ // Null when nothing was budgeted: there is nothing to divide by, and the
+ // block then draws no rate rather than a rate of infinity.
+ executionPercentage: category.budgetAmount > 0 ? category.executionPercentage : null,
+ remainingBudget: category.remainingBudget,
+ isOverBudget: category.isOverBudget === true,
+});
+
 function ExpenseDomain({
  card,
  analysis,
@@ -226,6 +338,118 @@ function ExpenseDomain({
  selectedCategory,
  onSelectCategory,
 }: DomainCompositionProps<'expense'>) {
+ // WHICH LEVEL THE CHART RANKS AT WHILE NO CATEGORY IS SELECTED. Inside a
+ // category it is already ranking accounts, so the switch is not offered there:
+ // a second control naming the same thing would contradict the one selection
+ // that governs the chips, the chart and the list below.
+ const [rankBy, setRankBy] = useState<'category' | 'subcategory'>('category');
+ // Whether the folded bar of the flat ranking is open, showing what it holds.
+ const [isFoldOpen, setIsFoldOpen] = useState(false);
+
+ // The fold belongs to one ranking of one month. Leaving that ranking by any
+ // route closes it, rather than leaving a list of the previous scope on screen.
+ useEffect(() => {
+  setIsFoldOpen(false);
+ }, [rankBy, selectedCategory, answer.window.referenceMonth]);
+
+ const categories = answer.categories ?? [];
+ const subcategories = answer.subcategories ?? [];
+ const selected =
+  selectedCategory === null
+   ? null
+   : (categories.find(
+      (category) => category.categoryName === selectedCategory,
+     ) ?? null);
+
+ // Inside a category the chart always ranks its accounts; outside, the reader
+ // chooses. The server already scoped subcategories[] to whichever it is.
+ const isNarrowed = selectedCategory !== null;
+ const level = isNarrowed ? 'subcategory' : rankBy;
+
+ const flat = level === 'subcategory' && !isNarrowed ? withFold(subcategories) : null;
+
+ const rows: ParetoRow[] =
+  level === 'category'
+   ? toCategoryRows(categories)
+   : (flat?.bars ?? toSubcategoryRows(subcategories));
+
+ // Ranked by spend by the server, so the tail is what the fold holds.
+ const foldedRows = flat?.folded ?? [];
+ const foldSpent = foldedRows.reduce((sum, row) => sum + row.actualSpent, 0);
+ const foldBudget = foldedRows.reduce((sum, row) => sum + row.budgetAmount, 0);
+ // The scope's whole spending, off the ranking's last running figure, so a
+ // row's share is of the month and not of the fold.
+ const spentTotal =
+  subcategories.length > 0
+   ? subcategories[subcategories.length - 1].cumulativeActual
+   : 0;
+
+ const rankSwitch = !isNarrowed && !isFoldOpen && subcategories.length > 0 && (
+  <div className='budgetPareto__rankBy' role='radiogroup' aria-label='Rank by'>
+   <span className='budgetPareto__rankByLabel'>Rank by</span>
+   <button
+    type='button'
+    role='radio'
+    aria-checked={rankBy === 'category'}
+    className={`budgetPareto__segment${
+     rankBy === 'category' ? ' is-active' : ''
+    }`}
+    onClick={() => setRankBy('category')}
+   >
+    Category
+   </button>
+   <button
+    type='button'
+    role='radio'
+    aria-checked={rankBy === 'subcategory'}
+    className={`budgetPareto__segment${
+     rankBy === 'subcategory' ? ' is-active' : ''
+    }`}
+    onClick={() => setRankBy('subcategory')}
+   >
+    Subcategory
+   </button>
+  </div>
+ );
+
+ // The back control names its destination and not "Back", because a reader can
+ // arrive by chip without ever having opened a column.
+ const trail = (
+  <div className='budgetPareto__trail'>
+   {isNarrowed && (
+    <button
+     type='button'
+     className='budgetPareto__back'
+     onClick={() => onSelectCategory(null)}
+    >
+     <span className='budgetPareto__backArrow' aria-hidden='true'>
+      ←
+     </span>
+     {/* It names what it will show and not "Back": clearing the category
+         returns to whichever ranking the switch is on, and a reader who
+         arrived by chip never saw a column to go back to. */}
+     {rankBy === 'category' ? 'All categories' : 'All subcategories'}
+    </button>
+   )}
+   {(isNarrowed || level === 'subcategory') && (
+    <span className='budgetPareto__level' aria-current='true'>
+     {isNarrowed
+      ? `${selectedCategory} · subcategories`
+      : 'every budget account of the month'}
+    </span>
+   )}
+   {rankSwitch}
+  </div>
+ );
+
+ const onOpen = (row: ParetoRow) => {
+  if (row.isFold === true) {
+   setIsFoldOpen(true);
+   return;
+  }
+  onSelectCategory(row.key);
+ };
+
  return (
   <>
    <DomainSeries
@@ -237,13 +461,87 @@ function ExpenseDomain({
     onRetry={onRetry}
    />
 
-   {answer.categories && (
-    <CategoryBudgetPareto
-     categories={answer.categories}
-     execution={answer.categoryExecution ?? null}
-     card={card}
-     referenceMonth={answer.window.referenceMonth}
-    />
+   {/* The fold REPLACES the chart rather than expanding under it: opening a
+       column already replaces the ranking, and one gesture cannot have two
+       consequences on one screen. */}
+   {isFoldOpen ? (
+    <section className='domainCards domainCards--single'>
+     <figure className='budgetPareto'>
+      <div className='budgetPareto__trail'>
+       <button
+        type='button'
+        className='budgetPareto__back'
+        onClick={() => setIsFoldOpen(false)}
+       >
+        <span className='budgetPareto__backArrow' aria-hidden='true'>
+         ←
+        </span>
+        All subcategories
+       </button>
+       <span className='budgetPareto__level' aria-current='true'>
+        {`rest · ${foldedRows.length} accounts below the top ${FLAT_BAR_COUNT}`}
+       </span>
+      </div>
+
+      <div className='budgetPareto__head'>
+       {/* Its own money, and its share of the month beside it: what is being
+           decided here is whether a tail spread over many lines is worth acting
+           on, and an execution rate over unrelated accounts is not that
+           figure. */}
+       <span className='budgetPareto__total'>
+        {currencyFormat(card.currency, foldSpent, CURRENCY_OPTIONS[DEFAULT_CURRENCY])}
+       </span>
+       <span className='budgetPareto__totalLabel'>
+        {`total spent of ${currencyFormat(
+         card.currency,
+         foldBudget,
+         CURRENCY_OPTIONS[DEFAULT_CURRENCY],
+        )} budgeted · ${
+         spentTotal > 0 ? percent(foldSpent / spentTotal) : '—'
+        } of the month's expense`}
+       </span>
+      </div>
+
+      <SubcategoryRestList
+       rows={foldedRows}
+       currency={card.currency}
+       spentTotal={spentTotal}
+      />
+     </figure>
+    </section>
+   ) : (
+    rows.length > 0 && (
+     <CategoryBudgetPareto
+      rows={rows}
+      rowNoun={level === 'category' ? 'categories' : 'budget accounts'}
+      execution={
+       selected ? executionOf(selected) : (answer.categoryExecution ?? null)
+      }
+      card={card}
+      referenceMonth={answer.window.referenceMonth}
+      title={
+       level === 'category'
+        ? 'Spending against budget'
+        : isNarrowed
+         ? `Spending against budget · ${selectedCategory}`
+         : 'Spending against budget · every subcategory'
+      }
+      rateScope={selectedCategory ?? 'Categorized spending'}
+      trail={isNarrowed || level === 'subcategory' ? trail : rankSwitch}
+      notes={
+       flat && flat.folded.length > 0
+        ? [
+           `${FLAT_BAR_COUNT} of ${subcategories.length} budget accounts are drawn; the ${flat.folded.length} below them are summed into rest. Both curves are computed over all ${subcategories.length}, so the last point is 100%`,
+          ]
+        : undefined
+      }
+      onOpen={level === 'category' || flat !== null ? onOpen : undefined}
+     >
+      {answer.natureSplit && (
+       <NatureSplit split={answer.natureSplit} currency={card.currency} />
+      )}
+     </CategoryBudgetPareto>
+    )
    )}
 
    {/* Between the ranking and the list, which is the order it is read in: the

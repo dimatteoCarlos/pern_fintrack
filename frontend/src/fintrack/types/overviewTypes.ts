@@ -387,6 +387,68 @@ export type OverviewExpenseCategory = {
  hasSkippedBudget: boolean;
 };
 
+// One budget account of the month, ranked the same way the categories above
+// are. ONE ROW IS ONE ACCOUNT AND NOTHING IS SUMMED: the account already is the
+// triple category / subcategory / nature, so two accounts sharing a subcategory
+// keep their own row and the nature is what tells them apart.
+//
+// The scope is the request's: the accounts of the named category, or every
+// expense account of the month when none was named.
+export type OverviewExpenseSubcategory = {
+ accountId: number;
+ // Resolved by the server, never the raw column: 'unknown' when the account
+ // carries no subcategory. It still holds budget and spending, so dropping it
+ // would take real money out of the ranking.
+ subcategoryName: string;
+ // Null when the account carries no tag. NOT defaulted to 'other', which is a
+ // value somebody chose; an absent tag is a gap and reads differently.
+ nature: string | null;
+ // Repeated on every row so a row of the flat ranking is readable on its own,
+ // in a list that is not grouped by category.
+ categoryName: string | null;
+ currency: string;
+ budgetAmount: number;
+ actualSpent: number;
+ remainingBudget: number;
+ executionPercentage: number | null;
+ isOverBudget: boolean;
+ rank: number;
+ cumulativeActual: number;
+ cumulativePercentage: number;
+ cumulativeBudget: number;
+ cumulativeBudgetPercentage: number;
+ hasSkippedBudget: boolean;
+};
+
+// One of the four nature tags, in the catalog's own order. The row is published
+// even when nobody used it, so the block keeps one shape across months and two
+// months can be read against each other.
+export type OverviewNatureRow = {
+ nature: string;
+ accountCount: number;
+ spent: number;
+ budget: number;
+ // Of the spending IN SCOPE, 0-1. Never of the month when a category is open.
+ share: number;
+};
+
+// How the month's spending splits across the four natures. A COMPOSITION AND
+// NOT A RANKING: four fixed values ordered by size discover nothing, and the
+// four are read against the same four of last month.
+export type OverviewNatureSplit = {
+ // Null for the whole domain. Read from here rather than from the client's own
+ // selection, so a stale selection cannot label a figure it did not produce.
+ categoryName: string | null;
+ spentTotal: number;
+ budgetTotal: number;
+ rows: OverviewNatureRow[];
+ // Accounts carrying no tag, counted outside the four rather than folded into
+ // 'other'.
+ untaggedCount: number;
+ untaggedSpent: number;
+ untaggedBudget: number;
+};
+
 export type OverviewCharts = {
  trend: OverviewTrend;
  expenseCategories: OverviewExpenseCategory[];
@@ -753,6 +815,12 @@ export type GetOverviewDomainData = {
  transactions: OverviewTransactionPage | OverviewAllocationPage;
  trend: OverviewTrendPoint[];
  categories?: OverviewExpenseCategory[];
+ // Expense only, and optional so a backend older than the field reads as
+ // absent rather than as an empty ranking. Scoped to the named category, or
+ // every expense account of the month when none was named.
+ subcategories?: OverviewExpenseSubcategory[];
+ // Expense only, over the same scope as subcategories above.
+ natureSplit?: OverviewNatureSplit | null;
  // Expense only. Categorized spending over the same categories' budget; null
  // when the user has no category.
  categoryExecution?: OverviewCategoryBudgetExecution | null;
