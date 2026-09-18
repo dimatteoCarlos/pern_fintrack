@@ -10,6 +10,7 @@
 
 import { statementService, priorDecemberOf } from './statementService.js';
 import { overviewExpenseService } from '../../fintrack_api/services/overview_services/services/overviewExpenseService.js';
+import { overviewIncomeService } from '../../fintrack_api/services/overview_services/services/overviewIncomeService.js';
 import { overviewDebtService } from '../../fintrack_api/services/overview_services/services/overviewDebtService.js';
 import { pocketBoardService } from '../../fintrack_api/services/pocket_services/services/pocketBoardService.js';
 import {
@@ -25,6 +26,7 @@ import {
  getMonthlyIncome,
  getMonthlyExpense,
 } from '../../fintrack_api/services/overview_services/db/overviewMonthlyRepository.js';
+import { getCategorySpendInRange } from '../../fintrack_api/services/budget_services/db/budgetTransactionRepository.js';
 import { getAccountsAndBalances } from '../db/accountsAndBalancesRepository.js';
 import { toAmount } from '../../fintrack_api/services/budget_services/core/money.js';
 
@@ -40,7 +42,7 @@ const monthLabel = (yyyyMmDd) => {
 };
 
 /**
- * Section 3's monthly table: every calendar month of the reference year up to
+ * Section 4's monthly table: every calendar month of the reference year up to
  * referenceMonth, folded into an aggregate lead-in (every month older than the
  * trailing 6) plus up to 6 individual trailing months — the same split the
  * approved mockup draws (period-statement-mockup.html, page 2, "Jan-Mar" +
@@ -96,7 +98,7 @@ const buildMonthlyBreakdown = (incomeMonths, expenseMonths, referenceMonth) => {
 };
 
 /**
- * Section 6's per-account "Change since Jan 1" column: a second read of the
+ * Section 3's per-account "Change since Jan 1" column: a second read of the
  * same repository at the prior calendar year's December close, the same
  * reuse getPriorYearClose (statementService.js) already makes for the
  * aggregate figures — no new query.
@@ -111,7 +113,7 @@ const buildPriorBalanceByAccountId = (priorAccountsAndBalances) =>
  new Map(priorAccountsAndBalances.map((row) => [row.accountId, row.balance]));
 
 /**
- * Section 11's "Committed YTD" column: the same reuse, a second board read at
+ * Section 13's "Committed YTD" column: the same reuse, a second board read at
  * the prior close. A pocket absent from the prior board is one opened during
  * the reference year.
  *
@@ -176,6 +178,7 @@ export async function getStatementReportData(pool, userId, { window }, timeZone 
  const [
   { overview, executiveSummaryRows },
   expenseFull,
+  incomeFull,
   debtFull,
   board,
   priorBoard,
@@ -185,6 +188,7 @@ export async function getStatementReportData(pool, userId, { window }, timeZone 
   holdingRows,
   incomeMonths,
   expenseMonths,
+  categoryYearToDate,
  ] = await Promise.all([
   statementService.getStatementCore(pool, userId, { window }, timeZone),
   // Same call overviewPageService already makes with CARD_ONLY, run a second
@@ -192,6 +196,10 @@ export async function getStatementReportData(pool, userId, { window }, timeZone 
   // itself is not refetched — overview.charts.expenseCategories is that exact
   // array, republished verbatim by the page service.
   overviewExpenseService.getExpenseDomainData(pool, userId, { window, ...CARD_ONLY }, timeZone),
+  // The full level, for bySource: the month's income grouped by the account it
+  // came from, which getIncomeBySource only runs at that level
+  // (overviewIncomeService.js:95-97) and the page service never republishes.
+  overviewIncomeService.getIncomeDomainData(pool, userId, { window, ...CARD_FULL }, timeZone),
   // The full level, for byCounterparty and legsOverTime — §12 refuses both at
   // card level on purpose, so the page service never carries them.
   overviewDebtService.getDebtDomainData(pool, userId, { window, ...CARD_FULL }, timeZone),
@@ -199,19 +207,23 @@ export async function getStatementReportData(pool, userId, { window }, timeZone 
   // getBoard's own doc comment); allocated/target/remaining/progress are, at
   // this reference month's close.
   pocketBoardService.getBoard(pool, userId, timeZone, referenceMonth),
-  // Section 11's "Committed YTD" column — the same board, read a second time
+  // Section 13's "Committed YTD" column — the same board, read a second time
   // at the prior close, the reuse getPriorYearClose already makes for every
   // other aggregate figure.
   pocketBoardService.getBoard(pool, userId, timeZone, priorMonth),
   getAccountsAndBalances(pool, userId, referenceMonth, timeZone),
-  // Section 6's "Change since Jan 1" column — same reuse, one second read.
+  // Section 3's "Change since Jan 1" column — same reuse, one second read.
   getAccountsAndBalances(pool, userId, priorMonth, timeZone),
   getAccountAllocations(pool, userId),
   getPocketSourceHoldings(pool, userId),
-  // Section 3's monthly table — Jan 1 of the reference year through
+  // Section 4's monthly table — Jan 1 of the reference year through
   // referenceMonth, gap-filled by the repository itself.
   getMonthlyIncome(pool, incomeAccountIds, yearStart, referenceMonth, timeZone),
   getMonthlyExpense(pool, expenseAccountIds, yearStart, referenceMonth, timeZone),
+  // Section 8's two year-to-date columns, which printed an em dash until now
+  // because nothing accumulated spend per category across months. Grouped in
+  // SQL over the same Jan-1-to-close window the two series above use.
+  getCategorySpendInRange(pool, userId, yearStart, referenceMonth, timeZone),
  ]);
 
  const knownAccountIds = new Set(accountRows.map((row) => row.accountId));
@@ -230,6 +242,18 @@ export async function getStatementReportData(pool, userId, { window }, timeZone 
   financialGoals: overview.financialGoals,
   trend: overview.charts.trend,
   categories: overview.charts.expenseCategories,
+  // One level under the categories: every budget account of the month, ranked
+  // by spend. Taken off the same call categoryExecution comes from, so it costs
+  // nothing extra, and the page service does not republish it.
+  subcategories: expenseFull.subcategories ?? [],
+  // Section 5's ring: the month's income by the account it came from, ranked
+  // with its shares already taken against the card's total. Absent when the
+  // month received nothing, which is an empty ring rather than an empty array
+  // of one.
+  incomeBySource: incomeFull.analysis?.bySource ?? [],
+  // Keyed by the same lowercase category_name the month's categories carry, so
+  // the PDF matches a row without folding case on every lookup.
+  categoryYearToDate,
   categoryExecution: expenseFull.categoryExecution,
   debtAnalysis: debtFull.analysis,
   pocketBoard: board,
