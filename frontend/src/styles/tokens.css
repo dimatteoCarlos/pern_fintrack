@@ -105,6 +105,15 @@
     alpha, so the row darkens the panel instead of painting a second colour. */
  --color-surface-hover-on-panel: rgba(20, 20, 20, 0.06);
  --color-surface-active-on-panel: rgba(20, 20, 20, 0.12);
+ /* The same pair on the dark app surface, where the two above composite to
+    nothing. Cream at low alpha, so the row lifts off the ground instead of
+    painting a second colour. Ground and not text: the 3:1 floor of SC 1.4.11
+    does not apply to them, and every state that uses them is carried by two
+    other signals as well.
+
+    First consumer: the openable column of the expense Pareto. */
+ --color-surface-hover-on-dark: rgba(232, 228, 218, 0.08);
+ --color-surface-active-on-dark: rgba(232, 228, 218, 0.16);
  /* A progress bar on the cream panel: its track, and the one ink its fill takes
     (P5-6, no categorical colour). The fill carries 4.24:1 on the track and 5.35:1
     on the panel; the track is ground and carries no meaning of its own. */

@@ -1816,6 +1816,358 @@ a.icon {
 }
 
 /*------------*/
+/* THE LEVEL TRAIL AND THE SWITCH. The chart ranks categories, the accounts of
+   one of them, or every account of the month, and this row is where it says
+   which. Absent at the top level, so the default screen gains no row. */
+
+.overviewLayout .budgetPareto__trail {
+ display: flex;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: var(--space-2) var(--space-3);
+}
+
+.overviewLayout .budgetPareto__back {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-1);
+ padding: 0;
+ border: none;
+ background: none;
+ /* The default UI size and not xs: this is the way out of a drilled chart, and
+    it was reported as too small to read. */
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-muted);
+ cursor: pointer;
+}
+
+.overviewLayout .budgetPareto__back:hover,
+.overviewLayout .budgetPareto__back:focus-visible {
+ color: var(--color-content-on-dark);
+ text-decoration: underline;
+}
+
+.overviewLayout .budgetPareto__backArrow {
+ font-size: var(--font-size-base);
+}
+
+.overviewLayout .budgetPareto__level {
+ font-size: var(--font-size-sm);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-muted);
+}
+
+/* One continuous track with a single divider, and never a detached pill: a chip
+   is what the category filter below uses, and the two must not read as one
+   control. This filters nothing — it chooses what the chart ranks. */
+.overviewLayout .budgetPareto__rankBy {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+ margin-inline-start: auto;
+}
+
+.overviewLayout .budgetPareto__rankByLabel {
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .budgetPareto__segment {
+ padding: var(--space-1) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ background: none;
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-muted);
+ cursor: pointer;
+}
+
+.overviewLayout .budgetPareto__segment:first-of-type {
+ border-start-start-radius: var(--radius-sm);
+ border-end-start-radius: var(--radius-sm);
+ border-inline-end: none;
+}
+
+.overviewLayout .budgetPareto__segment:last-of-type {
+ border-start-end-radius: var(--radius-sm);
+ border-end-end-radius: var(--radius-sm);
+}
+
+/* A tab idiom and never the accent as a fill, which is what an active chip
+   does: the two controls sit on one screen and must not look alike. */
+.overviewLayout .budgetPareto__segment.is-active {
+ background: var(--color-surface-raised);
+ border-block-end: var(--border-width-thick) solid var(--color-accent);
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .budgetPareto__segment:hover {
+ background: var(--color-surface-hover-on-dark);
+}
+
+/*------------*/
+/* AN OPENABLE COLUMN. A bar standing for a group opens; a bar standing for one
+   account does not, and the absent affordance is the statement that there is no
+   level below it. The target is the whole column because a bar at the tail of
+   the ranking is fifteen units wide. */
+
+.overviewLayout .budgetPareto__hit {
+ fill: transparent;
+ cursor: pointer;
+}
+
+.overviewLayout .budgetPareto__group--openable:hover .budgetPareto__hit {
+ fill: var(--color-surface-hover-on-dark);
+}
+
+.overviewLayout .budgetPareto__hit:active {
+ fill: var(--color-surface-active-on-dark);
+}
+
+/* A stroke and not an outline: outline on an SVG element is not carried by
+   every engine, and the rect is inset so the ring clears its neighbour. */
+.overviewLayout .budgetPareto__hit:focus-visible {
+ fill: var(--color-surface-hover-on-dark);
+ stroke: var(--color-accent);
+ stroke-width: var(--border-width-thick);
+ outline: none;
+}
+
+/* The standing affordance, so a column says it opens before it is pointed at. */
+.overviewLayout .budgetPareto__categoryText--openable {
+ fill: var(--color-content-on-dark-muted);
+ text-decoration: underline dotted;
+ text-underline-offset: 3px;
+}
+
+.overviewLayout .budgetPareto__group--openable:hover .budgetPareto__categoryText {
+ fill: var(--color-content-on-dark);
+ text-decoration: underline solid;
+}
+
+/*------------*/
+/* THE FOLD. Every row below the cut, summed into one bar. Hatched inside the
+   Others outline the ring already uses for a fold with no rank, so it takes no
+   hue off the categorical scale and can never be read as an account. */
+
+.overviewLayout .budgetPareto__hatchLine {
+ stroke: var(--color-content-on-dark-subtle);
+ stroke-width: var(--border-width-thin);
+}
+
+.overviewLayout .budgetPareto__bar--fold {
+ stroke: var(--color-ranked-others-outline);
+ stroke-width: var(--border-width-thin);
+}
+
+/* Dashed, because a solid outline there would claim one account's allocation. */
+.overviewLayout .budgetPareto__bar--budgetFold {
+ stroke-dasharray: 4 3;
+}
+
+.overviewLayout .budgetPareto__swatch--fold {
+ border: var(--border-width-thin) solid var(--color-ranked-others-outline);
+ background: repeating-linear-gradient(
+  45deg,
+  var(--color-content-on-dark-subtle) 0 1px,
+  transparent 1px 4px
+ );
+}
+
+/* The tooth a cut bar wears. Only the fold is ever cut, which is one more thing
+   no real account does. */
+.overviewLayout .budgetPareto__break {
+ fill: none;
+ stroke: var(--color-surface-app);
+ stroke-width: var(--border-width-thick);
+}
+
+.overviewLayout .budgetPareto__valueText--inside {
+ font-size: var(--font-size-xs);
+ fill: var(--color-content-on-dark);
+}
+
+/*------------*/
+/* WHAT THE FOLD HOLDS, OPENED. A list and not a second ranking: its members are
+   small by construction, and the share column is what keeps a concentrated tail
+   visible. Every folded account is listed and the box scrolls. */
+
+.overviewLayout .restList {
+ max-block-size: 22rem;
+ overflow-y: auto;
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-lg);
+}
+
+.overviewLayout .restList__table {
+ inline-size: 100%;
+ border-collapse: collapse;
+}
+
+.overviewLayout .restList__caption {
+ padding: var(--space-2) var(--space-3);
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+ text-align: start;
+}
+
+.overviewLayout .restList__head {
+ position: sticky;
+ inset-block-start: 0;
+ padding: var(--space-2) var(--space-3);
+ background: var(--color-surface-raised);
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark-subtle);
+ text-align: start;
+}
+
+.overviewLayout .restList__head--figure,
+.overviewLayout .restList__cell--figure {
+ text-align: end;
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .restList__cell {
+ padding: var(--space-2) var(--space-3);
+ border-block-start: var(--border-width-thin) solid var(--color-border-subtle);
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-muted);
+ vertical-align: top;
+}
+
+.overviewLayout .restList__name {
+ display: block;
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .restList__nature,
+.overviewLayout .restList__category,
+.overviewLayout .restList__zero {
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .restList__category {
+ display: block;
+}
+
+.overviewLayout .restList__over {
+ color: var(--color-status-alert);
+}
+
+/*------------*/
+/* SPENDING BY NATURE. A composition and not a ranking, so four fixed rows in
+   the catalog's own order, never re-sorted by size. One scale for all eight
+   bars: the rows compare in money, the percentage carries the composition. */
+
+.overviewLayout .natureSplit {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ padding: var(--space-3) var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+}
+
+/* The left rule turns accent exactly as the drilled chart's trail does, so the
+   narrowed scope is stated by the block's own edge and not only in words. */
+.overviewLayout .natureSplit--narrowed {
+ border-inline-start: var(--border-width-thick) solid var(--color-accent);
+}
+
+.overviewLayout .natureSplit__head {
+ display: flex;
+ align-items: baseline;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+
+.overviewLayout .natureSplit__title {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .natureSplit__scope {
+ color: var(--color-accent);
+}
+
+.overviewLayout .natureSplit__meta {
+ margin-inline-start: auto;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+ font-variant-numeric: tabular-nums;
+}
+
+.overviewLayout .natureSplit__rows {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin: 0;
+ padding: 0;
+ list-style: none;
+}
+
+.overviewLayout .natureSplit__row {
+ display: grid;
+ grid-template-columns: 5rem 1fr;
+ align-items: center;
+ gap: var(--space-1) var(--space-3);
+}
+
+/* A nature nobody used keeps its place, dimmed: four are always four, or two
+   months are two different blocks. */
+.overviewLayout .natureSplit__row--empty {
+ opacity: 0.6;
+}
+
+.overviewLayout .natureSplit__name {
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-muted);
+}
+
+.overviewLayout .natureSplit__bars {
+ display: flex;
+ flex-direction: column;
+ gap: 2px;
+}
+
+.overviewLayout .natureSplit__bar {
+ display: block;
+ block-size: var(--space-2);
+ min-inline-size: 1px;
+}
+
+.overviewLayout .natureSplit__bar--spent {
+ background: var(--color-scale-category-1);
+}
+
+.overviewLayout .natureSplit__bar--budget {
+ border: var(--border-width-thin) solid var(--color-scale-category-2);
+}
+
+.overviewLayout .natureSplit__figures {
+ grid-column: 2;
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-1) var(--space-2);
+ font-size: var(--font-size-xs);
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.overviewLayout .natureSplit__spent {
+ color: var(--color-content-on-dark);
+}
+
+.overviewLayout .natureSplit__caption {
+ margin: 0;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/*------------*/
 /* EXECUTION RATE, under the Pareto and above the category filter. The value
    takes the budget status level's ink; the legend states that convention. */
 
@@ -2425,8 +2777,9 @@ a.icon {
  color: var(--color-content-on-dark-subtle);
  /* Restated and not inherited: a button carries the user agent's own font, so
     the size has to be named here or the chip comes out at the browser default
-    beside text that is not. */
- font-size: var(--font-size-xs);
+    beside text that is not. At the default UI size and not xs, so it matches
+    the trail above the chart and is legible. */
+ font-size: var(--font-size-sm);
  white-space: nowrap;
  cursor: pointer;
  transition:
