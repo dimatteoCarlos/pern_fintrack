@@ -196,6 +196,64 @@ const SPENT_QUERY = `
   GROUP BY t.account_id
 `;
 
+// Spend per CATEGORY over a range of months, for one owner.
+//
+// GROUPED IN SQL, unlike every other spend figure in this module. The month's
+// category totals are folded in memory from per-account rows, which works
+// because those rows were read anyway; a year-to-date figure has no such rows
+// to fold and the alternative is dragging eleven months of transactions into
+// the server to add them up.
+//
+// The upper bound is the FIRST OF THE MONTH AFTER the one asked for, computed
+// in SQL from the bound itself — the same half-open window and the same one
+// AT TIME ZONE per operand the queries above document at length.
+//
+// The join to category_budget_accounts is INNER, so an account CLOSED during
+// the year is absent: CLOSE deletes its user_accounts row and the category_name
+// goes with it. That is the limit the statement already states for past closes,
+// not a new one.
+const CATEGORY_SPEND_IN_RANGE_QUERY = `
+  SELECT
+    cba.category_name,
+    COALESCE(SUM(
+      ${spentAmountSql('t')}
+    ), 0) AS actual_spent
+  FROM transactions t
+  JOIN user_accounts ua ON ua.account_id = t.account_id
+  JOIN category_budget_accounts cba ON cba.account_id = ua.account_id
+  WHERE ua.user_id = $1
+    AND t.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4)
+    AND t.transaction_actual_date <  (($3::date + INTERVAL '1 month') AT TIME ZONE $4)
+    AND t.movement_type_id IN (${spentMovementTypeList()})
+  GROUP BY cba.category_name
+  ORDER BY cba.category_name
+`;
+
+/**
+ * What each category spent between a first-of-month bound and the close of a
+ * later month, both on the owner's calendar.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} userId - UUID of the owner
+ * @param {string} fromMonth - inclusive lower bound, 'YYYY-MM-01'
+ * @param {string} throughMonth - the last month to include, 'YYYY-MM-01'
+ * @param {string} timeZone - IANA zone of the account owner
+ * @returns {Promise<Array<{categoryName: string, actualSpent: number}>>}
+ */
+export async function getCategorySpendInRange(pool, userId, fromMonth, throughMonth, timeZone = 'UTC') {
+ const { rows } = await pool.query(CATEGORY_SPEND_IN_RANGE_QUERY, [
+  userId,
+  fromMonth,
+  throughMonth,
+  timeZone,
+ ]);
+
+ return rows.map((row) => ({
+  categoryName: row.category_name,
+  actualSpent: toAmount(row.actual_spent ?? 0),
+ }));
+}
+
 // The current month and its successor, from ONE evaluation of CURRENT_TIMESTAMP.
 // Kept as the default path rather than derived in the caller: two reads of "now"
 // could straddle midnight on the last day of a month and compare one month's
