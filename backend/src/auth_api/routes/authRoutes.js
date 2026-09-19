@@ -7,7 +7,7 @@ import {
   validateSession,
 } from '../controllers/authController.js';
 import { authRefreshToken } from '../controllers/authRefreshToken.js';
-import { verifyToken } from '../middlewares/authMiddleware.js';
+import { verifyToken, verifyOriginForCookieAuth } from '../middlewares/authMiddleware.js';
 import { authLimiter, signUpLimiter } from '../middlewares/rateLimiter.js';
 import { validateRequestSync } from '../middlewares/validateRequest.js';
 import { signUpSchema, signInSchema } from '../../validation/zod/userSchemas.js';
@@ -22,10 +22,10 @@ router.post('/sign-up', signUpLimiter, validateRequestSync(signUpSchema), signUp
 router.post('/sign-in', authLimiter, validateRequestSync(signInSchema), signInUser);
 
 // Ruta de refresh token api/auth/refresh-token
-router.post('/refresh-token', authRefreshToken);
+router.post('/refresh-token', verifyOriginForCookieAuth, authRefreshToken);
 
 //api/auth/sign-out
-router.post('/sign-out', signOutUser);
+router.post('/sign-out', verifyOriginForCookieAuth, signOutUser);
 
 //validate session
 router.get('/validate-session', verifyToken, validateSession);

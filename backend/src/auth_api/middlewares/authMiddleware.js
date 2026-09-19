@@ -8,6 +8,7 @@ import {
   clearAccessTokenCookie,
   clearRefreshTokenCookie,
 } from '../../utils/authUtils/cookieConfig.js';
+import { ACCEPTED_ORIGINS } from '../../utils/authUtils/acceptedOrigins.js';
 
 // ======================================
 // 📊 ROLE HIERARCHY CONFIGURATION
@@ -128,6 +129,43 @@ try {
   throw new Error('Invalid token');
 }
  */
+// =================================
+// VERIFY ORIGIN (CSRF guard for the two cookie-authenticated routes)
+// =================================
+// refresh-token and sign-out read req.cookies.refreshToken instead of the
+// Authorization header every other route requires, and that cookie is
+// sameSite: 'none' in production - required because frontend and backend are
+// separate origins, but it is also what lets a browser attach the cookie to
+// a request from any site, not just this app's own frontend. Every other
+// route is immune to that by construction: the access token lives in
+// sessionStorage and is attached by JS reading same-origin storage, which a
+// cross-site page cannot do. These two routes are the only ones a
+// cross-site page can trigger with the victim's credentials attached.
+//
+// Checked against the same ACCEPTED_ORIGINS the CORS middleware already
+// trusts, not a second list: a browser's own Origin header cannot be forged
+// by script, only by the browser reporting the page that made the request,
+// so this is the one signal CORS's own origin check already relies on,
+// applied here to a route CORS would otherwise let through on preflight and
+// leave unchecked afterward - CORS governs whether the response is
+// readable, not whether the request runs.
+//
+// A missing Origin is let through, matching cors()'s own `!origin` rule in
+// app.js: CSRF is a browser phenomenon that always sends Origin on a
+// credentialed cross-origin POST, so a request with none is not the attack
+// this guards against, and refusing it would also refuse any non-browser
+// caller this project already accepts elsewhere.
+export const verifyOriginForCookieAuth = (req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
+    return next();
+  }
+
+  console.error('CSRF guard: origin not allowed', origin);
+  return next(createError(403, 'Request origin not allowed.'));
+};
+
 //=================================
 //🎯 TOKEN ERROR HANDLING FUNCTION
 //=================================

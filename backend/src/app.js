@@ -24,6 +24,8 @@ import { pool } from './db/config/configDB.js';
 //Get currency catalog function
 import { loadCurrencyCatalog } from './fintrack_api/services/fx_services/currency_catalog/loadCurrencyCatalog.js';
 
+import { ACCEPTED_ORIGINS } from './utils/authUtils/acceptedOrigins.js';
+
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
@@ -105,31 +107,6 @@ if (process.env.NODE_ENV === 'production') {
 //Middlewares initialization
 app.use(helmet());
 //CORS Configuration for access control
-// The eight localhost origins are a development convenience: with
-// credentials: true below, any one of them can carry the browser's cookies,
-// so listing them in production widens who can send an authenticated
-// cross-origin request to every developer machine that happens to run a
-// server on one of these ports, not just this app's own dev server.
-const LOCALHOST_ORIGINS =
-  process.env.NODE_ENV === 'production'
-    ? []
-    : [
-        'http://localhost:5000',
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:8080',
-        'http://localhost:1234',
-        'http://localhost:5432',
-      ];
-
-const ACCEPTED_ORIGINS = [
-  process.env.CLIENT_URL,
-  ...LOCALHOST_ORIGINS,
-  'https://pern-fintrack.vercel.app',
-].filter(Boolean);
-
 app.use(
   cors({
     origin: (origin, callback) => {
