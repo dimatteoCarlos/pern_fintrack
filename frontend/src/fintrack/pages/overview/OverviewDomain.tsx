@@ -221,9 +221,19 @@ function DomainView<D extends OverviewDomainName>({
    <LastMovements
     data={rows}
     title={screen.list.title}
-    subtitle={`${answer.transactions.totalRows} in ${monthLabel(
-     served.referenceMonth,
-    )}${selectedCategory ? ` · ${selectedCategory}` : ''}`}
+    subtitle={
+     <>
+      {selectedCategory && (
+       <>
+        <span className='lastMovements__scope'>{selectedCategory}</span>
+        {' · '}
+       </>
+      )}
+      {`${answer.transactions.totalRows} in ${monthLabel(
+       served.referenceMonth,
+      )}`}
+     </>
+    }
     listHeader={
      <Pagination
       page={answer.transactions.page}

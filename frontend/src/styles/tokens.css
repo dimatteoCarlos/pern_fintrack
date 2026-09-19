@@ -67,6 +67,12 @@
     being an unmeasured literal. A placeholder is hint text, so it stays a step
     below --color-content-on-dark-subtle rather than borrowing it. */
  --color-content-on-dark-placeholder: #979797; /* on app, raised; 6.57:1 */
+ /* The name of the level the reader drilled into, which is the subject of the
+    figure below it. Ochre so the one word the reader chose separates from the
+    white the rest of the trail is written in. Its own name and not the pocket
+    portfolio's gold, which happens to be the same hue: a change to that card
+    must not move this. 7.42:1 on --color-surface-app, 6.74:1 on raised. */
+ --color-content-drilled-subject: #c49a5a;
 
  /* COLOR - INTERACTIVE */
  --color-accent: #e8e4da;

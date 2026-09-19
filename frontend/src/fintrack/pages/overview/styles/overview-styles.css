@@ -316,6 +316,14 @@ a.icon {
  padding: 0rem 0 2rem 0;
 }
 
+/* The drilled name leads the row and the count follows it, so the subject is
+   read before its size. Ochre and bold against the creme the rest of the line
+   keeps — the same token the Pareto trail and the nature split already use. */
+.main__subtitle .lastMovements__scope {
+ color: var(--color-content-drilled-subject);
+ font-weight: var(--font-weight-bold);
+}
+
 .presentation__card__title__container.main {
  padding: 1rem 0 0 0;
  /* border: 1px solid yellow; */
@@ -1900,9 +1908,11 @@ a.icon {
  color: var(--color-content-on-dark);
 }
 
-/* The category's own name, which is the title. */
+/* The category's own name, which is the title. Ochre and not the inherited
+   white: it is the one word on the row the reader chose, and the way back and
+   the qualifier beside it are not. */
 .overviewLayout .budgetPareto__levelName {
- color: inherit;
+ color: var(--color-content-drilled-subject);
 }
 
 /* What is being ranked inside it. A qualifier and not part of the name, so it
@@ -2210,8 +2220,11 @@ a.icon {
  color: var(--color-content-on-dark);
 }
 
+/* The same ochre the drilled name takes in the trail above: it is the same
+   choice the reader made, restated here, so it reads as one subject and not as
+   two headings that happen to share a word. */
 .overviewLayout .natureSplit__scope {
- color: var(--color-accent);
+ color: var(--color-content-drilled-subject);
 }
 
 .overviewLayout .natureSplit__meta {

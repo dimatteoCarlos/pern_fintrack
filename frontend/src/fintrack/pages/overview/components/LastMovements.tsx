@@ -31,7 +31,9 @@ type LastMovementsProps = {
   // sentence "Last 30 days", which was true of the five per-domain lists this
   // component was written for and false of the activity teaser, whose rows are
   // the five most recent whenever they happened.
-  subtitle?: string;
+  // ReactNode and not string: the drilled name inside it is ochre, which a
+  // plain string cannot carry.
+  subtitle?: ReactNode;
   // Rendered between the subtitle and the rows. It exists for the pager: a
   // caller cannot place one above the list from outside, because the title and
   // the subtitle are drawn in here and a pager stacked before this component
