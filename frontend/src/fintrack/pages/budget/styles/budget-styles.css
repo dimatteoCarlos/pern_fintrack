@@ -396,20 +396,20 @@
   scrollbar-gutter: stable;
 }
 
-/* THE GUTTER ABOVE SOLVES NOTHING ON A TOUCH SCREEN, by the same specification
-   its own comment cites: on an overlay scrollbar the property has no effect, so
-   no width is reserved and the bar paints over the rows. The amounts are ranged
-   right against the content box, so they are what it covers - $15.94, $26.62,
-   $30.32 on the September board.
+/* THE GUTTER ABOVE RESERVES NOTHING WHERE THE SCROLLBAR OVERLAYS, by the same
+   specification its own comment cites, so the bar paints over the rows. The
+   amounts are ranged right against the content box and are what it covers -
+   $15.94, $26.62 and $30.32 on the September board.
 
-   pointer: coarse and not a width breakpoint: what decides whether the scrollbar
-   overlays is the platform, not the viewport, and a narrow desktop window still
-   draws a classic bar that the gutter already handles. Reserving the space at
-   every width would inset the rows on desktop to fix a defect they do not have. */
-@media (pointer: coarse) {
-  .categoryList {
-    padding-inline-end: var(--space-2);
-  }
+   Unconditional, and the first attempt at this was not. It was written under
+   @media (pointer: coarse) on the assumption that an overlay scrollbar means a
+   touch device; that assumption is wrong, and Carlos reproduced the overlap in
+   a narrow DESKTOP window, where pointer is fine and the rule never applied.
+   Nothing in CSS reports whether a scrollbar overlays, so the space is reserved
+   everywhere: it costs 8px of right margin where a classic bar already had its
+   gutter, and it does not depend on guessing which platform draws which bar. */
+.categoryList {
+  padding-inline-end: var(--space-2);
 }
 
 /* ── Height degradation ──────────────────────────────────────────────────────
