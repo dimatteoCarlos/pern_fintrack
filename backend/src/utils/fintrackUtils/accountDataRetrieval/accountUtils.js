@@ -8,9 +8,10 @@
 // stamps - deleted_at IS NULL AND closed_at IS NULL - so neither a deleted nor
 // a closed account counts as owned.
 //
-// Two queries here do not, and each states its reason on the line: resolving
-// the owner of a row is identity, not circulation, and the compensation
-// account has to be found in whatever state it is in.
+// Three queries here do not, and each states its reason on the line: resolving
+// the owner of a row is identity, not circulation, the compensation account has
+// to be found in whatever state it is in, and getAccountsByType answers an
+// ownership question, which a closed account is still the answer to.
 
 import { pool } from '../../../db/config/configDB.js';
 import { createError } from '../../errorHandling.js';
@@ -159,8 +160,40 @@ export async function getSlackAccountId(clientOrPool, userId) {
 }
 
 /**
- * Get all accounts of a given type for a user, with subcategory, nature and currency.
- * Used by the Budget module for ownership checks and exports.
+ * Every account of a given type the user HAS EVER HAD, with subcategory, nature
+ * and currency, each flagged with whether it existed in a given month.
+ *
+ * TWO ANSWERS FROM ONE READ, BECAUSE THE CALLER ASKS TWO QUESTIONS. The Budget
+ * controller uses this both to prove ownership of an id the client named and to
+ * build the set it reports when the client names none. Those are different
+ * questions about the same accounts: owning a category does not stop when it is
+ * closed, so the ownership answer must include a closed one; the reported set is
+ * about a month, so it must include a category that existed in that month and no
+ * other. Until 2026-09-19 this query answered only the first and answered it
+ * with the second's filter, which made every closed category a 403 on its own
+ * history.
+ *
+ * THE ROW SET IS OWNERSHIP; THE TWO ENDS OF EACH ACCOUNT'S OWN WINDOW TRAVEL
+ * BESIDE IT. Nothing here is a fixed span: `startMonth` is read from that
+ * account's `account_start_date` and `closedMonth` from its `closed_at`, so an
+ * account open for one month publishes the same month twice and an account open
+ * for nine years publishes ends nine years apart.
+ *
+ * `deleted_at IS NULL OR closed_at IS NOT NULL` stays in the WHERE because it
+ * depends on no month: the soft delete is a different exit and is out of every
+ * one of them. It cannot be a bare `deleted_at IS NULL`, because CLOSE stamps
+ * that column beside closed_at and a bare test on it would put back exactly the
+ * defect above.
+ *
+ * THE ENDS AND NOT A BOOLEAN, because the callers ask about different spans: a
+ * status is about one month and an export about a range, and a flag computed at
+ * one month cannot answer whether an account's window intersects a range. They
+ * come back as 'YYYY-MM-01' text cut on the OWNER's calendar, so the caller
+ * compares strings — lexicographic order on that format is chronological order —
+ * and no time zone arithmetic happens in JavaScript.
+ *
+ * `closedMonth` is null for an account still open, which the callers read as no
+ * upper bound rather than as a missing value.
  *
  * `nature` is a catalog value, not a column on category_budget_accounts. The
  * join is LEFT because category_nature_type_id is nullable: an inner join would
@@ -169,16 +202,27 @@ export async function getSlackAccountId(clientOrPool, userId) {
  *
  * @param {string} userId - User UUID.
  * @param {string} accountType - e.g. 'category_budget'.
- * @returns {Promise<Array<{accountId: number, accountName: string, subcategory: string|null, nature: string|null, currency: string}>>}
+ * @param {string} [timeZone] - IANA zone of the account owner, the calendar the month boundaries are cut on.
+ * @param {Object} [clientOrPool] - Database client or pool. The same fallback getAccountTypeId above takes, and for the same reason: a probe that closes an account inside a transaction has to read it on that transaction's client or it reads the committed world instead.
+ * @returns {Promise<Array<{accountId: number, accountName: string, subcategory: string|null, nature: string|null, currency: string, startMonth: string, closedMonth: string|null, currentMonth: string}>>}
  */
-export async function getAccountsByType(userId, accountType) {
+export async function getAccountsByType(userId, accountType, timeZone = 'UTC', clientOrPool = pool) {
+  // currentMonth is the same value on every row and is carried here rather than
+  // resolved by the caller, for the reason budgetController states at its head:
+  // the current month is the server's to decide, never the device's clock.
   const query = `
     SELECT
       ua.account_id,
       ua.account_name,
       cba.subcategory,
       cnt.category_nature_type_name AS nature,
-      cur.currency_code AS currency
+      cur.currency_code AS currency,
+      to_char(date_trunc('month', ua.account_start_date AT TIME ZONE $3), 'YYYY-MM-01') AS start_month,
+      CASE
+        WHEN ua.closed_at IS NULL THEN NULL
+        ELSE to_char(date_trunc('month', ua.closed_at AT TIME ZONE $3), 'YYYY-MM-01')
+      END AS closed_month,
+      to_char(date_trunc('month', now() AT TIME ZONE $3), 'YYYY-MM-01') AS current_month
     FROM user_accounts ua
     JOIN account_types act ON ua.account_type_id = act.account_type_id
     JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
@@ -189,16 +233,18 @@ export async function getAccountsByType(userId, accountType) {
       AND act.account_type_name = $2
       AND ua.account_name != 'slack'
       AND act.account_type_name IS DISTINCT FROM 'boundary'
-      AND ua.deleted_at IS NULL
-      AND ua.closed_at IS NULL
+      AND (ua.deleted_at IS NULL OR ua.closed_at IS NOT NULL)
     ORDER BY ua.account_name ASC
   `;
-  const result = await pool.query(query, [userId, accountType]);
+  const result = await clientOrPool.query(query, [userId, accountType, timeZone]);
   return result.rows.map((row) => ({
     accountId: row.account_id,
     accountName: row.account_name,
     subcategory: row.subcategory || null,
     nature: row.nature || null,
     currency: row.currency,
+    startMonth: row.start_month,
+    closedMonth: row.closed_month,
+    currentMonth: row.current_month,
   }));
 }

@@ -117,9 +117,16 @@ const MONTH_QUERY = `
 // NO closed_at PREDICATE, AND IT WOULD BE WRONG TO ADD ONE. The caller supplies
 // the id set (budgetRoutes.js '/accounts/status', and the series endpoint beside
 // it), so this statement answers "tell me about these accounts", not "which
-// accounts may I offer". The picker is getAccountsByType in accountUtils.js and
-// that one does filter both stamps. Filtering here would blank the name and the
-// category of a closed account out of a past month the owner is looking at.
+// accounts may I offer". Filtering here would blank the name and the category of
+// a closed account out of a past month the owner is looking at.
+//
+// WHERE THE NARROWING MOVED TO, corrected 2026-09-19. This note used to say the
+// picker was getAccountsByType in accountUtils.js and that it filtered both
+// stamps. It no longer does: filtering there answered 403 for a closed category
+// on all three budget endpoints, about an account the owner does own. That
+// function now returns every category ever owned with the first and last month
+// each one reports, and budgetController narrows the default set by the span
+// being asked about rather than by the state today.
 //
 // What changes once CLOSE keeps the row: a closed category resolves here again,
 // where it used to vanish with its extension row. That is the history becoming

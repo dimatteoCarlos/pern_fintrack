@@ -33,17 +33,53 @@ import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 
 /**
- * Return the caller's category_budget accounts, keyed by id.
+ * Return every category_budget account the caller has ever had, keyed by id.
  *
  * Every handler that receives an accountId from the client must check it
  * against this set. verifyToken proves who the caller is; it proves nothing
  * about which accounts they may read. Without this, passing another user's
  * accountId returns that user's budget — the same hole A2 closed elsewhere.
+ *
+ * EVER HAD, AND A CLOSED CATEGORY IS IN IT. Until 2026-09-19 this map was built
+ * by a query that filtered closed and deleted accounts out, so asking any of the
+ * three endpoints below about a category the owner had closed answered 403 —
+ * "not found or not owned" about an account they do own and whose past months
+ * are still theirs to read. Ownership is not circulation.
+ *
+ * Each entry carries the first and last month it reports, cut on the owner's
+ * calendar, which is what the handlers narrow by when the client names no ids.
+ * Two answers, one round trip.
  */
-const getOwnedBudgetAccounts = async (userId) => {
- const accounts = await getAccountsByType(userId, 'category_budget');
+const getOwnedBudgetAccounts = async (userId, timeZone) => {
+ const accounts = await getAccountsByType(userId, 'category_budget', timeZone);
  return new Map(accounts.map((a) => [a.accountId, a]));
 };
+
+/**
+ * The ids whose reporting window overlaps the span being asked about.
+ *
+ * WHAT THE CLIENT GETS WHEN IT NAMES NONE. A category the owner closed in April
+ * belongs in a report about March and not in one about May, so the default set
+ * follows the span asked for rather than the state today. Before this it
+ * followed today, which meant a closed category vanished from every month,
+ * including the ones it was open and spending in.
+ *
+ * OVERLAP AND NOT CONTAINMENT, which is why both ends are compared and crossed.
+ * A category opened halfway through a twelve-month export belongs in it, and so
+ * does one closed halfway through. Testing only one end would drop one of the
+ * two and nothing would say which.
+ *
+ * `from` and `to` are the same month for a status, which makes that case the
+ * degenerate one rather than a second rule.
+ */
+const idsOverlapping = (owned, from, to) =>
+ [...owned.values()]
+  .filter(
+   (account) =>
+    account.startMonth <= to &&
+    (account.closedMonth === null || account.closedMonth >= from),
+  )
+  .map((account) => account.accountId);
 
 /**
  * Answer a failed validation with the issues that caused it.
@@ -73,7 +109,13 @@ export async function getBudgetAccountsStatus(req, res, next) {
 
   const { accountIds: requestedIds, month } = budgetAccountsStatusBodySchema.parse(req.body);
 
-  const owned = await getOwnedBudgetAccounts(userId);
+  // Resolved before the ownership map and not after it: the map's month
+  // boundaries are cut on the owner's calendar, so the zone has to be in hand
+  // first. It is fetched once per request and the service receives it, rather
+  // than going to the users table itself.
+  const timeZone = await getUserTimeZone(pool, userId);
+
+  const owned = await getOwnedBudgetAccounts(userId, timeZone);
 
   // Check EVERY element. Validating only the first would let a caller hide
   // foreign ids behind one of their own.
@@ -91,11 +133,14 @@ export async function getBudgetAccountsStatus(req, res, next) {
   // ownership map itself — so those ids need no ownership check: they came from
   // it. This is what lets one request serve the three levels of the budget
   // drill-down instead of one request per level.
-  const accountIds = requestedIds ?? [...owned.keys()];
-
-  // Resolved here, not inside the service: the zone is fetched once per request
-  // and the service receives it, rather than going to the users table itself.
-  const timeZone = await getUserTimeZone(pool, userId);
+  //
+  // Narrowed to the month being reported rather than to the whole map. A request
+  // that names no month is about the current one, which the server named on
+  // every row of the map for the reason stated at the head of this file.
+  const reportedMonth = month ?? [...owned.values()][0]?.currentMonth ?? null;
+  const accountIds =
+   requestedIds ??
+   (reportedMonth === null ? [] : idsOverlapping(owned, reportedMonth, reportedMonth));
 
   const response = await budgetCalculationService.getBudgetAccountsStatus(
    pool,
@@ -167,15 +212,19 @@ export async function getBudgetAccountSeries(req, res, next) {
   const { accountId } = seriesParamsSchema.parse(req.params);
   const { from, to } = seriesQuerySchema.parse(req.query);
 
-  const owned = await getOwnedBudgetAccounts(userId);
+  const timeZone = await getUserTimeZone(pool, userId);
+
+  // Ownership only. This handler narrows nothing: the client named one account
+  // and the series itself reports no month outside that account's own window.
+  // A closed category answers here now, which is the whole point — its past is
+  // what a twelve-month series is for.
+  const owned = await getOwnedBudgetAccounts(userId, timeZone);
   if (!owned.has(accountId)) {
    return res.status(403).json({
     status: 403,
     message: 'Account not found or not owned by the authenticated user.',
    });
   }
-
-  const timeZone = await getUserTimeZone(pool, userId);
 
   const response = await budgetCalculationService.getBudgetAccountSeries(
    pool,
@@ -206,7 +255,9 @@ export async function exportCSV(req, res, next) {
 
   const { accountId, from, to } = exportQuerySchema.parse(req.query);
 
-  const owned = await getOwnedBudgetAccounts(userId);
+  const timeZone = await getUserTimeZone(pool, userId);
+
+  const owned = await getOwnedBudgetAccounts(userId, timeZone);
 
   if (accountId && !owned.has(accountId)) {
    return res.status(403).json({
@@ -219,8 +270,19 @@ export async function exportCSV(req, res, next) {
    return res.status(200).send('No budget accounts found');
   }
 
-  const accountIds = accountId ? [accountId] : [...owned.keys()];
-  const timeZone = await getUserTimeZone(pool, userId);
+  // The span the default set is narrowed by, computed WIDE on purpose. The
+  // service resolves the real range from from/to with a default span of 1, and
+  // this handler has to narrow before it can call the service — so a missing end
+  // is filled with the owner's current month and the two are ordered. Any range
+  // the resolver can produce sits inside this one, which is the safe direction:
+  // a category that is in the span and reports nothing costs an empty section,
+  // while one left out of the span is data the file silently lacks.
+  const currentMonth = [...owned.values()][0]?.currentMonth ?? null;
+  const ends = [from ?? currentMonth, to ?? currentMonth].filter(Boolean).sort();
+
+  const accountIds = accountId
+   ? [accountId]
+   : idsOverlapping(owned, ends[0] ?? '', ends[ends.length - 1] ?? '9999-12-01');
 
   // The default span is 1, not the 12 /series uses. An export with no range is
   // the current month, which is what this endpoint returned before it accepted
