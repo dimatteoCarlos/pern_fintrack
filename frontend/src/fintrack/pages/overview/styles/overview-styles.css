@@ -1846,6 +1846,10 @@ a.icon {
    row that already has a vertical rule in it. */
 .overviewLayout .budgetPareto__back {
  display: inline-flex;
+ /* Pushed to the far edge of the trail. It works because the control is now the
+    LAST child of that flex row - an auto start margin on any earlier item would
+    carry everything after it to the right as well. */
+ margin-inline-start: auto;
  align-items: center;
  gap: var(--space-1);
  padding: var(--space-1) var(--space-3);
@@ -1890,9 +1894,13 @@ a.icon {
 
 /* Inherited and not base: the universal 16px rule would otherwise set the glyph
    two steps above its own phrase and it was read as a detached object. */
+/* Sized off the control's own text rather than in pixels, and it takes the
+   button's ink through currentColor - which is what lets it invert with the
+   fill on hover. The arrow it replaces was the text glyph U+2190. */
 .overviewLayout .budgetPareto__backArrow {
- font-size: inherit;
- line-height: 1;
+ inline-size: 1.1em;
+ block-size: 1.1em;
+ flex-shrink: 0;
 }
 
 /* WHAT THE CHART IS ABOUT, AND IT IS THE LARGEST THING ON THE ROW. Drilling into
@@ -1911,6 +1919,13 @@ a.icon {
 /* The category's own name, which is the title. Ochre and not the inherited
    white: it is the one word on the row the reader chose, and the way back and
    the qualifier beside it are not. */
+/* The same subject, named twice on one screen: once in the card's heading and
+   once in the trail under it. Both take the drilled-subject colour, or the
+   heading would state in white the very name the row below writes in ochre. */
+.overviewLayout .budgetPareto__titleSubject {
+ color: var(--color-content-drilled-subject);
+}
+
 .overviewLayout .budgetPareto__levelName {
  color: var(--color-content-drilled-subject);
 }
@@ -2966,22 +2981,51 @@ a.icon {
 }
 
 /* The selected category's level-3 screen, under the chips it answers. */
+/* A BORDERED CONTROL AND NOT A LINE OF TEXT. It was 11px of cream with no
+   border under a row of bordered chips, and Carlos reported it as barely
+   perceptible - which it was: the one thing on this screen that leaves it was
+   the only thing on it drawn without an edge.
+
+   Not a card and not a pair of hairlines above and below. A card implies
+   content and this is an action, and two rules around one line of text read as
+   a section band rather than as something to press. The border it takes here is
+   the way-back control's (.budgetPareto__back), so the two things that navigate
+   off this chart look alike. */
 .overviewLayout .categoryFilter__link {
  display: inline-flex;
  align-items: center;
  align-self: flex-start;
  gap: var(--space-1);
+ padding: var(--space-1) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-accent);
  border-radius: var(--radius-sm);
+ background: transparent;
  color: var(--color-accent);
  font-size: var(--font-size-xs);
  font-weight: var(--font-weight-semibold);
  text-decoration: none;
- transition: color var(--motion-fast);
+ transition: background-color var(--motion-fast), color var(--motion-fast);
 }
 
+/* The control fills instead of underlining. The underline was removed on
+   Carlos's instruction, and the fill answers the pointer the way every other
+   bordered control on this screen already does. */
 .overviewLayout .categoryFilter__link:hover {
- color: var(--color-content-on-dark);
- text-decoration: underline;
+ background: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+/* The category name, in the colour the trail and the card heading give the same
+   word. Its own rule and not inherited, so the three places that name the
+   drilled subject stay in step. */
+.overviewLayout .categoryFilter__linkSubject {
+ color: var(--color-content-drilled-subject);
+}
+
+/* And it gives the colour up on the filled state: #c49a5a on the #e8e4da fill
+   measures 2.04:1, which is not a reading. On the resting dark it is 7.42:1. */
+.overviewLayout .categoryFilter__link:hover .categoryFilter__linkSubject {
+ color: inherit;
 }
 
 .overviewLayout .categoryFilter__link:focus-visible {

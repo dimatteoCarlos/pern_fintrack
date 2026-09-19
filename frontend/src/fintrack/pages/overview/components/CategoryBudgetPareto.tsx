@@ -103,6 +103,10 @@ type CategoryBudgetParetoProps = {
  // 'YYYY-MM-01', the month the title names.
  referenceMonth: string | null;
  title: string;
+ // The name the reader drilled into, kept out of `title` so the card can write
+ // it in the subject colour. A node would do it too, but `title` also builds
+ // the chart's aria-label below, and a node cannot go in an attribute.
+ titleSubject?: string;
  // What the rate block is a rate OF, named so a reader who scrolled past the
  // trail still knows which figures are on screen.
  rateScope: string;
@@ -125,6 +129,7 @@ function CategoryBudgetPareto({
  card,
  referenceMonth,
  title,
+ titleSubject,
  rateScope,
  trail,
  notes,
@@ -308,6 +313,12 @@ function CategoryBudgetPareto({
      head={
       <CardTitle subtitle={monthLabel(referenceMonth, 'long')}>
        {title}
+       {titleSubject && (
+        <>
+         {' · '}
+         <span className='budgetPareto__titleSubject'>{titleSubject}</span>
+        </>
+       )}
       </CardTitle>
      }
      isRuled
@@ -355,7 +366,9 @@ function CategoryBudgetPareto({
         className='budgetPareto__scroll'
         tabIndex={0}
         role='region'
-        aria-label={`${title} chart, scrolls sideways`}
+        aria-label={`${title}${
+         titleSubject ? ` · ${titleSubject}` : ''
+        } chart, scrolls sideways`}
        >
         <svg
          className='budgetPareto__chart'

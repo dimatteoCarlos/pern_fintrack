@@ -7,6 +7,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+// '?react' and not the bare form: only that import carries a React type, so the
+// glyph can take a className and be sized by the stylesheet (R34).
+import ArrowLeftSolidSvg from '../../../../assets/budgetSvg/ArrowLeftSolidSvg.svg?react';
+
 import CategoryBudgetPareto, { ParetoRow } from '../components/CategoryBudgetPareto';
 import NatureSplit from '../components/NatureSplit';
 import SubcategoryRestList from '../components/SubcategoryRestList';
@@ -206,7 +210,12 @@ const CategoryFilter = ({
      aria-disabled={isBusy}
      viewTransition
     >
-     {`Open ${selected} budget detail`}
+     {/* The category is its own element so it can carry the subject colour the
+         rest of this screen gives it. Three pieces and not one string: the
+         name is the only part that changes. */}
+     {'Open '}
+     <span className='categoryFilter__linkSubject'>{selected}</span>
+     {' budget detail'}
      <svg
       className='categoryFilter__icon'
       viewBox='0 0 24 24'
@@ -416,21 +425,6 @@ function ExpenseDomain({
  // arrive by chip without ever having opened a column.
  const trail = (
   <div className='budgetPareto__trail'>
-   {isNarrowed && (
-    <button
-     type='button'
-     className='budgetPareto__back'
-     onClick={() => onSelectCategory(null)}
-    >
-     <span className='budgetPareto__backArrow' aria-hidden='true'>
-      ←
-     </span>
-     {/* It names what it will show and not "Back": clearing the category
-         returns to whichever ranking the switch is on, and a reader who
-         arrived by chip never saw a column to go back to. */}
-     {rankBy === 'category' ? 'All categories' : 'All subcategories'}
-    </button>
-   )}
    {/* The category's name is the SUBJECT of the drilled figure, so it is its own
        element and carries the title voice. What is ranked inside it is a
        qualifier beside the name, not part of it. At the top level there is no
@@ -451,6 +445,26 @@ function ExpenseDomain({
     </span>
    )}
    {rankSwitch}
+
+   {/* Last in the row and last in the DOM, so the reading order and the visual
+       order agree and nothing has to be reordered in CSS. The stylesheet pushes
+       it to the far edge with an auto inline-start margin. */}
+   {isNarrowed && (
+    <button
+     type='button'
+     className='budgetPareto__back'
+     onClick={() => onSelectCategory(null)}
+    >
+     <ArrowLeftSolidSvg
+      className='budgetPareto__backArrow'
+      aria-hidden='true'
+     />
+     {/* It names what it will show and not "Back": clearing the category
+         returns to whichever ranking the switch is on, and a reader who
+         arrived by chip never saw a column to go back to. */}
+     {rankBy === 'category' ? 'All categories' : 'All subcategories'}
+    </button>
+   )}
   </div>
  );
 
@@ -537,12 +551,13 @@ function ExpenseDomain({
       card={card}
       referenceMonth={answer.window.referenceMonth}
       title={
-       level === 'category'
+       level === 'category' || isNarrowed
         ? 'Spending against budget'
-        : isNarrowed
-         ? `Spending against budget · ${selectedCategory}`
-         : 'Spending against budget · every subcategory'
+        : 'Spending against budget · every subcategory'
       }
+      /* Only the name the reader chose. `every subcategory` above stays inside
+         the title: it is the whole set, not a subject picked out of it. */
+      titleSubject={isNarrowed ? (selectedCategory ?? undefined) : undefined}
       rateScope={selectedCategory ?? 'Categorized spending'}
       trail={isNarrowed || level === 'subcategory' ? trail : rankSwitch}
       notes={
