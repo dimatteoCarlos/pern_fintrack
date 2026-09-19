@@ -2,9 +2,14 @@
 //
 // This probe asserts the CLOSE that settled: a residual moved out under a
 // policy, an account marked closed with its row left in place, a preview
-// figure echoed back and refused if it had moved. None of that happens now.
-// CLOSE refuses a nonzero balance instead of disposing of it, and it deletes
-// the account row rather than marking it.
+// figure echoed back and refused if it had moved. The settlement half does not
+// happen now: CLOSE refuses a nonzero balance instead of disposing of it.
+//
+// THE ROW HALF CAME BACK. This header said CLOSE deletes the account row rather
+// than marking it, which was true from 2026-09-08 until the close began
+// stamping closed_at and deleted_at on a surviving row again. That does not
+// un-retire the probe - the policies it drives it with are still gone, and it
+// still fails to link - but the behaviour it asserts about the row is current.
 //
 // It also fails before its first assertion rather than failing an assertion:
 // it imports CLOSE_POLICY_DISCARD and CLOSE_POLICY_TRANSFER from the deletion

@@ -93,10 +93,17 @@ const CLOSE_ZERO_BALANCE_TYPES = Object.freeze([
 // CLOSE_ZERO_BALANCE_TYPES gives above: a type added to account_types must not
 // silently acquire a table this operation would then fail to find.
 //
-// It is also the only source the close interpolates a table name from. The
-// value is a frozen literal reached by a key compared against the catalog's
-// own names, never a string from the request, which is what makes the
-// interpolation below safe.
+// NO READER LEFT, AND IT IS KEPT ANYWAY. Its only consumer was the DELETE the
+// close used to run against the extension table; the close keeps that row now,
+// so nothing interpolates a table name from here. The map stays because it is
+// the only written-out statement of which type lives in which table, and the
+// erasure tail and any future per-type read need exactly that. It is not dead
+// knowledge, only an unused binding.
+//
+// While it was interpolated, what made that safe was the value being a frozen
+// literal reached by a key compared against the catalog's own names, never a
+// string from the request. Anything that starts interpolating it again keeps
+// that property or it is a different constant.
 const CLOSE_EXTENSION_TABLES = Object.freeze({
   income_source: 'income_source_accounts',
   category_budget: 'category_budget_accounts',
@@ -786,6 +793,17 @@ export const CLOSE_REASON_MAX_LENGTH = 255;
 // The coercion here is not the fix; the route is. This is the check that makes
 // the same mistake fail by name the next time, from a caller nobody has written
 // yet.
+//
+// THE FIRST BRANCH BELOW IS NO LONGER THE ONLY DETECTOR, and it is no longer
+// reachable through a normal call. lockAndDeriveBalances now refuses an id it
+// could not resolve, so the map it hands back is complete by contract; it also
+// coerces its argument, so the string-key miss that caused the incident above
+// cannot recur. Kept anyway: it costs one comparison on a money path, and it
+// still answers for a map assembled by some other means.
+//
+// The live job is the second branch. A NUMERIC arrives as text and parseFloat
+// can produce something that is not a number, which no amount of refusing at the
+// source prevents.
 const residualOf = (balances, accountId) => {
   const balance = balances.get(Number(accountId));
 
@@ -1302,20 +1320,31 @@ export const processCloseAccount = async (
   // ==========================================================================
   // BLOCK 3, SECOND HALF: the account stops existing and its identity survives.
   // The order is the owner's, stated on 2026-09-08: write/update
-  // account_registry, delete the extension row, delete user_accounts. All three
-  // run on the caller's dbClient inside the transaction opened above.
+  // account_registry first, then touch user_accounts. Two steps now rather than
+  // three - the extension row is no longer deleted - and what the order protects
+  // is unchanged: the archive is written while the live row is still readable.
+  // Both run on the caller's dbClient inside the transaction opened above.
   // ==========================================================================
 
-  // READ THE EXTENSION ROW BEFORE ANYTHING DELETES IT. Three of the registry's
-  // columns live only here, and 035's own comment says why they cannot be
-  // recovered afterwards: budgetCalculationService folds its payload on
-  // category_name and ACCOUNTS_QUERY publishes subcategory as its own field, so
-  // neither may be reconstructed by parsing account_name.
+  // READ THE EXTENSION ROW. It used to say "before anything deletes it", which
+  // was the reason while the close deleted that row; the row survives now and
+  // the read stays for the other reason, which never depended on the deletion:
+  // three of the registry's columns live only here, and 035's own comment says
+  // why they cannot be recovered afterwards - budgetCalculationService folds its
+  // payload on category_name and ACCOUNTS_QUERY publishes subcategory as its own
+  // field, so neither may be reconstructed by parsing account_name.
   //
   // The nature is stamped as the catalog id rather than the name text, because
   // category_nature_types rows are never deleted and the existing LEFT JOIN
   // stays answerable against the id.
-  const extensionTable = CLOSE_EXTENSION_TABLES[targetTypeName] ?? null;
+  //
+  // THE TABLE NAME IS NO LONGER RESOLVED HERE. The binding existed to be
+  // interpolated into the DELETE below, and that DELETE is gone; the read that
+  // remains names category_budget_accounts literally because it is the only
+  // type whose columns the registry carries. Left commented rather than removed
+  // so that whoever adds a second per-type read finds the lookup and its map
+  // (CLOSE_EXTENSION_TABLES above) instead of writing a third copy.
+  // const extensionTable = CLOSE_EXTENSION_TABLES[targetTypeName] ?? null;
 
   let extensionRow = null;
 
@@ -1409,71 +1438,68 @@ export const processCloseAccount = async (
     );
   }
 
-  // DELETE THE EXTENSION ROW EXPLICITLY, although the foreign key would take it
-  // anyway: every extension table declares account_id ... ON DELETE CASCADE
-  // (002_accounts.sql:124, :142, :167, :193). Stated rather than left to the
-  // cascade because the owner ruled the order, because it yields a count this
-  // path can report, and because a cascade is a property of the schema that a
-  // later migration can change without this file mentioning it.
+  // THE EXTENSION ROW SURVIVES. It used to be deleted here, explicitly rather
+  // than by the ON DELETE CASCADE each extension table declares
+  // (002_accounts.sql:124, :142, :167, :193).
   //
-  // The table name is interpolated. It comes from CLOSE_EXTENSION_TABLES, a
-  // frozen literal keyed by the catalog's own type name, and never from the
-  // request.
-  let extensionRowsDeleted = 0;
+  // Keeping the parent row while destroying this one produces an account that
+  // nine INNER joins drop in silence - eight in getAccountController.js and one
+  // at budgetTransactionRepository.js - and for three of the four types the
+  // columns exist nowhere else: the debtor's name and the amount owed, the
+  // pocket's target and desired date. Only the category-budget columns are
+  // copied into account_registry, and only because ACCOUNTS_QUERY folds its
+  // payload on category_name.
+  //
+  // With the DELETE gone, nothing interpolates a table name any more:
+  // extensionTable above is commented out and CLOSE_EXTENSION_TABLES has no
+  // reader left in this file. Both are kept, with the reason stated where each
+  // one sits.
+  //
+  // Reported as 0 rather than dropped from the response. The field is declared
+  // required on the frontend type (deletionTypes.ts) and asserted by
+  // scripts/verifyClose.js; removing it is a payload change that belongs to
+  // whoever retires the field, not to the commit that stops the deletion.
+  const extensionRowsDeleted = 0;
 
-  if (extensionTable !== null) {
-    const extensionDelete = await dbClient.query(
-      `DELETE FROM ${extensionTable} WHERE account_id = $1`,
-      [targetAccountId],
-    );
-
-    extensionRowsDeleted = extensionDelete.rowCount;
-  }
-
-  // DELETE THE ACCOUNT. This is the operation CLOSE is, in the owner's words of
+  // MARK THE ACCOUNT. This is the operation CLOSE is, in the owner's words of
   // 2026-09-08: "CLOSE solamente elimina la entidad de cuenta y conserva su
-  // identidad/historia."
+  // identidad/historia." The entity stops existing because the stamp says so,
+  // not because the row is gone.
   //
-  // NOT EXERCISABLE UNTIL 035 IS APPLIED, and that is the honest state rather
-  // than a defect here. Four transactions keys, pocket_allocations and
-  // budget_monthly_allocations all point into user_accounts with RESTRICT until
-  // 035 repoints them at account_registry; before that DDL this statement is
-  // refused by the first surviving reference, exactly as it should be.
+  // RESTORED from the statement retired on that same day, which set both columns
+  // and left the account in place because the foreign keys refused a delete
+  // until 035 repointed them. 035 is applied now, so the delete became possible
+  // - and the reason to prefer it did not survive contact with the readers.
+  // Deleting the row makes "is this account closed?" an absence, and an absence
+  // produces no error, no empty result and no warning at the twenty reads that
+  // forget to ask about it. A stamp is a condition a reviewer can see missing.
   //
-  // The deleted_at IS NULL predicate is kept from the UPDATE this replaces. The
-  // row is already locked and already checked, so it can only fail on a state
-  // this path did not create, which is what the 500 says.
-  const deleteResult = await dbClient.query(
-    `DELETE FROM user_accounts
+  // BOTH COLUMNS, and the pairing is temporary. closed_at is what this path
+  // means; deleted_at is written beside it because readers across the codebase
+  // still filter on it alone, and stopping now would put closed accounts back
+  // into circulation everywhere the sweep has not reached. It comes out when
+  // every active-only reader tests closed_at on its own - not when the audit is
+  // finished, which is a different and earlier moment.
+  //
+  // THE GUARD STAYS deleted_at IS NULL and must not become closed_at IS NULL
+  // while both are written: a soft-deleted account carries deleted_at and no
+  // closed_at, and a closed_at guard would let this path close it.
+  //
+  // CURRENT_TIMESTAMP is the transaction's start time, so all three columns take
+  // one identical value rather than three readings of the clock.
+  const markResult = await dbClient.query(
+    `UPDATE user_accounts
+        SET closed_at = CURRENT_TIMESTAMP,
+            deleted_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
       WHERE account_id = $1 AND user_id = $2 AND deleted_at IS NULL
       RETURNING account_id`,
     [targetAccountId, userId],
   );
 
-  if (deleteResult.rowCount === 0) {
+  if (markResult.rowCount === 0) {
     throw createError(500, `Failed to close account ${targetAccountId}`);
   }
-
-  // RETIRED 2026-09-08 by the second half of block 3, kept per the standing
-  // rule that code is commented and not deleted. CLOSE marked the row while the
-  // registry did not exist yet: it set closed_at and deleted_at and left the
-  // account in place, because deleting it was refused by the foreign keys 035
-  // repoints. The mark is not a step of the close any more - there is no row
-  // left to carry it.
-  //
-  // const markResult = await dbClient.query(
-  //   `UPDATE user_accounts
-  //       SET closed_at = CURRENT_TIMESTAMP,
-  //           deleted_at = CURRENT_TIMESTAMP,
-  //           updated_at = CURRENT_TIMESTAMP
-  //     WHERE account_id = $1 AND user_id = $2 AND deleted_at IS NULL
-  //     RETURNING account_id`,
-  //   [targetAccountId, userId],
-  // );
-  //
-  // if (markResult.rowCount === 0) {
-  //   throw createError(500, `Failed to close account ${targetAccountId}`);
-  // }
 
   return {
     actionType: USER_ACTION,
@@ -1489,13 +1515,16 @@ export const processCloseAccount = async (
     // discover it on the pocket board.
     releasedPockets,
     budgetTerminatedAt,
-    // The closure record, read back from the row that survives the account.
-    // Reported because it is the only thing left to report: the account row is
-    // gone by the time this returns.
+    // The closure record, read back from account_registry. It used to be the
+    // only thing left to report, because the account row was gone by the time
+    // this returned; the row is here now and carries the same stamp. The archive
+    // is still what the response quotes, since it is the row that holds the
+    // reason and the closer, which user_accounts does not.
     closeReason: reason,
     registryClosedAt: registryStamp.rows[0].closed_at,
+    // Always 0 now. The extension row is kept, so nothing is deleted to count.
     extensionRowsDeleted,
-    rowCount: deleteResult.rowCount,
+    rowCount: markResult.rowCount,
     // RETIRED 2026-09-08 with the settlement policies. The response used to
     // name the policy applied and the account the residual moved to; CLOSE
     // moves nothing now, so there is no destination to report.

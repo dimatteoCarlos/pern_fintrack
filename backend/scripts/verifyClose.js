@@ -36,7 +36,8 @@
 //  - it REFUSES a missing or whitespace-only reason, before taking its lock.
 //  - it releases every pocket allocation the account was backing.
 //  - it stamps account_registry with closed_at, closed_by and close_reason.
-//  - it deletes the extension row, then the user_accounts row.
+//  - it marks the user_accounts row with closed_at and deleted_at, and keeps
+//    both that row and the type's extension row. It used to delete both.
 //  - the transactions naming the account survive, because migration 035 points
 //    their keys at account_registry rather than at user_accounts.
 //
@@ -499,14 +500,23 @@ try {
     );
    }
 
-   const gone = await client.query(
-    'SELECT 1 FROM user_accounts WHERE account_id = $1',
+   // The assertion used to be that the row was gone. The close marks instead of
+   // deleting, so what proves the reversal and the closure ran in one
+   // transaction is now the stamp on the surviving row, not its absence. Both
+   // columns are tested because the close writes both and a test on one alone
+   // would pass against a soft-deleted account that was never closed.
+   const marked = await client.query(
+    'SELECT closed_at, deleted_at FROM user_accounts WHERE account_id = $1',
     [fundedId],
    );
    check(
     'the reversed account is closed in the same transaction',
-    gone.rows.length === 0,
-    `${gone.rows.length} row(s) left`,
+    marked.rows.length === 1 &&
+     marked.rows[0].closed_at !== null &&
+     marked.rows[0].deleted_at !== null,
+    marked.rows.length === 1
+     ? `closed_at ${marked.rows[0].closed_at}, deleted_at ${marked.rows[0].deleted_at}`
+     : `${marked.rows.length} row(s)`,
    );
 
    // THE DATABASE'S OWN HALF, and it is the reason the pairing is a CHECK
@@ -565,35 +575,46 @@ try {
   );
 
   // ---------------------------------------------------------------- after
+  // THE ROW SURVIVES, STAMPED. This assertion is the inverse of the one it
+  // replaces, which required the row to be gone. Existence is no longer what
+  // says an account is closed; closed_at is. deleted_at is asserted beside it
+  // because the close still writes both, and the day it stops this line is what
+  // fails and says so.
   const accountAfter = await client.query(
-   'SELECT 1 FROM user_accounts WHERE account_id = $1',
+   'SELECT closed_at, deleted_at FROM user_accounts WHERE account_id = $1',
    [accountId],
   );
   check(
-   'the user_accounts row is gone',
-   accountAfter.rows.length === 0,
-   `${accountAfter.rows.length} row(s) left`,
+   'the user_accounts row survives, stamped on both columns',
+   accountAfter.rows.length === 1 &&
+    accountAfter.rows[0].closed_at !== null &&
+    accountAfter.rows[0].deleted_at !== null,
+   accountAfter.rows.length === 1
+    ? `closed_at ${accountAfter.rows[0].closed_at}, deleted_at ${accountAfter.rows[0].deleted_at}`
+    : `${accountAfter.rows.length} row(s)`,
   );
 
   if (extensionTable) {
+   // The extension row is kept now. For three of the four types its columns
+   // exist nowhere else - the debtor's name and amount owed, the pocket's
+   // target and desired date - so deleting it destroyed data the registry never
+   // received.
    const extensionAfter = await countIn(extensionTable, 'account_id');
    check(
-    `the ${extensionTable} row is gone`,
-    extensionAfter === 0,
+    `the ${extensionTable} row survives the close`,
+    extensionAfter === extensionBefore,
     `${extensionBefore} -> ${extensionAfter}`,
    );
-   check(
-    'the response counts the extension row it deleted',
-    result.extensionRowsDeleted === extensionBefore,
-    `reported ${result.extensionRowsDeleted}, was ${extensionBefore}`,
-   );
-  } else {
-   check(
-    'a type with no extension table reports none deleted',
-    result.extensionRowsDeleted === 0,
-    `reported ${result.extensionRowsDeleted}`,
-   );
   }
+
+  // Zero for every type now, with or without an extension table. The field is
+  // still published because the frontend type declares it required; it reports
+  // work that no longer happens and comes out when that type does.
+  check(
+   'the response reports no extension row deleted',
+   result.extensionRowsDeleted === 0,
+   `reported ${result.extensionRowsDeleted}`,
+  );
 
   const registry = await client.query(
    `SELECT account_id, user_id, account_name, closed_at, closed_by, close_reason
@@ -698,7 +719,7 @@ try {
   console.log('');
   console.log(
    allPassed
-    ? 'CLOSE refuses what it must, releases, stamps, deletes, and leaves nothing behind'
+    ? 'CLOSE refuses what it must, releases, stamps, marks the row, and leaves nothing behind'
     : 'AT LEAST ONE ASSERTION FAILED',
   );
   process.exitCode = allPassed ? 0 : 1;
