@@ -28,12 +28,12 @@ if (sslRequired && !caCert) {
 
 const ssl_env = sslRequired ? { ca: caCert, rejectUnauthorized: true } : false;
 //------
-// One connection per instance in production: the pooler runs in session mode and
-// pins one server connection per client, so the footprint is instances x max
-// against a ceiling of 15. A stopgap until the connection string moves to
-// transaction mode; DB_POOL_MAX still overrides it.
-const defaultPoolMax = process.env.NODE_ENV === 'production' ? '1' : '2';
-const max_env = parseInt(process.env.DB_POOL_MAX || defaultPoolMax, 10);
+// Never set this to 1. Nine sites hold a client from pool.connect() and then
+// issue a pool.query() on the same path — transactionController.js:196 and :232
+// is one — which needs a second connection to be free. At max=1 that second
+// query waits on a connection the caller itself is holding and only returns
+// when connectionTimeoutMillis fires ten seconds later.
+const max_env = parseInt(process.env.DB_POOL_MAX || '2', 10);
 
 const config = {
   development: {
