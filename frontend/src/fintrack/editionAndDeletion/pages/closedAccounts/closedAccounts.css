@@ -262,6 +262,70 @@
 /* ===========================
    💳 LIST & CARD TILES
    =========================== */
+/* THE EMPTY AND THE FAILED STATE, which carried no rules at all: the three
+   class names were written in ClosedAccountsPage.tsx and declared in no
+   stylesheet, so the text inherited --color-content-primary — #141414 on the
+   #0d0f12 app ground, about 1.05:1. The words were painted and unreadable, and
+   the empty state is the first thing an owner who has closed nothing sees. */
+.closed-accounts__notice {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ gap: var(--space-2);
+ padding: var(--space-8) var(--space-4);
+ text-align: center;
+}
+
+.closed-accounts__notice-title {
+ margin: 0;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-bold);
+}
+
+/* Capped in characters rather than pixels, so the line length follows the text
+   and not the viewport. */
+.closed-accounts__notice-message {
+ margin: 0;
+ max-width: 42ch;
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+ line-height: var(--line-height-body);
+}
+
+/* Retry and clear-filters are the same kind of control as the toolbar's sort
+   direction button, so they take the registry's own control tokens instead of
+   a look of their own. */
+.closed-accounts__notice-action {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ margin-top: var(--space-2);
+ block-size: var(--size-control-registry);
+ padding-inline: var(--space-4);
+ color: var(--color-content-control-registry);
+ background-color: var(--color-surface-control-registry);
+ border: var(--border-width-thin) solid var(--color-border-control-registry);
+ border-radius: var(--radius-control-registry);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ cursor: pointer;
+ transition: color var(--motion-normal), border-color var(--motion-normal),
+  background-color var(--motion-normal);
+}
+
+.closed-accounts__notice-action:hover {
+ color: var(--color-content-on-dark);
+ border-color: var(--color-border-control-registry-hover);
+ background-color: var(--color-surface-control-registry-hover);
+}
+
+.closed-accounts__notice-action:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
 .closed-accounts__list {
  display: flex;
  flex-direction: column;
