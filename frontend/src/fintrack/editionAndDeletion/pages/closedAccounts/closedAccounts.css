@@ -109,15 +109,21 @@
  transition: color var(--motion-normal);
 }
 
+/* The registry's control tokens, which the export trigger named when it joined
+   this toolbar. Three values here have no token and stay literal rather than
+   gaining one invented for a single declaration: the entered text at #f8fafc,
+   which is deliberately brighter than a control's own label; the placeholder at
+   #475569; and the 0.875rem inline padding, which falls between --space-3 and
+   --space-4. */
 .closed-accounts__input,
 .closed-accounts__select {
  inline-size: 100%;
- block-size: 2.625rem;
+ block-size: var(--size-control-registry);
  padding-inline: 0.875rem;
  color: #f8fafc;
- background-color: rgba(15, 23, 42, 0.6);
- border: var(--border-width-thin) solid rgba(255, 255, 255, 0.1);
- border-radius: 10px;
+ background-color: var(--color-surface-control-registry);
+ border: var(--border-width-thin) solid var(--color-border-control-registry);
+ border-radius: var(--radius-control-registry);
  font-size: var(--font-size-sm);
  /* transition: all var(--motion-normal); - `all` also animated the focus
     state, so the ring arrived late. Named properties only. */
@@ -133,15 +139,22 @@
  color: #475569;
 }
 
+/* UNIFIED ONTO THE HOVER TOKENS, and the unification is the one visible change
+   in this retrofit. The field hovered to rgba(255, 255, 255, 0.2) over
+   rgba(15, 23, 42, 0.8) while the order button beside it hovered to 0.25 over
+   rgba(30, 41, 59, 0.8) — two controls on one toolbar disagreeing by a hair,
+   which is drift and not a distinction anyone asked for. Both now take the
+   token, so the field's hover border opens slightly further and its surface
+   lifts to the lighter slate. Carlos, 2026-09-19. */
 .closed-accounts__input:hover,
 .closed-accounts__select:hover {
- border-color: rgba(255, 255, 255, 0.2);
- background-color: rgba(15, 23, 42, 0.8);
+ border-color: var(--color-border-control-registry-hover);
+ background-color: var(--color-surface-control-registry-hover);
 }
 
 /* The ring the other dark toolbars draw on their search and select
    (debtsToolbar.css:193-198, pocketToolbar.css:323-328): 2px, white, inset so
-   it stays inside the field. The radius is left to the field's own 10px;
+   it stays inside the field. The radius is left to --radius-control-registry;
    --radius-lg is redeclared by the deletion chunk. */
 .closed-accounts__input:focus-visible,
 .closed-accounts__select:focus-visible {
@@ -172,12 +185,12 @@
  justify-content: center;
  gap: var(--space-2);
  white-space: nowrap;
- block-size: 2.625rem;
+ block-size: var(--size-control-registry);
  padding-inline: 0.875rem;
- color: #cbd5e1;
- background-color: rgba(15, 23, 42, 0.6);
- border: var(--border-width-thin) solid rgba(255, 255, 255, 0.1);
- border-radius: 10px;
+ color: var(--color-content-control-registry);
+ background-color: var(--color-surface-control-registry);
+ border: var(--border-width-thin) solid var(--color-border-control-registry);
+ border-radius: var(--radius-control-registry);
  font-size: var(--font-size-sm);
  font-weight: var(--font-weight-medium);
  cursor: pointer;
@@ -189,8 +202,8 @@
 
 .closed-accounts__order:hover {
  color: var(--color-content-on-dark);
- border-color: rgba(255, 255, 255, 0.25);
- background-color: rgba(30, 41, 59, 0.8);
+ border-color: var(--color-border-control-registry-hover);
+ background-color: var(--color-surface-control-registry-hover);
 }
 
 /* index.css sets font-size on the universal selector, so the span would not
