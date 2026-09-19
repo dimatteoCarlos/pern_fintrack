@@ -21,25 +21,52 @@
 .budgetVariance__head {
  display: flex;
  align-items: center;
+ justify-content: space-between;
  gap: var(--space-3);
 }
 
-/* It names where it goes and not "Back": the reader may have arrived at this
-   screen from the menu without ever scrolling the list, so "back" describes a
-   history entry rather than a destination. */
+/* A badge, and the module's own: the same fill, ink, size and inversion the
+   month picker and the export trigger carry in the header above
+   (budget-styles.css:173-191). Three controls on one screen answering the
+   pointer three different ways is what a shared idiom prevents.
+
+   It names where it goes and not "Back": the reader may have arrived here from
+   the menu without ever scrolling the list, so "back" would describe a history
+   entry rather than a destination. */
 .budgetVariance__back {
  display: inline-flex;
+ flex-shrink: 0;
  align-items: center;
  gap: var(--space-1);
- color: var(--color-content-on-dark-subtle);
+ padding: var(--space-1) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-content-primary);
+ border-radius: var(--radius-full);
+ background-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
  font-size: var(--font-size-xs);
- letter-spacing: var(--letter-spacing-wide);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: 0.02em;
  text-decoration: none;
- transition: color var(--motion-fast);
+ transition: background-color var(--motion-fast),
+  border-color var(--motion-fast), color var(--motion-fast);
 }
 
+/* The inversion the badge performs, so the pointer gets the same answer it gets
+   from the two controls in the header. */
 .budgetVariance__back:hover {
- color: var(--color-content-on-dark);
+ background-color: var(--color-content-primary);
+ border-color: var(--color-content-primary);
+ color: var(--color-accent);
+}
+
+.budgetVariance__back:active {
+ background-color: var(--color-accent);
+ color: var(--color-content-primary);
+}
+
+.budgetVariance__back:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thin);
 }
 
 .budgetVariance__backArrow {

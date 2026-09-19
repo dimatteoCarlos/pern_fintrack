@@ -82,9 +82,19 @@ function BudgetVariance() {
  const backTo = { pathname: '..', search: month ? `?month=${month}` : '' };
 
  return (
-  <section className='budgetVariance' aria-label='Budget variance'>
+  <section className='budgetVariance' aria-label='Spent vs budget'>
    <div className='budgetVariance__head'>
-    {/* relative and not an absolute path: this route is a child of budget, and
+    {/* The board's own words, which the list header already taught as
+        `Spent / Budget`, and not `Budget variance`: this screen sits under a
+        header that says Budget, so the term would repeat it. The quantity is
+        named in the caption below, where a reader who does not know the word
+        meets it beside its definition instead of in place of one. */}
+    <h2 className='budgetVariance__title'>Spent vs budget</h2>
+
+    {/* After the heading in the DOM as well as on screen: the reading order and
+        the visual order agree, so nothing has to be reordered in CSS.
+
+        relative and not an absolute path: this route is a child of budget, and
         the same link then works wherever the module is mounted. */}
     <Link className='budgetVariance__back' to={backTo} relative='path'>
      <span className='budgetVariance__backArrow' aria-hidden='true'>
@@ -92,15 +102,14 @@ function BudgetVariance() {
      </span>
      Category list
     </Link>
-
-    <h2 className='budgetVariance__title'>Budget variance</h2>
    </div>
 
    {/* What a bar measures, stated once and in money. A chart whose unit the
        reader has to infer from the numbers beside it is being read twice. */}
    <p className='budgetVariance__caption'>
-    Budget minus spent, per category. To the right is budget not spent
-    (favorable); to the left is spending past the plan (unfavorable).
+    Budget variance — budget minus spent, per category. To the right is budget
+    not spent (favorable); to the left is spending past the plan
+    (unfavorable).
    </p>
 
    {error && (

@@ -63,11 +63,13 @@ const OVER_FILTER_LABEL = 'Over budget';
 // options reads as that option and the other one is never looked for.
 const MENU_LABEL = 'Budget attention';
 
-// The reader-facing name of the variance screen. `variance` is the term the
-// practice uses for the difference between what was planned and what was spent,
-// per line - not the statistical variance, which is a different quantity that
-// happens to share the word.
-const VARIANCE_LABEL = 'Budget variance';
+// The reader-facing name of the variance screen, and it matches the heading
+// that screen draws. The board already rules its own column `Spent / Budget`,
+// so this is the vocabulary the reader has. `variance` is the term the practice
+// uses for the difference - not the statistical variance, which is a different
+// quantity that happens to share the word - and it is taught in that screen's
+// caption rather than assumed in a menu entry.
+const VARIANCE_LABEL = 'Spent vs budget';
 
 type BudgetListControlsProps = {
  search: string;
