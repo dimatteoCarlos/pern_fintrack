@@ -16,13 +16,15 @@
  justify-content: center;
  /* Anchors the ::after that gives the tappable area back below. */
  position: relative;
- /* The painted box: the glyph plus --space-1 on each side. Squared off the same
-    sum rather than a literal 24px, and the asset is 4:16, so the horizontal
-    padding is what keeps the highlight from collapsing into a column. */
- width: calc(var(--font-size-base) + var(--space-1) * 2);
- height: calc(var(--font-size-base) + var(--space-1) * 2);
+ /* The painted box: --size-icon, the same disc .backArrow draws (backArrow.css:
+    30-34). The two sit at opposite ends of the same title row on the detail
+    screens, and at the glyph plus --space-1 a side this one measured 24px
+    against the arrow's 32px, so the pair read as two different controls.
+    Padding goes with it: the box is centred by flex and the glyph below now
+    carries its own size. */
+ width: var(--size-icon);
+ height: var(--size-icon);
  flex-shrink: 0;
- padding: var(--space-1);
  border: none;
  /* Round and not the square it was. The box is already a square of the glyph
     plus --space-1 a side, so a full radius inscribes a circle in it, and a
@@ -40,17 +42,17 @@
 .accountActionsTrigger::after {
  content: '';
  position: absolute;
- inset: calc(
-  (var(--size-touch-target) - var(--font-size-base) - var(--space-1) * 2) / -2
- );
+ inset: calc((var(--size-touch-target) - var(--size-icon)) / -2);
 }
 
 /* Height only, width auto: the asset is a vertical ellipsis at a 4:16 ratio,
    and a square box would letterbox it into a column of its own width. */
 .accountActionsTrigger__glyph {
- /* The asset's own 16px: it is drawn at a 1.5 stroke for that size, and scaling
-    it up thickens the dots without making them read any better. */
- height: var(--font-size-base);
+ /* --font-size-lg, the size .backArrow's own drawing occupies inside the same
+    disc, so the two marks weigh alike and not only their discs. The 1.5 stroke
+    the asset is drawn at thickens slightly at this size; the alternative was a
+    20px disc around a 16px mark, which is the mismatch this change is fixing. */
+ height: var(--font-size-lg);
  width: auto;
 }
 

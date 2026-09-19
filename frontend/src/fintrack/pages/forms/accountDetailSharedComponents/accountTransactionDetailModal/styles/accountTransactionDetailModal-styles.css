@@ -49,20 +49,27 @@
  color: var(--color-content-on-dark);
 }
 
+/* --size-control-sm and not --size-touch-target, under the same repeal the list
+   bar and the budget modal already took: a control takes the height of its own
+   line, and this one shares a line with a --font-size-lg heading. At 44px the
+   cream disc outweighed the title it sits beside and read as the subject of the
+   header. The glyph drops to --font-size-sm with it, so the × keeps its
+   proportion inside the smaller disc instead of filling it. */
 .transactionDetail__close {
  display: flex;
  align-items: center;
  justify-content: center;
  flex-shrink: 0;
- width: var(--size-touch-target);
- height: var(--size-touch-target);
+ width: var(--size-control-sm);
+ height: var(--size-control-sm);
  padding: 0;
  border: var(--border-width-thin) solid var(--color-border-subtle);
  border-radius: var(--radius-full);
  background-color: var(--color-accent);
  color: var(--color-accent-content);
  font-family: var(--font-family-sans);
- font-size: var(--font-size-base);
+ font-size: var(--font-size-sm);
+ line-height: 1;
  cursor: pointer;
  transition: opacity var(--motion-fast);
 }

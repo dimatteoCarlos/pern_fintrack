@@ -35,6 +35,29 @@
   width: 100%;
 }
 
+/* BOTH ENDS PINNED THE SAME WAY, and each half of that fixes one defect.
+
+   Vertical: .backArrow is position: absolute, and an absolutely positioned
+   child of a flex container is not a flex item — align-items above never
+   reached it, so it sat at the content box's top edge while the title and the
+   menu centred. top/transform is what centres a box the flex algorithm does
+   not see.
+
+   Horizontal: the menu was the only control still in the flow, and
+   .form__title carries margin: 0 auto, which centres it on the space LEFT OVER
+   after the menu rather than on the row. Taking the menu out of the flow puts
+   the title at the container's true middle. */
+.page__content .main__title--container > .backArrow,
+.page__content .main__title--container > .accountActionsTrigger {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.page__content .main__title--container > .accountActionsTrigger {
+  position: absolute;
+  right: 0;
+}
+
 .labelText,
 label,
 .forms__label {

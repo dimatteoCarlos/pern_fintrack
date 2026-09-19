@@ -22,11 +22,13 @@
  justify-content: center;
  /* Anchors the ::after that gives the tappable area back below. */
  position: relative;
- /* The painted box: the glyph plus --space-1 on each side, off that same sum
-    rather than a literal pixel value. Equal on both axes, so --radius-full
-    rounds it to a circle and not to a pill. */
- width: calc(var(--font-size-base) + var(--space-1) * 2);
- height: calc(var(--font-size-base) + var(--space-1) * 2);
+ /* --size-icon, the same 32px disc .backArrow paints, and not the glyph-plus-
+    padding sum this used to compute (Carlos, 2026-09-19). The two controls sit
+    at the two ends of one title row, so a 24px disc beside a 32px one read as
+    the smaller control rather than as the same control mirrored. Equal on both
+    axes, so --radius-full rounds it to a circle and not to a pill. */
+ width: var(--size-icon);
+ height: var(--size-icon);
  flex-shrink: 0;
  padding: var(--space-1);
  /* Round, the same highlight its sibling AccountActionsTrigger paints. The two
@@ -46,18 +48,19 @@
 .accountEditLink::after {
  content: '';
  position: absolute;
- inset: calc(
-  (var(--size-touch-target) - var(--font-size-base) - var(--space-1) * 2) / -2
- );
+ inset: calc((var(--size-touch-target) - var(--size-icon)) / -2);
 }
 
 /* Square, unlike its sibling's glyph: the pencil is drawn on a 24 box at a
-   1:1 ratio, so height and width are the same figure. It inherits its colour
-   from the modifiers below — the asset strokes in currentColor, so nothing has
-   to be overridden here. */
+   1:1 ratio, so height and width are the same figure. --font-size-lg and not
+   --font-size-base, so the 20px drawing carries the same weight as the 19x16
+   arrow at the other end of the row; at 16px it read as the lighter mark.
+
+   It inherits its colour from the modifiers below — the asset strokes in
+   currentColor, so nothing has to be overridden here. */
 .accountEditLink__glyph {
- height: var(--font-size-base);
- width: var(--font-size-base);
+ height: var(--font-size-lg);
+ width: var(--font-size-lg);
 }
 
 /* ── On the dark app surface ────────────────────────────────────────────────
