@@ -1827,34 +1827,108 @@ a.icon {
  gap: var(--space-2) var(--space-3);
 }
 
+/* A BORDERED CONTROL, AND THE CORNER IS WHAT KEEPS IT OFF THE CHIPS. An
+   unfilled pill at --radius-full is exactly what an unselected category chip
+   below the chart already is: same border token, same transparent fill, same
+   size. So this takes the soft corner instead, and carries the accent ink and a
+   leading arrow that no chip has. Three differences, not one.
+
+   No underline. It was tried and read as a defect rather than as an
+   affordance; the border does the same job without drawing a line through a
+   row that already has a vertical rule in it. */
 .overviewLayout .budgetPareto__back {
  display: inline-flex;
  align-items: center;
  gap: var(--space-1);
- padding: 0;
- border: none;
- background: none;
+ padding: var(--space-1) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-accent);
+ border-radius: var(--radius-sm);
+ background: transparent;
  /* The default UI size and not xs: this is the way out of a drilled chart, and
     it was reported as too small to read. */
  font-size: var(--font-size-sm);
- color: var(--color-content-on-dark-muted);
+ font-weight: var(--font-weight-medium);
+ color: var(--color-accent);
  cursor: pointer;
+ transition:
+  color var(--motion-fast),
+  background-color var(--motion-fast);
 }
 
-.overviewLayout .budgetPareto__back:hover,
+/* It fills with cream under the pointer, the outlined-to-solid move the account
+   actions trigger already makes. The ink flips to the paired on-accent token
+   rather than staying light, which would leave near-white on near-white. */
+.overviewLayout .budgetPareto__back:hover {
+ background: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
 .overviewLayout .budgetPareto__back:focus-visible {
- color: var(--color-content-on-dark);
- text-decoration: underline;
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
 }
 
+/* The same step down a filled chip takes when pressed, so the two controls on
+   this screen answer a press the same way. */
+.overviewLayout .budgetPareto__back:active {
+ background: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+.overviewLayout .budgetPareto__back:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* Inherited and not base: the universal 16px rule would otherwise set the glyph
+   two steps above its own phrase and it was read as a detached object. */
 .overviewLayout .budgetPareto__backArrow {
- font-size: var(--font-size-base);
+ font-size: inherit;
+ line-height: 1;
 }
 
+/* WHAT THE CHART IS ABOUT, AND IT IS THE LARGEST THING ON THE ROW. Drilling into
+   a category makes that category the subject of the whole figure, so its name
+   carries the weight of a title and not of a caption. It was a 12px dim label,
+   which stated the subject in the smallest voice on the screen. */
 .overviewLayout .budgetPareto__level {
- font-size: var(--font-size-sm);
+ display: inline-flex;
+ align-items: baseline;
+ gap: var(--space-2);
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-on-dark);
+}
+
+/* The category's own name, which is the title. */
+.overviewLayout .budgetPareto__levelName {
+ color: inherit;
+}
+
+/* What is being ranked inside it. A qualifier and not part of the name, so it
+   drops to the caption voice the figure's total label already uses — the title
+   has to be readable as the owner's word alone. */
+.overviewLayout .budgetPareto__levelScope {
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
  letter-spacing: var(--letter-spacing-wide);
- color: var(--color-content-on-dark-muted);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The top level has no category to name, so the row states the whole set
+   instead. That is a caption, not a title: there is no subject to promote. */
+.overviewLayout .budgetPareto__level--all {
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The rule divides the way out from the place it leads out of, and exists only
+   when both are on the row; at the top level the label opens it. */
+.overviewLayout .budgetPareto__back + .budgetPareto__level {
+ border-inline-start: var(--border-width-thin) solid var(--color-border-subtle);
+ padding-inline-start: var(--space-3);
 }
 
 /* One continuous track with a single divider, and never a detached pill: a chip
@@ -1864,11 +1938,19 @@ a.icon {
  display: inline-flex;
  align-items: center;
  gap: var(--space-2);
- margin-inline-start: auto;
+ /* Auto on BOTH sides, so the switch is centred on its line instead of flush
+    against the end of it. At the top level it is the only thing on the row and
+    lands in the middle of the card; drilled into a category it shares the row
+    with the way out and the title, and the free space splits evenly between
+    them. */
+ margin-inline: auto;
 }
 
+/* The caption treatment the position label carries, so small dim text means a
+   label everywhere on this row and never something that can be pressed. */
 .overviewLayout .budgetPareto__rankByLabel {
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
  color: var(--color-content-on-dark-subtle);
 }
 
@@ -1879,6 +1961,9 @@ a.icon {
  font-size: var(--font-size-sm);
  color: var(--color-content-on-dark-muted);
  cursor: pointer;
+ transition:
+  color var(--motion-fast),
+  background-color var(--motion-fast);
 }
 
 .overviewLayout .budgetPareto__segment:first-of-type {
@@ -1892,16 +1977,46 @@ a.icon {
  border-end-end-radius: var(--radius-sm);
 }
 
-/* A tab idiom and never the accent as a fill, which is what an active chip
-   does: the two controls sit on one screen and must not look alike. */
+/* THE SELECTED SIDE IS FILLED, NOT UNDERLINED (Carlos, 2026-09-19). The rule
+   under the active label was read as a defect rather than as a selection, the
+   same reading the chart's category labels got, so both lost it on the same
+   day. The fill is the strongest available statement of which of two sides is
+   on, and it cannot be mistaken for a category chip: a chip is a detached pill
+   at --radius-full and this is one half of a joined track at --radius-sm. */
 .overviewLayout .budgetPareto__segment.is-active {
- background: var(--color-surface-raised);
- border-block-end: var(--border-width-thick) solid var(--color-accent);
- color: var(--color-content-on-dark);
+ background: var(--color-accent);
+ border-color: var(--color-accent);
+ color: var(--color-accent-content);
 }
 
-.overviewLayout .budgetPareto__segment:hover {
+/* Excluded from the hover surface: it carries the same specificity and sits
+   later in the file, so without the :not it would strip the accent off the
+   selected side the moment the pointer crossed it. */
+.overviewLayout .budgetPareto__segment:hover:not(.is-active) {
  background: var(--color-surface-hover-on-dark);
+}
+
+.overviewLayout .budgetPareto__segment:active {
+ background: var(--color-surface-active-on-dark);
+}
+
+/* Positioned so the ring paints over the neighbour it shares a border with. */
+.overviewLayout .budgetPareto__segment:focus-visible {
+ position: relative;
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+}
+
+.overviewLayout .budgetPareto__segment:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .overviewLayout .budgetPareto__back,
+ .overviewLayout .budgetPareto__segment {
+  transition: none;
+ }
 }
 
 /*------------*/
@@ -1932,16 +2047,16 @@ a.icon {
  outline: none;
 }
 
-/* The standing affordance, so a column says it opens before it is pointed at. */
+/* The standing affordance, so a column says it opens before it is pointed at.
+   Colour only, no underline (Carlos, 2026-09-19): the accent marks it as
+   clickable at rest, and the brighter on-dark fill marks the pointer on it. */
 .overviewLayout .budgetPareto__categoryText--openable {
- fill: var(--color-content-on-dark-muted);
- text-decoration: underline dotted;
- text-underline-offset: 3px;
+ fill: var(--color-accent);
 }
 
-.overviewLayout .budgetPareto__group--openable:hover .budgetPareto__categoryText {
+.overviewLayout .budgetPareto__group--openable:hover .budgetPareto__categoryText,
+.overviewLayout .budgetPareto__group--openable:focus-within .budgetPareto__categoryText {
  fill: var(--color-content-on-dark);
- text-decoration: underline solid;
 }
 
 /*------------*/

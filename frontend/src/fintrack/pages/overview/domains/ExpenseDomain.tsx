@@ -431,11 +431,23 @@ function ExpenseDomain({
      {rankBy === 'category' ? 'All categories' : 'All subcategories'}
     </button>
    )}
+   {/* The category's name is the SUBJECT of the drilled figure, so it is its own
+       element and carries the title voice. What is ranked inside it is a
+       qualifier beside the name, not part of it. At the top level there is no
+       subject to promote and the row states the whole set as a caption. */}
    {(isNarrowed || level === 'subcategory') && (
-    <span className='budgetPareto__level' aria-current='true'>
-     {isNarrowed
-      ? `${selectedCategory} · subcategories`
-      : 'every budget account of the month'}
+    <span
+     className={`budgetPareto__level${isNarrowed ? '' : ' budgetPareto__level--all'}`}
+     aria-current='true'
+    >
+     {isNarrowed ? (
+      <>
+       <span className='budgetPareto__levelName'>{selectedCategory}</span>
+       <span className='budgetPareto__levelScope'>subcategories</span>
+      </>
+     ) : (
+      'every budget account of the month'
+     )}
     </span>
    )}
    {rankSwitch}
@@ -478,7 +490,12 @@ function ExpenseDomain({
         </span>
         All subcategories
        </button>
-       <span className='budgetPareto__level' aria-current='true'>
+       {/* The caption variant: "rest" names no category of the owner's, so
+           there is no subject here to carry the title voice. */}
+       <span
+        className='budgetPareto__level budgetPareto__level--all'
+        aria-current='true'
+       >
         {`rest · ${foldedRows.length} accounts below the top ${FLAT_BAR_COUNT}`}
        </span>
       </div>
