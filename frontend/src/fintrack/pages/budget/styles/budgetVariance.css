@@ -46,10 +46,15 @@
  padding-inline-end: var(--space-2);
 }
 
-/* A badge, and the module's own: the same fill, ink, size and inversion the
-   month picker and the export trigger carry in the header above
-   (budget-styles.css:173-191). Three controls on one screen answering the
-   pointer three different ways is what a shared idiom prevents.
+/* A badge, and it carries the same size, weight and inversion as the month
+   picker and the export trigger in the header above (budget-styles.css:173-191)
+   - but the reverse of their resting state, by Carlos's decision 2026-09-19.
+   Those two are filled white and darken under the pointer; this one is an
+   outline on the card's own surface and fills white under the pointer.
+
+   The fill is transparent rather than a dark token: the badge sits on the card,
+   so painting --color-surface-app into it would leave a patch of a different
+   dark the day that card's surface changes.
 
    It names where it goes and not "Back": the reader may have arrived here from
    the menu without ever scrolling the list, so "back" would describe a history
@@ -60,10 +65,10 @@
  align-items: center;
  gap: var(--space-1);
  padding: var(--space-1) var(--space-3);
- border: var(--border-width-thin) solid var(--color-content-primary);
+ border: var(--border-width-thin) solid var(--color-border-inverse);
  border-radius: var(--radius-full);
- background-color: var(--color-surface-inverse);
- color: var(--color-content-primary);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
  font-size: var(--font-size-xs);
  font-weight: var(--font-weight-medium);
  letter-spacing: 0.02em;
@@ -72,22 +77,27 @@
   border-color var(--motion-fast), color var(--motion-fast);
 }
 
-/* The inversion the badge performs, so the pointer gets the same answer it gets
-   from the two controls in the header. */
+/* The inversion, now running the other way: the badge fills and its ink goes
+   dark. The arrow follows without a rule of its own, because it draws in
+   currentColor. */
 .budgetVariance__back:hover {
- background-color: var(--color-content-primary);
- border-color: var(--color-content-primary);
- color: var(--color-accent);
+ background-color: var(--color-surface-inverse);
+ border-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
 }
 
 .budgetVariance__back:active {
  background-color: var(--color-accent);
+ border-color: var(--color-accent);
  color: var(--color-content-primary);
 }
 
+/* Offset by a full --space-1 and not by a hairline: the border is white now, so
+   a white ring drawn against it would merge into one thicker line instead of
+   reading as a focus state. Four pixels of the dark surface separate them. */
 .budgetVariance__back:focus-visible {
  outline: var(--border-width-thick) solid var(--color-border-inverse);
- outline-offset: var(--border-width-thin);
+ outline-offset: var(--space-1);
 }
 
 /* Sized off the badge's own text rather than in pixels, so the glyph and the
