@@ -18,11 +18,17 @@
  gap: var(--space-3);
 }
 
+/* The same inset the rows carry, and it has to be repeated rather than moved
+   up to .budgetVariance: the rows scroll, so their padding belongs INSIDE the
+   scroll container, where it holds the figures off the bar. The head is outside
+   it and would otherwise sit 8px further right than everything it heads - which
+   on an overlay scrollbar puts the badge under the bar. */
 .budgetVariance__head {
  display: flex;
  align-items: center;
  justify-content: space-between;
  gap: var(--space-3);
+ padding-inline-end: var(--space-2);
 }
 
 /* A badge, and the module's own: the same fill, ink, size and inversion the
@@ -85,6 +91,7 @@
 .budgetVariance__foot,
 .budgetVariance__notice {
  margin: 0;
+ padding-inline-end: var(--space-2);
  color: var(--color-content-on-dark-subtle);
  font-size: var(--font-size-xs);
  line-height: var(--line-height-body);
