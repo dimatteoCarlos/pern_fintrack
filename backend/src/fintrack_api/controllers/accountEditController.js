@@ -34,13 +34,18 @@ export const patchAccountById = async (req, res, next) => {
     }
 
     // 1. Get account type by id
+    //
+    // closed_at is selected so the guard below can read it. The row itself is
+    // fetched WITHOUT a state predicate on purpose: a closed account has to be
+    // found in order to be refused by name, and a predicate here would answer
+    // 404 "not found", which is untrue and tells the screen nothing it can act on.
     const accountInfoResult = await client.query({
-     text: 
-      `SELECT act.account_type_name, ua.account_type_id
+     text:
+      `SELECT act.account_type_name, ua.account_type_id, ua.closed_at
       FROM user_accounts ua
       JOIN account_types act ON act.account_type_id = ua.account_type_id
       WHERE ua.account_id = $1 AND ua.user_id = $2`,
-      
+
      values: [accountId, userId],
     });
 
@@ -48,6 +53,25 @@ export const patchAccountById = async (req, res, next) => {
       const message = 'Account not found or user mismatch.';
       console.warn(pc['red'](message));
       return res.status(404).json({ status: 404, message });
+    }
+
+    // A CLOSED ACCOUNT IS NOT EDITABLE, and the reason is identity rather than
+    // permission. account_registry holds the account's name, type and currency as
+    // they stood at the moment it closed, and accountIdentity.js resolves a
+    // historical row with COALESCE(user_accounts, account_registry) — preferring
+    // the live row. Renaming a closed account would therefore rewrite the name on
+    // every past transaction of that account, while the archive kept the real one.
+    //
+    // Unreachable until CLOSE stops deleting the row: with no row, the 404 above
+    // fires first. Written with that change rather than after it, because the day
+    // the row survives this stops being theoretical with nothing to announce it.
+    //
+    // 409, not 403: the request was well formed and it is the state that refuses
+    // it, the same reading the close's own refusals take.
+    if (accountInfoResult.rows[0].closed_at !== null) {
+      const message = `Account ${accountId} is closed and cannot be edited. Its name, type and currency are the ones its history is recorded under.`;
+      console.warn(pc['red'](message));
+      return res.status(409).json({ status: 409, message });
     }
 
     const { account_type_name } = accountInfoResult.rows[0];
