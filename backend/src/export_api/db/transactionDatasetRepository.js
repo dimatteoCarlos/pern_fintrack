@@ -47,11 +47,24 @@ export async function getOwnedAccountIds(pool, userId) {
  return rows.map((row) => row.account_id);
 }
 
-// category_budget accounts only, open only: category_budget_accounts.account_id
-// references user_accounts(account_id), and CLOSE deletes that row, so a
-// closed category account has no category_name left to join through. A known
-// V1 limit, not a defect — the category filter is scoped the same way the
-// budget screen itself scopes a category, to accounts still open.
+// category_budget accounts only, open only — and the reason changed on
+// 2026-09-19 while the behaviour did not. It used to be that CLOSE deleted the
+// category_budget_accounts row, so a closed category had no category_name left
+// to join through and the join did the excluding. CLOSE keeps that row now, so
+// the join reaches it and the two predicates below are what exclude it.
+//
+// THE PREDICATES STAY, AND NOT FOR THE SAME REASON THE BALANCE READS DROPPED
+// THEIRS. Those price a named month and can ask whether the account was held in
+// it; this one resolves a category name to ids with no month of its own - the
+// period is applied to the transactions downstream - so there is no month to
+// bound against. Giving it one is a signature change and belongs with the rest
+// of the budget module's closed-account work, which is a separate job for the
+// reason PLAN_CLOSED_ACCOUNT_BALANCE.md records: the category columns live on
+// the extension row and the identity CTE does not publish them.
+//
+// The limit is therefore still a limit: a category-filtered export omits the
+// rows of a category the owner has since closed, including the rows of periods
+// when it was open.
 const CATEGORY_ACCOUNT_IDS_QUERY = `
   SELECT ua.account_id
   FROM user_accounts ua
