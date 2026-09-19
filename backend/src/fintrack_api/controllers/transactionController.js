@@ -31,6 +31,7 @@ import {
 import { recordTransaction } from '../../utils/fintrackUtils/transactionManagement/recordTransaction.js';
 import { formatDate } from '../../utils/helpers.js';
 import { getCurrencyId } from '../../utils/currencyLookup.js';
+import { LIVE_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import {
   dayInZone,
@@ -117,13 +118,24 @@ export const getAccountInfo = async (
   // retired pocket_saving type writes a pocket movement against an ordinary bank
   // account, and the retired account model starts accumulating rows again. No
   // test covers it.
+  // BOTH BRANCHES REFUSE AN ACCOUNT THAT NO LONGER CIRCULATES, and the 404 the
+  // caller already raises is what says so. Its two callers are the source and
+  // destination legs of a transfer (:631 and :648), and a missing row is the
+  // only thing producing that 404 — so before this predicate an account that
+  // existed but should not be usable passed the guard and the transfer was
+  // written against it.
+  //
+  // The compensation account is unaffected: it is neither deleted nor closed,
+  // and no path can close it.
   const accountQuery = byId
     ? `SELECT ua.* FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
-      WHERE ua.user_id = $1 AND ua.account_id = $2 AND LOWER(act.account_type_name) = LOWER($3)`
+      WHERE ua.user_id = $1 AND ua.account_id = $2 AND LOWER(act.account_type_name) = LOWER($3)
+      ${LIVE_ACCOUNT}`
     : `SELECT ua.* FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
-      WHERE ua.user_id = $1 AND LOWER(ua.account_name) = LOWER($2) AND LOWER(act.account_type_name) = LOWER($3)`;
+      WHERE ua.user_id = $1 AND LOWER(ua.account_name) = LOWER($2) AND LOWER(act.account_type_name) = LOWER($3)
+      ${LIVE_ACCOUNT}`;
 
   const accountInfoResult = await dbClient.query({
     text: accountQuery,

@@ -2,6 +2,7 @@
 //verifyAccountExistence, verifyAccountExists
 import pc from 'picocolors';
 import { pool } from '../../../db/config/configDB.js';
+import { LIVE_ACCOUNT } from '../accountDataRetrieval/accountUtils.js';
 // import { handlePostgresError } from './errorHandling.js';
 //-------------------------
 //VERIFY EXISTENCE OF ACCOUNT BY ACCOUNT_NAME AND ACCOUNT TYPE
@@ -71,6 +72,11 @@ export const verifyAccountExists = async (
   // which the caller uses to move money. The substring form could hand back a
   // different account than the one asked for. ORDER BY makes LIMIT 1 stop
   // depending on whichever row Postgres happens to return first.
+  //
+  // OPPOSITE PREDICATE TO THE ONE ABOVE, deliberately, and the two must never be
+  // swept together. That one asks who HOLDS a name and wants closed accounts in
+  // the answer; this one hands back an id something is about to move money
+  // through and must not. Same file, same shape, contradictory requirements.
   const accountExistQuery = {
     text: `SELECT 1, ua.account_id FROM user_accounts ua
      JOIN account_types act
@@ -78,6 +84,7 @@ export const verifyAccountExists = async (
      WHERE ua.user_id = $1
       AND LOWER(ua.account_name) = LOWER($2)
       AND LOWER(act.account_type_name) = LOWER($3)
+      ${LIVE_ACCOUNT}
      ORDER BY ua.account_id
      LIMIT 1`,
     values: [userId, account_name, account_type_name],
