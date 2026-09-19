@@ -85,8 +85,12 @@ export function transactionRowColumns(timeZonePlaceholder) {
     ${DERIVED_BALANCE} AS account_balance,
     ua.account_start_date,
     (tr.transaction_actual_date AT TIME ZONE ${timeZonePlaceholder})::date::text AS transaction_local_date,
-    -- CLOSE deletes the user_accounts row, so its absence is the closure.
-    (ua.account_id IS NULL) AS account_is_closed`;
+    -- Gone or stamped, and both halves are needed. CLOSE used to delete the
+    -- user_accounts row, so for every account closed before that changed the
+    -- absence IS the closure and no stamp will ever appear on a row that does
+    -- not exist. CLOSE now keeps the row and stamps it, so for everything after,
+    -- the absence never comes. The erasure tail still deletes the row outright.
+    (ua.account_id IS NULL OR ar.closed_at IS NOT NULL) AS account_is_closed`;
 }
 
 // The tables the columns above come from. The account_types join is LEFT in

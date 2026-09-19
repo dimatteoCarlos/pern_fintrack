@@ -199,9 +199,13 @@ const MONTHLY_PNL_QUERY = `
 // No ORDER BY. The ranking is the builder's — it breaks ties on the source name
 // and a SQL ordering would be a second, weaker ordering that the builder then
 // discards.
-// A closed source keeps its name: CLOSE deletes the user_accounts row and stamps
-// the name on account_registry, the same fallback transactionRowShape.js:79 uses.
-// account_is_closed tells the screen not to link a row whose account is gone.
+// A closed source keeps its name: CLOSE stamps it on account_registry, the same
+// fallback transactionRowShape.js:79 uses. account_is_closed tells the screen not
+// to link a row whose account has left circulation — gone from user_accounts for
+// everything closed before CLOSE began keeping the row, or stamped on a surviving
+// row for everything after. closed_at is in the GROUP BY because the grouping
+// keys on the registry's name rather than on its primary key, so Postgres cannot
+// derive the column's uniqueness on its own.
 const INCOME_BY_SOURCE_QUERY = `
   WITH legs AS (
     SELECT
@@ -218,13 +222,15 @@ const INCOME_BY_SOURCE_QUERY = `
   SELECT
     legs.source_id AS account_id,
     COALESCE(src.account_name, src_ar.account_name) AS account_name,
-    (legs.source_id IS NOT NULL AND src.account_id IS NULL) AS account_is_closed,
+    (legs.source_id IS NOT NULL
+      AND (src.account_id IS NULL OR src_ar.closed_at IS NOT NULL)) AS account_is_closed,
     COALESCE(SUM(legs.amount), 0) AS total_amount,
     COUNT(legs.transaction_id) AS transaction_count
   FROM legs
   LEFT JOIN user_accounts src ON src.account_id = legs.source_id
   LEFT JOIN account_registry src_ar ON src_ar.account_id = legs.source_id
-  GROUP BY legs.source_id, src.account_id, src.account_name, src_ar.account_name
+  GROUP BY legs.source_id, src.account_id, src.account_name, src_ar.account_name,
+           src_ar.closed_at
 `;
 
 // Pocket has no statement here. It used to: a monthly net over the rows of the

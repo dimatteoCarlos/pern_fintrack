@@ -128,11 +128,18 @@ export function accountIdentitySelect(userIdPlaceholder = '$1') {
           ) AS account_starting_amount,
           COALESCE(ua.account_start_date, ar.account_start_date) AS account_start_date,
           COALESCE(ua.created_at, ar.account_created_at) AS account_created_at,
-          -- The account row is gone, so the account is closed. Derived rather
-          -- than read: account_registry.closed_at is stamped by CLOSE, and an
-          -- account erased by the deletion tail leaves a registry row with no
-          -- stamp at all. Testing the join is the one test that covers both.
-          (ua.account_id IS NULL) AS is_closed
+          -- Closed if the row is GONE or the row carries the STAMP, and both
+          -- halves are load-bearing because two populations exist permanently.
+          -- Accounts closed before CLOSE began keeping the row have no
+          -- user_accounts row and never will; accounts closed after it carry
+          -- closed_at on a surviving row. The erasure tail is a third case and
+          -- lands in the first: it deletes the row and leaves a registry row
+          -- with no stamp at all.
+          --
+          -- ar.closed_at rather than ua.closed_at: the registry row is the one
+          -- guaranteed to exist here, and CLOSE stamps it in the same statement
+          -- that re-copies the identity columns.
+          (ua.account_id IS NULL OR ar.closed_at IS NOT NULL) AS is_closed
         FROM
           account_registry ar
         LEFT JOIN
