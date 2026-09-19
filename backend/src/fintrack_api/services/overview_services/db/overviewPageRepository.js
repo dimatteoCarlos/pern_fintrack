@@ -119,6 +119,14 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // both inside the balance and cancel. Cancellation, not exclusion — any variant
 // writing one leg without the other moves the figure, and no predicate here would
 // catch it.
+//
+// NO closed_at PREDICATE, AND THAT IS DELIBERATE. This figure is read at the
+// close of an arbitrary month, so excluding an account by its state today would
+// remove from March a balance the owner really held in March. It would also buy
+// nothing: CLOSE refuses a non-zero balance on bank and cash
+// (CLOSE_ZERO_BALANCE_TYPES), so a closed account of either type contributes 0
+// to every month after it closed. Same reason the Overview balance series is
+// left unfiltered; see overviewAccountRepository.js.
 const BANK_BALANCE_QUERY = `
   WITH bounds AS (
     SELECT (($2::date + INTERVAL '1 month') AT TIME ZONE $3) AS next_month_start
@@ -173,6 +181,11 @@ const BANK_BALANCE_QUERY = `
 // reproduced here rather than shared, and the only difference between them is
 // the floor — which exists here because this figure aggregates, while that one is
 // per account and reports the shortfall as a flag beside the number.
+//
+// No closed_at predicate either, for the reason written above the bank balance:
+// the two read the same account set at the same cut, and filtering one of them
+// by today's state would make the pair incomparable as well as wrong about the
+// month.
 const FREE_CASH_QUERY = `
   WITH bounds AS (
     SELECT (($2::date + INTERVAL '1 month') AT TIME ZONE $3) AS next_month_start

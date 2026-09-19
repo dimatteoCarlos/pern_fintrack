@@ -113,6 +113,17 @@ const MONTH_QUERY = `
 // whatever the planner returns and can differ between two identical requests;
 // with it, no component has to sort, which is the client-side arithmetic this
 // module exists to remove.
+//
+// NO closed_at PREDICATE, AND IT WOULD BE WRONG TO ADD ONE. The caller supplies
+// the id set (budgetRoutes.js '/accounts/status', and the series endpoint beside
+// it), so this statement answers "tell me about these accounts", not "which
+// accounts may I offer". The picker is getAccountsByType in accountUtils.js and
+// that one does filter both stamps. Filtering here would blank the name and the
+// category of a closed account out of a past month the owner is looking at.
+//
+// What changes once CLOSE keeps the row: a closed category resolves here again,
+// where it used to vanish with its extension row. That is the history becoming
+// readable, not a closed account re-entering circulation.
 const ACCOUNTS_QUERY = `
   SELECT
     ua.account_id,
@@ -208,10 +219,20 @@ const SPENT_QUERY = `
 // in SQL from the bound itself — the same half-open window and the same one
 // AT TIME ZONE per operand the queries above document at length.
 //
-// The join to category_budget_accounts is INNER, so an account CLOSED during
-// the year is absent: CLOSE deletes its user_accounts row and the category_name
-// goes with it. That is the limit the statement already states for past closes,
-// not a new one.
+// A CATEGORY CLOSED DURING THE YEAR COUNTS, and it did not always. The join to
+// category_budget_accounts is INNER, and CLOSE used to delete that row along
+// with the account's, so the category's own spending disappeared from its
+// year-to-date total the moment it was closed. Now that both rows survive, the
+// months it was open are added like any other.
+//
+// Stated as the intended answer rather than as a consequence: money spent
+// through a category in March was spent, and closing the category in June does
+// not unspend it. No closed_at predicate here would be a predicate that
+// subtracts real expenses from a past range.
+//
+// Accounts closed BEFORE the row was kept are still absent, and no statement can
+// recover them: their extension row was deleted and category_name lived only
+// there.
 const CATEGORY_SPEND_IN_RANGE_QUERY = `
   SELECT
     cba.category_name,
