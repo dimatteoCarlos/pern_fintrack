@@ -82,10 +82,12 @@ export const authFetch = async <T>(
       } catch (refreshError) {
         // 6️⃣ Refresh failed – propagate error; UI will redirect via ProtectedRoute
         // 🚨 Refresh failed - error log
+        // No hasCookie field: refreshToken is httpOnly, so document.cookie can
+        // never see it - the check always read false and said nothing about
+        // whether the cookie was actually sent.
         console.error('🚨 Refresh failed:', {
           error: refreshError,
           url,
-          hasCookie: document.cookie.includes('refreshToken'),
         });
 
         // Return rejected promise so calling code knows it failed
