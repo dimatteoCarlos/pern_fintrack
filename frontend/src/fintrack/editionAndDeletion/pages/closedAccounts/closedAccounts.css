@@ -43,11 +43,13 @@
  max-width: calc(100% - var(--size-icon) * 2);
 }
 
-/* Centred with the heading above it: left-aligned under a centred title the
-   two read as two separate blocks. */
+/* Ranged left, on Carlos's call of 2026-09-19. The heading above it stays
+   centred: the lede is a caption on the screen rather than a second line of
+   the title, and ranging it sets it apart instead of competing for the same
+   axis. Left and not right, so it starts where the reader's eye already is. */
 .closed-accounts__lede {
  margin: 0;
- text-align: center;
+ text-align: left;
  color: #94a3b8;
  font-size: 0.9375rem;
  line-height: 1.5;
