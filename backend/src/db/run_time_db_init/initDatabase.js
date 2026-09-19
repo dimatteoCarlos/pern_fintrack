@@ -35,6 +35,7 @@ import {
   ensureAccountClosureCatalog,
   ensureAccountTypeRequired,
   ensureAccountClosedAt,
+  ensureUserTokenVersion,
   ensureTransactionOpeningFor,
   ensureAccountRegistry,
   ensureBalanceReversal,
@@ -270,6 +271,10 @@ export async function initializeDatabase() {
     // not matter - it adds a column and touches no catalog - but it stays here
     // so both user_accounts schema steps read as one block.
     await ensureAccountClosedAt(client);
+
+    // Runtime counterpart of migration 039. Position carries no dependency -
+    // it needs only the users table, which exists on both branches by here.
+    await ensureUserTokenVersion(client);
 
     // Runtime counterpart of migration 022. Before the call below, not after:
     // that one repoints transactions.opening_for_account_id at the registry and

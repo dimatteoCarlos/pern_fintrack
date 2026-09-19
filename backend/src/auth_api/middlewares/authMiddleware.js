@@ -81,12 +81,44 @@ const verifyJWTToken = async (token) => {
     throw new Error('Invalid token format');
   }
   //old sintaxis
-  return new Promise((resolve, reject) => {
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) reject(err);
-      else resolve(decoded);
-    });
+  const decoded = await new Promise((resolve, reject) => {
+    // issuer here rejects a token signed under JWT_REFRESH_TOKEN_SECRET with
+    // a matching issuer string by coincidence — belt, not the whole check.
+    jwt.verify(
+      token,
+      process.env.JWT_SECRET,
+      { issuer: process.env.JWT_ISSUER || 'fintrack app' },
+      (err, payload) => {
+        if (err) reject(err);
+        else resolve(payload);
+      },
+    );
   });
+
+  // createToken signs { type: 'access_token' }. This is the check that
+  // actually keeps a refresh token out of an endpoint guarded by
+  // verifyToken/verifyUser: the two tokens are signed with different secrets,
+  // but nothing before this line looked at which secret verified the token,
+  // and JsonWebTokenError alone does not say a wrong-typed token was tried.
+  if (decoded.type !== 'access_token') {
+    throw new jwt.JsonWebTokenError('Wrong token type');
+  }
+
+  // The signature alone cannot be revoked before its 1h expiry — there is no
+  // blocklist for access tokens. token_version is the one channel that can:
+  // changePassword bumps users.token_version, and a token signed with the
+  // value before the bump fails here for the rest of its natural life
+  // instead of staying valid until it expires on its own.
+  const { rows } = await pool.query(
+    'SELECT token_version FROM users WHERE user_id = $1',
+    [decoded.userId],
+  );
+
+  if (rows.length === 0 || rows[0].token_version !== decoded.tv) {
+    throw new jwt.JsonWebTokenError('Token has been invalidated');
+  }
+
+  return decoded;
 };
 /**
 try {

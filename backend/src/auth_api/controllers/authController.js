@@ -1,6 +1,7 @@
 //backend/src/controllers/authController.js
 //signUpUser,signInUser,signOutUser,validateSession
 import { v4 as uuidv4 } from 'uuid';
+import jwt from 'jsonwebtoken';
 import { pool } from '../../db/config/configDB.js';
 import pc from 'picocolors';
 
@@ -8,6 +9,7 @@ import {
   createToken,
   createRefreshToken,
   hashed,
+  hashToken,
   isRight,
   getDecoyHash,
   refreshTokenExpiryFrom,
@@ -154,7 +156,7 @@ export const signUpUser = async (req, res, next) => {
       `INSERT INTO refresh_tokens(user_id, token, expiration_date, user_agent, ip_address) VALUES($1,$2,$3,$4,$5) RETURNING token_id`,
       [
         newUser.user_id,
-        refreshToken,
+        hashToken(refreshToken),
         refreshTokenExpiry,
         req.headers['user-agent'],
         req.ip,
@@ -234,7 +236,7 @@ export const signInUser = async (req, res, next) => {
 
     const userData = await pool
       .query({
-        text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_contact, u.user_role_id, u.timezone,
+        text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_contact, u.user_role_id, u.timezone, u.token_version,
         ur.user_role_name,
         ct.currency_code as currency
         FROM users u
@@ -275,7 +277,11 @@ export const signInUser = async (req, res, next) => {
     //--------------------------------
     // ✅ TOKENS GENERATION
     // Generate JWT tokens with user role
-    const accessToken = createToken(user.user_id, user.user_role_name);
+    const accessToken = createToken(
+      user.user_id,
+      user.user_role_name,
+      user.token_version,
+    );
 
     const refreshToken = createRefreshToken(user.user_id);
 
@@ -288,7 +294,7 @@ export const signInUser = async (req, res, next) => {
       'INSERT INTO refresh_tokens (user_id, token, expiration_date, user_agent, ip_address) VALUES ($1, $2, $3, $4, $5) RETURNING token_id',
       [
         user.user_id,
-        refreshToken,
+        hashToken(refreshToken),
         refreshTokenExpirationDate,
         req.headers['user-agent'],
         req.ip,
@@ -355,23 +361,49 @@ export const signInUser = async (req, res, next) => {
 export const signOutUser = async (req, res, next) => {
   console.log(pc.yellow('signOutUser'));
   // console.log('req',req.cookies,  )
-  const refreshTokenFromClient =
-    req.cookies.refreshToken || req.body.refreshToken;
+  // Was `req.cookies.refreshToken || req.body.refreshToken`: this route
+  // carries no auth middleware, and the UPDATE below had no user_id, so a
+  // caller who named any token string in the JSON body — not necessarily
+  // their own — could revoke that session. The cookie is httpOnly and
+  // unreadable from script, which is what the body fallback bypassed.
+  const refreshTokenFromClient = req.cookies.refreshToken;
   // console.log({refreshTokenFromClient})
   // const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
+
+  // The signature, not just presence, decides whose session this is: it is
+  // what proves the caller holds a token this server issued rather than an
+  // arbitrary string, and it is the only source of userId available here,
+  // since this route runs unauthenticated.
+  let ownerId = null;
+  if (refreshTokenFromClient) {
+    try {
+      const decoded = jwt.verify(
+        refreshTokenFromClient,
+        process.env.JWT_REFRESH_TOKEN_SECRET,
+        { issuer: process.env.JWT_ISSUER || 'fintrack app' },
+      );
+      if (decoded?.type === 'refresh_token' && decoded?.userId) {
+        ownerId = decoded.userId;
+      }
+    } catch (verifyError) {
+      console.warn(
+        pc.yellow('signOutUser: refresh token failed verification, clearing cookies only'),
+      );
+    }
+  }
 
   try {
     let revokeSuccess = false;
     let revokeMessage = `No refresh token provided for revocation`;
 
     // ✅ REVOKING REFRESH TOKEN
-    if (refreshTokenFromClient) {
+    if (refreshTokenFromClient && ownerId) {
       try {
         const result = await pool.query(
           `UPDATE refresh_tokens
          SET revoked = TRUE
-         WHERE token = $1`,
-          [refreshTokenFromClient],
+         WHERE token = $1 AND user_id = $2`,
+          [hashToken(refreshTokenFromClient), ownerId],
         );
         revokeSuccess = result.rowCount > 0;
 

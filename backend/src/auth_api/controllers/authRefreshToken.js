@@ -3,6 +3,7 @@
 import jwt from 'jsonwebtoken';
 import {
   createToken,
+  hashToken,
   rotateRefreshToken,
 } from '../../utils/authUtils/authFn.js';
 import { createError } from '../../utils/errorHandling.js';
@@ -27,6 +28,7 @@ export const authRefreshToken = async (req, res, next) => {
     const decoded = jwt.verify(
       refreshTokenFromClient,
       process.env.JWT_REFRESH_TOKEN_SECRET,
+      { issuer: process.env.JWT_ISSUER || 'fintrack app' },
     );
     //
     const userId = decoded?.userId;
@@ -36,11 +38,20 @@ export const authRefreshToken = async (req, res, next) => {
       return next(createError(403, 'Invalid refresh token signature.'));
     }
 
+    // createRefreshToken signs { type: 'refresh_token' }. The DB row this
+    // token is checked against (step 3 below) has no type of its own, so
+    // without this check a stolen access token that happened to verify under
+    // this secret — it cannot today, the two secrets differ, but nothing
+    // here asserted that — would read as a refresh token.
+    if (decoded.type !== 'refresh_token') {
+      return next(createError(403, 'Wrong token type.'));
+    }
+
     // ✅ 3.CHECK TOKEN IN DATABASE (neither revoked nor expired)
     const refreshTokenResult = await pool.query(
       `SELECT * FROM refresh_tokens
        WHERE token = $1 AND user_id = $2 AND revoked = FALSE AND expiration_date > NOW()`,
-      [refreshTokenFromClient, userId],
+      [hashToken(refreshTokenFromClient), userId],
     );
 
     const storedRefreshToken = refreshTokenResult.rows[0];
@@ -53,11 +64,11 @@ export const authRefreshToken = async (req, res, next) => {
 
     // ✅ 4.GET THE USER INFORMATION FROM THE USERS TABLE
     const userResult = await pool.query(
-      `SELECT 
-   u.user_id, u.username, u.email, u.user_role_id, 
-   ur.user_role_name 
-  FROM  users u 
-  JOIN user_roles ur 
+      `SELECT
+   u.user_id, u.username, u.email, u.user_role_id, u.token_version,
+   ur.user_role_name
+  FROM  users u
+  JOIN user_roles ur
   ON u.user_role_id = ur.user_role_id
   WHERE user_id = $1 `,
       [userId],
@@ -72,7 +83,11 @@ export const authRefreshToken = async (req, res, next) => {
     }
 
     // ✅ GENERATE NEW ACCESS TOKEN
-    const newAccessToken = createToken(user.user_id, user.user_role_name);
+    const newAccessToken = createToken(
+      user.user_id,
+      user.user_role_name,
+      user.token_version,
+    );
 
     // ✅ 6.VERIFY NEED OF ROTATION (at 10% remaining life)
     const currentRefreshTokenExpiry = decoded.exp * 1000;

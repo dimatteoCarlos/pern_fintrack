@@ -60,6 +60,29 @@ if (process.env.JWT_SECRET.length < JWT_SECRET_MIN_LENGTH) {
   );
 }
 
+// authFn.js signs and verifies refresh tokens with JWT_REFRESH_TOKEN_SECRET
+// and hashes passwords with bcrypt.genSalt(Number(process.env.SALT_ROUNDS)).
+// Missing, the first failure was silent for the secret (jwt.sign throws only
+// past the call site, three files away) and a NaN for the rounds (bcrypt
+// throws "Not a number" on the first sign-up, not at boot). Both move here.
+if (!process.env.JWT_REFRESH_TOKEN_SECRET) {
+  throw new Error(
+    'JWT_REFRESH_TOKEN_SECRET is not set. Refresh tokens cannot be signed or verified without it.',
+  );
+}
+
+if (process.env.JWT_REFRESH_TOKEN_SECRET.length < JWT_SECRET_MIN_LENGTH) {
+  console.warn(
+    `⚠️ JWT_REFRESH_TOKEN_SECRET is shorter than ${JWT_SECRET_MIN_LENGTH} characters. A short secret can be recovered offline from any refresh token the server has issued.`,
+  );
+}
+
+if (!Number.isInteger(Number(process.env.SALT_ROUNDS))) {
+  throw new Error(
+    'SALT_ROUNDS is not set to an integer. Passwords cannot be hashed without it.',
+  );
+}
+
 // ============================
 // Initialize in-memory currency catalog
 // ============================
@@ -82,16 +105,28 @@ if (process.env.NODE_ENV === 'production') {
 //Middlewares initialization
 app.use(helmet());
 //CORS Configuration for access control
+// The eight localhost origins are a development convenience: with
+// credentials: true below, any one of them can carry the browser's cookies,
+// so listing them in production widens who can send an authenticated
+// cross-origin request to every developer machine that happens to run a
+// server on one of these ports, not just this app's own dev server.
+const LOCALHOST_ORIGINS =
+  process.env.NODE_ENV === 'production'
+    ? []
+    : [
+        'http://localhost:5000',
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:8080',
+        'http://localhost:1234',
+        'http://localhost:5432',
+      ];
+
 const ACCEPTED_ORIGINS = [
   process.env.CLIENT_URL,
-  'http://localhost:5000',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:8080',
-  'http://localhost:1234',
-  'http://localhost:5432',
+  ...LOCALHOST_ORIGINS,
   'https://pern-fintrack.vercel.app',
 ].filter(Boolean);
 

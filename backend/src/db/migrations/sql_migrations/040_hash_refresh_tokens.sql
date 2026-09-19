@@ -1,0 +1,105 @@
+-- 040_hash_refresh_tokens.sql
+--
+-- ============================================================================
+-- Migration 040: rewrites every existing refresh_tokens.token value to its
+--   SHA-256 hex digest, matching what the application now stores and compares
+--   going forward. No column changes: token stays TEXT.
+-- Depends on: 004_auth.sql, which declares the column. Application-side, on
+--   hashToken() in authFn.js, which every write and read site now calls
+--   before touching this column.
+-- Measured before writing: fintrack_dev's refresh_tokens carries only tokens
+--   the running application already wrote, all plaintext JWTs (three dots,
+--   far longer than 64 characters). A SHA-256 hex digest is always exactly 64
+--   characters, so length is a safe, idempotent way to tell the two apart -
+--   see the WHERE clause below.
+-- ============================================================================
+--
+-- WHAT WAS WRONG
+--
+-- The column stored the signed JWT itself - the exact bearer credential a
+-- refresh request presents - so anyone who could read the table (a backup, a
+-- replica, a stray diagnostic query) held something usable exactly as issued,
+-- with the row's own revoked flag the only thing between it and a live
+-- session. Hashing what is stored closes that without touching what a
+-- session actually is.
+--
+-- WHY THIS IS NOT A FORCED LOGOUT
+--
+-- The plaintext value a signed-in browser holds in its refreshToken cookie
+-- does not change - it is still the JWT this row was created from, and it is
+-- still what is cookied, jwt.verify()'d and compared. What changes is only
+-- the representation stored here: from here on the application hashes an
+-- incoming token before comparing it against this column, and this file
+-- makes the column already hold that hash for every session that predates
+-- the code change. A session open when this runs keeps working; nothing
+-- issues it a new token.
+--
+-- WHY sha256() AND NOT pgcrypto's digest()
+--
+-- sha256(bytea) is built into Postgres core since 11.0 - no CREATE EXTENSION,
+-- no privilege beyond what this connection already has to alter the table.
+-- The one other function this schema relies on for a similar reason,
+-- gen_random_uuid() in 004_auth.sql, made the same move into core in 13.0.
+-- Nothing in this codebase uses pgcrypto today and this file does not start.
+--
+-- WHY text::bytea NEEDS NO ENCODING CAVEAT HERE
+--
+-- The cast reads the column's bytes under the session's client_encoding, and
+-- Node's crypto.createHash().update(string) reads a JS string as UTF-8 by
+-- default - the same encoding, so the two sides hash identical bytes for any
+-- input. A JWT is base64url and dots, pure ASCII, whose UTF-8 encoding is
+-- single-byte and identical to any single-byte encoding besides, which is
+-- what makes this true even before comparing which encoding either side uses.
+--
+-- WHY THE GUARD IS length() <> 64 AND NOT A REVOKED OR EXPIRED FILTER
+--
+-- This is a representation change, not a lifecycle one: a revoked or expired
+-- row's token value is exactly as much a bearer credential at rest as a live
+-- one, and cleanRevokedTokens() (authFn.js) removes both classes on its own
+-- schedule regardless of what this file does. Filtering here would leave
+-- exactly the rows a slower cleanup pass had not yet reached still in
+-- plaintext, which is the state this file exists to end.
+--
+-- BOOT-PATH COUNTERPART
+--
+-- None. createTables.js's CREATE TABLE IF NOT EXISTS declares the same TEXT
+-- column 004_auth.sql does, and a database built fresh through that path
+-- starts with zero refresh_tokens rows - there is no plaintext row on that
+-- path for this file's UPDATE to reach. The application code that hashes on
+-- write and on read is not migration-gated; it is live on both paths as soon
+-- as it deploys, which is what makes a freshly booted database correct with
+-- no counterpart here.
+--
+-- RETIREMENT REGISTER
+--
+-- Retires the plaintext storage of refresh_tokens.token. No named constraint
+-- or catalog entry describes that former state, so there is no register entry
+-- alongside this file to close.
+--
+-- ============================================================================
+
+-- UP ------------------------------------------------------------------------
+--
+-- No BEGIN or COMMIT here: runMigrations.js opens one transaction per file.
+-- Re-runnable by construction: a row already hashed is 64 characters and the
+-- WHERE clause skips it, so a hand-applied retry after a partial failure
+-- rehashes nothing twice.
+
+UPDATE refresh_tokens
+   SET token = encode(sha256(token::bytea), 'hex')
+ WHERE length(token) <> 64;
+
+-- DOWN ----------------------------------------------------------------------
+--
+-- Not reversible. A cryptographic hash discards the input; no query recovers
+-- the plaintext JWTs this file overwrote. Reversing means every session open
+-- at the time this ran signs out on its next refresh, because the token the
+-- browser holds no longer matches any row. If that is the accepted cost:
+--
+-- BEGIN;
+-- DELETE FROM migrations WHERE filename = '040_hash_refresh_tokens.sql';
+-- COMMIT;
+--
+-- The column itself needs no reversal - it was never altered, only rewritten
+-- - and application code must roll back first, or every refresh compares a
+-- hash against rows this statement can no longer produce.

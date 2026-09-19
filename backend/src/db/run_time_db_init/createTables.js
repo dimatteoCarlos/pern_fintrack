@@ -824,6 +824,29 @@ export async function ensureAccountClosedAt(client = pool) {
 }
 
 /**
+ * Runtime counterpart of migration 039. verifyJWTToken (authMiddleware.js)
+ * reads users.token_version on every authenticated request, so a database
+ * built by this path needs the column before sign-in works at all.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureUserTokenVersion(client = pool) {
+ const { rows } = await client.query(`
+  SELECT EXISTS (
+   SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'token_version'
+  ) AS present
+ `);
+
+ if (rows[0].present) return;
+
+ await client.query(
+  'ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0',
+ );
+ console.log(pc.green('users.token_version added.'));
+}
+
+/**
  * Add transactions.opening_for_account_id, mark the row that opens each
  * account, and enforce that an account is opened once.
  *

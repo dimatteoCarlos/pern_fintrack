@@ -2,13 +2,26 @@
 //hashed,isRight,createToken,createRefreshToken,cleanRevokedTokens,rotateRefreshToken
 
 import bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import jwt from 'jsonwebtoken';
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 
 //------------------------------
 const salt = Number(process.env.SALT_ROUNDS);
+
+// refresh_tokens.token stored the signed JWT itself, so a read of that table -
+// a backup, a compromised replica, a stray query in a support tool - handed
+// out a credential usable exactly as issued, with the row's own revoked flag
+// the only thing standing between it and a valid session. Hashing what is
+// stored does not change what the browser holds or what is verified: the
+// plaintext JWT is still what is signed, cookied and jwt.verify()'d; only the
+// value compared against the database is this digest of it. SHA-256 and not
+// bcrypt, because the token is already high-entropy (a signed JWT, not a
+// human password) and this digest is computed on every refresh - bcrypt's
+// deliberate slowness has nothing to defend here and would tax every request.
+export const hashToken = (token) =>
+  createHash('sha256').update(token).digest('hex');
 
 // The single lifetime of a refresh token. Three things have to agree on it: the
 // signature, the row the refresh endpoint checks against, and the cookie the
@@ -53,7 +66,7 @@ export const getDecoyHash = () => {
 };
 
 //--
-export const createToken = (id, role) => {
+export const createToken = (id, role, tokenVersion) => {
   if (!id) {
     throw new Error('the user id is required to generate the token.');
   }
@@ -61,6 +74,13 @@ export const createToken = (id, role) => {
   if (!role) {
     throw new Error('the user role is required to generate the token.');
   }
+
+  // Stamped on every access token so a password change can invalidate the
+  // ones already issued: changePassword bumps users.token_version, and
+  // verifyJWTToken rejects a token whose tv no longer matches the row. A
+  // caller that omits it gets tv 0, which matches every account that has
+  // never changed its password and no others.
+  const tv = tokenVersion ?? 0;
 
   // Verificar que la clave secreta esté configurada
   if (!process.env.JWT_SECRET) {
@@ -78,6 +98,7 @@ export const createToken = (id, role) => {
       userId: id,
       type: 'access_token',
       role,
+      tv,
       iat: Math.floor(Date.now() / 1000),
     },
     process.env.JWT_SECRET,
@@ -113,7 +134,12 @@ export const createRefreshToken = (id) => {
     {
       expiresIn,
       // expiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
-      issuer: process.env.JWT_ISSUER || 'fintrack',
+      // Same fallback literal as createToken's issuer above — they disagreed
+      // ('fintrack' vs 'fintrack app') whenever JWT_ISSUER was unset, which
+      // verification did not yet check. Left mismatched, the first issuer
+      // check added to either verifier would reject every token signed by
+      // the other function.
+      issuer: process.env.JWT_ISSUER || 'fintrack app',
       // audience: process.env.JWT_AUDIENCE || 'your-app-users'
     },
   );
@@ -123,13 +149,15 @@ export const createRefreshToken = (id) => {
 export async function cleanRevokedTokens() {
   try {
     await pool.query('SELECT 1');
-    const daysAgo = new Date();
-    daysAgo.setDate(daysAgo.getDate() - 1);
-    console.log('🚀 ~ cleanRevokedTokens ~ daysAgo:', daysAgo);
 
+    // Was `revoked = TRUE OR (updated_at <= $1 OR expiration_date <= $1)`
+    // with $1 one day back — a live, unrevoked, unexpired session rotates
+    // updated_at only when its refresh token is used, so any session idle
+    // for more than a day (REFRESH_TOKEN_DAYS is 7) had its row deleted here
+    // and was signed out on its next request with no warning. The row's
+    // lifetime is decided by revoked and expiration_date alone.
     const result = await pool.query(
-      'DELETE FROM refresh_tokens WHERE revoked = TRUE OR (updated_at <= $1 OR expiration_date <= $1)',
-      [daysAgo],
+      'DELETE FROM refresh_tokens WHERE revoked = TRUE OR expiration_date <= NOW()',
     );
 
     console.log(
@@ -172,10 +200,10 @@ export const rotateRefreshToken = async (oldToken, userId, req) => {
     // console.log('old refresh token', oldToken);
 
     const revokeResult = await client.query(
-      `UPDATE refresh_tokens 
-       SET revoked = TRUE, updated_at = NOW() 
+      `UPDATE refresh_tokens
+       SET revoked = TRUE, updated_at = NOW()
        WHERE token = $1 AND user_id = $2`,
-      [oldToken, userId],
+      [hashToken(oldToken), userId],
     );
 
     if (revokeResult.rowCount === 0) {
@@ -195,7 +223,7 @@ export const rotateRefreshToken = async (oldToken, userId, req) => {
        VALUES ($1, $2, $3, $4, $5)`,
       [
         userId,
-        newRefreshToken,
+        hashToken(newRefreshToken),
         expirationDate,
         req.headers['user-agent'],
         req.ip,
@@ -205,6 +233,7 @@ export const rotateRefreshToken = async (oldToken, userId, req) => {
 
     console.log('🔄 Refresh token rotated successfully');
 
+    // The caller cookies this plaintext value; the row above stores its hash.
     return newRefreshToken;
   } catch (error) {
     await client.query('ROLLBACK');

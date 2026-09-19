@@ -1,0 +1,68 @@
+-- 039_add_user_token_version.sql
+--
+-- ============================================================================
+-- Migration 039: adds users.token_version, an integer counter starting at 0,
+--   so a password change can invalidate an access token already issued rather
+--   than only the refresh tokens that would issue a future one.
+-- Depends on: 004_auth.sql, which declares users.
+-- Measured before writing: no column of this name exists on either build path;
+--   ADD COLUMN with a DEFAULT of a constant rewrites every row once but reads
+--   no existing data and cannot fail on adoption.
+-- ============================================================================
+--
+-- WHAT WAS OPEN WITHOUT IT
+--
+-- changePassword (userController.js) already calls revokeAllUserRefreshTokens
+-- and clears both cookies, so a refresh after a password change fails. The
+-- access token already in the browser is a separate, stateless credential —
+-- authMiddleware.js verifies it by signature alone, against no table — and it
+-- kept authenticating every request for up to its 1h lifetime regardless of
+-- the password change that just happened, which matters most exactly when the
+-- change was made because the password leaked.
+--
+-- WHY A COUNTER AND NOT A REVOCATION LIST
+--
+-- A denylist of individual access token ids would need its own table pruned
+-- on the same schedule refresh_tokens already is, for a token that expires in
+-- an hour on its own. A counter needs one column, one write on password
+-- change, and one read on verification, and does not grow.
+--
+-- WHY IT DOES NOT ALSO BUMP ON SIGN-OUT
+--
+-- Sign-out revokes the one refresh token presented, which is already scoped
+-- per session (fixed alongside this file). Bumping the counter on sign-out
+-- would invalidate every access token on every device the account is signed
+-- into, not just the one signing out — a different, wider operation this
+-- migration does not decide.
+--
+-- BOOT-PATH COUNTERPART
+--
+-- ensureUserTokenVersion() in createTables.js, called from initDatabase.js.
+-- users is created by both build paths, so a database built by either one
+-- needs the column added.
+--
+-- RETIREMENT REGISTER
+--
+-- Retires nothing. No application code decided password-change-time access
+-- token validity before this file; that absence is what it closes.
+--
+-- ============================================================================
+
+-- UP ------------------------------------------------------------------------
+--
+-- No BEGIN or COMMIT here: runMigrations.js opens one transaction per file.
+
+ALTER TABLE users
+ ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
+
+-- DOWN ----------------------------------------------------------------------
+--
+-- Run manually. Reversing is safe only if no access token signed with a tv
+-- claim is still live — verifyJWTToken reads this column on every request, so
+-- dropping it turns every authenticated request into a 500 until the app code
+-- reading it is rolled back first.
+--
+-- BEGIN;
+-- ALTER TABLE users DROP COLUMN token_version;
+-- DELETE FROM migrations WHERE filename = '039_add_user_token_version.sql';
+-- COMMIT;

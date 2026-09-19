@@ -392,8 +392,14 @@ export const changePassword = async (req, res, next) => {
     // ===========================
     const newHashedPassword = await hashed(newPassword);
 
+    // token_version increments alongside the hash: it is what forces the
+    // caller's own still-live access token to stop verifying on its next
+    // request, closing the gap revokeAllUserRefreshTokens below does not —
+    // that call stops a future refresh, not the token already in the
+    // browser, which otherwise kept working for up to an hour after a
+    // password change the owner made because the password was compromised.
     await client.query({
-      text: `UPDATE users SET password_hashed = $1, updated_at = CURRENT_TIMESTAMP 
+      text: `UPDATE users SET password_hashed = $1, updated_at = CURRENT_TIMESTAMP, token_version = token_version + 1
     WHERE user_id = $2`,
       values: [newHashedPassword, userId],
     });
