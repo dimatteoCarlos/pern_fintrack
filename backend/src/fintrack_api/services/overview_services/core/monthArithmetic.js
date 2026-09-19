@@ -72,6 +72,23 @@ export const TREND_MONTHS = 6;
 export const ANALYSIS_MONTHS = 13;
 
 /**
+ * The months a module export's detail rows cover: ANALYSIS_MONTHS ending at the
+ * month on screen.
+ *
+ * The same span makeReportingWindow already derives as analysisStart below, and
+ * the same span the debt export was already reading. Declared here so the budget
+ * and pocket exports take that depth from one definition instead of each picking
+ * its own.
+ *
+ * @param {string} referenceMonth - 'YYYY-MM-01', the month the summary reports
+ * @returns {{from: string, to: string}} both as 'YYYY-MM-01', inclusive
+ */
+export const detailWindowFor = (referenceMonth) => ({
+ from: shiftMonths(referenceMonth, -(ANALYSIS_MONTHS - 1)),
+ to: referenceMonth,
+});
+
+/**
  * The window every domain calculator reads from, derived once.
  *
  * A calculator that shifted these itself would be free to disagree with the

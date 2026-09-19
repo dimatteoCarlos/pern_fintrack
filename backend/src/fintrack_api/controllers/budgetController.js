@@ -28,9 +28,20 @@ import { budgetCalculationService } from '../services/budget_services/services/b
 import { budgetAllocationService } from '../services/budget_services/services/budgetAllocationService.js';
 import { pool } from '../../db/config/configDB.js';
 import { getAccountsByType } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
-import { convertSeriesToCSV } from '../../utils/fintrackUtils/exportUtils.js';
+import {
+ convertSeriesToCSV,
+ buildBudgetSeriesSheets,
+ CSV_CONTENT_TYPE,
+ XLSX_CONTENT_TYPE,
+} from '../../utils/fintrackUtils/exportUtils.js';
+import { writeXlsxWorkbook } from '../../export_api/core/writers/writeXlsx.js';
+import { getModuleTransactionRows } from '../../export_api/services/moduleTransactionsService.js';
+import { getCurrentMonth } from '../services/budget_services/db/budgetTransactionRepository.js';
+import { detailWindowFor } from '../services/overview_services/core/monthArithmetic.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+import { getUsername } from '../../utils/authUtils/getUsername.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { moduleExportFileName } from '../../export_api/core/exportFileName.js';
 
 /**
  * Return every category_budget account the caller has ever had, keyed by id.
@@ -247,15 +258,51 @@ export async function getBudgetAccountSeries(req, res, next) {
  }
 }
 
-/** GET /api/fintrack/budget/export */
+// The months the data is about, not the day it was downloaded. Two exports of
+// the same range taken on different days are the same file and are named alike;
+// a single-month range keeps the one month as its name.
+const rangeLabel = (first, last) => (first === last ? first : `${first}_${last}`);
+
+/**
+ * Write the budget export in the format that was asked for.
+ *
+ * Shared by the no-accounts answer and the normal one, which is what makes the
+ * empty file well formed: the same converter produces it, so it carries the
+ * header row and says what it would have contained.
+ */
+const sendBudgetExport = async (res, { format, filename, accounts, detail }) => {
+ res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+ if (format === 'xlsx') {
+  const workbook = await writeXlsxWorkbook(buildBudgetSeriesSheets(accounts, detail));
+
+  res.setHeader('Content-Type', XLSX_CONTENT_TYPE);
+  return res.status(200).send(workbook);
+ }
+
+ res.setHeader('Content-Type', CSV_CONTENT_TYPE);
+ return res.status(200).send(convertSeriesToCSV(accounts, detail));
+};
+
+/**
+ * GET /api/fintrack/budget/export?accountId=&from=&to=&format=csv|xlsx
+ *
+ * One row per account per month in either writer. The workbook has one sheet,
+ * because the month series is the finest grain this calculator resolves.
+ */
 export async function exportCSV(req, res, next) {
  try {
   const userId = requireUserId(req, res);
   if (!userId) return;
 
-  const { accountId, from, to } = exportQuerySchema.parse(req.query);
+  const { accountId, from, to, format } = exportQuerySchema.parse(req.query);
 
-  const timeZone = await getUserTimeZone(pool, userId);
+  // The owner's name rides along for the filename only. Read in the same round
+  // trip as the zone, the shape exportController.js:44-47 already uses.
+  const [timeZone, username] = await Promise.all([
+   getUserTimeZone(pool, userId),
+   getUsername(pool, userId),
+  ]);
 
   const owned = await getOwnedBudgetAccounts(userId, timeZone);
 
@@ -266,10 +313,6 @@ export async function exportCSV(req, res, next) {
    });
   }
 
-  if (owned.size === 0) {
-   return res.status(200).send('No budget accounts found');
-  }
-
   // The span the default set is narrowed by, computed WIDE on purpose. The
   // service resolves the real range from from/to with a default span of 1, and
   // this handler has to narrow before it can call the service — so a missing end
@@ -277,8 +320,28 @@ export async function exportCSV(req, res, next) {
   // the resolver can produce sits inside this one, which is the safe direction:
   // a category that is in the span and reports nothing costs an empty section,
   // while one left out of the span is data the file silently lacks.
-  const currentMonth = [...owned.values()][0]?.currentMonth ?? null;
+  //
+  // The second read runs only for an owner with no account at all, who has no
+  // row to carry the month and still needs one to name the empty file.
+  const currentMonth =
+   [...owned.values()][0]?.currentMonth ?? (await getCurrentMonth(pool, timeZone));
   const ends = [from ?? currentMonth, to ?? currentMonth].filter(Boolean).sort();
+
+  const filenameFor = (period) =>
+   moduleExportFileName({ dataset: 'budget', period, format, username });
+
+  // An owner with no budget account gets a well-formed empty file in the format
+  // that was asked for, header row and all. It used to answer a plain-text
+  // sentence, which became a broken download once the screen offered a format
+  // menu: the browser has already been told a spreadsheet is coming.
+  if (owned.size === 0) {
+   return sendBudgetExport(res, {
+    format,
+    filename: filenameFor(rangeLabel(ends[0], ends[ends.length - 1])),
+    accounts: [],
+    detail: { rows: [], window: detailWindowFor(ends[ends.length - 1]) },
+   });
+  }
 
   const accountIds = accountId
    ? [accountId]
@@ -296,16 +359,34 @@ export async function exportCSV(req, res, next) {
    1
   );
 
-  const csv = convertSeriesToCSV(series.accounts);
+  // Thirteen months ending at the month the summary reports, the same depth the
+  // debt export already reads. The summary keeps its own range: the two describe
+  // different windows on purpose, and the detail block names its own.
+  const detailWindow = detailWindowFor(series.to);
 
-  // The months the data is about, not the day it was downloaded. Two exports of
-  // the same range taken on different days are the same file and are named
-  // alike. A single-month range keeps the name it had.
-  const range = series.from === series.to ? series.from : `${series.from}_${series.to}`;
-  const filename = `budget_export_${range}.csv`;
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.status(200).send(csv);
+  // The account set is resolved over the WIDENED window, not over the summary's
+  // range. Narrowing it to the summary's accounts would silently drop the
+  // movements of a category that existed ten months ago and not this month.
+  const detailAccountIds = accountId
+   ? [accountId]
+   : idsOverlapping(owned, detailWindow.from, detailWindow.to);
+
+  const detail = {
+   rows: await getModuleTransactionRows(
+    pool,
+    userId,
+    { from: detailWindow.from, to: detailWindow.to, accountIds: detailAccountIds },
+    timeZone,
+   ),
+   window: detailWindow,
+  };
+
+  return sendBudgetExport(res, {
+   format,
+   filename: filenameFor(rangeLabel(series.from, series.to)),
+   accounts: series.accounts,
+   detail,
+  });
  } catch (error) {
   if (error.name === 'ZodError') {
    return respondWithZodIssues(res, error);

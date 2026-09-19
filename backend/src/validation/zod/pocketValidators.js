@@ -13,6 +13,12 @@ import { SUPPORTED_CURRENCIES } from '../../fintrack_api/services/fx_services/co
 // Date, which is the only reason a month parameter cannot shift a day west of
 // UTC. A second copy of that regex is a second chance to get it wrong.
 import { monthBound } from './budgetValidators.js';
+// The one list of writers the two export endpoints have. Imported so the schema
+// cannot offer a format the converters cannot produce.
+import {
+ EXPORT_FORMATS,
+ DEFAULT_EXPORT_FORMAT,
+} from '../../utils/fintrackUtils/exportUtils.js';
 
 // Every schema here is strict, for the reason budgetValidators states: Zod
 // strips an unknown key silently, so a caller still sending a retired field —
@@ -160,5 +166,27 @@ export const allocationBodySchema = z
 export const boardQuerySchema = z
  .object({
   month: monthBound.optional(),
+ })
+ .strict();
+
+/**
+ * GET /api/fintrack/pocket/export?month=YYYY-MM&format=csv|xlsx
+ *
+ * The same month rule as the board, plus the writer to answer in. A schema of
+ * its own and not `format` added to boardQuerySchema: the board renders JSON and
+ * has no second format, and a strict schema that accepted the key there would
+ * take a parameter it then ignores.
+ *
+ * format defaults to csv, so a request that named none before this parameter
+ * existed keeps getting the file it already got.
+ */
+export const pocketExportQuerySchema = z
+ .object({
+  month: monthBound.optional(),
+  format: z
+   .enum(EXPORT_FORMATS, {
+    message: `format must be one of: ${EXPORT_FORMATS.join(', ')}`,
+   })
+   .default(DEFAULT_EXPORT_FORMAT),
  })
  .strict();

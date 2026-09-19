@@ -16,6 +16,12 @@ import { z } from 'zod';
 import { monthBound } from './budgetValidators.js';
 import { ANALYSIS_LEVELS } from '../../fintrack_api/services/overview_services/core/analysisLevels.js';
 import { MOVEMENT_TYPE_NAMES } from '../../fintrack_api/services/overview_services/db/movementTypes.js';
+// The one list of writers the two export endpoints have, shared with
+// pocketValidators.js so neither can offer a format the writers cannot produce.
+import {
+ EXPORT_FORMATS,
+ DEFAULT_EXPORT_FORMAT,
+} from '../../utils/fintrackUtils/exportUtils.js';
 
 // The six domains of §3 of the contract. A literal list rather than a catalog
 // read: a domain is a calculator this module either has or does not have, not a
@@ -85,6 +91,27 @@ export const overviewDomainParamsSchema = z.object({
  */
 export const overviewPageQuerySchema = z.object({
  month: monthBound.optional(),
+}).strict();
+
+/**
+ * GET /debt/export
+ * Query: month (optional, past only), format (csv or xlsx, default csv)
+ *
+ * Declared here and not in a debt file of its own because the export reads the
+ * debt analysis through overviewDebtService, so it inherits this module's month
+ * rule: the day is discarded and the ceiling is a 422 the handler raises.
+ *
+ * No page and no pageSize: the file is every counterparty of the month, and a
+ * paginated export is a truncated one.
+ *
+ * format defaults to csv, so a request that named none before this parameter
+ * existed keeps getting the file it already got.
+ */
+export const debtExportQuerySchema = z.object({
+ month: monthBound.optional(),
+ format: z.enum(EXPORT_FORMATS, {
+  message: `format must be one of: ${EXPORT_FORMATS.join(', ')}`,
+ }).default(DEFAULT_EXPORT_FORMAT),
 }).strict();
 
 /**

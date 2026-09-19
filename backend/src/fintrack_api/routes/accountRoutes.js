@@ -31,6 +31,9 @@ import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreat
 // 📚 TRANSACTIONS CONTROLLER
 import { getTransactionsForAccountById } from '../controllers/getTransactionsForAccountById.js';
 
+// 📥 CLOSED-ACCOUNT REGISTRY DOWNLOAD
+import { exportClosedAccounts } from '../controllers/closedAccountExportController.js';
+
 // 🛠️ ACCOUNT EDITION CONTROLLER
 import { patchAccountById } from '../controllers/accountEditController.js';
 
@@ -82,6 +85,12 @@ router.get('/type', getAllAccountsByType);
 // Before '/:accountId', which is a catch-all: registered after it, 'closed'
 // would be read as an account id and answer from the by-id route instead.
 router.get('/closed', getClosedAccounts);
+
+// The same registry as a downloadable file, and every row the filter matches -
+// the list above serves one page of at most 100. Declared here for the reason
+// the comment above states about its neighbour: '/:accountId' is a catch-all,
+// and the two closed-account routes are read and moved together.
+router.get('/closed/export', exportClosedAccounts);
 
 router.get('/:accountId', getAccountById);
 //-----

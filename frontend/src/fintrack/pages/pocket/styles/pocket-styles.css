@@ -114,12 +114,55 @@
 
    z-index because the hero is painted after this in document order and would
    otherwise cover the half that overlaps it. */
-.pocketLayout .headerContent__container > .monthStepper {
+/* MOVED FROM .monthStepper TO THE ROW THAT HOLDS IT: the export trigger sits
+   beside the pill now, so the ROW and not the pill alone is what straddles the
+   seam. .monthStepper keeps every other rule of its own; only the position left
+   with the wrapper. Same move overview-styles.css records for .statementBar. */
+/* The PAIR is what is centred, not the stepper with the trigger hung off the
+   container's right edge: the two read as one control at the middle of the
+   line. Carlos, 2026-09-19. */
+.pocketLayout .headerContent__container > .headerActionBar {
  position: absolute;
  top: 100%;
  left: 50%;
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
  transform: translate(-50%, -50%);
  z-index: 2;
+}
+
+/* The export trigger wears this screen's stepper pill, value for value: the
+   raised fill and subtle edge of .monthStepper--dark (monthPicker-styles.css:
+   164-167) and the muted ink of .month-badge--dark (:30-33), at the compact
+   scale .monthStepper .month-badge sets (:204-211).
+
+   min-height: 0 because the shared stylesheet floors the trigger at
+   --size-control-sm (32px) while the stepper measures 27.6px — the taller box
+   would set the row's height and the two would not line up. */
+.pocketLayout .headerActionBar .exportMenu__trigger {
+ min-height: 0;
+ padding: var(--space-1) var(--space-3);
+ border-color: var(--color-border-subtle);
+ background-color: var(--color-surface-raised);
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: 0.02em;
+}
+
+/* The same inversion the dark badge performs (monthPicker-styles.css:72-76). */
+.pocketLayout .headerActionBar .exportMenu__trigger:hover,
+.pocketLayout .headerActionBar .exportMenu__trigger.is-active {
+ background-color: var(--color-accent);
+ border-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.pocketLayout .headerActionBar .exportMenu__trigger:active {
+ background-color: var(--color-content-on-dark-subtle);
+ border-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
 }
 
 /* The upper half of one card cut in two. Position, height and anchor come from

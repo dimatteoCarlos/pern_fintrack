@@ -4,7 +4,7 @@
 // 🏷️ Pattern: Container Component (Smart Component)
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // 🏪 Global State Management
 import { useAuthStore } from '../../stores/useAuthStore';
@@ -75,6 +75,7 @@ const CLOSED_ACCOUNTS_ROUTE = '/fintrack/account/closed';
 
 const UserProfileMenu = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   /* 🌟 ====================
 🏪 GLOBAL STATE CONNECTION
@@ -181,9 +182,16 @@ const UserProfileMenu = () => {
       e.preventDefault();
       e.stopPropagation();
       setModalState('none');
-      navigate(CLOSED_ACCOUNTS_ROUTE, { viewTransition: true });
+      // The screen the reader is leaving travels with the navigation, so the
+      // registry's back arrow returns HERE rather than to a fixed page. This
+      // menu is mounted on every screen, so that origin is different on every
+      // visit and no constant could name it.
+      navigate(CLOSED_ACCOUNTS_ROUTE, {
+        viewTransition: true,
+        state: { previousRoute: `${location.pathname}${location.search}` },
+      });
     },
-    [navigate],
+    [navigate, location.pathname, location.search],
   );
 
   /**

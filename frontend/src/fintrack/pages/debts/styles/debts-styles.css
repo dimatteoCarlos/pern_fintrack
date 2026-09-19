@@ -119,6 +119,16 @@
   margin-top: 0;
 }
 
+/* The Summary heading and the export trigger on one line. The heading keeps its
+   own padding and the trigger centres against it, so the row is exactly as tall
+   as the title was on its own. */
+.debtsLayout .debtsSummaryBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 a.icon {
   height: 100%;
   width: 2rem;

@@ -7,6 +7,7 @@ import currencyRoutes from './currencyRoutes.js';
 import budgetRoutes from './budgetRoutes.js';
 import pocketRoutes from './pocketRoutes.js';
 import overviewRoutes from './overviewRoutes.js';
+import debtRoutes from './debtRoutes.js';
 
 //------------------------
 const router = express.Router();
@@ -33,6 +34,12 @@ router.use('/pocket',
 //while the frontend switches screen by screen.
 router.use('/overview',
  overviewRoutes);//per-domain overview calculators
+
+//Mounted beside /overview, not inside it: the debt export is a file download and
+//not a domain payload, and /overview/:domain reserves its path for the six
+//domains the contract names.
+router.use('/debt',
+ debtRoutes);//the per-counterparty debt export
 
 
 export default router;

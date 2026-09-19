@@ -19,16 +19,35 @@
  gap: var(--space-1, 0.25rem);
 }
 
+/* The containing block the shared back control needs: .backArrow is
+   position: absolute, so without this it would pin itself to the page. */
+.closed-accounts__title-row {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ position: relative;
+ width: 100%;
+ min-height: var(--size-icon);
+}
+
 .closed-accounts__title {
  margin: 0;
  color: var(--color-content-on-dark);
  font-size: 1.75rem;
  font-weight: var(--font-weight-bold);
  letter-spacing: -0.02em;
+ /* Centred against the row and not against the space the arrow leaves, which
+    is what keeps the heading in the same place on every screen. The reserve is
+    one disc at each end, so a long title wraps instead of running under it. */
+ text-align: center;
+ max-width: calc(100% - var(--size-icon) * 2);
 }
 
+/* Centred with the heading above it: left-aligned under a centred title the
+   two read as two separate blocks. */
 .closed-accounts__lede {
  margin: 0;
+ text-align: center;
  color: #94a3b8;
  font-size: 0.9375rem;
  line-height: 1.5;
@@ -186,6 +205,58 @@
 
 .closed-accounts__order-icon.is-ascending {
  transform: rotate(180deg);
+}
+
+/* 📥 THE EXPORT TRIGGER'S CELL. Its own line at the foot of the toolbar grid,
+   pushed to the right end: the four fields already fill all twelve columns from
+   768px up (:562-565), so a fifth cell on that row could only be made to fit by
+   narrowing the search box or the sort pair, and the sort pair had to be
+   widened once already (:159-164). */
+.closed-accounts__export {
+ grid-column: 1 / -1;
+ justify-self: end;
+}
+
+/* The trigger wears this toolbar's direction button, value for value
+   (:166-186): the same well, the same hairline, the same ink, the same line
+   height and the same corner, so the two read as one family rather than as a
+   pill that arrived from another screen. The shared stylesheet's --radius-full
+   and --size-control-sm are what would make it read as one.
+
+   Three class names, so the override outranks .exportMenu--dark whichever order
+   the two sheets are loaded in. */
+.closed-accounts .closed-accounts__export .exportMenu__trigger {
+ block-size: var(--size-control-registry);
+ padding-inline: var(--space-3);
+ border-color: var(--color-border-control-registry);
+ border-radius: var(--radius-control-registry);
+ background-color: var(--color-surface-control-registry);
+ color: var(--color-content-control-registry);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+}
+
+/* The same answer to the pointer the direction button gives (:188-192). */
+.closed-accounts .closed-accounts__export .exportMenu__trigger:hover,
+.closed-accounts .closed-accounts__export .exportMenu__trigger.is-active {
+ color: var(--color-content-on-dark);
+ border-color: var(--color-border-control-registry-hover);
+ background-color: var(--color-surface-control-registry-hover);
+}
+
+/* The press lights the border in the accent, as this page's other two controls
+   do (:534-537). The fill is held, so the open menu and the press differ. */
+.closed-accounts .closed-accounts__export .exportMenu__trigger:active {
+ border-color: var(--color-accent);
+ background-color: var(--color-surface-control-registry-hover);
+}
+
+/* The ring the toolbar's own controls draw (:492-496). Restated rather than
+   left to the shared sheet because that one writes it on .exportMenu--dark, at
+   a specificity the three rules above have already passed. */
+.closed-accounts .closed-accounts__export .exportMenu__trigger:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
 }
 
 /* ===========================
@@ -347,11 +418,13 @@
 /* ===========================
    📄 PAGER & FOOTER
    =========================== */
+/* justify-content: space-between when the back button shared the row; with the
+   pager alone that would have moved it to the left end it did not sit at. */
 .closed-accounts__pager {
  display: flex;
  flex-wrap: wrap;
  align-items: center;
- justify-content: space-between;
+ justify-content: flex-end;
  gap: var(--space-4);
  padding-block-start: var(--space-2);
 }
@@ -382,8 +455,7 @@
  font-weight: var(--font-weight-bold);
 }
 
-.closed-accounts__page-button,
-.closed-accounts__back {
+.closed-accounts__page-button {
  display: inline-flex;
  align-items: center;
  justify-content: center;
@@ -401,8 +473,7 @@
   background-color var(--motion-normal);
 }
 
-.closed-accounts__page-button:hover:not(:disabled),
-.closed-accounts__back:hover {
+.closed-accounts__page-button:hover:not(:disabled) {
  background-color: rgba(51, 65, 85, 0.8);
  border-color: rgba(255, 255, 255, 0.2);
 }
@@ -419,18 +490,35 @@
    gets no sign of which button holds focus. Same ring as
    standardDeletionDialog.css:148-151. */
 .closed-accounts__order:focus-visible,
-.closed-accounts__page-button:focus-visible,
-.closed-accounts__back:focus-visible {
+.closed-accounts__page-button:focus-visible {
  outline: var(--border-width-thick) solid var(--color-border-inverse);
  outline-offset: var(--border-width-thick);
 }
 
+/* THE FOOTER'S OWN WAY OUT, RESTORED 2026-09-19 (Carlos). It was retired on the
+   reading that the header's arrow replaced it; it does not. The arrow returns to
+   whichever screen the registry was opened from, and this one names the
+   accounting dashboard and always goes there.
+
+   It renders as a link now, not a button, so the box it used to inherit from
+   .closed-accounts__page-button is restated here. Same padding, radius and
+   border width as that sibling, in its own blue. */
 .closed-accounts__back {
- /* align-self: flex-start; - the button now sits in the pager row, where the
-    row's own alignment places it. */
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ align-self: flex-start;
+ padding: var(--space-2) var(--space-4);
+ border: var(--border-width-thin) solid rgba(56, 189, 248, 0.2);
+ border-radius: 8px;
  color: #38bdf8;
  background: rgba(56, 189, 248, 0.08);
- border-color: rgba(56, 189, 248, 0.2);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ text-decoration: none;
+ cursor: pointer;
+ transition: color var(--motion-normal), border-color var(--motion-normal),
+  background-color var(--motion-normal);
 }
 
 .closed-accounts__back:hover {
@@ -444,8 +532,7 @@
    (debtsToolbar.css:189-191) do. Written after the hover rules, and with the
    page button's :not(:disabled), so it wins while the cursor is also over it. */
 .closed-accounts__order:active,
-.closed-accounts__page-button:active:not(:disabled),
-.closed-accounts__back:active {
+.closed-accounts__page-button:active:not(:disabled) {
  border-color: var(--color-accent);
 }
 
@@ -459,8 +546,7 @@
  .closed-accounts__order-icon,
  .closed-accounts__row,
  .closed-accounts__row::before,
- .closed-accounts__page-button,
- .closed-accounts__back {
+ .closed-accounts__page-button {
   transition: none;
  }
 

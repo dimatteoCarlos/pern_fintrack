@@ -3,7 +3,7 @@
 import { useEffect, useId, useState } from 'react';
 // Only the commented icon map below used these.
 // import type { FunctionComponent, SVGProps } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import { useClosedAccounts } from '../../hooks/useClosedAccounts.ts';
 import { useLanguageTranslation } from '../../hooks/useLangTranslation.ts';
@@ -32,10 +32,17 @@ import { formatDateToDDMMYYYY } from '../../../helpers/functions.ts';
 // import PocketSvg from '../../../../assets/accountingDashboardSvg/pocketsAccountsSvg.svg?react';
 // import ArchiveSvg from '../../../../assets/userProfileMenuSvg/archiveSvg.svg?react';
 import { getAccountTypeIcon } from '../../utils/accountTypeIcons.ts';
+// The header's way out: the same arrow every dark-surface title row draws.
+import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg?react';
 // The toolbar's two, from the pocket module's set: the same magnifier and the
 // same direction chevron the owner already reads elsewhere in the app.
 import SearchSvg from '../../../../assets/pocketSvg/SearchSvg.svg?react';
 import SortDirectionSvg from '../../../../assets/pocketSvg/SortDirectionSvg.svg?react';
+
+// The same download control budget, pocket and debts mount. It owns the menu
+// and the in-flight flag; the scope on screen is what this page hands it.
+import ExportMenu from '../../../general_components/exportMenu/ExportMenu.tsx';
+import { downloadClosedAccountsExport } from '../../../api/exportApi.ts';
 
 import './closedAccounts.css';
 import ClosedAccountsCountBadge from './ClosedAccountsCountBadge.tsx';
@@ -134,7 +141,19 @@ const ACCOUNT_TYPE_LABEL_KEYS: Record<string, keyof DictionaryDataType> = {
 };
 
 export const ClosedAccountsPage = () => {
- const navigate = useNavigate();
+ // WHERE THE ARROW GOES, AND WHY IT IS NOT A CONSTANT (Carlos, 2026-09-19).
+ // The registry is opened from the profile menu, which is mounted on every
+ // screen, so the page the reader arrived from is different every time and a
+ // fixed destination would send them somewhere they were not. The origin is
+ // passed as router state by the caller and read here.
+ //
+ // The fallback covers the one arrival that carries no state - a reload, or a
+ // link pasted into the address bar - and is the same route the way out at the
+ // foot of the page uses.
+ const location = useLocation();
+ const previousRoute =
+  (location.state as { previousRoute?: string } | null)?.previousRoute ??
+  ACCOUNTING_DASHBOARD_ROUTE;
 
  // The same persistence every other screen in this module uses: the choice
  // lives in localStorage under 'userLang' and falls back rather than throwing on
@@ -193,7 +212,26 @@ export const ClosedAccountsPage = () => {
  return (
   <main className='closed-accounts'>
    <header className='closed-accounts__header'>
-    <h1 className='closed-accounts__title'>{t('closedAccountsPageTitle')}</h1>
+    {/* The way out, in the title row where every other screen carries it:
+        the shared 32px disc out of flow at the left, so the heading stays
+        centred against the full width instead of shifting beside it.
+
+        It returns to the screen the reader came FROM, which is not the same
+        thing the button at the foot of the page does - that one names one
+        destination and always goes there. */}
+    <div className='closed-accounts__title-row'>
+     <Link
+      to={previousRoute}
+      viewTransition
+      className='backArrow backArrow--dark'
+      aria-label={t('closedAccountsBackButton')}
+     >
+      <LeftArrowLightSvg aria-hidden='true' />
+     </Link>
+
+     <h1 className='closed-accounts__title'>{t('closedAccountsPageTitle')}</h1>
+    </div>
+
     <p className='closed-accounts__lede'>{t('closedAccountsLede')}</p>
    </header>
 
@@ -317,6 +355,32 @@ export const ClosedAccountsPage = () => {
        </span>
       </button>
      </div>
+    </div>
+
+    {/* 📥 THE DOWNLOAD, WITH THE QUERY THAT DEFINES IT. The file is the list
+        the four controls above are describing, so the search, the type filter
+        and the sort pair travel exactly as they stand. It is in the toolbar
+        and not in the title row because that row is the arrow-and-heading
+        pattern every screen draws, and because a reader who has just filtered
+        is here.
+
+        The page size is the one control that does not travel: the file carries
+        every row the filter matched, not the screenful being read. */}
+    <div className='closed-accounts__export'>
+     <ExportMenu
+      subject='the closed-account registry'
+      surface='dark'
+      disabled={isLoading}
+      onExport={(format) =>
+       downloadClosedAccountsExport({
+        format,
+        search: query.search,
+        type: query.type,
+        sort: query.sort,
+        order: query.order,
+       })
+      }
+     />
     </div>
    </section>
 
@@ -476,63 +540,67 @@ export const ClosedAccountsPage = () => {
     </ul>
    )}
 
+   {/* TWO WAYS OUT, AND THEY ARE NOT THE SAME CONTROL (Carlos, 2026-09-19).
+       It was removed as a duplicate on the reading that both went to the
+       accounting dashboard; they do not. The arrow in the title row returns to
+       whichever screen the reader opened the registry from, and this one names
+       one destination and always goes there. A reader who arrived from Budget
+       and wants the accounting dashboard has no other control that takes them.
+
+       Outside the pager and not inside it: the pager hides itself on a single
+       page, and the way out must not disappear with it. */}
+   <Link
+    to={ACCOUNTING_DASHBOARD_ROUTE}
+    viewTransition
+    className='closed-accounts__back'
+   >
+    {t('closedAccountsBackButton')}
+   </Link>
+
    {/* 📄 THE PAGER. Hidden on a single page rather than shown disabled: a
-       control that can never do anything is noise. Back on the left and the
-       pager on the right, one row, as in the proposal; the footer always
-       renders because the back button lives in it. */}
-   <footer className='closed-accounts__pager'>
-    <button
-     type='button'
-     className='closed-accounts__back'
-     onClick={() => navigate(ACCOUNTING_DASHBOARD_ROUTE, { viewTransition: true })}
-    >
-     {t('closedAccountsBackButton')}
-    </button>
+       control that can never do anything is noise.
 
-    {/* The count moved to ClosedAccountsCountBadge above the list; a second
-        copy here repeated it.
-    <span className='closed-accounts__count'>
-     {t('closedAccountsTotal').replace('{total}', String(total))}
-    </span> */}
+       The count moved to ClosedAccountsCountBadge above the list; a second
+       copy here repeated it. */}
+   {!isLoading && !error && pageCount > 1 && (
+    <footer className='closed-accounts__pager'>
+     <div className='closed-accounts__pager-controls'>
+      <button
+       type='button'
+       className='closed-accounts__page-button'
+       onClick={() => setPage(query.page - 1)}
+       disabled={query.page <= 1}
+      >
+       {t('closedAccountsPreviousPage')}
+      </button>
 
-     {!isLoading && !error && pageCount > 1 && (
-      <div className='closed-accounts__pager-controls'>
-       <button
-        type='button'
-        className='closed-accounts__page-button'
-        onClick={() => setPage(query.page - 1)}
-        disabled={query.page <= 1}
-       >
-        {t('closedAccountsPreviousPage')}
-       </button>
+      {/* The two numbers in bold, as in the proposal. The sentence is split on
+          its placeholders so each language keeps its own word order. */}
+      <span className='closed-accounts__page-status'>
+       {t('closedAccountsPageStatus')
+        .split(/(\{page\}|\{pageCount\})/)
+        .map((part, index) =>
+         part === '{page}' ? (
+          <strong key={index}>{query.page}</strong>
+         ) : part === '{pageCount}' ? (
+          <strong key={index}>{pageCount}</strong>
+         ) : (
+          part
+         ),
+        )}
+      </span>
 
-       {/* The two numbers in bold, as in the proposal. The sentence is split on
-           its placeholders so each language keeps its own word order. */}
-       <span className='closed-accounts__page-status'>
-        {t('closedAccountsPageStatus')
-         .split(/(\{page\}|\{pageCount\})/)
-         .map((part, index) =>
-          part === '{page}' ? (
-           <strong key={index}>{query.page}</strong>
-          ) : part === '{pageCount}' ? (
-           <strong key={index}>{pageCount}</strong>
-          ) : (
-           part
-          ),
-         )}
-       </span>
-
-       <button
-        type='button'
-        className='closed-accounts__page-button'
-        onClick={() => setPage(query.page + 1)}
-        disabled={query.page >= pageCount}
-       >
-        {t('closedAccountsNextPage')}
-       </button>
-      </div>
-     )}
-   </footer>
+      <button
+       type='button'
+       className='closed-accounts__page-button'
+       onClick={() => setPage(query.page + 1)}
+       disabled={query.page >= pageCount}
+      >
+       {t('closedAccountsNextPage')}
+      </button>
+     </div>
+    </footer>
+   )}
   </main>
  );
 };

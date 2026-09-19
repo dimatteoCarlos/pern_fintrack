@@ -133,12 +133,23 @@
 
    Two selectors because the skeleton has no picker around it: while the month
    is on the wire, MonthPicker renders the badge on its own. */
-.budgetLayout .headerContent__container > .react-datepicker-wrapper,
-.budgetLayout .headerContent__container > .month-badge--skeleton {
+/* MOVED FROM THE BADGE TO THE ROW THAT HOLDS IT: the export trigger sits beside
+   the badge now, so the ROW and not the badge alone is what hangs past the
+   container's bottom edge. The badge is no longer a direct child, so the two
+   selectors this replaces could not match it either way. Same move
+   overview-styles.css records for .statementBar. */
+/* The PAIR is what is centred, not the badge with the trigger hung off the
+   container's right edge: the two read as one control at the middle of the
+   line. Carlos, 2026-09-19. */
+.budgetLayout .headerContent__container > .headerActionBar {
   position: absolute;
   bottom: calc(var(--space-2) * -1);
   left: 50%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   transform: translateX(-50%);
+  z-index: 2;
 }
 
 /* Out of the column's flow now, so the container is as tall as the title alone
@@ -148,6 +159,41 @@
   padding: var(--space-1) var(--space-3);
   font-size: var(--font-size-xs);
   background-color: var(--color-surface-inverse);
+}
+
+/* The export trigger wears this screen's month badge, value for value: the
+   padding and size of the rule above, the white fill it names, and the dark
+   outline and ink of .month-badge--light (monthPicker-styles.css:35-38). The
+   shared stylesheet's own pill is the cream seam variant, which on this header
+   reads as a second, louder control beside the badge.
+
+   min-height: 0 because that stylesheet floors the trigger at
+   --size-control-sm (32px) while this badge measures 25.6px — the taller box
+   would set the row's height and the two would not line up. */
+.budgetLayout .headerActionBar .exportMenu__trigger {
+  min-height: 0;
+  padding: var(--space-1) var(--space-3);
+  border-color: var(--color-content-primary);
+  background-color: var(--color-surface-inverse);
+  color: var(--color-content-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.02em;
+}
+
+/* The same inversion the badge performs, so the pair answers the pointer alike
+   (monthPicker-styles.css:65-70). */
+.budgetLayout .headerActionBar .exportMenu__trigger:hover,
+.budgetLayout .headerActionBar .exportMenu__trigger.is-active {
+  background-color: var(--color-content-primary);
+  border-color: var(--color-content-primary);
+  color: var(--color-accent);
+}
+
+.budgetLayout .headerActionBar .exportMenu__trigger:active {
+  background-color: var(--color-accent);
+  border-color: var(--color-content-primary);
+  color: var(--color-content-primary);
 }
 
 /* Retired by the move into the flow above: top does nothing on a static box, and

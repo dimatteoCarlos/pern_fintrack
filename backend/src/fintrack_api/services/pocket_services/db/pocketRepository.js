@@ -236,6 +236,63 @@ export async function getPocketHistory(db, userId, pocketId, timeZone) {
 }
 
 /**
+ * Every allocation and release of EVERY pocket the caller owns, up to the close
+ * of one month.
+ *
+ * getPocketHistory above reads one pocket, because the detail screen shows one.
+ * This is one statement over the whole board rather than that one in a loop: a
+ * loop issues a query per pocket and, worse, cannot order the result as a single
+ * table — the rows would come back in as many orderings as there are pockets.
+ *
+ * The ceiling is the same one getPocketsForUser applies to `allocated`
+ * (pocketRepository.js:97-99), so the sum of these rows for a pocket equals the
+ * Allocated figure on the board row beside it. A looser bound would put rows in
+ * the file that the board's own total does not count.
+ *
+ * There is deliberately NO lower bound. The export asks for every commitment and
+ * release of every pocket, and a floor would both answer less and break the
+ * equality with Allocated above, which is what makes the file checkable.
+ *
+ * Ordered by pocket and then forward in time, not newest first: the table is
+ * read as a running total per pocket, and the append-only convention of
+ * 020_create_pocket_tables.sql:113-114 — +300 becomes +250 by writing -50 — only
+ * reads correctly in the order the rows were decided.
+ *
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} userId - UUID from the token
+ * @param {string} monthStart - first day of the selected month, YYYY-MM-01
+ * @param {string} timeZone - the owner's IANA zone
+ * @returns {Promise<object[]>} raw rows, amount as text
+ */
+export async function getPocketHistoryForUser(db, userId, monthStart, timeZone) {
+ const { rows } = await db.query(
+  `
+  SELECT
+   pa.pocket_id                  AS "pocketId",
+   p.name                        AS "pocketName",
+   pa.amount::text               AS amount,
+   to_char(pa.allocation_actual_date AT TIME ZONE $3, 'YYYY-MM-DD') AS "allocationDate",
+   -- A closed account's name survives on account_registry, stamped at closure.
+   COALESCE(ua.account_name, ar.account_name) AS "sourceAccountName"
+  FROM pocket_allocations pa
+  -- Inner: an allocation cannot outlive its pocket, and the pocket's name is
+  -- what identifies the row once every pocket shares one table.
+  JOIN pockets p ON p.pocket_id = pa.pocket_id
+  -- LEFT on both: these supply a label, not a row. Inner, either would drop
+  -- every allocation made from an account that has since been closed.
+  LEFT JOIN user_accounts ua ON ua.account_id = pa.source_account_id
+  LEFT JOIN account_registry ar ON ar.account_id = pa.source_account_id
+  WHERE pa.user_id = $1
+   AND pa.allocation_actual_date < (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+  ORDER BY p.name ASC, pa.allocation_actual_date ASC, pa.allocation_id ASC
+  `,
+  [userId, monthStart, timeZone],
+ );
+
+ return rows;
+}
+
+/**
  * Write a new pocket and answer with its id.
  *
  * The pocket lands with no money and no source account: allocating is a separate

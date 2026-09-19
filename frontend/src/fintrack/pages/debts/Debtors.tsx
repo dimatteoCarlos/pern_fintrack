@@ -2,6 +2,8 @@ import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import { CardTitle } from '../../general_components/CardTitle';
 import OpenAddEditBtn from '../../general_components/OpenAddEditBtn';
 import ListOfDebtors from './components/ListOfDebtors';
+import ExportMenu from '../../general_components/exportMenu/ExportMenu';
+import { downloadDebtExport } from '../../api/exportApi';
 
 // The form has one declared route and the board no longer has two, so the
 // destination is the route itself. Appending to the current pathname made the
@@ -35,7 +37,22 @@ function Debtors() {
             <div className='open__btn__label'>New Debtor</div>
           </OpenAddEditBtn>
 
-          <CardTitle>Summary</CardTitle>
+          {/* The heading and the trigger share one line. The row is the
+              wrapper's job and not CardTitle's: that component titles twelve
+              screens, and a menu passed as its `legend` would render a <ul>
+              inside the heading element.
+
+              No month travels: this module has no month control and its list is
+              not cut by one, so the server resolves the month it reports on. */}
+          <div className='debtsSummaryBar'>
+            <CardTitle>Summary</CardTitle>
+
+            <ExportMenu
+              subject='the debtor list'
+              surface='dark'
+              onExport={(format) => downloadDebtExport({ format })}
+            />
+          </div>
 
           <ListOfDebtors
             previousRoute={originRoute}

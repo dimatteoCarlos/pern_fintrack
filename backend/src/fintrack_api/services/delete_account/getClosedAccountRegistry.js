@@ -61,40 +61,32 @@ const toPositiveInt = (value, fallback, ceiling = Number.MAX_SAFE_INTEGER) => {
 };
 
 /**
- * @param {object} db - pool; this is a read and takes no lock
- * @param {string} userId
- * @param {object} query - the request's query string, already parsed by express
- * @param {string} [query.search] - matched against the name, the reason and the
- *   category name; absent or blank means no search
- * @param {string} [query.type] - an account_type_name to restrict to
- * @param {string} [query.sort] - a key of SORTABLE_COLUMNS
- * @param {string} [query.order] - 'asc' or 'desc'
- * @param {string|number} [query.page]
- * @param {string|number} [query.limit]
- * @returns {Promise<object>} one page plus the figures a pager needs
+ * The ORDER BY of both readers below, resolved from the query string.
+ *
+ * An unrecognised key falls back rather than raising, the same tolerance
+ * toPositiveInt applies to a page: a stale sort in a shared link shows the
+ * default order, not an error screen.
  */
-export const getClosedAccountRegistry = async (db, userId, query = {}) => {
-  if (!userId) {
-    throw createError(400, 'A user is required to list closed accounts.');
-  }
-
-  const sortKey = Object.prototype.hasOwnProperty.call(
-    SORTABLE_COLUMNS,
-    query.sort,
-  )
+const resolveSort = (query) => ({
+  sortKey: Object.prototype.hasOwnProperty.call(SORTABLE_COLUMNS, query.sort)
     ? query.sort
-    : DEFAULT_SORT;
+    : DEFAULT_SORT,
+  sortDirection:
+    String(query.order ?? '').toLowerCase() === 'asc' ? 'ASC' : DEFAULT_ORDER,
+});
 
-  const sortDirection =
-    String(query.order ?? '').toLowerCase() === 'asc' ? 'ASC' : DEFAULT_ORDER;
-
-  const limit = toPositiveInt(query.limit, DEFAULT_LIMIT, MAX_LIMIT);
-  const page = toPositiveInt(query.page, 1);
-  const offset = (page - 1) * limit;
-
-  // Built rather than written out, because search and type are each optional and
-  // a statement carrying an always-true placeholder for an absent filter is
-  // harder to read than one that does not carry the clause at all.
+/**
+ * The WHERE of both readers below, and the values its placeholders take.
+ *
+ * Built rather than written out, because search and type are each optional and
+ * a statement carrying an always-true placeholder for an absent filter is
+ * harder to read than one that does not carry the clause at all.
+ *
+ * Shared so the file the download endpoint writes cannot match a different set
+ * of rows than the screen it was launched from: one search predicate, one type
+ * predicate, one ownership filter.
+ */
+const buildRegistryFilter = (userId, query) => {
   const conditions = ['ar.user_id = $1', 'ar.closed_at IS NOT NULL'];
   const values = [userId];
 
@@ -117,6 +109,57 @@ export const getClosedAccountRegistry = async (db, userId, query = {}) => {
     conditions.push(`LOWER(act.account_type_name) = $${values.length}`);
   }
 
+  return { conditions, values, searchTerm, typeFilter };
+};
+
+// The FROM of both readers, shared for the same reason the filter is: the three
+// catalog joins are what resolve a type, a currency and a nature into the words
+// a reader sees, and a second copy could answer one of them differently.
+// Every join is LEFT, for the reason the file header states.
+const REGISTRY_SOURCE = `
+    FROM account_registry ar
+    LEFT JOIN account_types act
+      ON act.account_type_id = ar.account_type_id
+    LEFT JOIN currencies cur
+      ON cur.currency_id = ar.currency_id
+    LEFT JOIN category_nature_types cnt
+      ON cnt.category_nature_type_id = ar.category_nature_type_id`;
+
+// account_id breaks every tie, so two closures stamped in the same transaction
+// cannot swap places between one page and the next. Without it a pager over
+// equal sort keys can show the same row twice and skip another.
+const orderBy = ({ sortKey, sortDirection }) =>
+  `ORDER BY ${SORTABLE_COLUMNS[sortKey]} ${sortDirection} NULLS LAST, ar.account_id DESC`;
+
+/**
+ * @param {object} db - pool; this is a read and takes no lock
+ * @param {string} userId
+ * @param {object} query - the request's query string, already parsed by express
+ * @param {string} [query.search] - matched against the name, the reason and the
+ *   category name; absent or blank means no search
+ * @param {string} [query.type] - an account_type_name to restrict to
+ * @param {string} [query.sort] - a key of SORTABLE_COLUMNS
+ * @param {string} [query.order] - 'asc' or 'desc'
+ * @param {string|number} [query.page]
+ * @param {string|number} [query.limit]
+ * @returns {Promise<object>} one page plus the figures a pager needs
+ */
+export const getClosedAccountRegistry = async (db, userId, query = {}) => {
+  if (!userId) {
+    throw createError(400, 'A user is required to list closed accounts.');
+  }
+
+  const { sortKey, sortDirection } = resolveSort(query);
+
+  const limit = toPositiveInt(query.limit, DEFAULT_LIMIT, MAX_LIMIT);
+  const page = toPositiveInt(query.page, 1);
+  const offset = (page - 1) * limit;
+
+  const { conditions, values, searchTerm, typeFilter } = buildRegistryFilter(
+    userId,
+    query,
+  );
+
   // COUNT(*) OVER() rather than a second statement: the total and the page have
   // to agree, and two statements against a table another session can write to
   // between them do not have to. It costs one window pass over the filtered set,
@@ -136,18 +179,9 @@ export const getClosedAccountRegistry = async (db, userId, query = {}) => {
       ar.closed_at,
       ar.close_reason,
       COUNT(*) OVER() AS total_rows
-    FROM account_registry ar
-    LEFT JOIN account_types act
-      ON act.account_type_id = ar.account_type_id
-    LEFT JOIN currencies cur
-      ON cur.currency_id = ar.currency_id
-    LEFT JOIN category_nature_types cnt
-      ON cnt.category_nature_type_id = ar.category_nature_type_id
+    ${REGISTRY_SOURCE}
     WHERE ${conditions.join('\n      AND ')}
-    -- account_id breaks every tie, so two closures stamped in the same
-    -- transaction cannot swap places between one page and the next. Without it a
-    -- pager over equal sort keys can show the same row twice and skip another.
-    ORDER BY ${SORTABLE_COLUMNS[sortKey]} ${sortDirection} NULLS LAST, ar.account_id DESC
+    ${orderBy({ sortKey, sortDirection })}
     LIMIT $${values.length + 1}
     OFFSET $${values.length + 2}
   `;
@@ -194,6 +228,97 @@ export const getClosedAccountRegistry = async (db, userId, query = {}) => {
     type: typeFilter,
     accountList,
   };
+};
+
+/**
+ * Every closure the filter matches, for the download endpoint. No page.
+ *
+ * A SIBLING AND NOT A MODE OF THE READER ABOVE, decided here. The two share the
+ * filter, the sort and the three catalog joins - which is what makes the file
+ * carry the rows the screen is showing - and differ in the two places a shared
+ * function would have had to branch anyway: this one carries no LIMIT and no
+ * OFFSET, and its SELECT is wider. A flag on the list reader would have made
+ * every caller of the list read a statement that can also return the whole
+ * registry, and the cap at MAX_LIMIT is the list's own safety rule.
+ *
+ * WHY THE SELECT IS WIDER, in the two ways that matter:
+ *   closed_by is resolved to the closer's username. The registry stamps a user
+ *     id, and an id is not a fact a reader can use; the join is LEFT because
+ *     035 makes the column ON DELETE SET NULL on purpose - a deleted user must
+ *     not take a closure record with them.
+ *   the three timestamps come back as 'YYYY-MM-DD' TEXT on the owner's
+ *     calendar, never as a timestamp. A workbook cell typed 'date' is built
+ *     from `new Date('2026-09-19')` by writeXlsx's toCellValue, which is UTC
+ *     midnight and reads back as the day before west of UTC.
+ *
+ * @param {object} db - pool; this is a read and takes no lock
+ * @param {string} userId
+ * @param {object} query - the request's query string; same search, type, sort
+ *   and order the list endpoint accepts, and page and limit are not read
+ * @param {string} timeZone - IANA zone from getUserTimeZone, the calendar the
+ *   three dates are rendered on
+ * @returns {Promise<object[]>} one entry per closure, in the requested order
+ */
+export const getClosedAccountRegistryForExport = async (
+  db,
+  userId,
+  query = {},
+  timeZone = 'UTC',
+) => {
+  if (!userId) {
+    throw createError(400, 'A user is required to list closed accounts.');
+  }
+
+  const { sortKey, sortDirection } = resolveSort(query);
+  const { conditions, values } = buildRegistryFilter(userId, query);
+
+  // The zone travels as a placeholder like every other value, never
+  // interpolated: it reaches AT TIME ZONE as an expression, not an identifier.
+  values.push(timeZone);
+  const zone = `$${values.length}::text`;
+
+  const exportQuery = `
+    SELECT
+      ar.account_name,
+      act.account_type_name,
+      cur.currency_code,
+      ar.account_starting_amount::text AS account_starting_amount,
+      (ar.account_start_date AT TIME ZONE ${zone})::date::text
+        AS account_start_date,
+      (ar.account_created_at AT TIME ZONE ${zone})::date::text
+        AS account_created_at,
+      ar.category_name,
+      ar.subcategory,
+      cnt.category_nature_type_name,
+      (ar.closed_at AT TIME ZONE ${zone})::date::text AS closed_at,
+      closer.username AS closed_by_username,
+      ar.close_reason
+    ${REGISTRY_SOURCE}
+    LEFT JOIN users closer
+      ON closer.user_id = ar.closed_by
+    WHERE ${conditions.join('\n      AND ')}
+    ${orderBy({ sortKey, sortDirection })}
+  `;
+
+  const { rows } = await db.query(exportQuery, values);
+
+  // camelCase, the shape the list publishes and the keys the sheet spec in
+  // exportUtils reads. account_id is not among them: the file is read by a
+  // person, and the id names a row that no longer exists in user_accounts.
+  return rows.map((row) => ({
+    accountName: row.account_name,
+    accountTypeName: row.account_type_name,
+    currencyCode: row.currency_code,
+    accountStartingAmount: row.account_starting_amount,
+    accountStartDate: row.account_start_date,
+    accountCreatedAt: row.account_created_at,
+    categoryName: row.category_name,
+    subcategory: row.subcategory,
+    categoryNatureTypeName: row.category_nature_type_name,
+    closedAt: row.closed_at,
+    closedBy: row.closed_by_username,
+    closeReason: row.close_reason,
+  }));
 };
 
 // The keys a client may send as `sort`, exported so the screen's dropdown and

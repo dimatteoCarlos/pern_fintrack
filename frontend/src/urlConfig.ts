@@ -84,6 +84,11 @@ export const url_create_debtor_account: string =
 //--endpoint: http://localhost:5000/api/fintrack/debts/debtor/${account_id)?&user=c109eb15-4139-43b4-b081-8fb9860588af
 export const url_get_debtor_by_id: string = BASE_URL_APP + 'debts/debtor/';
 
+// GET /api/fintrack/debt/export?month=YYYY-MM-01
+// The debtor list as a comma-separated file. The month is optional and the
+// current one never travels: the server resolves it on the owner's calendar.
+export const url_debt_export: string = BASE_URL_APP + 'debt/export';
+
 //--FOR OVERVIEW PAGE
 //---GET ACCOUNT INFO BY ACCOUNT ID
 //--endpoint example: http://localhost:5000/api/fintrack/account/11?&user=${user}
@@ -240,6 +245,12 @@ export const url_budget_account_current = (accountId: string | number) =>
 export const url_budget_account_series = (accountId: string | number) =>
   `${BASE_URL_APP}budget/accounts/${accountId}/series`;
 
+// GET /api/fintrack/budget/export?accountId=&from=&to=
+// The month's budget rows as a comma-separated file. The three parameters are
+// optional and follow the block's own rule above: nothing travels for the
+// current month, and a historical scope travels as from/to.
+export const url_budget_export: string = BASE_URL_APP + 'budget/export';
+
 // ===================================
 //📝 GET IMPACT REPORT URL (RTA-specific)
 // ===================================
@@ -289,6 +300,18 @@ export const url_closed_accounts = (queryString: string = '') =>
   queryString
     ? `${BASE_URL_APP}account/closed?${queryString}`
     : `${BASE_URL_APP}account/closed`;
+
+// GET /api/fintrack/account/closed/export?format=csv|xlsx&search=&sort=&order=&type=
+// The registry as a file. Unlike the budget, pocket and debt exports, which
+// send a month or a range, this one sends the search, the type filter and the
+// sort the screen is applying, so the file is cut and ordered the way the list
+// on screen is. The page and limit above do not travel: the file is every row
+// that matched, not the screenful being read.
+//
+// Declared here beside url_closed_accounts rather than with the other three
+// module exports, which are each in their own module's block.
+export const url_closed_accounts_export: string =
+  BASE_URL_APP + 'account/closed/export';
 
 // ===================================
 // 🌐 GET FX CURRENCY RATES 
@@ -361,3 +384,10 @@ export const url_pocket_allocations = (pocketId: number | string): string =>
 // uncommitted, releasing by what THIS POCKET holds from that one account.
 export const url_pocket_releases = (pocketId: number | string): string =>
  BASE_URL_APP + `pocket/${pocketId}/releases`;
+
+// GET /api/fintrack/pocket/export?month=YYYY-MM-01
+// The board as a comma-separated file, for the month the board is showing. The
+// month is optional under the same rule url_pocket_board states: the current
+// one is resolved by the server and only a month the reader stepped back to is
+// sent, spelled as the first of that month.
+export const url_pocket_export: string = BASE_URL_APP + 'pocket/export';

@@ -114,6 +114,17 @@
     First consumer: the openable column of the expense Pareto. */
  --color-surface-hover-on-dark: rgba(232, 228, 218, 0.08);
  --color-surface-active-on-dark: rgba(232, 228, 218, 0.16);
+ /* THE CLOSED-ACCOUNT REGISTRY'S TOOLBAR CONTROLS, named 2026-09-19 when the
+    export trigger joined that row. Its search, selects and direction button are
+    a translucent well sunk into a translucent slate panel, which no surface
+    token composites to; the values are the ones closedAccounts.css already
+    draws them with (closedAccounts.css:110-192) and are named here so the
+    trigger takes the same ones instead of a fifth copy of the literals. */
+ --color-surface-control-registry: rgba(15, 23, 42, 0.6);
+ --color-surface-control-registry-hover: rgba(30, 41, 59, 0.8);
+ --color-border-control-registry: rgba(255, 255, 255, 0.1);
+ --color-border-control-registry-hover: rgba(255, 255, 255, 0.25);
+ --color-content-control-registry: #cbd5e1;
  /* A progress bar on the cream panel: its track, and the one ink its fill takes
     (P5-6, no categorical colour). The fill carries 4.24:1 on the track and 5.35:1
     on the panel; the track is ground and carries no meaning of its own. */
@@ -473,6 +484,10 @@
  --radius-lg: 0.875rem;
  --radius-xl: 1rem;
  --radius-full: 9999px;
+ /* The corner the registry toolbar's fields and buttons take, off the scale
+    above at 10px: named rather than rounded to --radius-sm or --radius-md so a
+    control added to that row keeps the corner its neighbours already have. */
+ --radius-control-registry: 0.625rem;
 
  /* BORDERS
     FinTrack separates by border rather than by shadow, because most of its
@@ -525,6 +540,10 @@
     32px clears the 24px WCAG AA floor (SC 2.5.8) and gives up the 44px of the
     AAA one (SC 2.5.5), which is the trade a one-row bar costs at 360px. */
  --size-control-sm: 2rem;
+ /* The registry toolbar's own line: 42px, taller than the bar controls above
+    because that toolbar is a panel of stacked fields rather than a single row,
+    and a control joining it has to measure the same as the ones beside it. */
+ --size-control-registry: 2.625rem;
 
  /* MOTION
     Enumerate the properties of a transition; `all` animates ones that were

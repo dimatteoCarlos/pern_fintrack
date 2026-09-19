@@ -4,6 +4,8 @@ import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.ts
 import { usePocketBoardStore } from '../../stores/usePocketBoardStore.ts';
 import PocketBigBoxResult from './components/PocketBigBoxResult.tsx';
 import MonthPicker from '../../general_components/monthPicker/MonthPicker.tsx';
+import ExportMenu from '../../general_components/exportMenu/ExportMenu.tsx';
+import { downloadPocketExport } from '../../api/exportApi.ts';
 
 import './styles/pocket-styles.css';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
@@ -96,15 +98,33 @@ function PocketLayout() {
           shared selector's, behind its opt-in prop, so the bounds are held
           once: a local wrapper would carry a second copy of them and the
           forward arrow would eventually step past the current month. */}
-      <MonthPicker
-       month={referenceMonth}
-       currentMonth={currentMonth}
-       minMonth={earliestPlanMonth}
-       surface='dark'
-       withSteppers
-       isLoading={isLoading}
-       onSelect={selectMonth}
-      />
+      {/* One row, and the row is what is floated out: the position the
+          stepper alone used to carry moved to this wrapper when the export
+          trigger joined it, so the header's box still does not grow. The
+          same move OverviewLayout made for .statementBar. */}
+      <div className='headerActionBar'>
+       <MonthPicker
+        month={referenceMonth}
+        currentMonth={currentMonth}
+        minMonth={earliestPlanMonth}
+        surface='dark'
+        withSteppers
+        isLoading={isLoading}
+        onSelect={selectMonth}
+       />
+
+       {/* Only a month the reader stepped back to travels, spelled as the
+           first of that month by the api client. */}
+       <ExportMenu
+        subject='the pocket board'
+        disabled={isLoading}
+        onExport={(format) =>
+         downloadPocketExport(
+          monthParam ? { format, month: monthParam } : { format },
+         )
+        }
+       />
+      </div>
      </div>
     </div>
 

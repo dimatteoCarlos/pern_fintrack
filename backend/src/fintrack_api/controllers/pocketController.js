@@ -14,18 +14,31 @@
 
 import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+import { getUsername } from '../../utils/authUtils/getUsername.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { moduleExportFileName } from '../../export_api/core/exportFileName.js';
 import { pocketBoardService } from '../services/pocket_services/services/pocketBoardService.js';
 import { pocketDetailService } from '../services/pocket_services/services/pocketDetailService.js';
 import { pocketWriteService } from '../services/pocket_services/services/pocketWriteService.js';
 import { pocketAllocationService } from '../services/pocket_services/services/pocketAllocationService.js';
-import { getCalendarToday } from '../services/pocket_services/db/pocketRepository.js';
+import {
+ getCalendarToday,
+ getPocketHistoryForUser,
+} from '../services/pocket_services/db/pocketRepository.js';
+import {
+ convertPocketBoardToCSV,
+ buildPocketBoardSheets,
+ CSV_CONTENT_TYPE,
+ XLSX_CONTENT_TYPE,
+} from '../../utils/fintrackUtils/exportUtils.js';
+import { writeXlsxWorkbook } from '../../export_api/core/writers/writeXlsx.js';
 import {
  pocketParamsSchema,
  createPocketBodySchema,
  updatePocketBodySchema,
  allocationBodySchema,
  boardQuerySchema,
+ pocketExportQuerySchema,
 } from '../../validation/zod/pocketValidators.js';
 
 /**
@@ -71,6 +84,34 @@ const respondWithServiceError = (res, next, error) => {
 };
 
 /**
+ * Resolve the month the caller asked for on the owner's calendar, or answer 422.
+ *
+ * Shared by the board and its CSV export: the ceiling is a property of the
+ * request and not of the response format, and two copies of "later than the
+ * current month" would be two places to fix it.
+ *
+ * Returns null after writing the 422 — the same shape as requireUserId, so both
+ * guards read alike at the call site.
+ *
+ * @returns {Promise<string|null>} 'YYYY-MM-01', or null when a 422 was sent
+ */
+const resolveMonthOr422 = async (res, timeZone, month) => {
+ const today = await getCalendarToday(pool, timeZone);
+ const currentMonth = `${today.slice(0, 7)}-01`;
+ const monthStart = month ?? currentMonth;
+
+ if (monthStart > currentMonth) {
+  res.status(422).json({
+   status: 422,
+   message: `month ${monthStart.slice(0, 7)} is later than the current month ${currentMonth.slice(0, 7)}.`,
+  });
+  return null;
+ }
+
+ return monthStart;
+};
+
+/**
  * GET /api/fintrack/pocket/board?month=YYYY-MM
  *
  * The month is optional and its absence means the current one. The current
@@ -96,16 +137,8 @@ export async function getPocketBoard(req, res, next) {
   }
 
   const timeZone = await getUserTimeZone(pool, userId);
-  const today = await getCalendarToday(pool, timeZone);
-  const currentMonth = `${today.slice(0, 7)}-01`;
-  const monthStart = query.data.month ?? currentMonth;
-
-  if (monthStart > currentMonth) {
-   return res.status(422).json({
-    status: 422,
-    message: `month ${monthStart.slice(0, 7)} is later than the current month ${currentMonth.slice(0, 7)}.`,
-   });
-  }
+  const monthStart = await resolveMonthOr422(res, timeZone, query.data.month);
+  if (!monthStart) return;
 
   const board = await pocketBoardService.getBoard(
    pool,
@@ -125,6 +158,92 @@ export async function getPocketBoard(req, res, next) {
   });
  } catch (error) {
   return next(error);
+ }
+}
+
+/**
+ * GET /api/fintrack/pocket/export?month=YYYY-MM&format=csv|xlsx
+ *
+ * The same board the screen reads, in either writer and with the same two
+ * blocks: the board, then every commitment and release behind it. One month and
+ * one ceiling, resolved by resolveMonthOr422 above, so the export cannot answer
+ * for a month the board itself refuses.
+ *
+ * The movement record of this module is the allocation ledger and not the bank
+ * transactions of the funding accounts: a commitment moves no money, so a
+ * transaction cannot explain a board row it never touched.
+ */
+export async function exportPocketBoard(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const query = pocketExportQuerySchema.safeParse(req.query);
+
+  if (!query.success) {
+   return respondWithZodIssues(res, query.error);
+  }
+
+  // The owner's name rides along for the filename only. Read in the same round
+  // trip as the zone, the shape exportController.js:44-47 already uses.
+  const [timeZone, username] = await Promise.all([
+   getUserTimeZone(pool, userId),
+   getUsername(pool, userId),
+  ]);
+
+  const monthStart = await resolveMonthOr422(res, timeZone, query.data.month);
+  if (!monthStart) return;
+
+  const board = await pocketBoardService.getBoard(
+   pool,
+   userId,
+   timeZone,
+   monthStart,
+  );
+
+  // The month the data is about, not the day it was downloaded: two exports of
+  // the same month taken on different days are the same file and are named alike.
+  const nameFor = (format) =>
+   moduleExportFileName({
+    dataset: 'pocket',
+    period: monthStart.slice(0, 7),
+    format,
+    username,
+   });
+
+  // Every allocation and release of every pocket up to this month's close. The
+  // read has a ceiling and no floor (pocketRepository.js:286), so the ledger
+  // already reaches further back than the thirteen months budget and debt read,
+  // and adding a floor would break its equality with the board's Allocated.
+  const allocations = await getPocketHistoryForUser(
+   pool,
+   userId,
+   monthStart,
+   timeZone,
+  );
+
+  // Either writer answers 200 with headers and no rows, never 400. An owner who
+  // holds no pocket asked a valid question and the answer is "none" — the same
+  // reason getPocketBoard answers an empty board with 200.
+  if (query.data.format === 'xlsx') {
+   const workbook = await writeXlsxWorkbook(
+    buildPocketBoardSheets(board.pockets, allocations),
+   );
+
+   res.setHeader('Content-Type', XLSX_CONTENT_TYPE);
+   res.setHeader('Content-Disposition', `attachment; filename="${nameFor('xlsx')}"`);
+   return res.status(200).send(workbook);
+  }
+
+  res.setHeader('Content-Type', CSV_CONTENT_TYPE);
+  res.setHeader('Content-Disposition', `attachment; filename="${nameFor('csv')}"`);
+  return res.status(200).send(
+   convertPocketBoardToCSV(board.pockets, allocations),
+  );
+ } catch (error) {
+  // The row cap raises a 422 carrying its status; without this it would reach
+  // the error middleware as an unexpected failure and answer 500.
+  return respondWithServiceError(res, next, error);
  }
 }
 

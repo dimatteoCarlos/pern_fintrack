@@ -1,0 +1,209 @@
+/* frontend/src/fintrack/general_components/exportMenu/styles/exportMenu-styles.css
+   The control that saves a module list as a file, in the format the reader picks.
+
+   Two surfaces, and the modifiers name the surface the control SITS ON rather
+   than the colour it paints: 'seam' is the line between the white header and the
+   dark board, where the budget and pocket month controls already live, and
+   'dark' is the app ground the debts summary card sits on. The seam is why that
+   variant carries a fill at all: a transparent pill straddling white and near
+   black reads on one half and disappears on the other.
+
+   Its shape follows the overview's own header download control
+   (periodStatementButton-styles.css), which solved the same seam on the same
+   kind of row. What it does not copy is that file's two-label breakpoint: the
+   word here is "Export" at every width, so there is nothing to shorten.
+
+   Imported by ExportMenu.tsx. */
+
+/* The anchor the menu is positioned against. inline-flex so the row holding it
+   measures the trigger and not a full-width block. */
+.exportMenu {
+ position: relative;
+ display: inline-flex;
+}
+
+/* Relative for the tappable area below, which is unpainted and has to be
+   measured against this box. */
+.exportMenu__trigger {
+ position: relative;
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-1);
+ min-height: var(--size-control-sm);
+ padding: 0 var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-full);
+ font-family: inherit;
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-bold);
+ line-height: var(--line-height-heading);
+ white-space: nowrap;
+ cursor: pointer;
+ transition: background-color var(--motion-fast),
+  border-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* The 44px touch floor is repealed for these rows, so the pill takes the height
+   of the line it sits in (budgetListControls.css:129). The pointer gets the
+   floor back here instead: unpainted, hit-testable, and inset only on the block
+   axis so two controls side by side on the same row do not overlap. */
+.exportMenu__trigger::after {
+ content: '';
+ position: absolute;
+ inset-block: calc((var(--size-touch-target) - var(--size-control-sm)) / -2);
+ inset-inline: 0;
+}
+
+.exportMenu__glyph {
+ flex-shrink: 0;
+ width: var(--space-4);
+ height: var(--space-4);
+}
+
+/* index.css sets a font-size on the universal selector, so this span does not
+   inherit the button's and has to restate both steps. */
+.exportMenu__label {
+ font-size: inherit;
+ font-weight: inherit;
+}
+
+/* Turns over while the menu is open, so the trigger states the menu's state and
+   not only that one exists. */
+.exportMenu__chevron {
+ flex-shrink: 0;
+ width: var(--space-3);
+ height: var(--space-3);
+ transition: transform var(--motion-fast);
+}
+
+.exportMenu__trigger.is-active .exportMenu__chevron {
+ transform: rotate(180deg);
+}
+
+.exportMenu__trigger:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The menu floats over the page ground below the seam, so it takes the popover
+   triad the month picker's calendar and the overview's statement menu take: app
+   surface, subtle edge, overlay shadow.
+
+   --space-2 and not --space-1 from the trigger: the tappable area above reaches
+   past the pill's bottom edge, and the menu has to start after it rather than
+   under it. */
+.exportMenu__list {
+ position: absolute;
+ top: calc(100% + var(--space-2));
+ right: 0;
+ z-index: var(--z-dropdown);
+ min-width: calc(var(--space-16) * 3);
+ margin: 0;
+ padding: var(--space-1);
+ list-style: none;
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-app);
+ box-shadow: var(--shadow-overlay);
+}
+
+.exportMenu__option {
+ display: block;
+ width: 100%;
+ padding: var(--space-2) var(--space-3);
+ border: none;
+ border-radius: var(--radius-sm);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-family: inherit;
+ font-size: var(--font-size-xs);
+ text-align: left;
+ white-space: nowrap;
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.exportMenu__option:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.exportMenu__option:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(var(--border-width-thick) * -1);
+}
+
+.exportMenu__option:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+.exportMenu__option:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* Straddling the white header and the dark board: cream with dark ink, the same
+   pill the month control beside it paints, so the two read as one row rather
+   than as two controls that happen to have met there. */
+.exportMenu--seam .exportMenu__trigger {
+ background-color: var(--color-accent);
+ color: var(--color-content-primary);
+}
+
+/* Inverts the way the month badge beside it does on the same row. */
+.exportMenu--seam .exportMenu__trigger:hover,
+.exportMenu--seam .exportMenu__trigger.is-active {
+ background-color: var(--color-content-primary);
+ border-color: var(--color-content-primary);
+ color: var(--color-accent);
+}
+
+/* A dark ring alone vanishes on the pill's lower half, which sits on the dark
+   board: the white halo in the offset is what carries it across both bands. */
+.exportMenu--seam .exportMenu__trigger:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
+ box-shadow: 0 0 0 calc(var(--border-width-thick) * 2)
+  var(--color-border-inverse);
+}
+
+.exportMenu--seam .exportMenu__trigger:active {
+ background-color: var(--color-content-secondary);
+ border-color: var(--color-content-secondary);
+ color: var(--color-accent);
+}
+
+/* On the dark app ground, beside a heading on a card, where a filled pill would
+   outweigh the heading next to it: a hairline and the card's own ink instead. */
+.exportMenu--dark .exportMenu__trigger {
+ background-color: transparent;
+ color: var(--color-content-on-dark-muted);
+}
+
+.exportMenu--dark .exportMenu__trigger:hover,
+.exportMenu--dark .exportMenu__trigger.is-active {
+ background-color: var(--color-accent);
+ border-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+/* --color-border-inverse is the ring meant for the app surface. */
+.exportMenu--dark .exportMenu__trigger:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.exportMenu--dark .exportMenu__trigger:active {
+ background-color: var(--color-content-on-dark-subtle);
+ border-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .exportMenu__trigger,
+ .exportMenu__chevron,
+ .exportMenu__option {
+  transition: none;
+ }
+}

@@ -4,6 +4,8 @@ import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.ts
 import { useBudgetStatusStore } from '../../stores/useBudgetStatusStore.ts';
 import BudgetBigBoxResult from './components/BudgetBigBoxResult.tsx';
 import MonthPicker from '../../general_components/monthPicker/MonthPicker.tsx';
+import ExportMenu from '../../general_components/exportMenu/ExportMenu.tsx';
+import { downloadBudgetExport } from '../../api/exportApi.ts';
 import './styles/budget-styles.css';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 import { Outlet, useSearchParams } from 'react-router-dom';
@@ -105,11 +107,32 @@ function BudgetLayout() {
                 The label is the month the server resolved, never the one the
                 client asked for — the two differ on the first request, which
                 asks for none. */}
-            <MonthPicker
-              month={referenceMonth}
-              currentMonth={currentMonth}
-              onSelect={selectMonth}
-            />
+            {/* One row, and the row is what is floated out: the position the
+                badge alone used to carry moved to this wrapper when the export
+                trigger joined it, so the header's box still does not grow.
+                The same move OverviewLayout made for .statementBar. */}
+            <div className='headerActionBar'>
+              <MonthPicker
+                month={referenceMonth}
+                currentMonth={currentMonth}
+                onSelect={selectMonth}
+              />
+
+              {/* The month on screen travels as both bounds, so the file is the
+                  month being read. Absent, nothing is sent and the server
+                  resolves the current month, the rule the module follows. */}
+              <ExportMenu
+                subject='the budget'
+                disabled={isLoading}
+                onExport={(format) =>
+                  downloadBudgetExport(
+                    monthParam
+                      ? { format, from: monthParam, to: monthParam }
+                      : { format },
+                  )
+                }
+              />
+            </div>
           </div>
         </div>
 

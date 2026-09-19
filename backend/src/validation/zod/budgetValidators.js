@@ -9,6 +9,12 @@ import { z } from 'zod';
 // a schema that accepted a code the converter cannot resolve would turn a
 // typo into a 500 at write time.
 import { SUPPORTED_CURRENCIES } from '../../fintrack_api/services/fx_services/core/fxConfig.js';
+// The one list of writers the three export endpoints share, so none of them can
+// offer a format the converters cannot produce.
+import {
+ EXPORT_FORMATS,
+ DEFAULT_EXPORT_FORMAT,
+} from '../../utils/fintrackUtils/exportUtils.js';
 
 // Every schema in this file is strict.
 //
@@ -177,12 +183,16 @@ export const seriesQuerySchema = z.object({
 
 /**
  * GET /budget/export
- * Query: accountId, from, to — all optional.
+ * Query: accountId, from, to, format — all optional.
  *
  * accountId omitted exports every budget account owned; from/to omitted collapse
  * the range to the current month, which is what the endpoint did before it
  * accepted a range. A default of twelve months here would change the meaning of
  * a request that already works.
+ *
+ * format defaults to csv, so a request that named none before this parameter
+ * existed keeps getting the file it already got. The schema is strict, which is
+ * why it had to be declared: the key was answering 400 while the screen sent it.
  */
 export const exportQuerySchema = z.object({
  accountId: z.coerce.number().positive({
@@ -190,4 +200,7 @@ export const exportQuerySchema = z.object({
  }).optional(),
  from: monthBound.optional(),
  to: monthBound.optional(),
+ format: z.enum(EXPORT_FORMATS, {
+  message: `format must be one of: ${EXPORT_FORMATS.join(', ')}`,
+ }).default(DEFAULT_EXPORT_FORMAT),
 }).strict();

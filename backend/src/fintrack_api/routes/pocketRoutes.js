@@ -8,6 +8,7 @@
 import express from 'express';
 import {
  getPocketBoard,
+ exportPocketBoard,
  getPocketDetail,
  createPocket,
  editPocket,
@@ -25,6 +26,12 @@ const router = express.Router();
 // Declared before /:pocketId, which would otherwise match 'board' and send the
 // literal to a parameter that expects an id.
 router.get('/board', getPocketBoard);
+
+// GET /api/fintrack/pocket/export?month=YYYY-MM&format=csv|xlsx
+// One row per pocket as text/csv, or a workbook whose second sheet is every
+// commitment and release behind those totals. Declared before /:pocketId for the
+// same reason /board is: the literal 'export' would be read as a pocket id.
+router.get('/export', exportPocketBoard);
 
 // POST /api/fintrack/pocket
 // { name, note?, targetAmount, currency, desiredDate }
