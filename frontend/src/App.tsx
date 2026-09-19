@@ -36,6 +36,12 @@ import DebtsLayout from './fintrack/pages/debts/DebtsLayout';
 
 // These components are loaded only when the route is accessed
 const Budget = lazy(() => import('./fintrack/pages/budget/Budget'));
+
+// Lazy for the same reason Budget is: a chart nobody has asked for yet should
+// not weigh on the first paint of the module that offers it.
+const BudgetVariance = lazy(
+  () => import('./fintrack/pages/budget/BudgetVariance'),
+);
 const Pocket = lazy(() => import('./fintrack/pages/pocket/Pocket'));
 const Debtors = lazy(() => import('./fintrack/pages/debts/Debtors'));
 
@@ -233,6 +239,18 @@ function App() {
                   element: (
                     <LazyRoute>
                       <Budget />
+                    </LazyRoute>
+                  ),
+                },
+                // A sibling of the list and not a screen of its own: the board
+                // above - the month, the export and the month's figures - is
+                // rendered by BudgetLayout, so the variance is read against the
+                // totals it belongs to rather than beside a second copy of them.
+                {
+                  path: 'variance',
+                  element: (
+                    <LazyRoute>
+                      <BudgetVariance />
                     </LazyRoute>
                   ),
                 },

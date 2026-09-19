@@ -18,7 +18,7 @@
 // useBudgetListFilter, and the header keeps the server's figures: filtering
 // changes what is listed, never what is reported.
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 // One file each, under `assets/budgetListControlsSvg/`, entering through the
 // '?react' suffix: a bare .svg import is typed `string` and cannot take a
@@ -37,6 +37,7 @@ import type {
  BudgetSortDirection,
  BudgetSortKey,
 } from '../hooks/useBudgetListFilter';
+import { useClickOutside } from '../../../editionAndDeletion/hooks/useClickOutside';
 import '../styles/budgetListControls.css';
 
 // The wording belongs to the caller, not here: level 1 has no subcategory to
@@ -56,6 +57,17 @@ export type BudgetListState = 'ready' | 'loading' | 'unavailable';
 // unlike the sort keys: both levels filter on the same served isOverBudget, so
 // there is nothing a level could reword.
 const OVER_FILTER_LABEL = 'Over budget';
+
+// What the trigger is once there is more than one thing behind it. The word is
+// about the group, not about either entry: a trigger named after one of its own
+// options reads as that option and the other one is never looked for.
+const MENU_LABEL = 'Budget attention';
+
+// The reader-facing name of the variance screen. `variance` is the term the
+// practice uses for the difference between what was planned and what was spent,
+// per line - not the statistical variance, which is a different quantity that
+// happens to share the word.
+const VARIANCE_LABEL = 'Budget variance';
 
 type BudgetListControlsProps = {
  search: string;
@@ -77,6 +89,10 @@ type BudgetListControlsProps = {
  total: number;
  isFiltered: boolean;
  state?: BudgetListState;
+ // Absent at level 2, and that absence is the switch: with nothing else to
+ // offer, the trigger stays the one-tap toggle it is today rather than becoming
+ // a menu holding a single entry.
+ onOpenVariance?: () => void;
 };
 
 function BudgetListControls({
@@ -95,9 +111,34 @@ function BudgetListControls({
  total,
  isFiltered,
  state = 'ready',
+ onOpenVariance,
 }: BudgetListControlsProps) {
  const isReady = state === 'ready';
  const isLoading = state === 'loading';
+
+ // Declared above the early return below, not beside the markup that uses them:
+ // this component returns null for an unavailable list, and a hook called after
+ // that point would run on some renders and not others.
+ const [isMenuOpen, setIsMenuOpen] = useState(false);
+ const menuRef = useRef<HTMLDivElement>(null);
+ const hasMenu = onOpenVariance !== undefined;
+
+ useClickOutside(menuRef, () => setIsMenuOpen(false), isMenuOpen);
+
+ // Escape closes it, the same as the export menu and the two overview export
+ // controls. A menu that only closes by clicking elsewhere strands a reader who
+ // opened it from the keyboard.
+ useEffect(() => {
+  if (!isMenuOpen) return;
+
+  const onKeyDown = (event: KeyboardEvent) => {
+   if (event.key === 'Escape') setIsMenuOpen(false);
+  };
+
+  document.addEventListener('keydown', onKeyDown);
+
+  return () => document.removeEventListener('keydown', onKeyDown);
+ }, [isMenuOpen]);
 
  // Nothing to filter: the bar is off rather than disabled, because a disabled
  // control still claims its space and still says the tool exists.
@@ -116,119 +157,193 @@ function BudgetListControls({
 
  return (
   <div className='budgetListControls'>
-   <div className='budgetListControls__fields'>
-    <div className='budgetListControls__query'>
-     <SearchSvg className='budgetListControls__icon' />
+   {/* The anchor for the menu, and it has to be a wrapper rather than the strip
+       itself: .budgetListControls__fields carries overflow: hidden so the
+       filter segment's fill cannot square off the rounded corner, and anything
+       absolutely positioned inside it would be clipped by that. */}
+   <div className='budgetListControls__bar' ref={menuRef}>
+    <div className='budgetListControls__fields'>
+     <div className='budgetListControls__query'>
+      <SearchSvg className='budgetListControls__icon' />
 
-     <input
-      type='search'
-      className='budgetListControls__search'
-      value={search}
-      onChange={(event) => onSearchChange(event.target.value)}
-      // One word on screen, the caller's whole phrase to a screen reader. They
-      // were the same string until the bar became one row and the phrase
-      // stopped fitting: a placeholder cut mid-word reads as broken, not as
-      // compact. What the field searches is on the title right above it.
-      placeholder='Search'
-      aria-label={searchLabel}
-      autoComplete='off'
-      maxLength={searchMaxLength}
-      disabled={isLoading}
-     />
+      <input
+       type='search'
+       className='budgetListControls__search'
+       value={search}
+       onChange={(event) => onSearchChange(event.target.value)}
+       // One word on screen, the caller's whole phrase to a screen reader. They
+       // were the same string until the bar became one row and the phrase
+       // stopped fitting: a placeholder cut mid-word reads as broken, not as
+       // compact. What the field searches is on the title right above it.
+       placeholder='Search'
+       aria-label={searchLabel}
+       autoComplete='off'
+       maxLength={searchMaxLength}
+       disabled={isLoading}
+      />
 
-     {/* Inside the field and present on every term, not only on the empty
-         result: before this the only way out was a button that appeared when
-         the list had already gone blank, so a term that matched rows could
-         not be undone. */}
-     {search && !isLoading && (
+      {/* Inside the field and present on every term, not only on the empty
+          result: before this the only way out was a button that appeared when
+          the list had already gone blank, so a term that matched rows could
+          not be undone. */}
+      {search && !isLoading && (
+       <button
+        type='button'
+        className='budgetListControls__reset'
+        onClick={() => onSearchChange('')}
+        aria-label='Clear search'
+       >
+        <ClearSvg />
+       </button>
+      )}
+     </div>
+
+     <div className='budgetListControls__sort'>
+      <div className='budgetListControls__selectBox'>
+       {/* Bars of falling length, inside the control rather than a word beside
+           it: the word cost the search field the width its placeholder needed.
+           The select keeps aria-label, which is now the only name it has. */}
+       <SortSvg className='budgetListControls__icon' />
+
+       <select
+        className='budgetListControls__select'
+        value={sort}
+        onChange={handleSortChange}
+        aria-label='Sort by'
+        disabled={isLoading}
+       >
+        {sortOptions.map((option) => (
+         <option key={option.value} value={option.value}>
+          {option.label}
+         </option>
+        ))}
+       </select>
+
+       {/* Drawn rather than typed: a ▾ character comes from whatever font the
+           OS falls back to and shares no stroke weight with the icons beside
+           it. Inside this box and not the group, so it stays over the select
+           when the direction button is added after it. */}
+       <ChevronDownSvg className='budgetListControls__icon budgetListControls__icon--trailing' />
+      </div>
+
+      {/* One control, not two arrows. The select already carries a chevron
+          meaning "this opens"; a second and third pointing up and down would be
+          three similar glyphs saying two different things. The arrow here is the
+          state, so the direction reads without pressing anything. */}
       <button
        type='button'
-       className='budgetListControls__reset'
-       onClick={() => onSearchChange('')}
-       aria-label='Clear search'
+       className={`budgetListControls__direction${
+        direction === 'asc' ? ' is-ascending' : ''
+       }`}
+       onClick={() => onDirectionChange(direction === 'asc' ? 'desc' : 'asc')}
+       aria-label={
+        direction === 'asc'
+         ? 'Sorted ascending, switch to descending'
+         : 'Sorted descending, switch to ascending'
+       }
+       disabled={isLoading}
       >
-       <ClearSvg />
+       <SortDirectionSvg />
+      </button>
+     </div>
+
+     {/* THE SAME SEGMENT, TWO CONTROLS, and which one it is depends on whether
+         the caller has a second thing to offer.
+
+         A warning sign rather than a funnel, in both: what this leads to is
+         "show me the problems", and the red it lights in is the one the row's
+         square already uses for the same fact. The word it cannot show lives in
+         aria-label and in title.
+
+         Where there is only the filter it stays a toggle, and aria-pressed is
+         what a screen reader needs from one. Where there is also the variance
+         screen it becomes a menu trigger, and the pair it then announces is
+         aria-haspopup with aria-expanded: a trigger that also claimed to be
+         pressed would be describing two different states with one attribute.
+
+         The lit state survives the change. is-active still tracks the filter and
+         not the menu, so a reader who filtered the list sees that the list is
+         filtered without opening anything.
+
+         Both stay OUTSIDE the <p role='status'> below — a control inside a live
+         region is announced again on every count change. */}
+     {hasMenu ? (
+      <button
+       type='button'
+       className={`budgetListControls__filter${
+        quickFilter === 'over' ? ' is-active' : ''
+       }`}
+       onClick={() => setIsMenuOpen((open) => !open)}
+       aria-haspopup='menu'
+       aria-expanded={isMenuOpen}
+       aria-label={MENU_LABEL}
+       title={MENU_LABEL}
+       disabled={isLoading}
+      >
+       <OverBudgetSvg />
+      </button>
+     ) : (
+      <button
+       type='button'
+       className={`budgetListControls__filter${
+        quickFilter === 'over' ? ' is-active' : ''
+       }`}
+       onClick={() =>
+        onQuickFilterChange(quickFilter === 'over' ? 'all' : 'over')
+       }
+       aria-pressed={quickFilter === 'over'}
+       aria-label={OVER_FILTER_LABEL}
+       title={OVER_FILTER_LABEL}
+       disabled={isLoading}
+      >
+       <OverBudgetSvg />
       </button>
      )}
     </div>
 
-    <div className='budgetListControls__sort'>
-     <div className='budgetListControls__selectBox'>
-      {/* Bars of falling length, inside the control rather than a word beside
-          it: the word cost the search field the width its placeholder needed.
-          The select keeps aria-label, which is now the only name it has. */}
-      <SortSvg className='budgetListControls__icon' />
+    {/* Two entries, and each is a different kind of thing: the first changes
+        what the list behind it shows, the second leaves for another screen.
+        menuitemcheckbox says so for the first - a screen reader announces its
+        checked state - while the second is a plain menuitem.
 
-      <select
-       className='budgetListControls__select'
-       value={sort}
-       onChange={handleSortChange}
-       aria-label='Sort by'
-       disabled={isLoading}
-      >
-       {sortOptions.map((option) => (
-        <option key={option.value} value={option.value}>
-         {option.label}
-        </option>
-       ))}
-      </select>
-
-      {/* Drawn rather than typed: a ▾ character comes from whatever font the
-          OS falls back to and shares no stroke weight with the icons beside
-          it. Inside this box and not the group, so it stays over the select
-          when the direction button is added after it. */}
-      <ChevronDownSvg className='budgetListControls__icon budgetListControls__icon--trailing' />
-     </div>
-
-     {/* One control, not two arrows. The select already carries a chevron
-         meaning "this opens"; a second and third pointing up and down would be
-         three similar glyphs saying two different things. The arrow here is the
-         state, so the direction reads without pressing anything. */}
-     <button
-      type='button'
-      className={`budgetListControls__direction${
-       direction === 'asc' ? ' is-ascending' : ''
-      }`}
-      onClick={() => onDirectionChange(direction === 'asc' ? 'desc' : 'asc')}
-      aria-label={
-       direction === 'asc'
-        ? 'Sorted ascending, switch to descending'
-        : 'Sorted descending, switch to ascending'
-      }
-      disabled={isLoading}
+        Both close the menu. Leaving it open after a filter would cover the
+        rows the filter just changed. */}
+    {hasMenu && isMenuOpen && (
+     <ul
+      className='budgetListControls__menu'
+      role='menu'
+      aria-label={MENU_LABEL}
      >
-      <SortDirectionSvg />
-     </button>
-    </div>
+      <li role='none'>
+       <button
+        type='button'
+        role='menuitemcheckbox'
+        aria-checked={quickFilter === 'over'}
+        className='budgetListControls__menuItem'
+        onClick={() => {
+         onQuickFilterChange(quickFilter === 'over' ? 'all' : 'over');
+         setIsMenuOpen(false);
+        }}
+       >
+        {OVER_FILTER_LABEL}
+       </button>
+      </li>
 
-    {/* A switch, not a choice between two things. `All` and `Over budget` are a
-        binary in which one value is the absence of a filter, and a pair of
-        chips for that cost the bar a second row of its own.
-
-        A warning sign rather than a funnel: what this turns on is "show me the
-        problems", and the red it lights in is the one the row's square already
-        uses for the same fact. The word it cannot show lives in aria-label and
-        in title.
-
-        aria-pressed and not a radio group: the pressed state is exactly what a
-        screen reader needs from a toggle, and it needs no arrow-key handling to
-        be reachable. It stays OUTSIDE the <p role='status'> below — a control
-        inside a live region is announced again on every count change. */}
-    <button
-     type='button'
-     className={`budgetListControls__filter${
-      quickFilter === 'over' ? ' is-active' : ''
-     }`}
-     onClick={() =>
-      onQuickFilterChange(quickFilter === 'over' ? 'all' : 'over')
-     }
-     aria-pressed={quickFilter === 'over'}
-     aria-label={OVER_FILTER_LABEL}
-     title={OVER_FILTER_LABEL}
-     disabled={isLoading}
-    >
-     <OverBudgetSvg />
-    </button>
+      <li role='none'>
+       <button
+        type='button'
+        role='menuitem'
+        className='budgetListControls__menuItem'
+        onClick={() => {
+         setIsMenuOpen(false);
+         onOpenVariance?.();
+        }}
+       >
+        {VARIANCE_LABEL}
+       </button>
+      </li>
+     </ul>
+    )}
    </div>
 
    {/* Its own element and not a reserved row: it collapses to nothing while

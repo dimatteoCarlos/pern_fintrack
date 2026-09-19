@@ -19,7 +19,7 @@ import {
 } from '../../../helpers/budgetStatus.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 import { BudgetCategoryStatus } from '../../../types/budgetTypes.ts';
@@ -110,6 +110,7 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
   // reporting a different month from the row that was clicked.
   const [searchParams, setSearchParams] = useSearchParams();
   const month = searchParams.get('month');
+  const navigate = useNavigate();
 
   // The filter lives in the URL for the same reason the month does: entering a
   // category unmounts this list, and a term held in state would not survive the
@@ -191,6 +192,10 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
         total={total}
         isFiltered={isFiltered}
         state={listState}
+        // The month on screen travels with it, the same as every category link
+        // below: the variance screen reads the month it is handed, never the
+        // one the calendar happens to be on.
+        onOpenVariance={() => navigate(withMonthParam('variance', month))}
       />
 
       {/* A class of its own for the scroll. list__main__container is rendered by

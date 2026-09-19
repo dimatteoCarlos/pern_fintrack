@@ -56,6 +56,72 @@
    inside a row whose only elastic part is the term. They also read as four
    objects that happen to share a line rather than as one instrument. The
    segments are told apart by a hairline each, below. */
+/* The menu's anchor, and the reason it exists is one line below: the strip
+   clips what is drawn inside it. Nothing else changes - the wrapper is a plain
+   block, so the strip and the status row stack exactly as before. */
+.budgetListControls__bar {
+ position: relative;
+}
+
+/* Hung under the trigger's own end of the strip, not under the strip's middle:
+   the trigger is the last segment, so the menu opens beneath the control that
+   was pressed. It is measured by its longest entry rather than given a width,
+   with a floor so a two-word entry does not draw a menu narrower than a tap. */
+.budgetListControls__menu {
+ position: absolute;
+ inset-block-start: calc(100% + var(--space-1));
+ inset-inline-end: 0;
+ z-index: var(--z-dropdown);
+ min-inline-size: 12rem;
+ margin: 0;
+ padding: var(--space-1);
+ list-style: none;
+ background-color: var(--color-surface-raised);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ /* --radius-xl and not --radius-lg: the deletion chunk redeclares --radius-lg
+    on the global :root, so its value depends on whether that chunk has loaded.
+    This is the radius the strip above it already carries. */
+ border-radius: var(--radius-xl);
+ box-shadow: var(--shadow-overlay);
+}
+
+/* Ranged left and full width: a menu entry is a target, and a target the width
+   of its own text leaves dead space inside the row that looks pressable and is
+   not. */
+.budgetListControls__menuItem {
+ display: block;
+ inline-size: 100%;
+ padding: var(--space-2) var(--space-3);
+ border: none;
+ border-radius: var(--radius-md);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ text-align: start;
+ white-space: nowrap;
+ cursor: pointer;
+ transition: background-color var(--motion-fast);
+}
+
+.budgetListControls__menuItem:hover {
+ background-color: var(--color-surface-sunken);
+}
+
+.budgetListControls__menuItem:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
+}
+
+/* The check is drawn rather than reserved: the filter entry is the only one
+   that can carry it, and a column held open for a mark the other entry can
+   never have would indent that one for nothing. */
+.budgetListControls__menuItem[aria-checked='true']::before {
+ content: '✓';
+ margin-inline-end: var(--space-2);
+ color: var(--color-financial-negative);
+}
+
 .budgetListControls__fields {
  display: flex;
  flex-wrap: nowrap;

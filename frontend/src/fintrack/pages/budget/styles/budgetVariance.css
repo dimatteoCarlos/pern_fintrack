@@ -1,0 +1,182 @@
+/* frontend/src/fintrack/pages/budget/styles/budgetVariance.css
+   The variance screen: one bar per budgeted category, signed, radiating from a
+   central axis and sorted by magnitude.
+
+   It replaces the category list inside the board's frame rather than stacking
+   on it, so it inherits the same height arithmetic: the rows scroll and nothing
+   above them grows. Imported by BudgetVariance.tsx. */
+
+/* The same handoff the list gets, one step further: .budgetLayout is a flex
+   column that takes what the header and the navbar leave
+   (budget-styles.css:346-349), and without flex: 1 here that height would stop
+   at this element and the rows below would size to their own content. */
+.budgetVariance {
+ display: flex;
+ flex: 1;
+ flex-direction: column;
+ min-block-size: 0;
+ gap: var(--space-3);
+}
+
+.budgetVariance__head {
+ display: flex;
+ align-items: center;
+ gap: var(--space-3);
+}
+
+/* It names where it goes and not "Back": the reader may have arrived at this
+   screen from the menu without ever scrolling the list, so "back" describes a
+   history entry rather than a destination. */
+.budgetVariance__back {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-1);
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ text-decoration: none;
+ transition: color var(--motion-fast);
+}
+
+.budgetVariance__back:hover {
+ color: var(--color-content-on-dark);
+}
+
+.budgetVariance__backArrow {
+ font-size: var(--font-size-base);
+ line-height: 1;
+}
+
+.budgetVariance__title {
+ margin: 0;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+}
+
+.budgetVariance__caption,
+.budgetVariance__foot,
+.budgetVariance__notice {
+ margin: 0;
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-xs);
+ line-height: var(--line-height-body);
+}
+
+.budgetVariance__notice {
+ padding-block: var(--space-6);
+ text-align: center;
+}
+
+/* The scroll lives here for the same reason it lives on .categoryList: this is
+   the only part of the screen that can grow, and the frame above it must not
+   move when it does. The right padding is the one .categoryList also carries -
+   an overlay scrollbar reserves no width and would otherwise paint over the
+   figures ranged against this edge. */
+.budgetVariance__rows {
+ flex: 1;
+ min-block-size: 0;
+ overflow-y: auto;
+ margin: 0;
+ padding: 0;
+ padding-inline-end: var(--space-2);
+ list-style: none;
+ scrollbar-gutter: stable;
+}
+
+/* Three columns and the middle one is the elastic one: the name is read, the
+   figure is read, and the bar is the only part whose length carries meaning
+   rather than content. The name is capped so one long category cannot squeeze
+   the track that every row is compared across. */
+.budgetVariance__row {
+ display: grid;
+ grid-template-columns: minmax(0, 7rem) 1fr minmax(0, 8rem);
+ align-items: center;
+ gap: var(--space-2);
+ padding-block: var(--space-2);
+ border-block-end: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+.budgetVariance__row:last-child {
+ border-block-end: none;
+}
+
+.budgetVariance__name {
+ overflow: hidden;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+
+.budgetVariance__track {
+ position: relative;
+ display: block;
+ block-size: var(--space-3);
+}
+
+/* Drawn, not implied. Without a line at the centre the two halves read as one
+   bar of varying length and the direction is lost. */
+.budgetVariance__axis {
+ position: absolute;
+ inset-block: calc(var(--space-1) * -1);
+ inset-inline-start: 50%;
+ inline-size: var(--border-width-thin);
+ background-color: var(--color-border-subtle);
+}
+
+.budgetVariance__bar {
+ position: absolute;
+ inset-block: 0;
+ border-radius: var(--radius-sm);
+}
+
+/* Each half grows away from the axis, which is what makes the side mean the
+   direction: the favorable bar starts at the centre and runs right, the
+   unfavorable one ends at the centre and runs left. */
+.budgetVariance__bar--favorable {
+ inset-inline-start: 50%;
+ background-color: var(--color-financial-positive);
+}
+
+.budgetVariance__bar--unfavorable {
+ inset-inline-end: 50%;
+ background-color: var(--color-financial-negative);
+}
+
+.budgetVariance__amount {
+ display: flex;
+ align-items: baseline;
+ justify-content: flex-end;
+ gap: var(--space-1);
+ font-size: var(--font-size-sm);
+ font-variant-numeric: tabular-nums;
+}
+
+.budgetVariance__amount--favorable {
+ color: var(--color-amount-positive);
+}
+
+.budgetVariance__amount--unfavorable {
+ color: var(--color-amount-negative);
+}
+
+/* The word the colour cannot carry on its own. Colour alone is not a reading
+   for someone who does not separate these two hues. */
+.budgetVariance__direction {
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-xs);
+}
+
+/* The name column gives way first on a phone: it is the only one that can be
+   shortened without losing a comparison, and the track is what the screen
+   exists to show. */
+@media (max-width: 480px) {
+ .budgetVariance__row {
+  grid-template-columns: minmax(0, 5rem) 1fr minmax(0, 6.5rem);
+ }
+
+ .budgetVariance__name {
+  font-size: var(--font-size-xs);
+ }
+}
