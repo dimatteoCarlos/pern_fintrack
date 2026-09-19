@@ -28,7 +28,12 @@ if (sslRequired && !caCert) {
 
 const ssl_env = sslRequired ? { ca: caCert, rejectUnauthorized: true } : false;
 //------
-const max_env=parseInt(process.env.DB_POOL_MAX || '2', 10);
+// One connection per instance in production: the pooler runs in session mode and
+// pins one server connection per client, so the footprint is instances x max
+// against a ceiling of 15. A stopgap until the connection string moves to
+// transaction mode; DB_POOL_MAX still overrides it.
+const defaultPoolMax = process.env.NODE_ENV === 'production' ? '1' : '2';
+const max_env = parseInt(process.env.DB_POOL_MAX || defaultPoolMax, 10);
 
 const config = {
   development: {
