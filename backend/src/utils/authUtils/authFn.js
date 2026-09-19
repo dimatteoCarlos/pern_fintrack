@@ -129,7 +129,17 @@ export const createRefreshToken = (id) => {
   const expiresIn = `${REFRESH_TOKEN_DAYS}d`;
 
   return jwt.sign(
-    { userId: id, type: 'refresh_token', iat: Math.floor(Date.now() / 1000) },
+    // jti, the token's own identifier. Without it the payload is userId, type
+    // and a second-resolution iat, so two refresh tokens minted for one user
+    // inside the same second are byte-identical - and refresh_tokens.token is
+    // UNIQUE (createTables.js:217), so the second sign-in violates it instead
+    // of storing a second session.
+    {
+      userId: id,
+      type: 'refresh_token',
+      jti: randomUUID(),
+      iat: Math.floor(Date.now() / 1000),
+    },
     process.env.JWT_REFRESH_TOKEN_SECRET,
     {
       expiresIn,
