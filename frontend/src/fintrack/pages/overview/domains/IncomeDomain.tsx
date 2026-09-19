@@ -100,8 +100,12 @@ function IncomeDomain({
         name={sourceLabel(source)}
         amount={currencyFormat(card.currency, source.amount, formatNumberCountry)}
         share={shareOf(source.share)}
-        // A closed source's user_accounts row is gone and getAccountById answers
-        // 404 for it, so the row keeps its name and loses the link.
+        // The row keeps its name and loses the link. The reason used to be that
+        // the user_accounts row was gone and getAccountById answered 404; the
+        // close keeps that row now and that route serves a closed account on
+        // purpose (getAccountController.js:971-984). The link stays suppressed
+        // because this is a period breakdown: the destination is the account's
+        // current state, which is not what the figure beside it describes.
         link={
          source.accountIsClosed || source.accountName === null
           ? null

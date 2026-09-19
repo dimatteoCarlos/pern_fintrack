@@ -79,15 +79,14 @@
 -- the courtesy, and the point of the decision was that the courtesy is not the
 -- enforcement.
 --
--- NO BOOT-PATH COUNTERPART, FOR THE REASON 035 HAS NONE
+-- THE BOOT-PATH COUNTERPART EXISTS. THIS NOTE SAID IT DID NOT
 --
--- createTables.js declares no account_registry: the note above
--- addFxAuditColumns() states that this path takes all four pieces of 035 or
--- none of them, and none is what it takes today. A counterpart for a constraint
--- on a table the boot path does not create would be a statement against a
--- missing relation. When 035's counterpart is written, this cap is part of what
--- it must carry, and the constraint to read back from an applied database is
--- chk_close_reason_length.
+-- It said createTables.js declares no account_registry, and that 035's four
+-- pieces were all absent from that path. Both were true when this file was
+-- written and neither is true now: createTables.js:1016 creates the table and
+-- :1112-1123 adds this same cap, guarded by a catalog lookup on conname so a
+-- second boot does not attempt it twice. The constraint to read back from an
+-- applied database, on either path, is chk_close_reason_length.
 --
 -- RETIREMENT REGISTER
 --

@@ -135,9 +135,11 @@ export const useCloseAccount = (targetAccountId: number | string) => {
     };
    }
 
-   // The account row is gone, not merely marked, so it leaves the active
-   // list for the same reason HARD's does. What survives is the
-   // account_registry row, which no store on this screen reads.
+   // It leaves the active list because it is no longer active, which is what
+   // this store holds. The reason used to be that the row was gone, not merely
+   // marked; the close marks it now and the backend's own lists exclude it by
+   // predicate, so the next fetch would not return it either. Removing it here
+   // is what keeps the screen from waiting for that fetch.
    removeAccountFromStore(targetAccountId);
 
    return {
