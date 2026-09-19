@@ -396,6 +396,22 @@
   scrollbar-gutter: stable;
 }
 
+/* THE GUTTER ABOVE SOLVES NOTHING ON A TOUCH SCREEN, by the same specification
+   its own comment cites: on an overlay scrollbar the property has no effect, so
+   no width is reserved and the bar paints over the rows. The amounts are ranged
+   right against the content box, so they are what it covers - $15.94, $26.62,
+   $30.32 on the September board.
+
+   pointer: coarse and not a width breakpoint: what decides whether the scrollbar
+   overlays is the platform, not the viewport, and a narrow desktop window still
+   draws a classic bar that the gutter already handles. Reserving the space at
+   every width would inset the rows on desktop to fix a defect they do not have. */
+@media (pointer: coarse) {
+  .categoryList {
+    padding-inline-end: var(--space-2);
+  }
+}
+
 /* ── Height degradation ──────────────────────────────────────────────────────
    The board is a frame now, so every rem spent above the list is a rem the list
    does not get. On a short screen that arithmetic ends with no list at all.
