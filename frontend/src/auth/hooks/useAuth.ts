@@ -64,6 +64,21 @@ const mapUserResponseToUserData = (
 /* ===============================
 🔧 ERROR EXTRACTION UTILITY
  =============================== */
+// The wait a rate-limited caller is told to serve. Rounded up to the minute
+// above a minute, because a countdown to the second on a two-minute lockout
+// invites watching rather than leaving.
+const formatRetryAfter = (seconds: number): string => {
+  const safe = Math.max(0, Math.ceil(seconds));
+
+  if (safe < 60) {
+    return `You can try again in ${safe} second${safe === 1 ? '' : 's'}.`;
+  }
+
+  const minutes = Math.ceil(safe / 60);
+
+  return `You can try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`;
+};
+
 const extractErrorMessage = (err: unknown): string => {
   // If axios error with response
   if (axios.isAxiosError(err) && err.response) {
@@ -71,6 +86,20 @@ const extractErrorMessage = (err: unknown): string => {
     //-------------------------------------
     // console.log('extractErrorMessage:', data, err.stack);
     //-------------------------------------
+    // Above the served-message branch below, which would return the sentence
+    // without the wait. The 429 body carries the seconds actually left, taken
+    // from the limiter's own reset time rather than its nominal window
+    // (rateLimiter.js:29-38), and a reader who is not told how long retries
+    // into the same wall and extends the lockout.
+    if (err.response.status === 429) {
+      const served =
+        typeof data?.message === 'string' ? data.message : 'Too many attempts.';
+
+      return typeof data?.retryAfter === 'number'
+        ? `${served} ${formatRetryAfter(data.retryAfter)}`
+        : served;
+    }
+
     // Priority: BE error message
     if (data?.message && typeof data.message === 'string') {
       return data.message;
@@ -82,9 +111,6 @@ const extractErrorMessage = (err: unknown): string => {
     }
     if (err.response.status === 400) {
       return 'Invalid input data';
-    }
-    if (err.response.status === 429) {
-      return 'Too many attempts. Please try again later.';
     }
   }
 
