@@ -23,6 +23,14 @@
  flex-direction: column;
  min-block-size: 0;
  gap: var(--space-3);
+ /* The foot is the last thing in the frame and the navbar starts where the
+    frame ends, so without this the count line rests on the navbar's edge. The
+    list below does not need it because it scrolls - its last row is clipped
+    there and reads as `there is more`, which a static line of text does not.
+    It is the same --space-3 the blocks above are separated by, and it costs
+    12px of the scrolling rows, which is what any bottom inset costs in a frame
+    of fixed height. */
+ padding-block-end: var(--space-3);
 }
 
 /* The same inset the rows carry, and it has to be repeated rather than moved
