@@ -8,6 +8,7 @@ import {
 import { createError } from '../../utils/errorHandling.js';
 
 import { pool } from '../../db/config/configDB.js';
+import { LIVE_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 
 import {
   clearAccessTokenFromCookie,
@@ -47,10 +48,14 @@ export const getUserById = async (req, res, next) => {
     }
     // //consulta de info cuentas del user
     const userAccountsResult = await pool.query({
-      text: `SELECT  account_id
-        FROM user_accounts
-       WHERE user_id = $1
-       ORDER BY account_id ASC
+      // Aliased `ua` only so LIVE_ACCOUNT can be interpolated: the predicate
+      // names that alias, and duplicating the two stamps here to avoid the
+      // rename is how they came to differ between files in the first place.
+      text: `SELECT ua.account_id
+        FROM user_accounts ua
+       WHERE ua.user_id = $1
+       ${LIVE_ACCOUNT}
+       ORDER BY ua.account_id ASC
     `,
       values: [userId],
     });

@@ -81,6 +81,7 @@ export const dashboardTotalBalanceAccounts = async (req, res, next) => {
       JOIN account_types act ON ua.account_type_id = act.account_type_id
       JOIN currencies ct ON ua.currency_id = ct.currency_id
       WHERE user_id = $1 AND ua.account_name!=$2
+      ${LIVE_ACCOUNT}
       GROUP BY act.account_type_name, ct.currency_code
       ORDER BY account_type_name ASC
   `,
@@ -205,6 +206,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
       JOIN currencies ct
        ON ua.currency_id = ct.currency_id
       WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+      ${LIVE_ACCOUNT}
       GROUP BY ct.currency_code
 `,
       values: [userId, accountType, 'slack'],
@@ -221,6 +223,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
         JOIN currencies ct ON ua.currency_id = ct.currency_id
         JOIN category_budget_accounts st ON ua.account_id = st.account_id
       WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+      ${LIVE_ACCOUNT}
       GROUP BY ct.currency_code
 `,
         values: [userId, accountType, 'slack'],
@@ -237,6 +240,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
    JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
    JOIN currencies ct ON ua.currency_id = ct.currency_id
    WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+   ${LIVE_ACCOUNT}
    GROUP BY  ct.currency_code
     `,
         values: [userId, accountType, 'slack'],
@@ -395,6 +399,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
           WHERE ua.user_id = $1
           AND act.account_type_name =$2
           AND ua.account_name !=$3
+          ${LIVE_ACCOUNT}
           
           GROUP BY ct.currency_code, cba.category_name
           ORDER BY cba.category_name ASC, ct.currency_code DESC;
@@ -411,7 +416,8 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
             JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
             JOIN currencies ct ON ua.currency_id = ct.currency_id
           WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-          -- GROUP BY ua.account_name, ct.currency_code, ua.account_id, st.target, st.note, 
+          ${LIVE_ACCOUNT}
+          -- GROUP BY ua.account_name, ct.currency_code, ua.account_id, st.target, st.note,
           ORDER BY balance DESC, ua.account_name ASC
 `,
         values: [userId, accountType, 'slack'],
