@@ -30,12 +30,20 @@
 // them to, and the difference matters here because this anchor is what the whole
 // series hangs from. See the account-creation exception recorded at the bank
 // balance in overviewPageRepository.js.
+//
+// EVERY STATEMENT HERE IS BOUNDED BY THE ACCOUNT'S REPORTING WINDOW, the months
+// between its opening and its closure — accountReportingWindow.js carries the
+// rule and the reason. Two of the three carried the opening half already; none
+// carried the closing half, because until 2026-09-19 a closed account had no
+// user_accounts row and fell out of these queries by accident of storage. It has
+// one now, so what used to be arranged by the close is stated by the read.
 
 import { toAmount } from '../../budget_services/core/money.js';
 import {
  ACCOUNT_OPENING_MOVEMENT_TYPE_ID,
  derivedAccountBalanceSql,
 } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { accountReportingWindowSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/accountReportingWindow.js';
 
 // NUMERIC, not FLOAT: this figure is the anchor a summed NUMERIC amount is
 // subtracted from, and a float anchor makes every month of the series inexact.
@@ -68,20 +76,40 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 const nextMonthStart = (monthSql, timeZonePlaceholder) =>
  `((${monthSql} + INTERVAL '1 month') AT TIME ZONE ${timeZonePlaceholder})`;
 
+// THE ANCHOR MOVED INSIDE THE MONTH LOOP, AND THE WINDOW IS WHY. It used to be
+// one scalar computed once — the summed balance of every account in the set —
+// with the whole set's later movements subtracted from it. That shape cannot
+// carry a per-month, per-account bound: restricting the anchor to the accounts
+// inside their window while the subtraction still ran over the whole id array
+// would subtract a departed account's movements from a total it no longer
+// contributed to, which is the defect the close itself used to have.
+//
+// So the statement is now literally what its own paragraph below already said it
+// equals: the sum of MONTHLY_BALANCE_BY_ACCOUNT_QUERY's rows for that month.
+// Both sides of the subtraction move together because they are inside the same
+// correlated row.
+//
+// LEFT JOIN LATERAL ... ON TRUE and not CROSS JOIN LATERAL: a month in which no
+// account is inside its window must still produce its row, at 0. That is the
+// same contract the empty-accountIds case has, and CROSS would drop the month.
 const MONTHLY_BALANCE_QUERY = `
   SELECT
     m.month::date::text AS month,
-    b.current_balance - COALESCE(SUM(t.amount), 0) AS total_amount
+    COALESCE(SUM(a.balance), 0) AS total_amount
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
-  CROSS JOIN (
-    SELECT COALESCE(SUM(${DERIVED_BALANCE}), 0) AS current_balance
+  LEFT JOIN LATERAL (
+    SELECT
+      ${DERIVED_BALANCE} - COALESCE((
+        SELECT SUM(t.amount)
+        FROM transactions t
+        WHERE t.account_id = ua.account_id
+          AND t.transaction_actual_date >= ${nextMonthStart('m.month', '$4')}
+      ), 0) AS balance
     FROM user_accounts ua
     WHERE ua.account_id = ANY($1::int[])
-  ) b
-  LEFT JOIN transactions t
-    ON t.account_id = ANY($1::int[])
-   AND t.transaction_actual_date >= ${nextMonthStart('m.month', '$4')}
-  GROUP BY m.month, b.current_balance
+      AND ${accountReportingWindowSql('ua', 'm.month', '$4')}
+  ) a ON TRUE
+  GROUP BY m.month
   ORDER BY m.month
 `;
 
@@ -121,11 +149,13 @@ export async function getMonthlyBalance(pool, accountIds, from, to, timeZone = '
 // One row per account per month: the balance each counterparty held at the close
 // of each month of the window.
 //
-// It is the statement above with the aggregation removed, and the two agree by
-// arithmetic rather than by review: that one sums the accounts' derived balances
-// and then subtracts everything after the cut, this one subtracts per account
-// first. Addition does not care about the order, so summing these rows for a
-// month gives that month's total exactly.
+// It is the statement above with the aggregation removed, and the two now agree
+// by being the same expression rather than by two computations that have to be
+// checked against each other. Both subtract per account inside the month and
+// both apply the same reporting window; the aggregate then sums what this one
+// returns. Until the window went in the aggregate summed first and subtracted
+// after, which gave the same number and could not have carried a per-account
+// bound.
 //
 // One statement serves both level-2 debt analyses, which is the reason it is
 // shaped this way instead of as two. The reference month's rows are the
@@ -136,8 +166,9 @@ export async function getMonthlyBalance(pool, accountIds, from, to, timeZone = '
 // generate_series stays on the LEFT of the account set for D18's reason, restated
 // once more for a stock cut per account: a month in which nothing moved is the
 // balance carried unchanged, not a gap. CROSS JOIN and not LEFT JOIN because the
-// account set is the inner side and is fixed for the whole window — every account
-// has a row in every month, whatever it held.
+// account set is the inner side, and every account has a row in every month it
+// reports at all — which is the months of its own window and no longer every
+// month of the request's.
 //
 // The sign is left ALONE and the split is the caller's. A debtor balance is
 // positive when the user is owed and negative when the user owes
@@ -158,11 +189,12 @@ const MONTHLY_BALANCE_BY_ACCOUNT_QUERY = `
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   CROSS JOIN user_accounts ua
   WHERE ua.account_id = ANY($1::int[])
-    -- A month before the account's own start month has no balance to report,
-    -- not a settled one: without this floor the cross join manufactures a
-    -- $0 row from subtracting every transaction back out, which reads as a
-    -- real settled debt instead of an account that did not exist yet.
-    AND m.month >= date_trunc('month', ua.account_start_date AT TIME ZONE $4)
+    -- The floor this query already carried, now with the ceiling that was
+    -- missing beside it. This is the list where the ceiling is worth the most:
+    -- a closed counterparty used to appear in every month after its closure as
+    -- a row at 0, which in a debtor ranking reads as a live counterparty who
+    -- owes nothing rather than as one who is gone.
+    AND ${accountReportingWindowSql('ua', 'm.month', '$4')}
   ORDER BY m.month, ua.account_id
 `;
 
@@ -226,6 +258,14 @@ const DEBT_DOMAIN_FIELDS_QUERY = `
       ) AS has_movement
     FROM user_accounts ua
     WHERE ua.account_id = ANY($1::int[])
+      -- THE ONE PLACE IN THIS FILE WHERE THE WINDOW MOVES A PUBLISHED FIGURE,
+      -- and it is the three counts rather than the two sums. A closed debtor
+      -- sits at exactly 0 and carries movements of its own, so without the
+      -- window it lands in settled_count for every month after its closure -
+      -- a counterparty reported as settled in months when the owner no longer
+      -- had that counterparty at all. The sums are unaffected because a
+      -- balance of 0 is in neither leg.
+      AND ${accountReportingWindowSql('ua', '$2::date', '$3')}
   )
   SELECT
     COALESCE(SUM(balance) FILTER (WHERE balance > 0), 0) AS receivable,

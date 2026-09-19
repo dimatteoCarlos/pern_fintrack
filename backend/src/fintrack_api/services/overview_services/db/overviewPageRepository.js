@@ -25,6 +25,7 @@
 import { toAmount } from '../../budget_services/core/money.js';
 import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { accountReportingWindowSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/accountReportingWindow.js';
 import { transactionRowColumns, TRANSACTION_ROW_SOURCE } from '../../../../utils/fintrackUtils/transactionManagement/transactionRowShape.js';
 import { ACTIVITY_FILTER, ACTIVITY_READER_FILTER, ACTIVITY_ORDER } from '../../../../utils/fintrackUtils/transactionManagement/activityFilters.js';
 
@@ -120,13 +121,20 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // writing one leg without the other moves the figure, and no predicate here would
 // catch it.
 //
-// NO closed_at PREDICATE, AND THAT IS DELIBERATE. This figure is read at the
-// close of an arbitrary month, so excluding an account by its state today would
-// remove from March a balance the owner really held in March. It would also buy
-// nothing: CLOSE refuses a non-zero balance on bank and cash
-// (CLOSE_ZERO_BALANCE_TYPES), so a closed account of either type contributes 0
-// to every month after it closed. Same reason the Overview balance series is
-// left unfiltered; see overviewAccountRepository.js.
+// NO `closed_at IS NULL` PREDICATE, AND THE REPORTING WINDOW INSTEAD. This
+// figure is read at the close of an arbitrary month, so excluding an account by
+// its state TODAY would remove from March a balance the owner really held in
+// March. The window asks the month's own question — was this account open in the
+// month being priced — and answers it from the account's start date and closing
+// stamp. accountReportingWindow.js carries the rule.
+//
+// It moves no figure here today, and goes in anyway. CLOSE refuses a non-zero
+// balance on bank and cash (CLOSE_ZERO_BALANCE_TYPES), so a closed account of
+// either type contributes exactly 0 to every month after it closed and a sum
+// cannot tell an absent row from a zero one. That inertness is a fact about a
+// constant in another file, not about this statement, and the day a type that
+// may close at a balance enters this set the sum would freeze it into every
+// later month with nothing to say so.
 const BANK_BALANCE_QUERY = `
   WITH bounds AS (
     SELECT (($2::date + INTERVAL '1 month') AT TIME ZONE $3) AS next_month_start
@@ -143,6 +151,7 @@ const BANK_BALANCE_QUERY = `
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
     AND act.account_type_name IN ('bank', 'cash')
+    AND ${accountReportingWindowSql('ua', '$2::date', '$3')}
 `;
 
 // How much of that cash is not already promised to a pocket, at the same cut.
@@ -182,10 +191,10 @@ const BANK_BALANCE_QUERY = `
 // the floor — which exists here because this figure aggregates, while that one is
 // per account and reports the shortfall as a flag beside the number.
 //
-// No closed_at predicate either, for the reason written above the bank balance:
-// the two read the same account set at the same cut, and filtering one of them
-// by today's state would make the pair incomparable as well as wrong about the
-// month.
+// The same reporting window as the bank balance, and it has to be the same one:
+// the two read the same account set at the same cut and sit beside each other in
+// the hero, so bounding one of them differently would make the pair incomparable
+// as well as wrong about the month.
 const FREE_CASH_QUERY = `
   WITH bounds AS (
     SELECT (($2::date + INTERVAL '1 month') AT TIME ZONE $3) AS next_month_start
@@ -208,6 +217,7 @@ const FREE_CASH_QUERY = `
     JOIN account_types act ON act.account_type_id = ua.account_type_id
     WHERE ua.user_id = $1
       AND act.account_type_name IN ('bank', 'cash')
+      AND ${accountReportingWindowSql('ua', '$2::date', '$3')}
   )
   SELECT COALESCE(SUM(GREATEST(balance - allocated, 0)), 0) AS free_cash
   FROM per_account

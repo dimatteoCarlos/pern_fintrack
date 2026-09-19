@@ -1,8 +1,16 @@
 // backend/src/export_api/db/accountsAndBalancesRepository.js
 //
-// One row per open account, with its ledger-derived balance at the close of
-// one reference month (PLAN_EXPORT.md §9: "the ledger-derived balance
-// (derivedAccountBalanceSql), never the stored account_balance").
+// One row per account the owner HELD THAT MONTH, with its ledger-derived
+// balance at the close of one reference month (PLAN_EXPORT.md §9: "the
+// ledger-derived balance (derivedAccountBalanceSql), never the stored
+// account_balance").
+//
+// "Held that month" and not "open today", and the difference is the whole
+// correction of 2026-09-19. This query carried `ua.closed_at IS NULL`, so a
+// statement for March exported in May omitted an account the owner really held
+// in March and closed in April - a figure about a past month answered with a
+// fact about the present. It now carries the reporting window instead, which
+// asks the month's own question; accountReportingWindow.js carries the rule.
 //
 // The Export module's own repository, not a reuse of getAccountController.js's
 // inline `all` query: that one has no month bound (always "now") and is
@@ -11,6 +19,7 @@
 // applies inside a SUM, per row instead of aggregated across accounts.
 
 import { derivedAccountBalanceSql } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { accountReportingWindowSql } from '../../utils/fintrackUtils/accountDataRetrieval/accountReportingWindow.js';
 import { NOT_BOUNDARY_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 import { toAmount } from '../../fintrack_api/services/budget_services/core/money.js';
 
@@ -38,22 +47,24 @@ const ACCOUNTS_AND_BALANCES_QUERY = `
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   JOIN currencies ct ON ct.currency_id = ua.currency_id
   WHERE ua.user_id = $1
-    AND ua.deleted_at IS NULL
-    AND ua.closed_at IS NULL
     AND act.account_type_name IN ('bank', 'cash', 'investment', 'debtor')
-    -- A referenceMonth before the account's own start month has no balance
-    -- to report, not a $0 one: without this floor the same subtraction that
-    -- prices a past close manufactures a synthetic $0 row for an account
-    -- that did not exist yet.
-    AND $2::date >= date_trunc('month', ua.account_start_date AT TIME ZONE $3)::date
+    -- Replaces three predicates that used to sit here: the start-month floor,
+    -- which the window carries unchanged; closed_at IS NULL, which was the
+    -- defect; and deleted_at IS NULL, which cannot stay as it was because
+    -- CLOSE stamps that column beside closed_at and a bare test on it removes
+    -- every closed account from every month. The window keeps the soft delete
+    -- out and lets the close through for the months it belongs to.
+    AND ${accountReportingWindowSql('ua', '$2::date', '$3')}
   ORDER BY act.account_type_name ASC, ua.account_name ASC
 `;
 
 /**
- * Every open account the user holds, with its balance at the close of
- * `referenceMonth` — never today's balance for a statement about a past
- * month. Excludes the boundary (compensation) account, the same exclusion
- * every other statement figure applies.
+ * Every account the user held during `referenceMonth`, with its balance at the
+ * close of that month — never today's balance for a statement about a past
+ * month, and never today's account list either. An account opened after the
+ * month or closed before it is absent; one closed during it is present, with the
+ * balance it ended the month on. Excludes the boundary (compensation) account,
+ * the same exclusion every other statement figure applies.
  *
  * @param {object} pool
  * @param {string} userId

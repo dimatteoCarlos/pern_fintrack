@@ -31,6 +31,7 @@ import {
 } from './movementTypes.js';
 import { toAmount } from '../../budget_services/core/money.js';
 import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { accountReportingWindowSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/accountReportingWindow.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/annulmentRowIdentity.js';
 
 // NUMERIC, not FLOAT: capitalContributed, realizedPnl and closureAdjustment are
@@ -98,13 +99,13 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // in nor a result the market produced, and it does move the balance, which is
 // why a two-term identity over these accounts was never going to hold.
 //
-// Known limit, and now a published one: account_count is not bounded. An account
-// opened after the reference month contributes 0 to the balance and still counts,
-// and bounding it needs a creation date this query does not read. The card used
-// to consume this figure only to choose between two notices, so the limit stayed
-// internal; it is now a field of the card, which means a past month can report
-// three accounts beside a balance built from the two that were open then.
-// Bounding it is a change to THIS statement and not to the card.
+// account_count IS BOUNDED NOW, and this paragraph used to say it was not. The
+// limit was real: an account opened after the reference month contributed 0 to
+// the balance and still counted, so a past month could report three accounts
+// beside a balance built from the two that were open then. Bounding it was said
+// to need a creation date this query does not read - it needs the account's own
+// start date and closing stamp, both on the row the accounts CTE below already
+// selects from, and the bound goes in there. The card is unchanged.
 const INVESTMENT_FIGURES_QUERY = `
   WITH bounds AS (
     SELECT
@@ -125,6 +126,19 @@ const INVESTMENT_FIGURES_QUERY = `
       ), 0) AS derived_balance
     FROM user_accounts ua
     WHERE ua.account_id = ANY($1::int[])
+      -- THIS IS WHAT CLOSES THE account_count LIMIT NAMED ABOVE, at both ends
+      -- and with no new binding: the window is built from the account's own
+      -- start date and closing stamp, which this statement was already
+      -- selecting from. An account opened after the reference month and an
+      -- account closed before it are both outside it and neither is counted.
+      --
+      -- IT DOES NOT TOUCH THE IDENTITY. capitalContributed + realizedPnl +
+      -- closureAdjustment = ledgerBalance is stated over sums, and an account
+      -- outside its window contributes 0 to the balance side by arithmetic -
+      -- nothing before its opening, and CLOSE_ZERO_BALANCE_TYPES forbids
+      -- investment closing at anything else. The transaction terms are already
+      -- cut at the same reference month, so both sides drop the same nothing.
+      AND ${accountReportingWindowSql('ua', '$3::date', '$2')}
   ),
   contributions AS (
     SELECT COALESCE(SUM(t.amount), 0) AS capital_contributed
@@ -168,14 +182,20 @@ const INVESTMENT_FIGURES_QUERY = `
   -- :68-73). The identity this file publishes at :8 is stated over an account
   -- set that OUTLIVES the account: ACCOUNT_IDS_BY_TYPE_QUERY
   -- (overviewAccountRepository.js:220-227) reads through account_identity and
-  -- keeps a closed account's id, while the accounts CTE above reads FROM
-  -- user_accounts and so contributes nothing for it. A closed account
+  -- keeps a closed account's id, while the accounts CTE above drops it for
+  -- every month after its closure, by the reporting window. A closed account
   -- therefore keeps its whole history in contributions and realized against a
   -- balance side of zero, and the identity holds only if the terms sum to zero
   -- over it. The reversal amount is by construction the negative of everything
   -- that account accumulated, which is exactly the figure that makes them. Left
   -- out, the card would not report an unexplained reversal - it would report
   -- that account's entire history as unexplained.
+  --
+  -- THE WINDOW DID NOT CHANGE THAT ARGUMENT, IT REPLACED ITS MECHANISM. The
+  -- balance side used to be zero because CLOSE deleted the user_accounts row
+  -- and the CTE had nothing to select; it is zero now because the row is there
+  -- and the window excludes it. Same number, and the reversal is still what
+  -- makes the terms sum to it.
   --
   -- BOTH PLACES, NOT ONE. The FILTER decides which rows land in the sum, and
   -- the outer WHERE decides which rows reach the FILTER at all. Widening the
@@ -241,6 +261,12 @@ const INVESTMENT_FIGURES_QUERY = `
 // A zero-balance account comes back as a row. An account the owner opened and
 // emptied is a different situation from one they never had, and only a row can
 // say so.
+//
+// The window is where that distinction stops applying. Inside it an emptied
+// account is a fact the owner should see; outside it the row says nothing about
+// the month it appears in, because the account was not held that month. The
+// bound is the same one the statement above uses, so the shares still sum to
+// the balance the card publishes.
 const INVESTMENT_BALANCE_BY_ACCOUNT_QUERY = `
   WITH bounds AS (
     SELECT (($3::date + INTERVAL '1 month') AT TIME ZONE $2) AS next_month_start
@@ -256,6 +282,7 @@ const INVESTMENT_BALANCE_BY_ACCOUNT_QUERY = `
     ), 0) AS balance
   FROM user_accounts ua
   WHERE ua.account_id = ANY($1::int[])
+    AND ${accountReportingWindowSql('ua', '$3::date', '$2')}
   ORDER BY ua.account_id
 `;
 
