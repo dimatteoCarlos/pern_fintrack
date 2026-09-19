@@ -8,11 +8,20 @@
    container for the same reason. */
 .scrollJump {
  position: fixed;
- /* Anchored to the app column's right edge, not the viewport's: past 40rem the
-    column centres and a viewport offset leaves the button outside the app. */
+ /* Anchored to the right edge of the column it floats over, not the viewport's:
+    past the cap the column centres and a viewport offset leaves the button
+    outside the app.
+
+    The column is not the same on every screen, so the page names it and
+    --layout-width-max is only the fallback. It has to be the second argument of
+    var() and NOT a declaration on this rule: a custom property set on the
+    element itself beats the value inherited from the ancestor, so declaring the
+    default here is what kept .accounting__layout's value from ever arriving.
+    Accounting caps at --layout-width-min and the button sat 140px right of its
+    cards. */
  right: max(
   var(--space-4),
-  calc(50% - var(--layout-width-max) / 2 + var(--space-4))
+  calc(50% - var(--scroll-jump-column, var(--layout-width-max)) / 2 + var(--space-4))
  );
  bottom: var(--space-4);
  z-index: var(--z-dropdown);

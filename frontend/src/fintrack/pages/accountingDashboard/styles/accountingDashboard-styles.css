@@ -13,6 +13,11 @@
    have no token, and the container's desktop cap. */
 
 .accounting__layout {
+ /* Declared here and not on .scrollJump: the button renders inside this element
+    but outside .accounting__container, so this is the nearest ancestor both
+    share. A custom property inherits into a fixed-positioned child, which its
+    offsets do not. Same cap .accounting__container takes below. */
+ --scroll-jump-column: var(--layout-width-min);
  min-height: 100vh;
  /* No top padding: the space above the title belongs to .accounting__stickyHead
     now, so the pinned box starts at zero and docks without travelling. */
