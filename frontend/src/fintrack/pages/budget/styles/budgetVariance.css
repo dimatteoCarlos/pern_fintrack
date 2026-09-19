@@ -1,5 +1,5 @@
 /* frontend/src/fintrack/pages/budget/styles/budgetVariance.css
-   The variance screen: one bar per budgeted category, signed, radiating from a
+   The variance screen: one bar per budgeted line, signed, radiating from a
    central axis and sorted by magnitude.
 
    It replaces the category list inside the board's frame rather than stacking
@@ -9,8 +9,15 @@
 /* The same handoff the list gets, one step further: .budgetLayout is a flex
    column that takes what the header and the navbar leave
    (budget-styles.css:346-349), and without flex: 1 here that height would stop
-   at this element and the rows below would size to their own content. */
+   at this element and the rows below would size to their own content.
+
+   The three columns are declared once, here, because the header row and every
+   data row have to land on the same grid lines. Two literal templates would be
+   two things to keep in step, and the phone override below then changes one
+   value instead of two rules. */
 .budgetVariance {
+ --variance-columns: minmax(0, 7rem) 1fr minmax(0, 8rem);
+
  display: flex;
  flex: 1;
  flex-direction: column;
@@ -75,16 +82,31 @@
  outline-offset: var(--border-width-thin);
 }
 
+/* Sized off the badge's own text rather than in pixels, so the glyph and the
+   word it precedes stay in proportion if either is re-tuned. It takes the
+   badge's ink through currentColor, which is what lets it invert with it. */
 .budgetVariance__backArrow {
- font-size: var(--font-size-base);
- line-height: 1;
+ inline-size: 1.1em;
+ block-size: 1.1em;
+ flex-shrink: 0;
 }
 
 .budgetVariance__title {
+ overflow: hidden;
  margin: 0;
  color: var(--color-content-on-dark);
  font-size: var(--font-size-lg);
  font-weight: var(--font-weight-bold);
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+
+/* The name the reader drilled into, which is the subject of the chart below it
+   - the same role the token was added for in the Pareto trail and the nature
+   card. Ochre because it is the one word on the screen that was chosen rather
+   than listed. */
+.budgetVariance__subject {
+ color: var(--color-content-drilled-subject);
 }
 
 .budgetVariance__caption,
@@ -100,6 +122,41 @@
 .budgetVariance__notice {
  padding-block: var(--space-6);
  text-align: center;
+}
+
+/* The column headers, on the same grid lines as the rows and outside the
+   scroll container so they do not travel with it. The right inset is the one
+   the rows carry for the scrollbar; without it the word `Remaining` would sit
+   8px right of the figures it names. */
+.budgetVariance__columns {
+ display: grid;
+ grid-template-columns: var(--variance-columns);
+ align-items: end;
+ gap: var(--space-2);
+ padding-inline-end: var(--space-2);
+ padding-block-end: var(--space-1);
+ border-block-end: var(--border-width-thin) solid var(--color-border-subtle);
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-xs);
+ letter-spacing: 0.02em;
+ text-transform: uppercase;
+}
+
+/* ONE label over the axis, not a word at each end. The first attempt put
+   `over budget` at the left edge and `budget left` at the right, and two words
+   separated by the full width of the track read as two columns - so the red
+   bars looked like they belonged to the left one and the teal to the right,
+   when both grow out of the single line at the centre.
+
+   `Over / left` in that order carries the sides on its own: read left to
+   right, the first word names the half the bars run left into and the second
+   the half they run right into. */
+.budgetVariance__columnAxis {
+ text-align: center;
+}
+
+.budgetVariance__columnAmount {
+ text-align: end;
 }
 
 /* The scroll lives here for the same reason it lives on .categoryList: this is
@@ -118,15 +175,10 @@
  scrollbar-gutter: stable;
 }
 
-/* Three columns and the middle one is the elastic one: the name is read, the
-   figure is read, and the bar is the only part whose length carries meaning
-   rather than content. The name is capped so one long category cannot squeeze
-   the track that every row is compared across. */
+/* The row owns the separator and the vertical rhythm; the grid lives one level
+   in, on .budgetVariance__cells, because at the category level that element is
+   a <button> and a button cannot be the list item. */
 .budgetVariance__row {
- display: grid;
- grid-template-columns: minmax(0, 7rem) 1fr minmax(0, 8rem);
- align-items: center;
- gap: var(--space-2);
  padding-block: var(--space-2);
  border-block-end: var(--border-width-thin) solid var(--color-border-subtle);
 }
@@ -135,12 +187,68 @@
  border-block-end: none;
 }
 
+/* Three columns and the middle one is the elastic one: the name is read, the
+   figure is read, and the bar is the only part whose length carries meaning
+   rather than content. The name is capped so one long category cannot squeeze
+   the track that every row is compared across. */
+.budgetVariance__cells {
+ display: grid;
+ grid-template-columns: var(--variance-columns);
+ align-items: center;
+ gap: var(--space-2);
+ inline-size: 100%;
+}
+
+/* The whole row is the target at the category level, so the button IS the grid
+   rather than a control sitting inside one cell: a chevron-sized hit area on a
+   row this wide is a miss waiting to happen. Everything below the cursor line
+   is the browser's button chrome being removed, not styling. */
+.budgetVariance__cells--drill {
+ padding: 0;
+ border: none;
+ background: none;
+ color: inherit;
+ font: inherit;
+ text-align: start;
+ cursor: pointer;
+}
+
+/* The affordance is the chevron, which is there before the pointer arrives.
+   The ochre on hover says which name is about to become the subject of the
+   next chart - the same token that name is written in once it is. */
+.budgetVariance__cells--drill:hover .budgetVariance__nameText,
+.budgetVariance__cells--drill:hover .budgetVariance__chevron {
+ color: var(--color-content-drilled-subject);
+}
+
+.budgetVariance__cells--drill:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thin);
+}
+
+/* A flex and not a plain cell: the chevron keeps its width while the name is
+   the part that gives way, so the truncation lives on the text span inside
+   rather than on the cell. */
 .budgetVariance__name {
- overflow: hidden;
+ display: flex;
+ min-inline-size: 0;
+ align-items: baseline;
+ gap: var(--space-1);
  color: var(--color-content-on-dark);
  font-size: var(--font-size-sm);
+}
+
+.budgetVariance__nameText {
+ overflow: hidden;
  text-overflow: ellipsis;
  white-space: nowrap;
+ transition: color var(--motion-fast);
+}
+
+.budgetVariance__chevron {
+ flex-shrink: 0;
+ color: var(--color-content-on-dark-subtle);
+ transition: color var(--motion-fast);
 }
 
 .budgetVariance__track {
@@ -155,25 +263,38 @@
  position: absolute;
  inset-block: calc(var(--space-1) * -1);
  inset-inline-start: 50%;
- inline-size: var(--border-width-thin);
- background-color: var(--color-border-subtle);
+ border-inline-start: var(--border-width-thin) dashed var(--color-border-subtle);
 }
 
+/* --radius-xs and not --radius-sm, which is the radius this started at. The
+   bar is 12px tall (--space-3), so 8px reads as a pill: the two caps became the
+   whole shape on the smallest variances and those rows drew as ovals floating
+   beside the axis instead of as short bars touching it. 4px rounds the corner
+   and leaves the ends flat enough to read as a length.
+
+   The 2px floor is the same defect from the other side: a variance of 1.62
+   against a widest of 171.83 computes to a fraction of a pixel, which paints
+   nothing and makes a line that is over budget look like one that is exactly on
+   plan. A row with no variance at all draws no bar, so the floor never invents
+   one - that branch is in BudgetVariance.tsx. */
 .budgetVariance__bar {
  position: absolute;
  inset-block: 0;
- border-radius: var(--radius-sm);
+ min-inline-size: 2px;
+ border-radius: var(--radius-xs);
 }
 
 /* Each half grows away from the axis, which is what makes the side mean the
-   direction: the favorable bar starts at the centre and runs right, the
-   unfavorable one ends at the centre and runs left. */
-.budgetVariance__bar--favorable {
+   direction: budget left starts at the centre and runs right, spending over
+   the plan ends at the centre and runs left. The two modifiers are named after
+   the words budgetRemainWord returns (budgetStatus.ts:91-98), so the class in
+   the markup is the word on the screen. */
+.budgetVariance__bar--left {
  inset-inline-start: 50%;
  background-color: var(--color-financial-positive);
 }
 
-.budgetVariance__bar--unfavorable {
+.budgetVariance__bar--over {
  inset-inline-end: 50%;
  background-color: var(--color-financial-negative);
 }
@@ -187,11 +308,11 @@
  font-variant-numeric: tabular-nums;
 }
 
-.budgetVariance__amount--favorable {
+.budgetVariance__amount--left {
  color: var(--color-amount-positive);
 }
 
-.budgetVariance__amount--unfavorable {
+.budgetVariance__amount--over {
  color: var(--color-amount-negative);
 }
 
@@ -204,10 +325,10 @@
 
 /* The name column gives way first on a phone: it is the only one that can be
    shortened without losing a comparison, and the track is what the screen
-   exists to show. */
+   exists to show. One declaration moves the header and every row together. */
 @media (max-width: 480px) {
- .budgetVariance__row {
-  grid-template-columns: minmax(0, 5rem) 1fr minmax(0, 6.5rem);
+ .budgetVariance {
+  --variance-columns: minmax(0, 5rem) 1fr minmax(0, 6.5rem);
  }
 
  .budgetVariance__name {

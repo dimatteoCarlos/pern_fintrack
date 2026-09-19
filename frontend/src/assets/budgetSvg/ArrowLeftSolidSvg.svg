@@ -1,0 +1,17 @@
+<!-- A solid left arrow: a triangular head and a shaft with a rounded tail, one
+     closed path. The two arrows already in assets/ draw a 1.5px open stroke and
+     pin it to a literal colour (#141414 and #F7F7F7), so neither can sit on a
+     control that inverts its ink on hover.
+
+     currentColor and no width or height, which is the convention the list
+     controls' icons already follow: the stylesheet sizes it off the control's
+     own font size, and the badge's colour carries through on its own. -->
+<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+ <path
+  d="M2.5 12 10 5.5V9.9h9.5a2.1 2.1 0 0 1 0 4.2H10v4.4z"
+  stroke="currentColor"
+  stroke-width="1.2"
+  stroke-linejoin="round"
+  stroke-linecap="round"
+ />
+</svg>

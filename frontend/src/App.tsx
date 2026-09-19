@@ -254,6 +254,20 @@ function App() {
                     </LazyRoute>
                   ),
                 },
+                // The same component, drilled: with a category in the path it
+                // ranks that category's subcategories instead of the
+                // categories. A sibling and not a nested route, because the
+                // two charts replace each other rather than stack - and both
+                // stay inside BudgetLayout, which is what keeps the month
+                // already in the store from being fetched again.
+                {
+                  path: 'variance/:categoryName',
+                  element: (
+                    <LazyRoute>
+                      <BudgetVariance />
+                    </LazyRoute>
+                  ),
+                },
               ],
             },
 
